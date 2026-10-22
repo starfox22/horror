@@ -1,0 +1,26 @@
+{
+  "name": "horror",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "First-person browser horror game in the spirit of P.T. (PlayCanvas).",
+  "scripts": {
+    "assets": "node tools/build-assets.mjs",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "playcanvas": "2.23.1"
+  },
+  "devDependencies": {
+    "@gltf-transform/core": "4.5.1",
+    "@gltf-transform/extensions": "4.5.1",
+    "@gltf-transform/functions": "4.5.1",
+    "draco3dgltf": "^1.5.7",
+    "ktx2-encoder": "0.6.0",
+    "meshoptimizer": "1.3.0",
+    "sharp": "0.35.5",
+    "vite": "8.1.6"
+  }
+}

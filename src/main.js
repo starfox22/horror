@@ -1,0 +1,166 @@
+// Boot: graphics device (WebGPU, else WebGL2), decoders, the apartment, lighting, post-processing, player, ambience.
+// Hash options (the only URL part that survives in a claude.ai artifact): #webgl forces WebGL2, #stats shows timings,
+// #shot=x,z,yaw[,pitch] places the camera and skips the intro (used by tools/shoot.mjs for screenshots),
+// #q=1|2|3 picks the quality level, #ev=<number> and #amb=<number> override exposure and bounce light (for tuning).
+import * as pc from 'playcanvas';
+import { WalkGrid } from './walkgrid.js';
+import { Player } from './player.js';
+import { setupLighting, captureProbe } from './lighting.js';
+import { setupPost, setQuality } from './post.js';
+import { Ambience } from './ambience.js';
+
+const ASSETS = new URL('./assets/apartment/', location.href).href;
+const SPAWN = { x: 13.0, z: 3.55, yaw: 90 };          // entrance hall, looking down the corridor
+const PROBE_AT = [2.8, 1.5, 1.0];                     // reflection probe: open-plan room, away from any lamp
+const AMBIENT = 0.3;                                  // strength of the probe's bounce light and reflections
+const hash = new URLSearchParams(location.hash.slice(1));
+const shot = hash.get('shot')?.split(',').map(Number);
+
+const $ = (id) => document.getElementById(id);
+const status = (text, frac) => { $('status').textContent = text; if (frac !== undefined) $('bar').style.width = `${Math.round(frac * 100)}%`; };
+window.__state = { ready: false, error: null };
+window.addEventListener('error', (e) => { window.__state.error = String(e.message); status(`Error: ${e.message}`); });
+
+// Decoders: wasm where the page allows compiling it, the asm.js fallbacks otherwise (some sandboxes block wasm).
+const wasmOk = await WebAssembly.compile(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0])).then(() => true, () => false);
+const lib = (name) => {
+  const base = new URL(`./lib/${name}/`, location.href).href;
+  return wasmOk ? { glueUrl: `${base}${name}.wasm.js`, wasmUrl: `${base}${name}.wasm.wasm`, fallbackUrl: `${base}${name}.js` }
+    : { fallbackUrl: `${base}${name}.js` };
+};
+pc.WasmModule.setConfig('DracoDecoderModule', lib('draco'));
+pc.basisInitialize({ ...lib('basis'), numWorkers: 2 });
+
+const canvas = $('app');
+const device = await pc.createGraphicsDevice(canvas, {
+  deviceTypes: hash.has('webgl') ? [pc.DEVICETYPE_WEBGL2] : [pc.DEVICETYPE_WEBGPU, pc.DEVICETYPE_WEBGL2],
+  antialias: false, powerPreference: 'high-performance',
+});
+device.maxPixelRatio = Math.min(window.devicePixelRatio, 1.5);
+
+const opts = new pc.AppOptions();
+opts.graphicsDevice = device;
+opts.componentSystems = [pc.RenderComponentSystem, pc.CameraComponentSystem, pc.LightComponentSystem];
+opts.resourceHandlers = [pc.TextureHandler, pc.ContainerHandler];
+const app = new pc.AppBase(canvas);
+app.init(opts);
+app.setCanvasFillMode(pc.FILLMODE_FILL_WINDOW);
+app.setCanvasResolution(pc.RESOLUTION_AUTO);
+window.addEventListener('resize', () => app.resizeCanvas());
+app.start();
+status(`Loading the apartment… (${device.isWebGPU ? 'WebGPU' : 'WebGL 2'})`, 0.1);
+
+const [grid, container] = await Promise.all([
+  fetch(`${ASSETS}collision.json`).then(r => r.json()).then(j => new WalkGrid(j)),
+  new Promise((resolve, reject) => {
+    const asset = new pc.Asset('apartment', 'container', { url: `${ASSETS}scene.gltf` });
+    asset.once('load', () => resolve(asset.resource));
+    asset.once('error', reject);
+    app.assets.add(asset);
+    app.assets.load(asset);
+    // The container gives no byte progress; creep the bar so it is clear something is happening.
+    let f = 0.1; const t = setInterval(() => { f = Math.min(0.85, f + 0.02); status($('status').textContent, f); }, 400);
+    asset.once('load', () => clearInterval(t)); asset.once('error', () => clearInterval(t));
+  }),
+]);
+status('Lighting the rooms…', 0.9);
+
+const apartment = container.instantiateRenderEntity({ castShadows: true, receiveShadows: true });
+app.root.addChild(apartment);
+tuneMaterials(apartment);
+
+const camera = new pc.Entity('camera');
+camera.addComponent('camera', { fov: 68, nearClip: 0.05, farClip: 60, clearColor: new pc.Color(0, 0, 0) });
+app.root.addChild(camera);
+setupLighting(app);
+const frame = setupPost(app, camera);
+if (hash.has('q')) setQuality(frame, Number(hash.get('q')));
+
+const start = shot ? { x: shot[0], z: shot[1], yaw: shot[2] } : SPAWN;
+const player = new Player(app, camera, grid, start);
+if (shot && shot.length > 3) { player.pitch = shot[3]; player.apply(0); }
+
+// One frame of the lit room first, then capture the probe from it (diffuse + glossy environment from the room).
+await new Promise(r => app.once('frameend', r));
+await captureProbe(app, camera, PROBE_AT, { intensity: hash.has('amb') ? Number(hash.get('amb')) : AMBIENT });
+if (hash.has('ev')) app.scene.exposure = Number(hash.get('ev'));
+
+const ambience = new Ambience();
+player.onStep = (surface, speed) => ambience.step(surface, speed);
+const fwd = new pc.Vec3(), up = new pc.Vec3();
+app.on('update', (dt) => {
+  player.update(dt);
+  fwd.copy(camera.forward); up.copy(camera.up);
+  ambience.listen(camera.getPosition(), fwd, up);
+});
+
+// Quality: keys 1-3, or automatic during the first seconds of walking (drops a level while below ~40 / ~24 fps).
+let quality = hash.has('q') ? Number(hash.get('q')) : 3, manual = hash.has('q'), probe = { t: 0, frames: 0 };
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'Digit1' || e.code === 'Digit2' || e.code === 'Digit3') { quality = Number(e.code.slice(5)); manual = true; setQuality(frame, quality); }
+});
+app.on('update', (dt) => {
+  if (manual || !player.active || quality === 1) return;
+  probe.t += dt; probe.frames++;
+  if (probe.t < 4) return;
+  const fps = probe.frames / probe.t;
+  probe.t = 0; probe.frames = 0;
+  if (fps < (quality === 3 ? 40 : 24)) { quality--; setQuality(frame, quality); console.info(`quality ${quality} (${fps.toFixed(0)} fps)`); }
+  else manual = true;   // fast enough: stop checking
+});
+if (hash.has('stats')) stats(app, device);
+
+status('Ready.', 1);
+$('loading').hidden = true;
+const enter = $('enter');
+enter.hidden = false;
+const intro = $('intro');
+const lock = () => canvas.requestPointerLock?.()?.catch?.(() => {});
+enter.addEventListener('click', () => { ambience.start(); lock(); });
+canvas.addEventListener('click', () => { if (player.active && document.pointerLockElement !== canvas) lock(); });
+document.addEventListener('pointerlockchange', () => {
+  const locked = document.pointerLockElement === canvas;
+  player.active = locked;
+  intro.classList.toggle('gone', locked);
+  $('reticle').hidden = !locked;
+  enter.textContent = locked ? 'Click to enter' : 'Click to continue';
+  if (locked) showHint();
+});
+if (shot) { intro.classList.add('gone'); player.active = false; }
+window.__state.ready = true;
+window.__app = { app, player, frame, camera };
+
+function showHint() {
+  const h = $('hint');
+  if (h.dataset.shown) return;
+  h.dataset.shown = '1'; h.hidden = false;
+  setTimeout(() => h.classList.add('fade'), 6000);
+}
+
+// Glass stays see-through but reflective; screens and lamp emitters glow into the bloom without blinding.
+function tuneMaterials(root) {
+  const seen = new Set();
+  for (const r of root.findComponents('render')) for (const mi of r.meshInstances) {
+    const m = mi.material;
+    if (seen.has(m)) continue;
+    seen.add(m);
+    if (/^Glass/i.test(m.name)) { m.gloss = 0.95; m.metalness = 0; m.useMetalness = true; m.depthWrite = false; }
+    if (/Screen/i.test(m.name)) m.emissiveIntensity = 0.35;
+    if (m.name === 'Keylight') m.emissiveIntensity = 0.6;
+    if (m.name === 'Light') m.emissiveIntensity = 3;
+    m.update();
+  }
+}
+
+function stats(app, device) {
+  const el = document.createElement('div'); el.id = 'stats'; document.body.appendChild(el);
+  let frames = 0, last = performance.now();
+  app.on('frameend', () => {
+    frames++;
+    const now = performance.now();
+    if (now - last < 500) return;
+    const s = app.stats.drawCalls, f = app.stats.frame;
+    el.textContent = `${(frames * 1000 / (now - last)).toFixed(0)} fps  ${device.isWebGPU ? 'WebGPU' : 'WebGL2'}\ndraw calls ${s.total}  tris ${(f.triangles / 1e3).toFixed(0)}k`;
+    frames = 0; last = now;
+  });
+}
