@@ -31,6 +31,7 @@ the source model:
 node tools/fetch-source.mjs         # source zip from this repo's GitHub release → assets-src/ (needs repo read access)
 npm run assets                      # ~20 min (KTX2 texture encoding); add --fast for a 20 s PNG build while iterating
 node tools/check-reach.mjs          # every room reachable from the spawn point?
+node tools/check-walk.mjs           # drives the real controller along a route at 60 updates/s (no browser)
 node tools/check-collision.mjs      # picture of the walk grid → assets-src/collision.png
 node tools/shoot.mjs dist out name=x,z,yaw ...   # headless screenshots (software rendering, ~1 min each)
 ```

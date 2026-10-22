@@ -58,10 +58,15 @@ export class Player {
     this.vel.x += (fx - this.vel.x) * k;
     this.vel.z += (fz - this.vel.z) * k;
 
-    const g = this.grid;
-    const nx = this.pos.x + this.vel.x * dt, nz = this.pos.z + this.vel.z * dt;
-    if (g.fits(nx, this.pos.z, RADIUS, this.floor)) this.pos.x = nx; else this.vel.x = 0;
-    if (g.fits(this.pos.x, nz, RADIUS, this.floor)) this.pos.z = nz; else this.vel.z = 0;
+    const g = this.grid, p = this.pos;
+    const nx = p.x + this.vel.x * dt, nz = p.z + this.vel.z * dt;
+    // Each axis separately (walls slide); when an axis is blocked, try easing sideways up to 3 cm so the body rolls
+    // around small round obstacles (plants, chair legs) instead of sticking on them.
+    const nudge = 0.03;
+    if (g.fits(nx, p.z, RADIUS, this.floor)) p.x = nx;
+    else if (!this.ease('x', nx, nudge)) this.vel.x = 0;
+    if (g.fits(p.x, nz, RADIUS, this.floor)) p.z = nz;
+    else if (!this.ease('z', nz, nudge)) this.vel.z = 0;
     this.floor = g.floorUnder(this.pos.x, this.pos.z, RADIUS);
 
     const speed = Math.hypot(this.vel.x, this.vel.z);
@@ -73,6 +78,19 @@ export class Player {
       this.bobPhase += (Math.round(this.bobPhase / Math.PI) * Math.PI - this.bobPhase) * k;
     }
     this.apply(dt);
+  }
+
+  // Move along `axis` to `to` by also shifting the other axis a little, if that frees the way. Only when the other
+  // axis is not being pushed on purpose, so it never fights the player's own sideways input.
+  ease(axis, to, step) {
+    const g = this.grid, p = this.pos, other = axis === 'x' ? 'z' : 'x';
+    if (Math.abs(this.vel[other]) > 0.4 * Math.abs(this.vel[axis])) return false;
+    for (const d of [step, -step, 2 * step, -2 * step]) {
+      const x = axis === 'x' ? to : p.x + d, z = axis === 'x' ? p.z + d : to;
+      const sx = axis === 'x' ? p.x : p.x + d, sz = axis === 'x' ? p.z + d : p.z;
+      if (g.fits(sx, sz, RADIUS, this.floor) && g.fits(x, z, RADIUS, this.floor)) { p.x = x; p.z = z; return true; }
+    }
+    return false;
   }
 
   // Floor finish under the player: the living area's stone sits higher (0.23 m) than the wood floors.

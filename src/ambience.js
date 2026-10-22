@@ -122,14 +122,15 @@ export class Ambience {
   rainBed() {
     // Far rain on the building, heard everywhere, plus random droplets ticking on the glass.
     this.loop(this.noise, 3.1).connect(this.filter('bandpass', 1400, 0.4)).connect(this.gain(0.035)).connect(this.master);
+    // One positioned input per window; each droplet is a short-lived source feeding one of them.
+    const inputs = WINDOW_SPOTS.map((p) => { const g = this.gain(1); this.place(g, p, 0.8, 1.6, 0.1); return g; });
     const tick = () => {
-      const p = WINDOW_SPOTS[Math.floor(Math.random() * WINDOW_SPOTS.length)];
       const t = this.ctx.currentTime;
       const s = this.ctx.createBufferSource(); s.buffer = this.noise;
       const g = this.gain(0); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.25 + Math.random() * 0.3, t + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.03);
       const bp = this.filter('bandpass', 2500 + Math.random() * 3000, 4);
-      s.connect(bp).connect(g);
-      this.place(g, [p[0] + (Math.random() - 0.5) * 2, p[1] + (Math.random() - 0.5), p[2]], 0.8, 1.6, 0.1);
+      s.connect(bp).connect(g).connect(inputs[Math.floor(Math.random() * inputs.length)]);
+      s.onended = () => g.disconnect();
       s.start(t, Math.random() * 5, 0.05);
       setTimeout(tick, 30 + Math.random() * 160);
     };
@@ -152,13 +153,15 @@ export class Ambience {
   }
 
   drips() {
+    const tap = this.gain(1);
+    this.place(tap, TAP, 0.4, 1.8, 0.6);
     const drip = () => {
       const t = this.ctx.currentTime;
       const o = this.ctx.createOscillator(); o.type = 'sine';
       o.frequency.setValueAtTime(1500 + Math.random() * 400, t); o.frequency.exponentialRampToValueAtTime(420, t + 0.05);
       const g = this.gain(0); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.3, t + 0.003); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
-      o.connect(g); o.start(t); o.stop(t + 0.12);
-      this.place(g, TAP, 0.4, 1.8, 0.6);
+      o.connect(g).connect(tap); o.start(t); o.stop(t + 0.12);
+      o.onended = () => g.disconnect();
       setTimeout(drip, 2300 + Math.random() * 2600);
     };
     setTimeout(drip, 3000);
@@ -176,6 +179,8 @@ export class Ambience {
     n.connect(bp).connect(ng); n.start(t, Math.random() * 5, 0.15);
     const out = this.gain(0.55);
     tg.connect(out); ng.connect(out);
-    out.connect(this.master); out.connect(this.gain(0.4)).connect(this.reverb);
+    const send = this.gain(0.4);
+    out.connect(this.master); out.connect(send).connect(this.reverb);
+    n.onended = () => { out.disconnect(); send.disconnect(); };
   }
 }
