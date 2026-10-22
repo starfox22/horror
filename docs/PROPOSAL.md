@@ -55,6 +55,11 @@ B. Relightable modelled interiors (PBR materials, lit in-engine: flicker, darkne
 7. Old Victorian House Hallway Diorama, Braeden Wylam. CC BY, hallway with period furniture.
    https://sketchfab.com/3d-models/old-victorian-house-hallway-diorama-3345600555b74719a68a0477451a7303
 
+8. Modern Apartment, Visthétique (suggested by the owner, 2026-10-22). CC BY, ~3M tris, published
+   2025-11-27, furnished: open-plan living/kitchen/dining, one bedroom, one bathroom, work space. Strong candidate if
+   the lighting is not baked; heavy, so decimate the dense furniture and compress textures (KTX2) for the web.
+   https://sketchfab.com/3d-models/modern-apartment-1fbb649cd6624f2bb7b7d6e30c6533a5
+
 Dressing for B (any choice): Poly Haven CC0 props, textures and HDRIs (https://polyhaven.com/models), which
 are scan-quality and need no attribution.
 
