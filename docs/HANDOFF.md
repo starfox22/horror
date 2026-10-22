@@ -14,6 +14,8 @@ current.
 - Keep everything documented so another AI can continue.
 
 ## State
+- 2026-10-22: round 2 added to docs/PROPOSAL.md: seven no-login GitHub archviz rooms, examples page
+  https://claude.ai/artifact/6PVjhA37A16UxRMxhQhnPz; owner prioritises a modern detailed apartment.
 - 2026-10-22: proposal written (docs/PROPOSAL.md), shared with the owner as a claude.ai page (https://claude.ai/artifact/3NwzpfHYfCAMCW5Mvb8uz2). Waiting for the
   owner to pick the engine and one environment. No code yet.
 

@@ -77,3 +77,34 @@ tricks; **1 (Hallwyl)** if photoreal-from-day-one matters more than relighting.
   the environment's secrets as `SKETCHFAB_TOKEN`, or download the .glb yourself and commit it under `assets/`.
 - Triangle counts and licences above come from search-engine snapshots of the listings, not from the pages
   themselves (blocked); check them on download.
+
+## Round 2 (2026-10-22): assets Claude can download without a login, apartment first
+
+The owner asked for assets downloadable without logging in, prioritising a modern detailed apartment.
+Examples page with screenshots: https://claude.ai/artifact/6PVjhA37A16UxRMxhQhnPz
+
+Source: https://github.com/ErfanMo77/gltf-research-scenes (glTF 2.0 conversions of Blend Swap archviz scenes
+from Benedikt Bitterli's rendering resources). The .bin/.png files are Git LFS: the cloud's anonymous git lane
+does not serve LFS, but `https://media.githubusercontent.com/media/ErfanMo77/gltf-research-scenes/main/<path>`
+does (no login). Each scene's textures are embedded in its `gltf/<name>.bin`; use `gltf/<name>_extended.gltf`.
+
+| Scene folder | Original | Author | Licence | Notes |
+|---|---|---|---|---|
+| living-room-2 | The White Room | Jay-Artist | CC BY 3.0 | 601k tris, closed room ~5.7 x 7.8 m, 34 MB |
+| kitchen | Country Kitchen | Jay-Artist | CC BY 3.0 | ~1.4M tris, closed room ~6.9 x 8.7 m, 44 MB |
+| bathroom | Contemporary Bathroom | Mareck | CC0 | ~97 MB, not previewed live yet |
+| breakfast-room | The Breakfast Room | Wig42 | CC BY 3.0 | dark dining room, 24 MB |
+| living-room | The Grey & White Room | Wig42 | CC BY 3.0 | 286k tris, closed room ~5.6 x 4.2 m, 14 MB |
+| bathroom2 | Salle de bain | nacimus | CC BY 3.0 | 60 MB |
+| modern-hall | Modern hall | NewSee2l035 | CC BY 3.0 | partial set, only the camera side is built |
+
+Findings from a headless WebGL check (three.js, raw import, one generic environment light):
+- The rooms are closed shells at real scale, but furnished only in the half the original camera sees.
+- Raw real-time looks flat; the target look needs baked lighting. Blender (`bpy` 5.2.3) is on PyPI, which the cloud
+  reaches, so baking can be done in-session.
+- Rejected: Kroken and Watercolor (mmp/pbrt-v4-scenes, CC BY-ND forbids modification), Villa (no licence).
+
+Proposed apartment: White Room (living) + Country Kitchen + Breakfast Room (dining) + Contemporary Bathroom, joined
+by a hand-built L-shaped hallway; empty halves dressed with props from the other rooms and Poly Haven (CC0).
+Other no-login sources that need their domains allowed: Poly Haven, Objaverse on Hugging Face (mirror of older
+Sketchfab CC models), Zenodo. Sketchfab itself always needs an account to download.
