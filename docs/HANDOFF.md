@@ -14,6 +14,10 @@ current.
 - Keep everything documented so another AI can continue.
 
 ## State
+- 2026-10-22: owner chose Visthétique "Modern Apartment" (Sketchfab, CC BY). Advised the glTF download (202 MB zip,
+  original textures). Hand-over route: owner attaches the zip to a GitHub release in starfox22/horror (web UI,
+  2 GB limit; never commit it to git). The session's proxy authenticates api.github.com for this repo, so fetch it with
+  `curl -L -H 'Accept: application/octet-stream' https://api.github.com/repos/starfox22/horror/releases/assets/<id>`.
 - 2026-10-22: round 2 added to docs/PROPOSAL.md: seven no-login GitHub archviz rooms, examples page
   https://claude.ai/artifact/6PVjhA37A16UxRMxhQhnPz; owner prioritises a modern detailed apartment.
 - 2026-10-22: proposal written (docs/PROPOSAL.md), shared with the owner as a claude.ai page (https://claude.ai/artifact/3NwzpfHYfCAMCW5Mvb8uz2). Waiting for the
