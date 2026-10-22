@@ -108,3 +108,18 @@ Proposed apartment: White Room (living) + Country Kitchen + Breakfast Room (dini
 by a hand-built L-shaped hallway; empty halves dressed with props from the other rooms and Poly Haven (CC0).
 Other no-login sources that need their domains allowed: Poly Haven, Objaverse on Hugging Face (mirror of older
 Sketchfab CC models), Zenodo. Sketchfab itself always needs an account to download.
+
+## Round 3 (2026-10-22): a complete, matching modern apartment
+
+The owner found the round-2 rooms mismatched in style and asked for one complete modern apartment set.
+Search result: no complete, cohesive, licence-clean modern apartment is downloadable without a login.
+- GitHub `mgovorushenko/apartments` and `Taras-Galper/Flat13` have full apartments but no licence (all rights
+  reserved); Flat13 also uses IKEA models. `iandamai720-cmyk/interior-models` mixes IKEA and CC BY-NC items. Rejected.
+- Infinigen Indoors (princeton-vl/infinigen, BSD-3) generates a whole furnished home in one style, no login, but
+  needs Python 3.11 + bpy 4.2, whole-home generation "takes a long time" (their configs assume a 256 GB machine;
+  this cloud box has 4 cores / 16 GB), exports full scenes only as USDC, and the look is clean but generic.
+- Objaverse on Hugging Face mirrors older Sketchfab CC models without a login, but huggingface.co is not allowed here.
+Recommendation: Visthétique "Modern Apartment" (Sketchfab, CC BY, full flat). Needs a Sketchfab login once: either
+the owner downloads it, or adds a read-only Sketchfab API token as `SKETCHFAB_TOKEN` in the environment settings
+(picked up by a new session) and allows sketchfab.com, api.sketchfab.com and media.sketchfab.com.
+Fallback without login: unify the round-2 rooms (one floor, wall paint, trim and door set; swap clashing furniture).
