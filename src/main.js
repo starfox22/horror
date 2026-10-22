@@ -52,16 +52,17 @@ status(`Loading the apartment… (${device.isWebGPU ? 'WebGPU' : 'WebGL 2'})`, 0
 
 const [grid, container] = await Promise.all([
   fetch(`${ASSETS}collision.json`).then(r => r.json()).then(j => new WalkGrid(j)),
-  new Promise((resolve, reject) => {
-    const asset = new pc.Asset('apartment', 'container', { url: `${ASSETS}scene.gltf` });
+  modelFile().then((file) => new Promise((resolve, reject) => {
+    const asset = new pc.Asset('apartment', 'container', file);
     asset.once('load', () => resolve(asset.resource));
     asset.once('error', reject);
     app.assets.add(asset);
     app.assets.load(asset);
-    // The container gives no byte progress; creep the bar so it is clear something is happening.
+    if (file.filename.endsWith('.glb')) { status('Preparing the apartment…', 0.85); return; }
+    // An unpacked glTF gives no byte progress; creep the bar so it is clear something is happening.
     let f = 0.1; const t = setInterval(() => { f = Math.min(0.85, f + 0.02); status($('status').textContent, f); }, 400);
     asset.once('load', () => clearInterval(t)); asset.once('error', () => clearInterval(t));
-  }),
+  })),
 ]);
 status('Lighting the rooms…', 0.9);
 
@@ -129,6 +130,27 @@ document.addEventListener('pointerlockchange', () => {
 if (shot) { intro.classList.add('gone'); player.active = false; }
 window.__state.ready = true;
 window.__app = { app, player, frame, camera };
+
+// The artifact build (tools/make-artifact.mjs) ships the apartment as one GLB split into base64 text parts listed in
+// apartment.json; download them with real progress and reassemble the GLB in memory. Otherwise load the glTF.
+async function modelFile() {
+  const manifest = await fetch(`${ASSETS}apartment.json`).then(r => (r.ok ? r.json() : null), () => null);
+  if (!manifest) return { url: `${ASSETS}scene.gltf`, filename: 'scene.gltf' };
+  const glb = new Uint8Array(manifest.bytes);
+  const offsets = manifest.parts.reduce((a, p) => [...a, a[a.length - 1] + p.bytes], [0]);
+  let done = 0;
+  const one = async (p, i) => {
+    const text = await fetch(`${ASSETS}${p.file}`).then(r => { if (!r.ok) throw new Error(`${p.file}: HTTP ${r.status}`); return r.text(); });
+    const bytes = Uint8Array.fromBase64 ? Uint8Array.fromBase64(text) : Uint8Array.from(atob(text), c => c.charCodeAt(0));
+    glb.set(bytes, offsets[i]);
+    done += p.bytes;
+    status(`Loading the apartment… ${(done / 1e6).toFixed(0)} / ${(manifest.bytes / 1e6).toFixed(0)} MB`, 0.1 + 0.7 * done / manifest.bytes);
+  };
+  // Three downloads at a time.
+  const queue = manifest.parts.map((p, i) => [p, i]);
+  await Promise.all([0, 1, 2].map(async () => { while (queue.length) await one(...queue.shift()); }));
+  return { url: URL.createObjectURL(new Blob([glb], { type: 'model/gltf-binary' })), filename: 'apartment.glb' };
+}
 
 function showHint() {
   const h = $('hint');

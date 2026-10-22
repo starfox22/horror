@@ -8,7 +8,7 @@ Read `docs/HANDOFF.md` first if you are picking this up (state, owner's preferen
 
 ## Play
 
-- claude.ai link (current build): see `docs/HANDOFF.md` → Published builds.
+- claude.ai link (build 0.1): https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9
 - Locally: `npm install && npm run dev`, open the printed URL. Click to enter.
 
 Controls: WASD or arrows move · mouse look · Shift walk faster · B head bob on/off · 1 / 2 / 3 quality (low / medium /
@@ -21,7 +21,7 @@ URL hash options: `#webgl` (force WebGL 2 instead of WebGPU), `#stats` (fps, dra
 npm install
 npm run dev                         # dev server
 npm run build                       # static site in dist/ (relative paths: any static host)
-node tools/make-artifact.mjs        # dist/ → dist-artifact/ for the claude.ai artifact (page without <html>/<head>)
+node tools/make-artifact.mjs        # dist/ → dist-artifact/ for the claude.ai artifact (model packed as base64 GLB parts)
 ```
 
 The built apartment (`public/assets/apartment/`) is committed, so the commands above need nothing else. To rebuild it from

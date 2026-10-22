@@ -14,14 +14,18 @@ works with AI agents; whoever picks this up continues from the state below and k
 - Keep everything documented so another AI can continue.
 
 ## Published builds
-- Build 0.1 (2026-10-22): claude.ai artifact https://claude.ai/artifact/PENDING (private to the owner unless shared).
+- Build 0.1 (2026-10-22): claude.ai artifact https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9 (private to the owner
+  unless shared from its Share menu).
 - GitHub Pages: `.github/workflows/pages.yml` deploys `main` to https://starfox22.github.io/horror/ once the owner turns
   Pages on (Settings → Pages → Source: GitHub Actions). The repository is private, which needs a paid plan for Pages;
   the alternative is making it public. Until then the artifact is the link.
 
 To republish the artifact: `npm run build && node tools/make-artifact.mjs`, then the Artifact tool with
-`file_path: dist-artifact/index.html`, `root: dist-artifact`, `files`: the JSON list the script prints, and the same `url`.
-Limits: 15 MB per file (the pipeline splits geometry at 12 MB), 255 files per publish, 256 MB per version.
+`file_path: dist-artifact/index.html`, `root: dist-artifact`, `url` above, and `files` from the JSON list the script prints.
+The host serves no .bin/.ktx2 files, so make-artifact packs the model into one GLB split into ~14 MB base64 text parts
+(`assets/apartment/apartment-N.txt` + `apartment.json`); main.js reassembles it in memory. Limits: 15 MB per file,
+64 MB per publish call (so: call 1 = small files + parts 0-2, call 2 = parts 3-6, both to the same url),
+256 MB per version.
 
 ## How it fits together (see README.md for the file map)
 - **Engine**: PlayCanvas 2.23 from npm, bundled by Vite (`base: './'`, so the build runs from any folder). WebGPU with a
