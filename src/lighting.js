@@ -3,7 +3,7 @@
 // captured from inside the lit room so ambient light and reflections carry the room's own colours.
 import {
   Color, Entity, Quat, Vec3, Texture, RenderTarget, EnvLighting,
-  LIGHTFALLOFF_INVERSESQUARED, SHADOW_PCF3_32F, PIXELFORMAT_RGBA16F, PIXELFORMAT_RGBA8,
+  LIGHTFALLOFF_INVERSESQUARED, SHADOW_PCF3_32F, SHADOWUPDATE_THISFRAME, PIXELFORMAT_RGBA16F, PIXELFORMAT_RGBA8,
   FILTER_LINEAR, FILTER_LINEAR_MIPMAP_LINEAR, RENDERTARGET_ORIGIN_TOP, TONEMAP_LINEAR, GAMMA_NONE,
 } from 'playcanvas';
 
@@ -19,11 +19,13 @@ export const LAMPS = [
   // Stand-in for the bounce off the lit sofa and rug, which the probe (placed in the darker middle) under-reports.
   ['living bounce', 'omni', [-3.6, 1.3, 2.2], WARM, 0.45, 6.5, false],
   ['dining pendant L', 'spot', [-0.44, 1.74, 1.52], WARM, 3.2, 5.5, true, { inner: 30, outer: 70 }],
-  ['dining pendant R', 'spot', [0.77, 1.74, 1.52], WARM, 3.2, 5.5, false, { inner: 30, outer: 70 }],
-  ['cooker hood', 'spot', [-0.93, 1.50, -1.10], NEUTRAL, 1.6, 3.0, false, { inner: 35, outer: 75 }],
+  ['dining pendant R', 'spot', [0.77, 1.74, 1.52], WARM, 3.2, 5.5, true, { inner: 30, outer: 70 }],
+  ['cooker hood', 'spot', [-0.93, 1.50, -1.10], NEUTRAL, 1.6, 3.0, true, { inner: 35, outer: 75 }],
   ['bathroom mirror', 'omni', [6.95, 1.75, 1.25], NEUTRAL, 0.7, 3.2, true],
-  ['bedside strip', 'omni', [13.55, 0.95, 0.45], WARM, 0.9, 3.4, false],
-  ['desk lamp', 'omni', [4.11, 1.36, -0.85], WARM, 0.55, 2.4, false],
+  ['bedside strip', 'omni', [13.55, 0.95, 0.45], WARM, 0.9, 3.4, true],
+  // LED inside the bedroom's open shoe closet (where the flashlight lies), on the bedroom switch.
+  ['closet light', 'omni', [9.62, 1.08, 1.75], WARM, 0.3, 1.2, false],
+  ['desk lamp', 'omni', [4.11, 1.36, -0.85], WARM, 0.55, 2.4, true],
   ['iMac glow', 'omni', [5.24, 1.10, -0.90], SCREEN, 0.35, 2.2, false],
   ['laptop glow', 'omni', [-4.30, 0.70, 2.40], SCREEN, 0.18, 1.5, false],
   ['hall night light', 'omni', [12.70, 2.30, 3.75], WARM, 0.75, 5.5, true],
@@ -40,6 +42,8 @@ export function setupLighting(app) {
   L.shadowType = SHADOW_PCF3_32F;
   L.maxLightsPerCell = 12;
   L.cells = new Vec3(16, 4, 8);
+  L.cookiesEnabled = true;          // flashlight beam pattern, rain on the windows (street lamps)
+  L.cookieAtlasResolution = 1024;
   s.ambientLight = new Color(0.006, 0.007, 0.010);
 
   const lights = [];
@@ -51,6 +55,8 @@ export function setupLighting(app) {
       shadowResolution: 512, shadowBias: 0.25, normalOffsetBias: 0.04, volumetricScattering: type === 'spot' ? 1 : 0.4,
     });
     e.setPosition(p[0], p[1], p[2]);
+    // The rooms do not move: render each lamp's shadow once (the engine re-renders it when the light changes).
+    e.light.shadowUpdateMode = SHADOWUPDATE_THISFRAME;
     app.root.addChild(e);
     lights.push(e);
   }
@@ -61,6 +67,7 @@ export function setupLighting(app) {
     shadowResolution: 2048, shadowDistance: 24, numCascades: 1, shadowBias: 0.3, normalOffsetBias: 0.05,
   });
   moon.setRotation(rotationBetween(Vec3.DOWN, MOON_DIR));
+  moon.light.shadowUpdateMode = SHADOWUPDATE_THISFRAME;
   app.root.addChild(moon);
 
   s.skybox = nightSky(app.graphicsDevice);

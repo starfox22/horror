@@ -15,6 +15,8 @@
 glTF Transform (MIT), meshoptimizer (MIT), ktx2-encoder (MIT, wraps Basis Universal), draco3dgltf (Apache-2.0),
 sharp (Apache-2.0), Vite (MIT), Playwright (Apache-2.0).
 
-## Sound
+## Made in code (placeholders until downloadable assets are reachable)
 
-All current sounds are synthesised in `src/ambience.js` (no third-party audio).
+- Sound: all synthesised in `src/ambience.js` (no third-party audio).
+- The flashlight body (PlayCanvas primitives), the night city backdrop, rain drops, film grain and light cookies are
+  painted procedurally at runtime.

@@ -104,6 +104,10 @@ export class Player {
     const sway = Math.sin(this.bobPhase) * 0.012 * amp;
     const r = this.yaw * math.DEG_TO_RAD;
     this.camera.setPosition(this.pos.x + Math.cos(r) * sway, this.eyeY + bobY - 0.01 * amp, this.pos.z - Math.sin(r) * sway);
-    this.camera.setEulerAngles(this.pitch, this.yaw, Math.sin(this.bobPhase) * 0.25 * amp);
+    // Idle breathing: a slow rise and fall of the view, fading out while walking (off with the head bob).
+    this.breath = (this.breath || 0) + (dt || 0);
+    const idle = this.bobOn ? 1 - amp : 0;
+    const breathe = Math.sin(this.breath * 1.6) * 0.18 * idle, drift = Math.sin(this.breath * 0.37) * 0.12 * idle;
+    this.camera.setEulerAngles(this.pitch + breathe, this.yaw + drift, Math.sin(this.bobPhase) * 0.25 * amp + drift * 0.5);
   }
 }

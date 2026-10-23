@@ -20,3 +20,14 @@ h1 { margin: 0; font: 300 2.6rem/1.1 Georgia, "Times New Roman", serif; letter-s
 #hint { position: fixed; bottom: 18px; left: 0; right: 0; text-align: center; font-size: .75rem; color: rgba(216,212,202,.55); pointer-events: none; transition: opacity 2s; }
 #hint.fade { opacity: 0; }
 #stats { position: fixed; top: 8px; left: 8px; font: 11px/1.4 ui-monospace, Menlo, monospace; color: #8f8; white-space: pre; pointer-events: none; }
+#prompt { position: fixed; left: 0; right: 0; top: calc(50% + 22px); text-align: center; font-size: .78rem; letter-spacing: .06em;
+  color: rgba(232,228,218,.85); text-shadow: 0 1px 3px #000; pointer-events: none; }
+#toast { position: fixed; left: 0; right: 0; bottom: 48px; text-align: center; font-size: .8rem; color: rgba(232,228,218,.8);
+  text-shadow: 0 1px 3px #000; pointer-events: none; transition: opacity 1.5s; }
+#toast.fade { opacity: 0; }
+/* Film grain: a noise tile (painted by main.js) jittered every frame of a 12 fps step animation, blended softly. */
+#grain { position: fixed; inset: -64px; pointer-events: none; opacity: .07; mix-blend-mode: overlay;
+  background-size: 192px 192px; animation: grain .5s steps(6) infinite; }
+@keyframes grain { 0% { transform: translate(0, 0); } 17% { transform: translate(-31px, 17px); } 33% { transform: translate(23px, -41px); }
+  50% { transform: translate(-47px, -9px); } 67% { transform: translate(13px, 37px); } 83% { transform: translate(41px, -23px); } }
+@media (prefers-reduced-motion: reduce) { #grain { animation: none; } }

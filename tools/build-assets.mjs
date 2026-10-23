@@ -4,10 +4,12 @@
 // Usage: node tools/build-assets.mjs [--src assets-src/modern_apartment/scene.gltf] [--out public/assets/apartment] [--fast]
 //   --fast skips texture compression (PNG/JPEG kept, max 1024 px): quick iteration on geometry or collision.
 import { NodeIO, getBounds } from '@gltf-transform/core';
-import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
-import { dedup, prune, flatten, weld, simplify, join, draco, textureCompress } from '@gltf-transform/functions';
+import { ALL_EXTENSIONS, KHRTextureBasisu } from '@gltf-transform/extensions';
+import { dedup, prune, flatten, weld, simplify, join, draco, textureCompress, listTextureSlots } from '@gltf-transform/functions';
 import { MeshoptSimplifier } from 'meshoptimizer';
-import { ktx2 } from 'ktx2-encoder/gltf-transform';
+import { encodeToKTX2 } from 'ktx2-encoder';
+import { createHash } from 'node:crypto';
+import { existsSync } from 'node:fs';
 import draco3d from 'draco3dgltf';
 import sharp from 'sharp';
 import { mkdirSync, rmSync, readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs';
@@ -18,6 +20,9 @@ const SRC = arg('--src', 'assets-src/modern_apartment/scene.gltf');
 const FAST = process.argv.includes('--fast');
 const OUT = arg('--out', 'public/assets/apartment');
 const CHUNK = 12 * 1024 * 1024;
+// Glowing lamp parts per room (see separateMaterials).
+const FIXTURES = { BathroomFurnitures_Light_0: 'bathroom', BedDecors_Light_0: 'bedroom', Hood_Light_0: 'kitchen',
+  OficeDecors_Light_0: 'office' };
 
 const t0 = Date.now();
 const log = (...a) => console.log(`[${((Date.now() - t0) / 1000).toFixed(0)}s]`, ...a);
@@ -39,8 +44,9 @@ await doc.transform(dedup(), prune(), flatten());
 // Leaf = the white door pieces; the black piece that starts at the hinge edge holds the handles (the other is the frame).
 openDoor(doc, (n, b) => /^Door\.001_White1/.test(n.getName()) || (/^Door\.001_Black/.test(n.getName()) && b.min[2] > 0.38),
   { hinge: [9.15, 0.375], degrees: -90 });
+separateMaterials(doc);
 await doc.transform(weld(), simplify({ simplifier: MeshoptSimplifier, ratio: 0, error: 0.0004 }),
-  join({ keepNamed: false }), dedup(), prune());
+  join({ keepNamed: false }), dedup({ keepUniqueNames: true }), prune({ keepAttributes: true }));   // keep the window UVs (no texture uses them in the file)
 log('simplified + joined: triangles', tris(), 'meshes', doc.getRoot().listMeshes().length);
 
 function openDoor(doc, pick, { hinge: [hx, hz], degrees }) {
@@ -56,6 +62,34 @@ function openDoor(doc, pick, { hinge: [hx, hz], degrees }) {
     moved++;
   }
   log(`opened door: ${moved} pieces turned ${degrees} degrees`);
+}
+
+// Lamp fixtures that glow share one 'Light' material across rooms; give each its own copy ('Light.<room>') so join()
+// keeps them apart and the game can switch each room's glow off. Window panes get their own 'WindowGlass' material and
+// world-planar UVs (1 unit = 1 m along the wall, v = height) for the rain-on-glass effect.
+function separateMaterials(doc) {
+  for (const n of doc.getRoot().listScenes()[0].listChildren()) {
+    const room = FIXTURES[n.getName()], window = n.getName() === 'Windows_Glass_0';
+    if (!n.getMesh() || (!room && !window)) continue;
+    for (const prim of n.getMesh().listPrimitives()) {
+      const mat = prim.getMaterial().clone().setName(window ? 'WindowGlass' : `${prim.getMaterial().getName()}.${room}`);
+      prim.setMaterial(mat);
+      if (window) planarUVs(doc, n, prim);
+    }
+  }
+  log('separated fixture and window materials');
+}
+function planarUVs(doc, node, prim) {
+  const m = node.getMatrix(), pos = prim.getAttribute('POSITION'), nor = prim.getAttribute('NORMAL');
+  const uv = new Float32Array(pos.getCount() * 2), p = [0, 0, 0], q = [0, 0, 0];
+  for (let i = 0; i < pos.getCount(); i++) {
+    pos.getElement(i, p); nor.getElement(i, q);
+    const x = m[0] * p[0] + m[4] * p[1] + m[8] * p[2] + m[12], y = m[1] * p[0] + m[5] * p[1] + m[9] * p[2] + m[13], z = m[2] * p[0] + m[6] * p[1] + m[10] * p[2] + m[14];
+    const nx = m[0] * q[0] + m[4] * q[1] + m[8] * q[2], nz = m[2] * q[0] + m[6] * q[1] + m[10] * q[2];
+    uv[i * 2] = Math.abs(nx) > Math.abs(nz) ? z : x;
+    uv[i * 2 + 1] = 3 - y;
+  }
+  prim.setAttribute('TEXCOORD_0', doc.createAccessor().setType('VEC2').setArray(uv).setBuffer(pos.getBuffer()));
 }
 
 const scene = doc.getRoot().listScenes()[0];
@@ -77,12 +111,23 @@ if (FAST) {
 } else {
   await doc.transform(textureCompress({ encoder: sharp, resize: [2048, 2048], targetFormat: 'png' }));
   log('textures resized');
-  await doc.transform(ktx2({ isUASTC: true, isNormalMap: true, needSupercompression: true, generateMipmap: true,
-    slots: /normalTexture/, imageDecoder: decoder }));
-  log('normal maps -> UASTC');
-  await doc.transform(ktx2({ isUASTC: false, qualityLevel: 200, compressionLevel: 2, generateMipmap: true,
-    isPerceptual: true, imageDecoder: decoder }));
-  log('other textures -> ETC1S');
+  // Encoding is slow (UASTC normal maps ~1 min each), so results are cached by content in assets-src/ktx2-cache.
+  const CACHE = 'assets-src/ktx2-cache';
+  mkdirSync(CACHE, { recursive: true });
+  let hits = 0;
+  for (const tex of doc.getRoot().listTextures()) {
+    const normal = listTextureSlots(tex).some(s => /normalTexture/.test(s));
+    const opts = normal
+      ? { isUASTC: true, isNormalMap: true, needSupercompression: true, generateMipmap: true }
+      : { isUASTC: false, qualityLevel: 200, compressionLevel: 2, generateMipmap: true, isPerceptual: true };
+    const key = createHash('sha1').update(tex.getImage()).update(JSON.stringify(opts)).digest('hex');
+    const file = `${CACHE}/${key}.ktx2`;
+    if (existsSync(file)) hits++;
+    else writeFileSync(file, await encodeToKTX2(tex.getImage(), { ...opts, imageDecoder: decoder }));
+    tex.setImage(new Uint8Array(readFileSync(file))).setMimeType('image/ktx2');
+  }
+  doc.createExtension(KHRTextureBasisu).setRequired(true);
+  log(`textures -> KTX2 (UASTC normal maps, ETC1S others; ${hits} from cache)`);
 }
 // Each image gets a stable file name: textures/<index>.<ext>.
 doc.getRoot().listTextures().forEach((t, i) => t.setURI(`textures/${i}.${t.getMimeType() === 'image/ktx2' ? 'ktx2' : t.getMimeType().split('/')[1]}`));

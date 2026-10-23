@@ -8,16 +8,19 @@
 </head>
 <body>
   <canvas id="app"></canvas>
+  <div id="grain"></div>
   <div id="reticle" hidden></div>
-  <div id="hint" hidden>WASD move · mouse look · Shift walk faster · Esc pause</div>
+  <div id="prompt" hidden></div>
+  <div id="toast" hidden></div>
+  <div id="hint" hidden>WASD move · mouse look · Shift walk faster · E use · Esc pause</div>
   <div id="intro">
     <div class="card">
-      <p class="eyebrow">Walkable environment · build 0.1</p>
+      <p class="eyebrow">Walkable environment · build 0.2</p>
       <h1>The Apartment</h1>
       <p class="sub">Night. Rain on the windows. You are alone.</p>
       <div id="loading"><div class="bar"><span id="bar"></span></div><p id="status">Loading…</p></div>
       <button id="enter" hidden>Click to enter</button>
-      <p class="keys">WASD or arrows move · mouse look · Shift walk faster · B head bob · 1 / 2 / 3 quality · Esc pause</p>
+      <p class="keys">WASD or arrows move · mouse look · Shift walk faster · E use (light switches, objects) · F flashlight, once found · B head bob · 1 / 2 / 3 quality · Esc pause</p>
       <p class="tip">Use headphones.</p>
     </div>
     <p class="credit">"Modern Apartment" by Visthétique, CC BY 4.0 · engine PlayCanvas (MIT)</p>

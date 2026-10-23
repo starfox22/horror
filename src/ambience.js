@@ -167,6 +167,56 @@ export class Ambience {
     setTimeout(drip, 3000);
   }
 
+  // A short percussive tick: band-passed noise burst (+ optional low body), for switches and the flashlight button.
+  click(freq, level, body = 0) {
+    const t = this.ctx.currentTime;
+    const n = this.ctx.createBufferSource(); n.buffer = this.noise;
+    const g = this.gain(0); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(level, t + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.035);
+    n.connect(this.filter('bandpass', freq, 2.5)).connect(g);
+    const out = this.gain(1); g.connect(out);
+    if (body) {
+      const o = this.ctx.createOscillator(); o.frequency.setValueAtTime(freq / 8, t); o.frequency.exponentialRampToValueAtTime(freq / 16, t + 0.04);
+      const og = this.gain(0); og.gain.setValueAtTime(0.0001, t); og.gain.exponentialRampToValueAtTime(body, t + 0.003); og.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+      o.connect(og).connect(out); o.start(t); o.stop(t + 0.06);
+    }
+    const send = this.gain(0.3);
+    out.connect(this.master); out.connect(send).connect(this.reverb);
+    n.start(t, Math.random() * 5, 0.06);
+    n.onended = () => { out.disconnect(); send.disconnect(); };
+  }
+
+  switchClick(on) { this.click(on ? 2400 : 2000, 0.5, 0.25); }
+  flashlightClick(on) { this.click(on ? 3600 : 3000, 0.35, 0.08); }
+
+  pickUp() {
+    // cloth rustle + the plastic body knocking the shelf
+    const t = this.ctx.currentTime;
+    const n = this.ctx.createBufferSource(); n.buffer = this.noise;
+    const g = this.gain(0); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.25, t + 0.06); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+    n.connect(this.filter('bandpass', 1800, 0.6)).connect(g).connect(this.master);
+    n.start(t, Math.random() * 5, 0.4);
+    setTimeout(() => this.click(900, 0.4, 0.3), 120);
+  }
+
+  // Rolling thunder: a crack (if close) and a long low rumble that swells and fades. `distance` in km.
+  thunder(distance) {
+    const t = this.ctx.currentTime, near = Math.max(0, 1 - distance / 4);
+    const rumble = this.ctx.createBufferSource(); rumble.buffer = this.brown; rumble.loop = true;
+    const lp = this.filter('lowpass', 120 + near * 200, 0.5);
+    const g = this.gain(0);
+    const peak = 0.5 + near * 0.6, len = 4 + distance * 1.5;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(peak, t + 0.25 + distance * 0.15);
+    for (let k = 1; k < 5; k++) g.gain.setTargetAtTime(peak * (0.4 + Math.random() * 0.6) * (1 - k / 6), t + k * len / 6, 0.4);
+    g.gain.setTargetAtTime(0.0001, t + len * 0.8, len * 0.15);
+    rumble.connect(lp).connect(g);
+    const send = this.gain(0.6);
+    g.connect(this.master); g.connect(send).connect(this.reverb);
+    rumble.start(t, Math.random() * 5); rumble.stop(t + len * 1.6);
+    if (near > 0.3) this.click(500, 0.8 * near, 0.9 * near);
+    rumble.onended = () => { g.disconnect(); send.disconnect(); };
+  }
+
   step(surface, speed) {
     const t = this.ctx.currentTime, loud = Math.min(1, 0.45 + speed * 0.25) * (0.85 + Math.random() * 0.3);
     const thump = this.ctx.createOscillator(); thump.frequency.setValueAtTime(95, t); thump.frequency.exponentialRampToValueAtTime(45, t + 0.08);

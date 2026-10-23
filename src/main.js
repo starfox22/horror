@@ -1,13 +1,18 @@
 // Boot: graphics device (WebGPU, else WebGL2), decoders, the apartment, lighting, post-processing, player, ambience.
 // Hash options (the only URL part that survives in a claude.ai artifact): #webgl forces WebGL2, #stats shows timings,
 // #shot=x,z,yaw[,pitch] places the camera and skips the intro (used by tools/shoot.mjs for screenshots),
-// #q=1|2|3 picks the quality level, #ev=<number> and #amb=<number> override exposure and bounce light (for tuning).
+// #q=1|2|3 picks the quality level, #ev=<number> and #amb=<number> override exposure and bounce light (for tuning),
+// #dark switches every light off, #flash starts with the flashlight in hand.
 import * as pc from 'playcanvas';
 import { WalkGrid } from './walkgrid.js';
 import { Player } from './player.js';
 import { setupLighting, captureProbe } from './lighting.js';
 import { setupPost, setQuality } from './post.js';
 import { Ambience } from './ambience.js';
+import { Interactions } from './interact.js';
+import { Switches } from './switches.js';
+import { Flashlight } from './flashlight.js';
+import { Rain } from './rain.js';
 
 const ASSETS = new URL('./assets/apartment/', location.href).href;
 const SPAWN = { x: 13.0, z: 3.55, yaw: 90 };          // entrance hall, looking down the corridor
@@ -17,6 +22,14 @@ const hash = new URLSearchParams(location.hash.slice(1));
 const shot = hash.get('shot')?.split(',').map(Number);
 
 const $ = (id) => document.getElementById(id);
+// Film grain tile for the #grain overlay (style.css animates it).
+{
+  const c = document.createElement('canvas'); c.width = c.height = 192;
+  const g = c.getContext('2d'), img = g.createImageData(192, 192);
+  for (let i = 0; i < img.data.length; i += 4) { const v = 128 + (Math.random() + Math.random() - 1) * 110; img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255; }
+  g.putImageData(img, 0, 0);
+  $('grain').style.backgroundImage = `url(${c.toDataURL()})`;
+}
 const status = (text, frac) => { $('status').textContent = text; if (frac !== undefined) $('bar').style.width = `${Math.round(frac * 100)}%`; };
 window.__state = { ready: false, error: null };
 window.addEventListener('error', (e) => { window.__state.error = String(e.message); status(`Error: ${e.message}`); });
@@ -40,7 +53,7 @@ device.maxPixelRatio = Math.min(window.devicePixelRatio, 1.5);
 
 const opts = new pc.AppOptions();
 opts.graphicsDevice = device;
-opts.componentSystems = [pc.RenderComponentSystem, pc.CameraComponentSystem, pc.LightComponentSystem];
+opts.componentSystems = [pc.RenderComponentSystem, pc.CameraComponentSystem, pc.LightComponentSystem, pc.ParticleSystemComponentSystem];
 opts.resourceHandlers = [pc.TextureHandler, pc.ContainerHandler];
 const app = new pc.AppBase(canvas);
 app.init(opts);
@@ -73,7 +86,7 @@ tuneMaterials(apartment);
 const camera = new pc.Entity('camera');
 camera.addComponent('camera', { fov: 68, nearClip: 0.05, farClip: 60, clearColor: new pc.Color(0, 0, 0) });
 app.root.addChild(camera);
-setupLighting(app);
+const lit = setupLighting(app);
 const frame = setupPost(app, camera);
 if (hash.has('q')) setQuality(frame, Number(hash.get('q')));
 
@@ -81,16 +94,45 @@ const start = shot ? { x: shot[0], z: shot[1], yaw: shot[2] } : SPAWN;
 const player = new Player(app, camera, grid, start);
 if (shot && shot.length > 3) { player.pitch = shot[3]; player.apply(0); }
 
-// One frame of the lit room first, then capture the probe from it (diffuse + glossy environment from the room).
+const ambience = new Ambience();
+const interactions = new Interactions(camera, $('prompt'));
+const toast = (text) => { const t = $('toast'); t.textContent = text; t.hidden = false; t.classList.remove('fade'); clearTimeout(toast.timer); toast.timer = setTimeout(() => t.classList.add('fade'), 4000); };
+const flashlight = new Flashlight(app, camera, interactions, ambience, toast);
+
+// The room probe (ambient bounce + reflections) is captured from the lit room, and again whenever a switch changes
+// the lighting, with the flashlight beam held out of it.
+const ambientLevel = hash.has('amb') ? Number(hash.get('amb')) : AMBIENT;
+let capturing = null;
+const recapture = async () => {
+  if (capturing) { capturing.again = true; return; }
+  capturing = {};
+  do {
+    capturing.again = false;
+    flashlight.suspend(true);
+    const old = app.scene.envAtlas;
+    await new Promise(r => app.once('frameend', r));
+    await captureProbe(app, camera, PROBE_AT, { intensity: ambientLevel });
+    if (old && old !== app.scene.envAtlas) old.destroy();
+    flashlight.suspend(false);
+  } while (capturing.again);
+  capturing = null;
+};
+const switches = new Switches(app, grid, apartment, interactions, ambience, recapture);
+if (hash.has('dark')) switches.rooms.forEach(r => { if (r.on) switches.toggle(r); });
+if (hash.has('flash')) flashlight.pickUp();
+const rain = new Rain(app, apartment, ambience, lit);
+
+// One frame of the lit room first, then capture the probe from it.
 await new Promise(r => app.once('frameend', r));
-await captureProbe(app, camera, PROBE_AT, { intensity: hash.has('amb') ? Number(hash.get('amb')) : AMBIENT });
+await recapture();
 if (hash.has('ev')) app.scene.exposure = Number(hash.get('ev'));
 
-const ambience = new Ambience();
 player.onStep = (surface, speed) => ambience.step(surface, speed);
 const fwd = new pc.Vec3(), up = new pc.Vec3();
 app.on('update', (dt) => {
   player.update(dt);
+  interactions.enabled = player.active;
+  interactions.update();
   fwd.copy(camera.forward); up.copy(camera.up);
   ambience.listen(camera.getPosition(), fwd, up);
 });
@@ -129,7 +171,7 @@ document.addEventListener('pointerlockchange', () => {
 });
 if (shot) { intro.classList.add('gone'); player.active = false; }
 window.__state.ready = true;
-window.__app = { app, player, frame, camera };
+window.__app = { app, player, frame, camera, flashlight, interactions, switches, rain };
 
 // The artifact build (tools/make-artifact.mjs) ships the apartment as one GLB split into base64 text parts listed in
 // apartment.json; download them with real progress and reassemble the GLB in memory. Otherwise load the glTF.
@@ -170,6 +212,7 @@ function tuneMaterials(root) {
     if (/Screen/i.test(m.name)) m.emissiveIntensity = 0.35;
     if (m.name === 'Keylight') m.emissiveIntensity = 0.6;
     if (m.name === 'Light') m.emissiveIntensity = 3;
+    if (m.name === '97.001') m.opacity = 0.1;   // sheer curtains drawn across the windows: thin enough to see the rain
     m.update();
   }
 }

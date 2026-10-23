@@ -1,8 +1,9 @@
 # horror
 True horror game
 
-A first-person browser horror game in the spirit of P.T., built on PlayCanvas. Current state: **build 0.1, a walkable
-night-time apartment** (no scares yet): first-person walking, night lighting, post-processing and ambient sound.
+A first-person browser horror game in the spirit of P.T., built on PlayCanvas. Current state: **build 0.2, a walkable
+night-time apartment** (no scares yet): light switches in every area, a flashlight to find, rain on the windows,
+lightning and thunder, night lighting, post-processing and ambient sound.
 
 Read `docs/HANDOFF.md` first if you are picking this up (state, owner's preferences, how things fit together).
 
@@ -11,9 +12,9 @@ Read `docs/HANDOFF.md` first if you are picking this up (state, owner's preferen
 - claude.ai link (build 0.1): https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9
 - Locally: `npm install && npm run dev`, open the printed URL. Click to enter.
 
-Controls: WASD or arrows move · mouse look · Shift walk faster · B head bob on/off · 1 / 2 / 3 quality (low / medium /
-high; it also drops automatically on slow GPUs) · Esc pause.
-URL hash options: `#webgl` (force WebGL 2 instead of WebGPU), `#stats` (fps, draw calls).
+Controls: WASD or arrows move · mouse look · Shift walk faster · E use (switches, objects) · F flashlight (once found)
+· B head bob on/off · 1 / 2 / 3 quality (low / medium / high; it also drops automatically on slow GPUs) · Esc pause.
+URL hash options: `#webgl` (force WebGL 2 instead of WebGPU), `#stats` (fps, draw calls); for tests `#dark`, `#flash`.
 
 ## Build
 
@@ -29,7 +30,7 @@ the source model:
 
 ```sh
 node tools/fetch-source.mjs         # source zip from this repo's GitHub release → assets-src/ (needs repo read access)
-npm run assets                      # ~20 min (KTX2 texture encoding); add --fast for a 20 s PNG build while iterating
+npm run assets                      # ~20 s with the KTX2 cache (~20 min the first time); --fast for PNG textures
 node tools/check-reach.mjs          # every room reachable from the spawn point?
 node tools/check-walk.mjs           # drives the real controller along a route at 60 updates/s (no browser)
 node tools/check-collision.mjs      # picture of the walk grid → assets-src/collision.png
@@ -44,7 +45,10 @@ node tools/shoot.mjs dist out name=x,z,yaw ...   # headless screenshots (softwar
 | `src/player.js`, `src/walkgrid.js` | First-person controller and its collision/floor grid |
 | `src/lighting.js` | Lamps (positions from the model), moonlight, night sky, room reflection probe |
 | `src/post.js` | Camera effects (TAA, SSAO, bloom, volumetric haze, grading, vignette) and quality levels |
-| `src/ambience.js` | Synthesised ambience: rain, room tone, fridge, dripping tap, footsteps |
+| `src/ambience.js` | Synthesised sound: rain, room tone, fridge, tap, footsteps, switches, thunder |
+| `src/interact.js`, `src/switches.js` | Look-and-press-E interaction; light switches per area |
+| `src/flashlight.js` | The flashlight (pickup, viewmodel, beam with cookie and shadows) |
+| `src/rain.js` | Rain on the glass, street lamps with rain shadows, rain outside, night city, lightning |
 | `tools/` | Asset pipeline and checks (see Build) |
 | `public/assets/apartment/` | Built model: `scene.gltf`, `geometry-*.bin`, `textures/*.ktx2`, `collision.json` |
 | `public/lib/` | PlayCanvas's Basis (KTX2) and Draco decoders |

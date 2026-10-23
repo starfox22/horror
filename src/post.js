@@ -12,7 +12,7 @@ export function setupPost(app, camera) {
 
   frame.ssao.type = SSAOTYPE_LIGHTING;
   frame.ssao.intensity = 0.65;
-  frame.ssao.radius = 22;
+  frame.ssao.radius = 1.2;          // world units: this scene is in metres
   frame.ssao.samples = 16;
   frame.ssao.power = 5;
   frame.ssao.blurEnabled = true;
@@ -38,14 +38,14 @@ export function setupPost(app, camera) {
   const fog = frame.volumetricFog;
   fog.enabled = true;
   fog.light = moon?.light ?? null;
-  fog.density = 0.035;
+  fog.density = 0.014;
   fog.heightBase = 3;
   fog.heightFalloff = 0;
   fog.anisotropy = 0.55;
-  fog.intensity = 1.6;
+  fog.intensity = 2.4;
   fog.ambientColor.set(0.35, 0.42, 0.6);
   fog.ambientIntensity = 0.004;
-  fog.maxDistance = 25;
+  fog.maxDistance = 12;          // short: haze in the rooms, but the city outside stays clear
   fog.steps = 20;
   fog.scale = 0.5;
   fog.localSpotLights = true;
