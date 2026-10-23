@@ -26,7 +26,7 @@ export class Closets {
     this.app = app;
     this.sounds = sounds;
     this.moving = [];
-    const wood = apartment.findComponents('render').flatMap(r => r.meshInstances).find(mi => mi.material.name === 'Wood049')?.material;
+    const wood = apartment.findComponents('render').flatMap(r => r.meshInstances).find(mi => mi.material.name === 'Wood049@bed')?.material;
     this.buildInteriors(wood);
     this.sections = {};
     for (const [id, s] of Object.entries(SECTIONS)) {

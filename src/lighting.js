@@ -1,9 +1,10 @@
-// Night lighting for the apartment: moonlight through the windows, the apartment's own lamps (positions measured
-// from the model, see docs/areas/lighting.md), a night-sky cubemap outside the windows, and a reflection probe
-// captured from inside the lit room so ambient light and reflections carry the room's own colours.
+// Night lighting for the apartment: the apartment's own lamps (at their fixtures, measured from the model) and
+// recessed ceiling downlights, all with soft static shadows; a night-sky cubemap outside the windows. There is no
+// moonlight (outside is pitch black, as in P.T.): the 'moon' light only exists for a lightning flash (rain.js), which
+// throws the window frames' shadows across the floor for an instant. Bounce light and reflections: probes.js.
 import {
-  Color, Entity, Quat, Vec3, Texture, RenderTarget, EnvLighting, StandardMaterial,
-  LIGHTFALLOFF_INVERSESQUARED, SHADOW_PCF3_32F, SHADOWUPDATE_THISFRAME, PIXELFORMAT_RGBA16F, PIXELFORMAT_RGBA8,
+  Color, Entity, Quat, Vec3, Texture, RenderTarget, StandardMaterial,
+  LIGHTFALLOFF_INVERSESQUARED, SHADOW_PCF5_32F, SHADOWUPDATE_THISFRAME, PIXELFORMAT_RGBA16F, PIXELFORMAT_RGBA8,
   FILTER_LINEAR, FILTER_LINEAR_MIPMAP_LINEAR, RENDERTARGET_ORIGIN_TOP, TONEMAP_LINEAR, GAMMA_NONE,
 } from 'playcanvas';
 
@@ -12,23 +13,26 @@ const NEUTRAL = new Color(1.0, 0.92, 0.82);
 const SCREEN = new Color(0.55, 0.70, 1.0);
 
 // [name, type, position, colour, intensity, range, shadows, extra]
-// Spot lights point straight down unless `dir` is given. Positions are world metres (see tools/inspect-model.mjs).
+// Spot lights point straight down. Every lamp sits where its fixture's bulb is in the model (measured from the source
+// meshes: shade and glass bounds), so shadows fall away from the fixture you see; see-through parts (glass) cast none.
+// No stand-in lights: bounce light comes from the room probes (probes.js).
 export const LAMPS = [
-  ['arc lamp', 'spot', [-4.95, 1.58, 2.76], WARM, 3.2, 6.0, true, { inner: 20, outer: 68 }],
-  ['arc lamp shade', 'omni', [-4.95, 1.66, 2.76], WARM, 0.22, 2.2, false],
-  // Stand-in for the bounce off the lit sofa and rug, which the probe (placed in the darker middle) under-reports.
-  ['living bounce', 'omni', [-3.6, 1.3, 2.2], WARM, 0.25, 6.0, false],
-  ['dining pendant L', 'spot', [-0.44, 1.74, 1.52], WARM, 2.0, 5.0, true, { inner: 24, outer: 72 }],
-  ['dining pendant R', 'spot', [0.77, 1.74, 1.52], WARM, 2.0, 5.0, true, { inner: 24, outer: 72 }],
-  ['cooker hood', 'spot', [-0.93, 1.50, -1.10], NEUTRAL, 1.1, 3.0, true, { inner: 30, outer: 78 }],
-  ['bathroom mirror', 'omni', [6.95, 1.75, 1.25], NEUTRAL, 0.45, 3.0, true],
+  // inside the arc lamp's dome shade (CouchSet_Black, centre -4.88, 1.50, 2.70; rim at 1.28 m)
+  ['arc lamp', 'spot', [-4.88, 1.52, 2.70], WARM, 3.2, 6.0, true, { inner: 20, outer: 68 }],
+  // at the bulbs inside the pendants' opal globes (y 1.76-2.11): light all round, the globes glow and cast no shadow
+  ['dining pendant L', 'omni', [-0.44, 1.94, 1.523], WARM, 0.55, 4.5, true],
+  ['dining pendant R', 'omni', [0.777, 1.94, 1.523], WARM, 0.55, 4.5, true],
+  ['cooker hood', 'spot', [-0.94, 1.53, -1.13], NEUTRAL, 1.1, 3.0, true, { inner: 30, outer: 78 }],
+  // in front of the vertical LED strips beside the bathroom mirror (x 6.46-6.54, y 1.04-2.32)
+  ['bathroom mirror', 'omni', [6.62, 1.65, 1.25], NEUTRAL, 0.45, 3.0, true],
   // The bedside reading lamps are in devices.js (each has its own switch).
   // LED inside the bedroom's open shoe closet (where the flashlight lies), on the bedroom switch.
   ['closet light', 'omni', [9.62, 1.08, 1.75], WARM, 0.3, 1.2, false],
-  ['desk lamp', 'omni', [4.11, 1.36, -0.85], WARM, 0.4, 2.4, true],
+  // at the desk lamp's bulb, inside its shade (the shade shadows all but its opening)
+  ['desk lamp', 'omni', [4.105, 1.375, -0.93], WARM, 0.4, 2.4, true],
+  // screens: a soft glow just in front of each panel
   ['iMac glow', 'omni', [5.24, 1.10, -0.90], SCREEN, 0.35, 2.2, false],
-  ['laptop glow', 'omni', [-4.30, 0.70, 2.40], SCREEN, 0.18, 1.5, false],
-  ['hall night light', 'omni', [12.70, 2.30, 3.75], WARM, 0.22, 3.5, true],
+  ['laptop glow', 'omni', [-4.29, 0.66, 2.46], SCREEN, 0.18, 1.5, false],
 ];
 
 // Recessed ceiling downlights (2700 K, dimmed), the main light of each area as in a real flat. [room, x, z]
@@ -82,7 +86,7 @@ export function setupLighting(app) {
   const L = s.lighting;
   L.shadowsEnabled = true;
   L.shadowAtlasResolution = 4096;
-  L.shadowType = SHADOW_PCF3_32F;
+  L.shadowType = SHADOW_PCF5_32F;      // 5x5 filtered: soft-edged shadows
   // ~45 lights in 21 x 6 m: fine cells and a generous per-cell budget so no lamp is dropped where many overlap.
   L.maxLightsPerCell = 32;
   L.cells = new Vec3(28, 3, 10);
@@ -107,7 +111,7 @@ export function setupLighting(app) {
 
   const moon = new Entity('moon');
   moon.addComponent('light', {
-    type: 'directional', color: new Color(0.52, 0.62, 1.0), intensity: 0.45, castShadows: true,
+    type: 'directional', color: new Color(0.52, 0.62, 1.0), intensity: 0, enabled: false, castShadows: true,
     shadowResolution: 2048, shadowDistance: 24, numCascades: 1, shadowBias: 0.3, normalOffsetBias: 0.05,
   });
   moon.setRotation(rotationBetween(Vec3.DOWN, MOON_DIR));
@@ -149,9 +153,9 @@ function nightSky(device) {
   });
 }
 
-// Renders the lit room into a cubemap from `pos` (one frame), then turns it into the scene's environment atlas:
-// diffuse ambient and glossy reflections now come from the apartment itself instead of a generic sky.
-export function captureProbe(app, camera, pos, { size = 256, intensity = 1 } = {}) {
+// Renders the flat into a cubemap from `pos` (one frame) and resolves with it (the caller destroys it). Used for the
+// room probes (probes.js): diffuse bounce light and reflections come from the apartment itself.
+export function captureCube(app, camera, pos, size = 256) {
   return new Promise((resolve) => {
     const device = app.graphicsDevice;
     const cube = new Texture(device, {
@@ -176,16 +180,9 @@ export function captureProbe(app, camera, pos, { size = 256, intensity = 1 } = {
     app.root.addChild(rig);
     const off = app.on('frameend', () => {
       off.off();
-      cams.forEach(c => { c.enabled = false; });
-      const lighting = EnvLighting.generateLightingSource(cube);
-      const atlas = EnvLighting.generateAtlas(lighting);
-      lighting.destroy();
-      // skyboxIntensity scales both the environment lighting and the sky seen through the windows.
-      app.scene.envAtlas = atlas;
-      app.scene.skyboxIntensity = intensity;
+      cams.forEach(c => { c.renderTarget?.destroy(); c.enabled = false; });
       rig.destroy();
-      cube.destroy();
-      resolve(atlas);
+      resolve(cube);
     });
   });
 }

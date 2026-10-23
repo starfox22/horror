@@ -8,6 +8,7 @@
 import { Color, Entity, Quat, Texture, Vec3, PIXELFORMAT_RGBA8, ADDRESS_CLAMP_TO_EDGE, LIGHTFALLOFF_INVERSESQUARED } from 'playcanvas';
 
 const HAND = new Vec3(0.15, -0.20, -0.12);    // the lamp's head relative to the eye (right hand, chest height)
+export const BEAM_SIZE = 38;                  // cone angle (degrees), developer menu can change it
 const BEAM = 8;                              // intensity
 const COLOR = new Color(1, 0.94, 0.84);        // a warm-white LED torch
 
@@ -52,11 +53,12 @@ export class Flashlight {
       this.halfHeight = Math.min(box.halfExtents.x, box.halfExtents.y);
     }
     this.root = root;
+    this.size = BEAM_SIZE;
 
     // The beam and its bounce follow the camera, not the (hidden) model.
     this.beam = new Entity('flashlight beam');
     this.beam.addComponent('light', {
-      type: 'spot', color: COLOR, intensity: 0, range: 18, innerConeAngle: 12, outerConeAngle: 44,
+      type: 'spot', color: COLOR, intensity: 0, range: 18, innerConeAngle: BEAM_SIZE * 0.28, outerConeAngle: BEAM_SIZE,
       falloffMode: LIGHTFALLOFF_INVERSESQUARED,
       castShadows: true, shadowResolution: 1024, shadowBias: 0.12, normalOffsetBias: 0.02, volumetricScattering: 0.35,
       cookie: this.cookie(), cookieIntensity: 1, enabled: false,
@@ -113,7 +115,14 @@ export class Flashlight {
     this.beam.light.enabled = this.bounce.light.enabled = this.on || this.power > 0;
   }
 
-  // Disable the beam briefly (the room probe must not capture it).
+  // Beam size (developer menu): the cone's outer angle in degrees; the cookie's pattern scales with it.
+  setSize(deg) {
+    this.size = deg;
+    this.beam.light.outerConeAngle = deg;
+    this.beam.light.innerConeAngle = deg * 0.28;
+  }
+
+  // Disable the beam briefly (the room probes must not capture it).
   suspend(off) {
     this.suspended = off;
     if (this.on) this.beam.light.enabled = this.bounce.light.enabled = !off;

@@ -41,3 +41,24 @@ h1 { margin: 0; font: 300 2.6rem/1.1 Georgia, "Times New Roman", serif; letter-s
 @keyframes grain { 0% { transform: translate(0, 0); } 17% { transform: translate(-31px, 17px); } 33% { transform: translate(23px, -41px); }
   50% { transform: translate(-47px, -9px); } 67% { transform: translate(13px, 37px); } 83% { transform: translate(41px, -23px); } }
 @media (prefers-reduced-motion: reduce) { #grain { animation: none; } }
+/* Developer options (devmenu.js): a panel over everything, the intro included. */
+#dev { position: fixed; top: 16px; right: 16px; bottom: 16px; width: min(340px, calc(100vw - 32px)); z-index: 50; overflow-y: auto;
+  background: rgba(12, 12, 14, .94); border: 1px solid #34332f; box-shadow: 0 10px 40px rgba(0,0,0,.6); padding: 0 16px 14px;
+  font-size: .8rem; color: #d8d4ca; }
+#dev[hidden] { display: none; }
+#dev header { position: sticky; top: 0; display: flex; justify-content: space-between; align-items: center; padding: 14px 0 10px;
+  background: rgba(12, 12, 14, .98); font-size: .72rem; letter-spacing: .25em; text-transform: uppercase; color: #c9b48a; }
+#dev h2 { margin: 14px 0 8px; font-size: .7rem; letter-spacing: .2em; text-transform: uppercase; color: #8a867c; font-weight: 600; }
+#dev h3 { margin: 12px 0 4px; font-size: .74rem; color: #c9b48a; font-weight: 600; }
+#dev button { background: #1b1b1e; color: #d8d4ca; border: 1px solid #3a3934; padding: .35rem .6rem; font: inherit; cursor: pointer; }
+#dev button:hover { border-color: #c9b48a; }
+#dev button:disabled { opacity: .45; cursor: default; }
+#dev .x { border: none; background: none; font-size: 1rem; padding: 0 .2rem; }
+#dev .sub { width: 100%; text-align: left; letter-spacing: .2em; text-transform: uppercase; font-size: .7rem; color: #8a867c; display: flex; justify-content: space-between; }
+#dev .btns { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+#dev .row { display: grid; grid-template-columns: auto 1fr 3em; align-items: center; gap: 10px; }
+#dev input[type=range] { width: 100%; accent-color: #c9b48a; }
+#dev output { text-align: right; font-variant-numeric: tabular-nums; }
+#dev .light { display: flex; align-items: center; gap: 8px; padding: 3px 0; cursor: pointer; }
+#dev .light input { accent-color: #c9b48a; }
+#dev .hint { margin: 16px 0 0; color: #6d6a62; font-size: .72rem; }

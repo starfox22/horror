@@ -6,13 +6,13 @@
 import { Color, Entity, StandardMaterial, Vec3 } from 'playcanvas';
 
 export const ROOMS = [
-  { id: 'living', label: 'Living room lights', lights: ['arc lamp', 'arc lamp shade', 'living bounce'], bulbs: [[-4.95, 1.6, 2.76]],
+  { id: 'living', label: 'Living room lights', lights: ['arc lamp'], bulbs: [[-4.88, 1.47, 2.70]],
     from: [0.95, 3.9], dir: [0, 1], on: true },
-  { id: 'dining', label: 'Dining pendants', lights: ['dining pendant L', 'dining pendant R'], bulbs: [[-0.44, 1.8, 1.52], [0.77, 1.8, 1.52]],
-    from: [1.13, 3.9], dir: [0, 1], on: true },
-  { id: 'kitchen', label: 'Kitchen lights', lights: ['cooker hood'], glow: 'Light.kitchen', from: [1.31, 3.9], dir: [0, 1], on: true },
+  { id: 'dining', label: 'Dining pendants', lights: ['dining pendant L', 'dining pendant R'], glow: 'White1.pendant',
+    from: [1.13, 3.9], dir: [0, 1], on: false },
+  { id: 'kitchen', label: 'Kitchen lights', lights: ['cooker hood'], glow: 'Light.kitchen', from: [1.31, 3.9], dir: [0, 1], on: false },
   { id: 'office', label: 'Office lights', lights: ['desk lamp'], glow: 'Light.office', from: [3.0, 2.3], dir: [0, 1], on: true },
-  { id: 'hall', label: 'Hall lights', lights: ['hall night light'], from: [11.8, 3.6], dir: [0, 1], on: true },
+  { id: 'hall', label: 'Hall lights', lights: [], from: [11.8, 3.6], dir: [0, 1], on: false },
   { id: 'bathroom', label: 'Bathroom lights', lights: ['bathroom mirror'], glow: 'Light.bathroom', at: [6.80, 1.22, 1.76], on: true },
   // The two bedside reading lamps have their own switches (devices.js); this is the ceiling and the shoe-closet LED.
   { id: 'bedroom', label: 'Bedroom lights', lights: ['closet light'], at: [11.67, 1.17, 2.37], on: true },

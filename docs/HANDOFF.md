@@ -19,6 +19,9 @@ works with AI agents; whoever picks this up continues from the state below and k
   bedside reading lamps switch on their own; a regular handheld flashlight (downloaded) that is never seen in hand, only
   its beam (as in P.T.), wider and AAA-looking; drops on the windows gather and run down; the bathroom door opens and
   shuts and blocks you; more interactions (laptop lid, computer, coffee machine) with AAA feedback.
+- Build 0.5 (done, owner feedback on 0.4): dining pendants, kitchen and hall start off; the bathroom door's handle
+  moves with the door; shadows and reflections must be physically believable (no shadow from a light you cannot see);
+  flashlight circle a little smaller; a hidden developer menu (type "developer") for testing.
 - Show screenshots and links before big decisions; publish each prototype to a web link.
 - Keep everything documented so another AI can continue.
 
@@ -59,6 +62,35 @@ The host serves no .bin/.ktx2 files, so make-artifact packs the model into one G
 - **Sound** (`src/ambience.js`): all synthesised with Web Audio (rain per window, droplets, room tone, city rumble,
   fridge cycling, dripping tap, footsteps by floor finish), HRTF-positioned with a generated reverb. Replace with
   downloaded CC0 recordings when a source is reachable.
+
+## Build 0.5 changes (where they live)
+- **Per-room probes** (`src/probes.js`, pipeline `zoneSplit` in `tools/build-assets.mjs`): every surface is cut exactly
+  at the walls (`ZONE_CUTS`: x 1.55 corridor mouth, x 6.40 main/bath wall, x 9.20 bath/bed wall, z 2.57 hall wall;
+  Sutherland-Hodgman, attributes interpolated) and its material copied per room as `<material>@main|hall|bath|bed`
+  (look names up with `baseName()`; tagged/moving parts, props, lamp glows and screens are left whole: `UNZONED`).
+  Each room has a cubemap probe captured inside it (`ZONES[room].at`) and turned into its own env atlas: reflections are
+  box-projected onto the room's walls (custom `cubeMapProjectPS` chunk, relative to the capture point), bounce light
+  comes from the room's own probe (custom `ambientPS` chunk, scaled by `AMBIENT`), so an unlit room is really dark.
+  The open-plan room and corridor blend their bounce light by position (`envBlendWeight`) so no seam shows at the
+  corridor's mouth. GLSL and WGSL versions of both chunks: verified on WebGL 2 and WebGPU (see Gotchas for the
+  headless WebGPU flags). Probes are re-captured (one room per frame) after any switch, lamp or developer-menu change.
+- **Shadows that make sense**: no moonlight any more (the 'moon' light is enabled only for a lightning flash); every
+  lamp moved onto its fixture's bulb (arc lamp dome, pendant shades at 1.92 m, desk lamp bulb, cooker hood, the
+  bathroom mirror's LED strips), the stand-in lights (living bounce, arc lamp shade glow, hall night light) removed;
+  glass and other see-through materials cast no shadows; PCF5 filtering; curtains (`White1.curtain`, sheer drapes) do
+  not receive shadows (acne on thin double-sided cloth) and are matte (the model's roughness 0.36 made the folds mirror
+  the black windows as dark streaks). The dining pendants are opal globes: `SPLITS` cuts them out (`White1.pendant`),
+  they glow on the dining switch and cast no shadow, with an omni light at each bulb inside.
+- **Developer code and E**: while "developer" is being typed, its E does not use things (`interactions.blockKey`).
+- **Bathroom door handle**: the levers, rose and lock were modelled into the frame mesh; `SPLITS` cuts them onto the
+  leaf (`.bathdoor`), so they swing with it.
+- **Defaults**: dining pendants, kitchen and hall lights start off (`switches.js` ROOMS `on`).
+- **Flashlight**: `BEAM_SIZE` 38 deg (was 44); `Flashlight.setSize(deg)`.
+- **Developer menu** (`src/devmenu.js`): typing "developer" (in game or on the start screen) toggles it; it releases the
+  mouse. Flashlight beam size slider (15-75 deg) + default, give/toggle the flashlight; Lights submenu: every light by
+  area (37), each forced on/off (overrides its switch; "Back to switches" hands them back), all on/off; lightning
+  strike; FPS counter. New lights are picked up automatically (group "Other") unless registered in `collect()`.
+- Test hash `#allon` switches every switch on. `tools/find-meshes.mjs` lists source meshes in a box.
 
 ## Build 0.4 changes (where they live)
 - **Moving and switchable parts from the pipeline** (`tools/build-assets.mjs`): `FIXTURES` gives whole nodes their own
@@ -138,11 +170,18 @@ The host serves no .bin/.ktx2 files, so make-artifact packs the model into one G
   evaluate (`doors.update(0.033)` in a loop, `rain.update` with `rain.draw` stubbed out: drawing is the slow part).
 - Do not `pkill -f <name>` from a shell whose own command line contains <name> (it kills itself); use `[n]ame`.
 - Sketchfab models found in GitHub repos carry their licence in the GLB (`asset.extras.license`): check it there.
+- Headless WebGPU works with Chromium flags `--enable-unsafe-webgpu --use-webgpu-adapter=swiftshader
+  --enable-features=Vulkan --use-vulkan=swiftshader` on a localhost page (not about:blank); keep page sizes small
+  (480x270, `#q=1`) or screenshots time out. Check every custom shader chunk on both WebGL 2 and WebGPU.
+- With `material.envAtlas` set, the engine does not apply `scene.skyboxIntensity`; and with only `scene.envAtlas` +
+  `scene.skybox`, glossy surfaces reflected the night-sky cubemap (ENVATLASHQ): another reason for per-room atlases.
+- The volumetric haze draws a spot light's cone as a flat disc when the camera is near the light: keep the
+  flashlight's `volumetricScattering` low (0.35) or its circle gets a hard edge.
 - The cloud session reaches GitHub (git, media.githubusercontent.com, api.github.com for this repo) and npm/PyPI only;
   Sketchfab, Poly Haven, Zenodo and Hugging Face are blocked unless the owner allows them.
 
 ## Next steps (suggested, not started)
-1. Owner feedback on build 0.4.
+1. Owner feedback on build 0.5.
 2. Replace the synthesised sounds with downloaded CC0 recordings (search GitHub game repos, as for the props).
 3. Kitchen cabinets and the wardrobe's top row could open the same way as the wardrobe doors.
 3. Mirror reflections (bathroom) with a planar reflection; per-room reflection probes.

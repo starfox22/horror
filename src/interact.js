@@ -22,7 +22,8 @@ export class Interactions {
       clearTimeout(this.pressTimer);
       this.pressTimer = setTimeout(() => this.reticle?.classList.remove('pressed'), 120);
     };
-    window.addEventListener('keydown', (e) => { if (e.code === 'KeyE' && !e.repeat) use(); });
+    // blockKey(): set by the developer menu, true while its code word is being typed.
+    window.addEventListener('keydown', (e) => { if (e.code === 'KeyE' && !e.repeat && !this.blockKey?.('e')) use(); });
     window.addEventListener('mousedown', (e) => { if (e.button === 0 && document.pointerLockElement) use(); });
   }
 

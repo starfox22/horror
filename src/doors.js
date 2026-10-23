@@ -6,7 +6,7 @@ import { Entity, Vec3 } from 'playcanvas';
 import { segmentDistance } from './walkgrid.js';
 import { refreshShadows } from './lighting.js';
 
-const BATHROOM = { tag: 'bathdoor', hinge: [9.15, 0.375], width: 0.85, open: -92, handleY: 1.02, label: 'the bathroom door' };
+const BATHROOM = { tag: 'bathdoor', hinge: [9.15, 0.375], width: 0.85, open: -92, handleY: 1.1, label: 'the bathroom door' };
 const BODY = 0.22 + 0.05;     // player radius + half the leaf's thickness and a little air
 
 export class Doors {

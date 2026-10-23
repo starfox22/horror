@@ -41,7 +41,7 @@ export class Rain {
 
     for (const r of apartment.findComponents('render')) for (const mi of r.meshInstances) {
       const m = mi.material;
-      if (m.name !== 'WindowGlass') continue;
+      if (!/^WindowGlass(@\w+)?$/.test(m.name) || this.glasses?.includes(m)) continue;
       // Clear glass between the drops; the drops are water, seen by the room's light (grey diffuse + sharp specular
       // from the normal map) against the black outside. Their emissive is only raised during a lightning flash.
       const tile = (t) => t.set(1 / TILE, 1 / TILE);
@@ -51,7 +51,7 @@ export class Rain {
       m.blendType = BLEND_NORMAL; m.depthWrite = false;
       m.diffuse = new Color(0.42, 0.42, 0.43); m.gloss = 0.97; m.useMetalness = true; m.metalness = 0;
       m.update();
-      this.glass = m;
+      (this.glasses ||= []).push(m);
     }
 
     this.streaks = VOLUMES.map(([c, ext]) => this.rainVolume(c, ext));
@@ -234,10 +234,13 @@ export class Rain {
       for (const s of f.seq) if (f.time >= s.at && f.time < s.at + s.len) power = Math.max(power, s.power * (1 - (f.time - s.at) / s.len));
       if (f.time > 2) f.seq = [];
     }
+    // Lightning is the only light from outside: the sky light exists only during a flash (its shadow re-rendered once).
+    const on = power > 0;
+    if (on !== this.moon.light.enabled) { this.moon.light.enabled = on; if (on) this.moon.light.shadowUpdateMode = SHADOWUPDATE_THISFRAME; }
     this.moon.light.intensity = this.moonBase + power;
     for (const s of this.streaks) s.particlesystem.intensity = power * 0.9;   // the rain outside shows only in a flash
     // Drops refract the lit room behind the viewer (a faint glow that follows how many lights are on), and flare in a flash.
     const glow = this.roomLight * 0.55 + power * 0.3;
-    if (this.glass && Math.abs(this.glass.emissiveIntensity - glow) > 1e-4) { this.glass.emissiveIntensity = glow; this.glass.update(); }
+    for (const g of this.glasses || []) if (Math.abs(g.emissiveIntensity - glow) > 1e-4) { g.emissiveIntensity = glow; g.update(); }
   }
 }

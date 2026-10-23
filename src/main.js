@@ -2,11 +2,12 @@
 // Hash options (the only URL part that survives in a claude.ai artifact): #webgl forces WebGL2, #stats shows timings,
 // #shot=x,z,yaw[,pitch] places the camera and skips the intro (used by tools/shoot.mjs for screenshots),
 // #q=1|2|3 picks the quality level, #ev=<number> and #amb=<number> override exposure and bounce light (for tuning),
-// #dark switches every light off, #flash starts with the flashlight in hand, #open opens the wardrobe.
+// #dark switches every light off, #allon every switch on, #flash starts with the flashlight in hand, #open opens the wardrobe.
 import * as pc from 'playcanvas';
 import { WalkGrid } from './walkgrid.js';
 import { Player } from './player.js';
-import { setupLighting, captureProbe, addDownlights } from './lighting.js';
+import { setupLighting, addDownlights } from './lighting.js';
+import { Probes, ZONES, baseName } from './probes.js';
 import { setupPost, setQuality } from './post.js';
 import { Ambience } from './ambience.js';
 import { Interactions } from './interact.js';
@@ -16,11 +17,11 @@ import { Flashlight } from './flashlight.js';
 import { Rain } from './rain.js';
 import { Doors } from './doors.js';
 import { Devices } from './devices.js';
+import { DevMenu } from './devmenu.js';
 
 const ASSETS = new URL('./assets/apartment/', location.href).href;
 const SPAWN = { x: 13.0, z: 3.55, yaw: 90 };          // entrance hall, looking down the corridor
-const PROBE_AT = [2.8, 1.5, 1.0];                     // reflection probe: open-plan room, away from any lamp
-const AMBIENT = 0.3;                                  // strength of the probe's bounce light and reflections
+const AMBIENT = 0.3;                                  // strength of the room probes' bounce light (probes.js)
 const hash = new URLSearchParams(location.hash.slice(1));
 const shot = hash.get('shot')?.split(',').map(Number);
 
@@ -109,20 +110,20 @@ const flashlight = new Flashlight(app, camera, apartment, interactions, ambience
   { x: FLASHLIGHT_SPOT.pos.x, z: FLASHLIGHT_SPOT.pos.z, shelf: 1.84, yaw: 0 }, grid, player);
 frontDoor(apartment);
 
-// The room probe (ambient bounce + reflections) is captured from the lit room, and again whenever a switch changes
-// the lighting, with the flashlight beam held out of it.
+// Room probes (bounce light + box-projected reflections, one per room) are captured from the lit rooms, and again
+// whenever a switch or lamp changes the lighting, with the flashlight beam held out of them.
 const ambientLevel = hash.has('amb') ? Number(hash.get('amb')) : AMBIENT;
+const probes = new Probes(app, camera, apartment, { ambient: ambientLevel });
+app.scene.envAtlas = ZONES.main.atlas;       // for the few materials made at run time (switch plates, bezels)
+app.scene.skyboxIntensity = ambientLevel;
 let capturing = null, rain = null;
-const recapture = async () => {
+const recapture = async (passes = 1) => {
   if (capturing) { capturing.again = true; return; }
   capturing = {};
   do {
     capturing.again = false;
     flashlight.suspend(true);
-    const old = app.scene.envAtlas;
-    await new Promise(r => app.once('frameend', r));
-    await captureProbe(app, camera, PROBE_AT, { intensity: ambientLevel });
-    if (old && old !== app.scene.envAtlas) old.destroy();
+    await probes.captureAll(passes);
     flashlight.suspend(false);
     // The window drops glow faintly with the room's light (they refract the lit room); dark flat, dark drops.
     const lit = switches.rooms.filter(r => r.on).length / switches.rooms.length;
@@ -136,12 +137,13 @@ if (hash.has('dark')) {
   switches.rooms.forEach(r => { if (r.on) switches.toggle(r); });
   devices.lamps.forEach(l => { if (l.on) devices.toggleLamp(l); });
 }
+if (hash.has('allon')) switches.rooms.forEach(r => { if (!r.on) switches.toggle(r); });
 if (hash.has('flash')) flashlight.pickUp();
 rain = new Rain(app, apartment, ambience, lit);
 
-// One frame of the lit room first, then capture the probe from it.
+// One frame of the lit rooms first, then capture the probes from them (twice: each then holds the others' bounce).
 await new Promise(r => app.once('frameend', r));
-await recapture();
+await recapture(2);
 if (hash.has('ev')) app.scene.exposure = Number(hash.get('ev'));
 
 player.onStep = (surface, speed) => ambience.step(surface, speed);
@@ -169,6 +171,9 @@ app.on('update', (dt) => {
   else manual = true;   // fast enough: stop checking
 });
 if (hash.has('stats')) stats(app, device);
+const devMenu = new DevMenu({ app, flashlight, switches, devices, closets, rain, recapture,
+  stats: () => { if (!document.getElementById('stats')) stats(app, device); } });
+interactions.blockKey = (key) => devMenu.typing(key);
 
 status('Ready.', 1);
 $('loading').hidden = true;
@@ -186,9 +191,9 @@ document.addEventListener('pointerlockchange', () => {
   enter.textContent = locked ? 'Click to enter' : 'Click to continue';
   if (locked) showHint();
 });
-if (shot) { intro.classList.add('gone'); player.active = false; }
+if (shot) { intro.classList.add('gone'); intro.style.display = 'none'; player.active = false; }
 window.__state.ready = true;
-window.__app = { app, player, frame, camera, flashlight, interactions, switches, rain, doors, devices, closets };
+window.__app = { app, player, frame, camera, flashlight, interactions, switches, rain, doors, devices, closets, probes, devMenu };
 
 // The artifact build (tools/make-artifact.mjs) ships the apartment as one GLB split into base64 text parts listed in
 // apartment.json; download them with real progress and reassemble the GLB in memory. Otherwise load the glTF.
@@ -231,22 +236,28 @@ function showHint() {
 
 // Glass stays see-through but reflective; screens and lamp emitters glow into the bloom without blinding.
 function tuneMaterials(root) {
-  const seen = new Set(), hidden = new Set(), noShadow = new Set();
+  const seen = new Set(), hidden = new Set(), noShadow = new Set(), noCast = new Set();
   for (const r of root.findComponents('render')) for (const mi of r.meshInstances) {
-    const m = mi.material;
+    const m = mi.material, name = baseName(m.name);
     if (seen.has(m)) continue;
     seen.add(m);
-    if (/^Glass/i.test(m.name)) { m.gloss = 0.95; m.metalness = 0; m.useMetalness = true; m.depthWrite = false; }
-    if (/Screen/i.test(m.name)) m.emissiveIntensity = 0.35;
-    if (m.name === 'Keylight') m.emissiveIntensity = 0.6;
-    if (m.name === 'Light') m.emissiveIntensity = 3;
-    if (m.name === '97.001') { m.opacity = 0; m.update(); hidden.add(m); }   // sheer curtains across the windows: drawn back, so the rain shows
-    if (m.name.startsWith('Plain_Natural_Sheer')) noShadow.add(m);   // thin double-sided drapes: shadow acne streaks
+    if (/^Glass/i.test(name)) { m.gloss = 0.95; m.metalness = 0; m.useMetalness = true; m.depthWrite = false; }
+    if (/Screen/i.test(name)) m.emissiveIntensity = 0.35;
+    if (name === 'Keylight') m.emissiveIntensity = 0.6;
+    if (name === 'Light') m.emissiveIntensity = 3;
+    if (name === '97.001') { m.opacity = 0; m.update(); hidden.add(m); }   // sheer curtains across the windows: drawn back, so the rain shows
+    if (name.startsWith('Plain_Natural_Sheer') || name === 'White1.curtain') noShadow.add(m);   // thin double-sided drapes: shadow acne streaks
+    if (name === 'White1.curtain') m.gloss = 0.12;     // the model's curtains were glossy (roughness 0.36): fabric is matte
+    // Opal glass globes of the dining pendants: they glow when the pendants are on (switches.js) and cast no shadow.
+    if (name === 'White1.pendant') { m.emissive = new pc.Color(1, 0.78, 0.55); m.emissiveIntensity = 1.3; noCast.add(m); }
+    // See-through things cast no shadows (the shower screen, glasses, the pendants' glass round their bulbs, windows).
+    if (m.blendType !== pc.BLEND_NONE || /^Glass|WindowGlass/i.test(name)) noCast.add(m);
     m.update();
   }
   for (const r of root.findComponents('render')) for (const mi of r.meshInstances) {
     if (hidden.has(mi.material)) mi.visible = false;
     if (noShadow.has(mi.material)) mi.receiveShadow = false;
+    if (noCast.has(mi.material)) mi.castShadow = false;
   }
 }
 
