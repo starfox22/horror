@@ -15,12 +15,16 @@ works with AI agents; whoever picks this up continues from the state below and k
 - Build 0.3 (done, owner feedback on 0.2): no skyline, pitch-black outside like P.T. with rain on the glass; a real
   apartment's lighting (ceiling downlights everywhere, the corridor included); the bedroom wardrobe opens; a
   downloaded front door with a handle; a downloaded flashlight. Owner rule: download assets instead of building them.
+- Build 0.4 (done, owner feedback on 0.3): softer, warmer, realistic lighting with everything on (not blown out);
+  bedside reading lamps switch on their own; a regular handheld flashlight (downloaded) that is never seen in hand, only
+  its beam (as in P.T.), wider and AAA-looking; drops on the windows gather and run down; the bathroom door opens and
+  shuts and blocks you; more interactions (laptop lid, computer, coffee machine) with AAA feedback.
 - Show screenshots and links before big decisions; publish each prototype to a web link.
 - Keep everything documented so another AI can continue.
 
 ## Published builds
-- Build 0.1 (2026-10-22): claude.ai artifact https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9 (private to the owner
-  unless shared from its Share menu).
+- Builds 0.1-0.4 (2026-10-22/23): claude.ai artifact https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9 (always the
+  latest build; private to the owner unless shared from its Share menu).
 - GitHub Pages: `.github/workflows/pages.yml` deploys `main` to https://starfox22.github.io/horror/ once the owner turns
   Pages on (Settings → Pages → Source: GitHub Actions). The repository is private, which needs a paid plan for Pages;
   the alternative is making it public. Until then the artifact is the link.
@@ -56,10 +60,40 @@ The host serves no .bin/.ktx2 files, so make-artifact packs the model into one G
   fridge cycling, dripping tap, footsteps by floor finish), HRTF-positioned with a generated reverb. Replace with
   downloaded CC0 recordings when a source is reachable.
 
+## Build 0.4 changes (where they live)
+- **Moving and switchable parts from the pipeline** (`tools/build-assets.mjs`): `FIXTURES` gives whole nodes their own
+  material copy `<material>.<tag>` (iMac screen `.imac`, coffee panel `.coffee`, the bathroom door leaf `.bathdoor`
+  via `BATH_DOOR`); `SPLITS` cuts triangles out by world centroid (the two bedside bulbs `Light.bedside-left/right`
+  at z 0.5, the MacBook lid `*.laptoplid` above y 0.522). The door used to be baked open; now `NO_COLLISION` keeps
+  the leaf out of the walk grid (`tools/collision.mjs` `skip`) and the game blocks the doorway itself.
+- **Moving walls** (`src/walkgrid.js` `addBlocker`): a door leaf is a segment the player's circle may not cross.
+  Bathroom door (`src/doors.js`): hinge (9.15, 0.375), 0.85 m leaf, opens -92 deg into the bathroom on a damped
+  spring, stops against the player (soft bump), latches with a thud. Wardrobe doors are blockers too and also stop
+  against you. If a door ever ends up overlapping the player, `Player.update` ignores blockers until they step out.
+- **Static shadows and moving parts**: lamps render shadows once; `refreshShadows(app, pos, radius)` (lighting.js)
+  re-renders the nearby lamps' shadows while a door, wardrobe door or the laptop lid moves.
+- **Devices** (`src/devices.js`): bedside reading lamps (each a shadowed spot + spill at its bulb, E on the bulb),
+  MacBook (lid on its measured hinge `LID_HINGE`/`LID_AXIS`, screen and keyboard light sleep/wake), the office computer
+  (iMac + the desk's second screen: power button, chime, boot fade; off fades out), the coffee machine (panel lights,
+  grind, pump, pour, beeps; steam particles over the cup). Screens are emissive-only: switched off they are black glass.
+- **Flashlight** (`src/flashlight.js`): "Flash-Lite Flashlight" (CC BY 4.0) on the wardrobe shelf; once taken the
+  model is hidden and only the beam exists, held at the right hand below the eye (shadows shift as you look). 42 deg
+  cone with a reflector cookie (hot spot, corona, spill fading out), tremor + step sway + lag, switch-on stutter, and
+  a warm bounce omni placed where the beam's axis meets the walk grid (wall/floor/ceiling).
+- **Lighting levels** (`src/lighting.js`): downlights 2700 K at 1.35 (were 3.2) with wide soft cones (14/74 deg) and
+  dimmer lenses; lamps ~35 % lower. With everything on the flat is warm and readable, not blown out. Curtains
+  (`Plain_Natural_Sheer*`) no longer receive shadows (acne streaks on the thin double-sided cloth).
+- **Rain on the glass** (`src/rain.js`): fine droplets keep landing; drops of some size gather touching ones (volumes
+  add); past a size a drop runs down in stutters, sweeping up what it meets and shedding a bead trail until it stops.
+  Drops are lens sprites (dark meniscus, brighter refracted underside, highlight) that glow faintly with the share of
+  lights that are on (`rain.roomLight`, set after each probe capture). Tile 0.95 m of glass.
+- **Prompt UI** (`src/interact.js`, `style.css`): `[E]` key cap + action, fading in under the reticle; the reticle
+  opens into a ring over usable things and pulses on use. Labels no longer include "E ·".
+
 ## Build 0.3 changes (where they live)
 - **Downloaded props** (`assets/props/`, merged into the apartment file by `tools/build-assets.mjs` PROPS): the front door
   ("Door with frame", witnessk, CC BY 4.0, from github.com/pmndrs/xr) replaces the model's entrance door (REMOVE);
-  the flashlight is Poly Haven's "Vintage Flashlight" (CC0, from github.com/miaikoo/hush). Prop materials are prefixed
+  the flashlight was Poly Haven's "Vintage Flashlight" (0.4: replaced, see above). Prop materials are prefixed
   `Prop_<name>.` so the game finds them. Only GitHub is reachable from the cloud session: look for asset repos there.
 - **Ceiling lights** (`src/lighting.js` DOWNLIGHTS): 23 recessed downlights at the ceiling height baked into
   collision.json (`ceilCm`, WalkGrid.ceilingAt), on each area's switch; everything starts on. Clustered lighting needs
@@ -100,11 +134,15 @@ The host serves no .bin/.ktx2 files, so make-artifact packs the model into one G
   glass washes the view out (street lamps shine on it). Drops are therefore dark-diffuse, self-lit beads.
 - The volumetric haze filled the 25 m outside the windows with moonlit purple and hid the city: `maxDistance` 12.
 - Spot lights shine along their local -Y: aim with `lookAt(target)` then `rotateLocal(90, 0, 0)`.
+- Headless tests: SwiftShader runs ~1 fps, so animations barely advance in wall time. Step systems by hand in a page
+  evaluate (`doors.update(0.033)` in a loop, `rain.update` with `rain.draw` stubbed out: drawing is the slow part).
+- Do not `pkill -f <name>` from a shell whose own command line contains <name> (it kills itself); use `[n]ame`.
+- Sketchfab models found in GitHub repos carry their licence in the GLB (`asset.extras.license`): check it there.
 - The cloud session reaches GitHub (git, media.githubusercontent.com, api.github.com for this repo) and npm/PyPI only;
   Sketchfab, Poly Haven, Zenodo and Hugging Face are blocked unless the owner allows them.
 
 ## Next steps (suggested, not started)
-1. Owner feedback on build 0.3.
+1. Owner feedback on build 0.4.
 2. Replace the synthesised sounds with downloaded CC0 recordings (search GitHub game repos, as for the props).
 3. Kitchen cabinets and the wardrobe's top row could open the same way as the wardrobe doors.
 3. Mirror reflections (bathroom) with a planar reflection; per-room reflection probes.

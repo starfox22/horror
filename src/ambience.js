@@ -167,8 +167,50 @@ export class Ambience {
     setTimeout(drip, 3000);
   }
 
+  // Where a one-shot plays: positioned at p (HRTF, falls off with distance) or straight to the mix. Returns the input
+  // node and a cleanup function.
+  out(p, send = 0.3) {
+    const g = this.gain(1), s = this.gain(send);
+    if (p) {
+      const pn = this.panner(Array.isArray(p) ? p : [p.x, p.y, p.z], 0.6, 1.3);
+      g.connect(pn); pn.connect(this.master); pn.connect(s).connect(this.reverb);
+      return [g, () => { g.disconnect(); pn.disconnect(); s.disconnect(); }];
+    }
+    g.connect(this.master); g.connect(s).connect(this.reverb);
+    return [g, () => { g.disconnect(); s.disconnect(); }];
+  }
+
+  // Noise through a band-pass with an attack/decay envelope, at time t (s from now), into dest.
+  burst(dest, { t = 0, freq, q = 1, level, attack = 0.003, decay = 0.05, glide = null, type = 'bandpass', buffer = this.noise }) {
+    const t0 = this.ctx.currentTime + t;
+    const n = this.ctx.createBufferSource(); n.buffer = buffer;
+    const f = this.filter(type, freq, q);
+    if (glide) { f.frequency.setValueAtTime(freq, t0); f.frequency.exponentialRampToValueAtTime(glide, t0 + attack + decay); }
+    const g = this.gain(0); g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(level, t0 + attack); g.gain.exponentialRampToValueAtTime(0.0001, t0 + attack + decay);
+    n.connect(f).connect(g).connect(dest);
+    n.start(t0, Math.random() * 4, attack + decay + 0.05);
+    n.onended = () => g.disconnect();
+  }
+
+  // A sine/triangle tone with an envelope (beeps, chime partials, the body of a knock).
+  tone(dest, { t = 0, freq, to = null, level, attack = 0.005, decay = 0.2, type = 'sine' }) {
+    const t0 = this.ctx.currentTime + t;
+    const o = this.ctx.createOscillator(); o.type = type;
+    o.frequency.setValueAtTime(freq, t0); if (to) o.frequency.exponentialRampToValueAtTime(to, t0 + attack + decay);
+    const g = this.gain(0); g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(level, t0 + attack); g.gain.exponentialRampToValueAtTime(0.0001, t0 + attack + decay);
+    o.connect(g).connect(dest); o.start(t0); o.stop(t0 + attack + decay + 0.05);
+    o.onended = () => g.disconnect();
+  }
+
   // A short percussive tick: band-passed noise burst (+ optional low body), for switches and the flashlight button.
-  click(freq, level, body = 0) {
+  click(freq, level, body = 0, p = null) {
+    if (p) {
+      const [dest, done] = this.out(p, 0.3);
+      this.burst(dest, { freq, q: 2.5, level, attack: 0.002, decay: 0.033 });
+      if (body) this.tone(dest, { freq: freq / 8, to: freq / 16, level: body, attack: 0.003, decay: 0.047 });
+      setTimeout(done, 300);
+      return;
+    }
     const t = this.ctx.currentTime;
     const n = this.ctx.createBufferSource(); n.buffer = this.noise;
     const g = this.gain(0); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(level, t + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.035);
@@ -209,6 +251,95 @@ export class Ambience {
   }
 
   switchClick(on) { this.click(on ? 2400 : 2000, 0.5, 0.25); }
+  lampClick(p, on) { this.click(on ? 3000 : 2600, 0.35, 0.12, p); }
+
+  // Interior door: the lever goes down and the latch slides (two ticks), then a long low wooden creak as it swings.
+  door(opening, p) {
+    const [dest, done] = this.out(p, 0.4);
+    if (opening) { this.burst(dest, { freq: 1900, q: 3, level: 0.35, decay: 0.03 }); this.burst(dest, { t: 0.09, freq: 1200, q: 2, level: 0.4, decay: 0.05 }); }
+    const len = 1.1, t0 = this.ctx.currentTime + (opening ? 0.12 : 0);
+    const n = this.ctx.createBufferSource(); n.buffer = this.noise;
+    const g = this.gain(0);
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.10, t0 + 0.2); g.gain.exponentialRampToValueAtTime(0.05, t0 + 0.6); g.gain.exponentialRampToValueAtTime(0.0001, t0 + len);
+    for (const [f0, f1] of [[310, 420], [640, 520], [1180, 980]]) {
+      const bp = this.filter('bandpass', f0, 22); bp.frequency.setValueAtTime(f0, t0); bp.frequency.linearRampToValueAtTime(f1, t0 + len);
+      n.connect(bp).connect(g);
+    }
+    // air pushed by the leaf
+    this.burst(dest, { t: opening ? 0.12 : 0, freq: 300, type: 'lowpass', level: 0.12, attack: 0.25, decay: 0.6, buffer: this.brown });
+    g.connect(dest);
+    n.start(t0, Math.random() * 4, len + 0.1);
+    setTimeout(done, 2500);
+  }
+  // The leaf meets the frame: a dull wooden thud and the latch snapping in.
+  doorShut(p) {
+    const [dest, done] = this.out(p, 0.5);
+    this.tone(dest, { freq: 120, to: 55, level: 0.6, attack: 0.004, decay: 0.16 });
+    this.burst(dest, { freq: 700, q: 1, level: 0.5, decay: 0.09 });
+    this.burst(dest, { t: 0.05, freq: 2200, q: 3, level: 0.3, decay: 0.03 });
+    setTimeout(done, 800);
+  }
+  // The door swinging into the player: a soft bump.
+  bump(p) {
+    const [dest, done] = this.out(p, 0.2);
+    this.tone(dest, { freq: 90, to: 60, level: 0.3, attack: 0.01, decay: 0.12 });
+    this.burst(dest, { freq: 400, q: 0.8, level: 0.15, decay: 0.08 });
+    setTimeout(done, 500);
+  }
+
+  // Laptop lid: a soft friction sweep from the hinge; shutting ends in laptopShut's padded tap.
+  laptop(p, opening) {
+    const [dest, done] = this.out(p, 0.2);
+    this.burst(dest, { freq: opening ? 2500 : 3200, glide: opening ? 3800 : 2000, q: 1.5, level: 0.05, attack: 0.15, decay: 0.4 });
+    setTimeout(done, 1200);
+  }
+  laptopShut(p) {
+    const [dest, done] = this.out(p, 0.25);
+    this.tone(dest, { freq: 260, to: 140, level: 0.25, attack: 0.002, decay: 0.07 });
+    this.burst(dest, { freq: 1500, q: 1.2, level: 0.25, decay: 0.04 });
+    setTimeout(done, 600);
+  }
+
+  // Start-up chime: a warm F-sharp major chord with soft attack and a long ring, from the computer.
+  chime(p) {
+    const [dest, done] = this.out(p, 0.5);
+    for (const [f, a] of [[92.5, 0.12], [185, 0.14], [277.2, 0.1], [370, 0.09], [466.2, 0.06], [554.4, 0.05], [740, 0.025]]) {
+      this.tone(dest, { freq: f, level: a, attack: 0.03, decay: 3.2, type: 'sine' });
+      this.tone(dest, { freq: f * 1.003, level: a * 0.5, attack: 0.04, decay: 2.6, type: 'triangle' });
+    }
+    setTimeout(done, 4500);
+  }
+
+  // Bean-to-cup coffee machine: button beep, ~3 s of grinding, the pump's buzz and the pour, a finishing beep.
+  // Returns the timing so the game can start the steam with the hot water.
+  coffee(p) {
+    const grind = 3.2, brew = 9;
+    const [dest, done] = this.out(p, 0.25);
+    this.tone(dest, { freq: 2100, level: 0.08, attack: 0.005, decay: 0.12, type: 'square' });
+    const t0 = this.ctx.currentTime;
+    const n = this.ctx.createBufferSource(); n.buffer = this.noise; n.loop = true;
+    // Grinder: rough mid-band noise chopped by a fast LFO (beans cracking), with a motor whine.
+    const gg = this.gain(0), chop = this.ctx.createOscillator(), depth = this.gain(0.5);
+    chop.frequency.value = 37; chop.connect(depth).connect(gg.gain);
+    gg.gain.setValueAtTime(0, t0 + 0.4); gg.gain.linearRampToValueAtTime(0.5, t0 + 0.6); gg.gain.setValueAtTime(0.5, t0 + grind); gg.gain.linearRampToValueAtTime(0, t0 + grind + 0.3);
+    n.connect(this.filter('bandpass', 1300, 0.9)).connect(gg).connect(dest);
+    const whine = this.ctx.createOscillator(); whine.type = 'sawtooth'; whine.frequency.value = 180;
+    const wg = this.gain(0); wg.gain.setValueAtTime(0, t0 + 0.4); wg.gain.linearRampToValueAtTime(0.02, t0 + 0.7); wg.gain.setValueAtTime(0.02, t0 + grind); wg.gain.linearRampToValueAtTime(0, t0 + grind + 0.3);
+    whine.connect(this.filter('lowpass', 900)).connect(wg).connect(dest);
+    // Pump: a 50 Hz vibratory buzz with harmonics, then hissing hot water and the pour.
+    const b0 = t0 + grind + 0.8, b1 = b0 + brew;
+    const pump = this.ctx.createOscillator(); pump.type = 'sawtooth'; pump.frequency.value = 50;
+    const pg = this.gain(0); pg.gain.setValueAtTime(0, b0); pg.gain.linearRampToValueAtTime(0.06, b0 + 0.3); pg.gain.setValueAtTime(0.06, b1 - 1); pg.gain.linearRampToValueAtTime(0, b1);
+    pump.connect(this.filter('lowpass', 400)).connect(pg).connect(dest);
+    const pour = this.gain(0); pour.gain.setValueAtTime(0, b0 + 1); pour.gain.linearRampToValueAtTime(0.12, b0 + 2); pour.gain.setValueAtTime(0.12, b1 - 1.2); pour.gain.linearRampToValueAtTime(0, b1);
+    n.connect(this.filter('bandpass', 3800, 0.7)).connect(pour).connect(dest);
+    for (let k = 0; k < 40; k++) this.tone(dest, { t: grind + 2 + Math.random() * (brew - 2.5), freq: 500 + Math.random() * 700, to: 300, level: 0.02 + Math.random() * 0.03, attack: 0.002, decay: 0.05 });
+    for (const o of [n, chop, whine, pump]) { o.start(t0); o.stop(b1 + 2); }
+    this.tone(dest, { t: grind + brew + 1.2, freq: 2100, level: 0.08, attack: 0.005, decay: 0.12, type: 'square' });
+    this.tone(dest, { t: grind + brew + 1.45, freq: 2600, level: 0.08, attack: 0.005, decay: 0.2, type: 'square' });
+    setTimeout(done, (grind + brew + 3) * 1000);
+    return { grind, brew };
+  }
   flashlightClick(on) { this.click(on ? 3600 : 3000, 0.35, 0.08); }
 
   pickUp() {

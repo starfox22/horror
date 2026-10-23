@@ -3,6 +3,8 @@
 // its doors), a shelf, a hanging rail, and an LED strip that comes on while a section's doors are open, as in a modern
 // built-in wardrobe. The flashlight lies on the shelf behind the left tall door.
 import { Color, Entity, LIGHTFALLOFF_INVERSESQUARED, StandardMaterial, Vec3 } from 'playcanvas';
+import { refreshShadows } from './lighting.js';
+import { segmentDistance } from './walkgrid.js';
 
 const FRONT = 9.725;              // x of the door fronts; the back panel is at 9.27
 // id, hinge z, opening direction (+1 swings the free edge from +z towards +x), handle point, section
@@ -20,7 +22,7 @@ const SECTIONS = {
 export const FLASHLIGHT_SPOT = { pos: new Vec3(9.50, 1.858, -0.93), yaw: 90 };   // on the tall section's shelf, lens to the door
 
 export class Closets {
-  constructor(app, apartment, interactions, sounds) {
+  constructor(app, apartment, interactions, sounds, grid) {
     this.app = app;
     this.sounds = sounds;
     this.moving = [];
@@ -47,8 +49,14 @@ export class Closets {
         e.reparent(pivot);
         e.setPosition(wp); e.setRotation(wr);
       }
-      const door = { ...d, pivot, angle: 0, target: 0 };
-      interactions.add({ pos: new Vec3(...d.handle), size: 0.16, label: () => `E · ${door.target ? 'Close' : 'Open'} the wardrobe`,
+      const door = { ...d, pivot, angle: 0, target: 0, width: Math.abs(d.handle[2] - d.hinge) + 0.04 };
+      // While open, the leaf stands out into the room: a moving wall for the walk grid.
+      door.segment = (angle = door.angle) => {
+        const a = d.sign * 100 * angle * Math.PI / 180, dir = Math.sign(d.handle[2] - d.hinge);
+        return [FRONT, d.hinge, FRONT + Math.sin(a) * dir * door.width, d.hinge + Math.cos(a) * dir * door.width];
+      };
+      grid?.addBlocker(() => (door.angle < 0.02 ? null : door.segment()));
+      interactions.add({ pos: new Vec3(...d.handle), size: 0.16, label: () => `${door.target ? 'Close' : 'Open'} the wardrobe`,
         use: () => this.toggle(door), active: () => true });
       return door;
     });
@@ -96,9 +104,14 @@ export class Closets {
     if (!this.moving.length) return;
     for (const d of this.moving) {
       // Eased swing, ~0.7 s to 100 degrees.
+      const old = d.angle;
       d.angle += (d.target - d.angle) * (1 - Math.exp(-6 * dt));
       if (Math.abs(d.target - d.angle) < 0.002) d.angle = d.target;
+      // A door swinging into the player stops against them.
+      const p = this.player?.pos;
+      if (p && segmentDistance(p.x, p.z, d.segment()) < 0.25) { d.angle = old; d.target = old; }
       d.pivot.setEulerAngles(0, d.sign * 100 * d.angle, 0);
+      refreshShadows(this.app, d.pivot.getPosition(), 3);
     }
     this.moving = this.moving.filter(d => d.angle !== d.target);
     for (const [id, s] of Object.entries(this.sections)) {

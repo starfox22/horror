@@ -7,6 +7,19 @@ export class WalkGrid {
     this.blockedCells = Uint8Array.from(atob(json.blocked), c => c.charCodeAt(0));
     this.floorCells = Uint8Array.from(atob(json.floorCm), c => c.charCodeAt(0));
     this.ceilCells = json.ceilCm ? Uint8Array.from(atob(json.ceilCm), c => c.charCodeAt(0)) : null;
+    this.blockers = [];   // moving parts (door leaves): () => [ax, az, bx, bz] or null, a thin wall from a to b
+  }
+
+  // A door leaf or other moving wall, re-read on every query. Returns the function (pass it to removeBlocker).
+  addBlocker(segment) { this.blockers.push(segment); return segment; }
+
+  // Is a circle at (x, z) clear of every moving wall? `pad` = half the wall's thickness.
+  clearOfBlockers(x, z, radius, pad = 0.03) {
+    for (const b of this.blockers) {
+      const s = b();
+      if (s && segmentDistance(x, z, s) < radius + pad) return false;
+    }
+    return true;
   }
 
   index(x, z) {
@@ -37,6 +50,7 @@ export class WalkGrid {
   // A body of `radius` fits at (x, z): the centre and 8 points on the rim are free, and no floor under it is more
   // than `step` above `fromFloor` (stops climbing onto furniture through gaps in the grid).
   fits(x, z, radius, fromFloor, step = 0.12) {
+    if (this.blockers.length && !this.ignoreBlockers && !this.clearOfBlockers(x, z, radius)) return false;
     for (let a = -1; a < 8; a++) {
       const px = a < 0 ? x : x + Math.cos(a * Math.PI / 4) * radius;
       const pz = a < 0 ? z : z + Math.sin(a * Math.PI / 4) * radius;
@@ -56,4 +70,11 @@ export class WalkGrid {
     }
     return best;
   }
+}
+
+// Distance from (x, z) to the segment [ax, az, bx, bz].
+export function segmentDistance(x, z, [ax, az, bx, bz]) {
+  const dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz;
+  const t = l2 ? Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2)) : 0;
+  return Math.hypot(x - ax - t * dx, z - az - t * dz);
 }

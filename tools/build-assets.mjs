@@ -23,7 +23,7 @@ const CHUNK = 12 * 1024 * 1024;
 // Downloaded props merged into the apartment (assets/props/, credited in docs/CREDITS.md), placed in world metres.
 // The front door replaces the model's own entrance door (a flat panel with only a thin bar for a handle).
 const PROPS = [
-  { file: 'assets/props/vintage_flashlight.glb', name: 'Prop_flashlight', at: [0, -10, 0], scale: [1, 1, 1], yaw: 0 },
+  { file: 'assets/props/flashlite_flashlight.glb', name: 'Prop_flashlight', at: [0, -10, 0], scale: [1, 1, 1], yaw: 0 },
   { file: 'assets/props/door_with_frame.glb', name: 'Prop_front_door', at: [12.88, 0.14, 4.40], scale: [0.01155, 0.0120, 0.01], yaw: 180 },
 ];
 const REMOVE = /^EnteranceDoor_/;
@@ -35,9 +35,21 @@ const WARDROBE = [
   { id: 'upperleft', z: [1.341, 1.830], y: [1.205, 2.28] },
   { id: 'upperright', z: [1.866, 2.357], y: [1.205, 2.28] },
 ];
-// Glowing lamp parts per room (see separateMaterials).
-const FIXTURES = { BathroomFurnitures_Light_0: 'bathroom', BedDecors_Light_0: 'bedroom', Hood_Light_0: 'kitchen',
-  OficeDecors_Light_0: 'office' };
+// Parts the game switches or moves on their own get their own material copy '<material>.<tag>' (see separateMaterials):
+// lamp glows per room, the iMac's screen, the coffee machine's panel, the bathroom door leaf (hung on a hinge at run time).
+const FIXTURES = { BathroomFurnitures_Light_0: 'bathroom', Hood_Light_0: 'kitchen', OficeDecors_Light_0: 'office',
+  iMac_Screen_0: 'imac', 'Coffee+Maker_Coffee_Maker_Material5_0': 'coffee' };
+// The bathroom door leaf: the white panels and the black piece that starts at the hinge edge (handles); the other black
+// piece is the frame. Left out of the walk grid: the game blocks the doorway while the door is shut.
+const BATH_DOOR = (n, b) => /^Door\.001_White1/.test(n.getName()) || (/^Door\.001_Black/.test(n.getName()) && b.min[2] > 0.38);
+// Triangle-level splits: [node name pattern, (world centroid) => tag or null]. The two bedside reading lamps share one
+// glowing mesh (split at the bed's centre line, z 0.5); the MacBook's lid (everything above its base, y > 0.522) swings.
+const SPLITS = [
+  [/^BedDecors_Light_0$/, (c) => (c[2] < 0.5 ? 'bedside-left' : 'bedside-right')],
+  [/^MacBook_/, (c) => (c[1] > 0.522 ? 'laptoplid' : null)],
+];
+// Materials the walk grid ignores (moving parts).
+export const NO_COLLISION = /\.bathdoor$/;
 
 const t0 = Date.now();
 const log = (...a) => console.log(`[${((Date.now() - t0) / 1000).toFixed(0)}s]`, ...a);
@@ -60,10 +72,7 @@ for (const n of doc.getRoot().listNodes()) if (REMOVE.test(n.getName())) n.dispo
 await mergeProps(doc);
 await doc.transform(dedup(), prune(), flatten(), unpartition());
 extractWardrobeDoors(doc);
-// The bathroom's only door (bedroom side) is modelled shut: swing its leaf and handle 90 degrees into the bathroom.
-// Leaf = the white door pieces; the black piece that starts at the hinge edge holds the handles (the other is the frame).
-openDoor(doc, (n, b) => /^Door\.001_White1/.test(n.getName()) || (/^Door\.001_Black/.test(n.getName()) && b.min[2] > 0.38),
-  { hinge: [9.15, 0.375], degrees: -90 });
+splitTriangles(doc);
 separateMaterials(doc);
 await doc.transform(weld(), simplify({ simplifier: MeshoptSimplifier, ratio: 0, error: 0.0004 }),
   join({ keepNamed: false }), dedup({ keepUniqueNames: true }), prune({ keepAttributes: true }));   // keep the window UVs (no texture uses them in the file)
@@ -123,19 +132,40 @@ function extractWardrobeDoors(doc) {
   log(`wardrobe doors: ${made} door parts cut out`);
 }
 
-function openDoor(doc, pick, { hinge: [hx, hz], degrees }) {
-  const a = degrees * Math.PI / 180, c = Math.cos(a), s = Math.sin(a);
-  // Column-major rotation about the vertical axis through (hx, hz).
-  const R = [c, 0, -s, 0, 0, 1, 0, 0, s, 0, c, 0, hx - c * hx - s * hz, 0, hz + s * hx - c * hz, 1];
-  let moved = 0;
-  for (const n of doc.getRoot().listScenes()[0].listChildren()) {
-    if (!n.getMesh() || !pick(n, getBounds(n))) continue;
-    const M = n.getMatrix(), out = new Array(16).fill(0);
-    for (let col = 0; col < 4; col++) for (let row = 0; row < 4; row++) for (let k = 0; k < 4; k++) out[col * 4 + row] += R[k * 4 + row] * M[col * 4 + k];
-    n.setMatrix(out);
-    moved++;
+// Cuts the SPLITS triangles out of their nodes into new nodes whose materials get the tag as a suffix.
+function splitTriangles(doc) {
+  const scene = doc.getRoot().listScenes()[0];
+  let made = 0;
+  for (const n of scene.listChildren()) {
+    const rule = n.getMesh() && SPLITS.find(([re]) => re.test(n.getName()));
+    if (!rule) continue;
+    const m = n.getMatrix(), e = [0, 0, 0];
+    for (const prim of n.getMesh().listPrimitives()) {
+      const pos = prim.getAttribute('POSITION'), idx = prim.getIndices(), groups = new Map();
+      for (let t = 0; t < idx.getCount(); t += 3) {
+        const c = [0, 0, 0];
+        for (let k = 0; k < 3; k++) {
+          pos.getElement(idx.getScalar(t + k), e);
+          for (let r = 0; r < 3; r++) c[r] += (m[r] * e[0] + m[4 + r] * e[1] + m[8 + r] * e[2] + m[12 + r]) / 3;
+        }
+        const tag = rule[1](c) ?? '';
+        if (!groups.has(tag)) groups.set(tag, []);
+        groups.get(tag).push(idx.getScalar(t), idx.getScalar(t + 1), idx.getScalar(t + 2));
+      }
+      for (const [tag, list] of groups) {
+        if (!tag) continue;
+        const part = doc.createPrimitive().setMode(prim.getMode())
+          .setMaterial(prim.getMaterial().clone().setName(`${prim.getMaterial().getName()}.${tag}`))
+          .setIndices(doc.createAccessor().setType('SCALAR').setArray(new Uint32Array(list)).setBuffer(idx.getBuffer()));
+        for (const sem of prim.listSemantics()) part.setAttribute(sem, prim.getAttribute(sem).clone());
+        scene.addChild(doc.createNode(`${n.getName()}.${tag}`).setMatrix(m).setMesh(doc.createMesh(tag).addPrimitive(part)));
+        made++;
+      }
+      if (groups.has('')) prim.setIndices(doc.createAccessor().setType('SCALAR').setArray(new Uint32Array(groups.get(''))).setBuffer(idx.getBuffer()));
+      else prim.dispose();
+    }
   }
-  log(`opened door: ${moved} pieces turned ${degrees} degrees`);
+  log(`split parts: ${made}`);
 }
 
 // Lamp fixtures that glow share one 'Light' material across rooms; give each its own copy ('Light.<room>') so join()
@@ -143,7 +173,8 @@ function openDoor(doc, pick, { hinge: [hx, hz], degrees }) {
 // world-planar UVs (1 unit = 1 m along the wall, v = height) for the rain-on-glass effect.
 function separateMaterials(doc) {
   for (const n of doc.getRoot().listScenes()[0].listChildren()) {
-    const room = FIXTURES[n.getName()], window = n.getName() === 'Windows_Glass_0';
+    const window = n.getName() === 'Windows_Glass_0';
+    const room = FIXTURES[n.getName()] ?? (n.getMesh() && BATH_DOOR(n, getBounds(n)) ? 'bathdoor' : undefined);
     if (!n.getMesh() || (!room && !window)) continue;
     for (const prim of n.getMesh().listPrimitives()) {
       const mat = prim.getMaterial().clone().setName(window ? 'WindowGlass' : `${prim.getMaterial().getName()}.${room}`);
@@ -172,7 +203,7 @@ log('bounds', JSON.stringify(bounds));
 
 rmSync(OUT, { recursive: true, force: true });
 mkdirSync(`${OUT}/textures`, { recursive: true });
-writeFileSync(`${OUT}/collision.json`, JSON.stringify(buildCollision(doc, bounds)));
+writeFileSync(`${OUT}/collision.json`, JSON.stringify(buildCollision(doc, bounds, { skip: NO_COLLISION })));
 log('collision.json written');
 
 // Textures: cap at 2048 px, then KTX2 (GPU-compressed: ~6x less video memory than PNG) unless --fast.

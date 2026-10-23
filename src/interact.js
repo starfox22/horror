@@ -1,19 +1,27 @@
-// "Look at it and press E": things the player can use (light switches, the flashlight). Each frame the closest
-// interactable near the centre of view and within reach is focused; its label shows under the reticle and E (or a left
-// click while walking) uses it.
+// "Look at it and press E": things the player can use (switches, doors, lamps, the laptop…). Each frame the closest
+// interactable near the centre of view and within reach is focused: the reticle opens into a ring and the action shows
+// under it with an [E] key cap; E (or a left click while walking) uses it and the ring pulses.
 import { Vec3 } from 'playcanvas';
 
 const REACH = 2.1;          // metres from the eye
 const v = new Vec3();
 
 export class Interactions {
-  constructor(camera, prompt) {
+  constructor(camera, prompt, reticle) {
     this.camera = camera;
     this.prompt = prompt;
+    this.reticle = reticle;
+    this.text = '';
     this.items = [];
     this.focus = null;
     this.enabled = false;
-    const use = () => { if (this.enabled && this.focus) this.focus.use(); };
+    const use = () => {
+      if (!this.enabled || !this.focus) return;
+      this.focus.use();
+      this.reticle?.classList.add('pressed');
+      clearTimeout(this.pressTimer);
+      this.pressTimer = setTimeout(() => this.reticle?.classList.remove('pressed'), 120);
+    };
     window.addEventListener('keydown', (e) => { if (e.code === 'KeyE' && !e.repeat) use(); });
     window.addEventListener('mousedown', (e) => { if (e.button === 0 && document.pointerLockElement) use(); });
   }
@@ -40,7 +48,11 @@ export class Interactions {
     }
     this.focus = best;
     const text = best ? best.label() : '';
-    if (this.prompt.textContent !== text) this.prompt.textContent = text;
-    this.prompt.hidden = !best;
+    if (text && this.text !== text) {
+      this.prompt.replaceChildren(Object.assign(document.createElement('kbd'), { textContent: 'E' }), document.createTextNode(text));
+    }
+    if (text) this.text = text;
+    this.prompt.classList.toggle('show', !!best);
+    this.reticle?.classList.toggle('focus', !!best);
   }
 }

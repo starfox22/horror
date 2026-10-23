@@ -9,7 +9,7 @@ const BAND = [0.25, 1.9];
 const FLOOR_MAX = 0.5;
 const NO_FLOOR = 255;
 
-export function buildCollision(doc, bounds) {
+export function buildCollision(doc, bounds, { skip = null } = {}) {
   const x0 = bounds.min[0] - 0.2, z0 = bounds.min[2] - 0.2;
   const w = Math.ceil((bounds.max[0] + 0.2 - x0) / CELL), h = Math.ceil((bounds.max[2] + 0.2 - z0) / CELL);
   const blocked = new Uint8Array(w * h);
@@ -31,7 +31,7 @@ export function buildCollision(doc, bounds) {
       const tf = (src, out) => { const [x, y, z] = src;
         out[0] = m[0] * x + m[4] * y + m[8] * z + m[12]; out[1] = m[1] * x + m[5] * y + m[9] * z + m[13]; out[2] = m[2] * x + m[6] * y + m[10] * z + m[14]; };
       for (const prim of mesh.listPrimitives()) {
-        if (prim.getMode() !== 4) continue;
+        if (prim.getMode() !== 4 || (skip && skip.test(prim.getMaterial()?.getName() || ''))) continue;
         const pos = prim.getAttribute('POSITION'), idx = prim.getIndices();
         const count = idx ? idx.getCount() : pos.getCount();
         const v = [], e = [0, 0, 0];

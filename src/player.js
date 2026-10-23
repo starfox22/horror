@@ -60,6 +60,8 @@ export class Player {
 
     const g = this.grid, p = this.pos;
     const nx = p.x + this.vel.x * dt, nz = p.z + this.vel.z * dt;
+    // Already overlapping a moving wall (a door swung against you): let the body walk out of it.
+    g.ignoreBlockers = !g.clearOfBlockers(p.x, p.z, RADIUS, 0);
     // Each axis separately (walls slide); when an axis is blocked, try easing sideways up to 3 cm so the body rolls
     // around small round obstacles (plants, chair legs) instead of sticking on them.
     const nudge = 0.03;

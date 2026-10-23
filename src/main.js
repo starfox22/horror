@@ -14,6 +14,8 @@ import { Switches } from './switches.js';
 import { Closets, FLASHLIGHT_SPOT } from './closets.js';
 import { Flashlight } from './flashlight.js';
 import { Rain } from './rain.js';
+import { Doors } from './doors.js';
+import { Devices } from './devices.js';
 
 const ASSETS = new URL('./assets/apartment/', location.href).href;
 const SPAWN = { x: 13.0, z: 3.55, yaw: 90 };          // entrance hall, looking down the corridor
@@ -97,18 +99,20 @@ const player = new Player(app, camera, grid, start);
 if (shot && shot.length > 3) { player.pitch = shot[3]; player.apply(0); }
 
 const ambience = new Ambience();
-const interactions = new Interactions(camera, $('prompt'));
+const interactions = new Interactions(camera, $('prompt'), $('reticle'));
 const toast = (text) => { const t = $('toast'); t.textContent = text; t.hidden = false; t.classList.remove('fade'); clearTimeout(toast.timer); toast.timer = setTimeout(() => t.classList.add('fade'), 4000); };
-const closets = new Closets(app, apartment, interactions, ambience);
+const closets = new Closets(app, apartment, interactions, ambience, grid);
+closets.player = player;
+const doors = new Doors(app, apartment, interactions, grid, player, ambience);
 if (hash.has('open')) closets.doors.forEach(d => closets.toggle(d));
 const flashlight = new Flashlight(app, camera, apartment, interactions, ambience, toast,
-  { x: FLASHLIGHT_SPOT.pos.x, z: FLASHLIGHT_SPOT.pos.z, shelf: 1.84, yaw: -90 });
+  { x: FLASHLIGHT_SPOT.pos.x, z: FLASHLIGHT_SPOT.pos.z, shelf: 1.84, yaw: 0 }, grid, player);
 frontDoor(apartment);
 
 // The room probe (ambient bounce + reflections) is captured from the lit room, and again whenever a switch changes
 // the lighting, with the flashlight beam held out of it.
 const ambientLevel = hash.has('amb') ? Number(hash.get('amb')) : AMBIENT;
-let capturing = null;
+let capturing = null, rain = null;
 const recapture = async () => {
   if (capturing) { capturing.again = true; return; }
   capturing = {};
@@ -120,13 +124,20 @@ const recapture = async () => {
     await captureProbe(app, camera, PROBE_AT, { intensity: ambientLevel });
     if (old && old !== app.scene.envAtlas) old.destroy();
     flashlight.suspend(false);
+    // The window drops glow faintly with the room's light (they refract the lit room); dark flat, dark drops.
+    const lit = switches.rooms.filter(r => r.on).length / switches.rooms.length;
+    if (rain) rain.roomLight = 0.25 + 0.75 * lit;
   } while (capturing.again);
   capturing = null;
 };
 const switches = new Switches(app, grid, apartment, interactions, ambience, recapture, downlights);
-if (hash.has('dark')) switches.rooms.forEach(r => { if (r.on) switches.toggle(r); });
+const devices = new Devices(app, apartment, interactions, ambience, recapture);
+if (hash.has('dark')) {
+  switches.rooms.forEach(r => { if (r.on) switches.toggle(r); });
+  devices.lamps.forEach(l => { if (l.on) devices.toggleLamp(l); });
+}
 if (hash.has('flash')) flashlight.pickUp();
-const rain = new Rain(app, apartment, ambience, lit);
+rain = new Rain(app, apartment, ambience, lit);
 
 // One frame of the lit room first, then capture the probe from it.
 await new Promise(r => app.once('frameend', r));
@@ -177,7 +188,7 @@ document.addEventListener('pointerlockchange', () => {
 });
 if (shot) { intro.classList.add('gone'); player.active = false; }
 window.__state.ready = true;
-window.__app = { app, player, frame, camera, flashlight, interactions, switches, rain };
+window.__app = { app, player, frame, camera, flashlight, interactions, switches, rain, doors, devices, closets };
 
 // The artifact build (tools/make-artifact.mjs) ships the apartment as one GLB split into base64 text parts listed in
 // apartment.json; download them with real progress and reassemble the GLB in memory. Otherwise load the glTF.
@@ -207,7 +218,7 @@ function frontDoor(root) {
   const box = parts[0].meshInstances[0].aabb.clone();
   for (const r of parts) for (const mi of r.meshInstances) box.add(mi.aabb);
   const c = box.center;
-  interactions.add({ pos: new pc.Vec3(c.x, 1.05, box.getMin().z), size: 0.45, label: () => 'E · Front door',
+  interactions.add({ pos: new pc.Vec3(c.x, 1.05, box.getMin().z), size: 0.45, label: () => 'Front door',
     use: () => { ambience.lockedDoor(); toast('It is locked.'); } });
 }
 
@@ -220,7 +231,7 @@ function showHint() {
 
 // Glass stays see-through but reflective; screens and lamp emitters glow into the bloom without blinding.
 function tuneMaterials(root) {
-  const seen = new Set(), hidden = new Set();
+  const seen = new Set(), hidden = new Set(), noShadow = new Set();
   for (const r of root.findComponents('render')) for (const mi of r.meshInstances) {
     const m = mi.material;
     if (seen.has(m)) continue;
@@ -230,9 +241,13 @@ function tuneMaterials(root) {
     if (m.name === 'Keylight') m.emissiveIntensity = 0.6;
     if (m.name === 'Light') m.emissiveIntensity = 3;
     if (m.name === '97.001') { m.opacity = 0; m.update(); hidden.add(m); }   // sheer curtains across the windows: drawn back, so the rain shows
+    if (m.name.startsWith('Plain_Natural_Sheer')) noShadow.add(m);   // thin double-sided drapes: shadow acne streaks
     m.update();
   }
-  for (const r of root.findComponents('render')) for (const mi of r.meshInstances) if (hidden.has(mi.material)) mi.visible = false;
+  for (const r of root.findComponents('render')) for (const mi of r.meshInstances) {
+    if (hidden.has(mi.material)) mi.visible = false;
+    if (noShadow.has(mi.material)) mi.receiveShadow = false;
+  }
 }
 
 function stats(app, device) {

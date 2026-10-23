@@ -1,76 +1,96 @@
-// The flashlight: lies on the shelf behind the bedroom wardrobe's left door until picked up (E), then is held in the
-// right hand (viewmodel) and toggled with F. A shadow-casting spot light with a cookie (hot spot, soft rings, lens smudges)
-// scatters in the room haze, so the beam is visible. The hand trails the view slightly and sways with each step.
-import { Color, Entity, Quat, Texture, Vec3, PIXELFORMAT_RGBA8, ADDRESS_CLAMP_TO_EDGE } from 'playcanvas';
+// The flashlight: a Maglite-style torch ("Flash-Lite Flashlight", CC BY 4.0) lying on the shelf behind the bedroom
+// wardrobe's left door until picked up (E); then, as in P.T., the torch itself is never seen: only its beam, held in the
+// right hand below the eye, so its shadows shift as you look around. F toggles it.
+// The beam: a shadow-casting spot with a reflector cookie (hot spot, corona ring, wide dim spill, faint lens flaws) that
+// scatters in the room haze; the hand trails the view, sways with each step and has a slight tremor; switching on
+// stutters for a moment; and a weak warm bounce light sits where the beam lands, lifting the shadows around the pool as
+// light off a real wall would.
+import { Color, Entity, Quat, Texture, Vec3, PIXELFORMAT_RGBA8, ADDRESS_CLAMP_TO_EDGE, LIGHTFALLOFF_INVERSESQUARED } from 'playcanvas';
 
-const HOLD = new Vec3(0.17, -0.21, -0.38);    // hand position relative to the eye (the lantern hangs from its handle)
+const HAND = new Vec3(0.15, -0.20, -0.12);    // the lamp's head relative to the eye (right hand, chest height)
+const BEAM = 8;                              // intensity
+const COLOR = new Color(1, 0.94, 0.84);        // a warm-white LED torch
 
 export class Flashlight {
   // spot: { x, z, shelf (height of the shelf top), yaw }
-  constructor(app, camera, apartment, interactions, sounds, hud, spot) {
+  constructor(app, camera, apartment, interactions, sounds, hud, spot, grid, player) {
     this.app = app;
     this.camera = camera;
     this.sounds = sounds;
     this.hud = hud;
+    this.grid = grid;
+    this.player = player;
     this.held = false;
     this.on = false;
+    this.power = 0;           // 0..1, eased (flicker on start)
     this.rot = new Quat();
-    this.halfHeight = 0.07;
+    this.time = 0;
+    this.halfHeight = 0.03;
     this.model = this.build(apartment);
     const rest = new Vec3(spot.x, spot.shelf + this.halfHeight, spot.z);
     this.model.setPosition(rest);
     this.model.setEulerAngles(0, spot.yaw, 0);
     app.root.addChild(this.model);
-    this.item = interactions.add({ pos: rest, size: 0.16, label: () => 'E · Take the flashlight', use: () => this.pickUp() });
+    this.item = interactions.add({ pos: rest, size: 0.16, label: () => 'Take the flashlight', use: () => this.pickUp() });
     this.interactions = interactions;
     window.addEventListener('keydown', (e) => { if (e.code === 'KeyF' && !e.repeat && this.held) this.toggle(); });
     app.on('update', (dt) => this.update(dt));
   }
 
-  // The model is Poly Haven's "Vintage Flashlight" (CC0), merged into the apartment file by the asset pipeline
-  // (materials 'Prop_flashlight.*'); its lens faces the model's +Z, turned here so the beam runs along -Z.
+  // The model is merged into the apartment file by the asset pipeline (materials 'Prop_flashlight.*').
   build(apartment) {
     const root = new Entity('flashlight');
     const r = apartment.findComponents('render').find(c => c.meshInstances.some(mi => mi.material.name.startsWith('Prop_flashlight.')));
     if (r) {
       const e = r.entity;
       e.reparent(root);
-      e.setLocalPosition(0, 0, 0); e.setLocalEulerAngles(0, 180, 0);
-      // Centre the body on the root, so the root is the point it is held by and rests on.
+      e.setLocalPosition(0, 0, 0); e.setLocalEulerAngles(0, 0, 0);
+      // Centre the body on the root, so the root is the point it rests on.
       const box = r.meshInstances[0].aabb.clone();
       for (const mi of r.meshInstances.slice(1)) box.add(mi.aabb);
       e.setLocalPosition(-box.center.x, -box.center.y, -box.center.z);
-      this.halfHeight = box.halfExtents.y;
-      this.lensMat = r.meshInstances.map(mi => mi.material).find(m => /glass/i.test(m.name));
+      this.halfHeight = Math.min(box.halfExtents.x, box.halfExtents.y);
     }
-    if (this.lensMat) { this.lensMat.emissive = new Color(1, 0.93, 0.8); this.lensMat.emissiveIntensity = 0; this.lensMat.update(); }
+    this.root = root;
 
+    // The beam and its bounce follow the camera, not the (hidden) model.
     this.beam = new Entity('flashlight beam');
     this.beam.addComponent('light', {
-      type: 'spot', color: new Color(1, 0.93, 0.82), intensity: 0, range: 16, innerConeAngle: 9, outerConeAngle: 30,
-      castShadows: true, shadowResolution: 1024, shadowBias: 0.2, normalOffsetBias: 0.03, volumetricScattering: 1.3,
+      type: 'spot', color: COLOR, intensity: 0, range: 18, innerConeAngle: 12, outerConeAngle: 44,
+      falloffMode: LIGHTFALLOFF_INVERSESQUARED,
+      castShadows: true, shadowResolution: 1024, shadowBias: 0.12, normalOffsetBias: 0.02, volumetricScattering: 0.35,
       cookie: this.cookie(), cookieIntensity: 1, enabled: false,
     });
-    this.beam.setLocalEulerAngles(90, 0, 0);   // spot lights shine along -Y: turn that to -Z
-    this.beam.setLocalPosition(0, 0.035, -0.17);   // just in front of the lens
-    root.addChild(this.beam);
+    this.bounce = new Entity('flashlight bounce');
+    this.bounce.addComponent('light', { type: 'omni', color: new Color(1, 0.9, 0.78), intensity: 0, range: 3.2, castShadows: false,
+      falloffMode: LIGHTFALLOFF_INVERSESQUARED, enabled: false });
+    this.app.root.addChild(this.beam);
+    this.app.root.addChild(this.bounce);
     return root;
   }
 
-  // Beam pattern: bright centre, a dimmer ring, falloff and a few lens smudges, like a cheap LED torch.
+  // Beam pattern of a reflector torch: a tight hot spot, a brighter ring at its edge (the reflector's corona), a dim wide
+  // spill falling off to the cone, faint concentric reflector rings, and a couple of lens smudges.
   cookie() {
-    const N = 256, c = document.createElement('canvas'); c.width = c.height = N;
+    const N = 512, c = document.createElement('canvas'); c.width = c.height = N;
     const g = c.getContext('2d'), img = g.createImageData(N, N);
     for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
       const x = (i + 0.5) / N * 2 - 1, y = (j + 0.5) / N * 2 - 1, r = Math.hypot(x, y);
-      let v = 0.55 * Math.exp(-r * r * 9) + 0.32 * Math.exp(-((r - 0.55) ** 2) * 60) + 0.22 * Math.max(0, 1 - r);
-      v *= 0.9 + 0.1 * Math.sin(Math.atan2(y, x) * 7 + r * 20);           // reflector facets
-      v *= 1 - 0.25 * Math.exp(-((x - 0.2) ** 2 + (y + 0.15) ** 2) * 50);   // smudge
-      v = Math.min(1, v * 1.6) * (r < 1 ? 1 : 0);
-      const k = (j * N + i) * 4; img.data[k] = img.data[k + 1] = img.data[k + 2] = v * 255; img.data[k + 3] = 255;
+      if (r >= 1) { const k = (j * N + i) * 4; img.data[k] = img.data[k + 1] = img.data[k + 2] = 0; img.data[k + 3] = 255; continue; }
+      let v = 1.0 * Math.exp(-((r / 0.17) ** 2.2))                // hot spot
+        + 0.22 * Math.exp(-(((r - 0.24) / 0.05) ** 2))            // corona at the hot spot's rim
+        + 0.26 * Math.exp(-((r / 0.5) ** 2));                     // spill
+      v *= 1 + 0.05 * Math.sin(r * 90) * Math.exp(-r * 2);       // reflector rings
+      v *= 1 - 0.12 * Math.exp(-((x - 0.12) ** 2 + (y + 0.08) ** 2) * 160);   // smudges
+      v *= 1 - 0.07 * Math.exp(-((x + 0.3) ** 2 + (y - 0.22) ** 2) * 60);
+      v *= (1 - r * r) ** 1.5;                                     // and everything fades out smoothly to the cone's edge
+      const t = Math.min(1, v), k = (j * N + i) * 4;
+      // Slightly warmer at the rim of the spot, cooler in the middle (LED behind a reflector).
+      img.data[k] = 255 * Math.min(1, t * (1.0 + 0.04 * r)); img.data[k + 1] = 255 * t; img.data[k + 2] = 255 * Math.min(1, t * (1.02 - 0.08 * r));
+      img.data[k + 3] = 255;
     }
     g.putImageData(img, 0, 0);
-    const tex = new Texture(this.app.graphicsDevice, { width: N, height: N, format: PIXELFORMAT_RGBA8, mipmaps: false,
+    const tex = new Texture(this.app.graphicsDevice, { width: N, height: N, format: PIXELFORMAT_RGBA8, mipmaps: true,
       addressU: ADDRESS_CLAMP_TO_EDGE, addressV: ADDRESS_CLAMP_TO_EDGE, name: 'flashlight-cookie' });
     tex.setSource(c);
     return tex;
@@ -79,8 +99,7 @@ export class Flashlight {
   pickUp() {
     this.held = true;
     this.interactions.remove(this.item);
-    this.model.reparent(this.app.root);
-    this.model.findComponents('render').forEach(r => { r.castShadows = false; });   // its own beam must not hit it
+    this.model.enabled = false;            // in hand it is out of view; only the beam shows
     this.rot.copy(this.camera.getRotation());
     this.sounds?.pickUp();
     this.hud?.('F · Flashlight on / off');
@@ -90,24 +109,65 @@ export class Flashlight {
   toggle() {
     this.on = !this.on;
     this.sounds?.flashlightClick(this.on);
-    this.beam.light.enabled = this.on;
-    this.beam.light.intensity = this.on ? 7 : 0;
-    if (this.lensMat) { this.lensMat.emissiveIntensity = this.on ? 6 : 0; this.lensMat.update(); }
+    this.flicker = this.on ? 0.22 : 0;
+    this.beam.light.enabled = this.bounce.light.enabled = this.on || this.power > 0;
   }
 
   // Disable the beam briefly (the room probe must not capture it).
-  suspend(off) { if (this.on) this.beam.light.enabled = !off; }
+  suspend(off) {
+    this.suspended = off;
+    if (this.on) this.beam.light.enabled = this.bounce.light.enabled = !off;
+  }
 
   update(dt) {
     if (!this.held) return;
-    // The hand lags the view a little (heavier feel) and keeps up within ~80 ms.
+    dt = Math.min(dt, 0.05);
+    this.time += dt;
+    // Power: snaps on with a short stutter (a cheap switch's contact), off at once.
+    if (this.on) {
+      this.flicker = Math.max(0, this.flicker - dt);
+      const stutter = this.flicker > 0 ? (Math.sin(this.time * 90) > 0.2 ? 0.35 : 1) : 1;
+      this.power = Math.min(1, this.power + dt / 0.05) * stutter;
+    } else this.power = 0;
+    const lit = this.power > 0.001 && !this.suspended;
+    this.beam.light.enabled = this.bounce.light.enabled = lit;
+    if (!lit) return;
+
+    // The hand lags the view a little (heavier feel), with a faint tremor and the step's sway.
     const target = this.camera.getRotation();
-    this.rot.slerp(this.rot, target, 1 - Math.exp(-14 * dt));
-    const p = this.camera.getPosition();
-    const off = new Vec3();
-    this.rot.transformVector(HOLD, off);
-    this.model.setPosition(p.x + off.x, p.y + off.y, p.z + off.z);
-    this.model.setRotation(this.rot);
-    this.model.rotateLocal(1.5, 3, 0);  // tip slightly up and inwards, so the beam meets the centre of view ~3 m ahead
+    this.rot.slerp(this.rot, target, 1 - Math.exp(-11 * dt));
+    const p = this.camera.getPosition(), off = new Vec3();
+    this.rot.transformVector(HAND, off);
+    const bob = this.player ? Math.sin(this.player.bobPhase) * Math.min(1, Math.hypot(this.player.vel.x, this.player.vel.z)) : 0;
+    this.beam.setPosition(p.x + off.x, p.y + off.y + Math.abs(bob) * 0.012, p.z + off.z);
+    this.beam.setRotation(this.rot);
+    const t = this.time;
+    // Aim slightly up and inwards, so the hot spot meets the centre of view ~3 m ahead; plus tremor and step sway.
+    this.beam.rotateLocal(2.2 + 0.25 * Math.sin(t * 1.7) + 0.12 * Math.sin(t * 4.3) + bob * 0.6, 2.8 + 0.2 * Math.sin(t * 1.3 + 1) - bob * 0.8, 0);
+    this.beam.rotateLocal(90, 0, 0);       // spot lights shine along -Y
+
+    // Bounce: march the beam's axis through the walk grid until it meets a wall, the floor or the ceiling.
+    const dir = this.beam.up.clone().mulScalar(-1);
+    const hit = this.march(this.beam.getPosition(), dir);
+    const d = Math.max(0.3, hit.dist);
+    // Eyes adapt: a surface right in front of the lens would blow out, so the beam eases off up close (as a game camera's
+    // exposure would), and is at full strength from ~2 m.
+    const near = Math.min(1, 0.4 + 0.6 * (d / 2) ** 1.3);
+    this.near = this.near === undefined ? near : this.near + (near - this.near) * (1 - Math.exp(-6 * dt));
+    this.beam.light.intensity = BEAM * this.power * this.near;
+    const back = Math.min(0.5, d * 0.35);
+    this.bounce.setPosition(hit.pos.x - dir.x * back, hit.pos.y - dir.y * back, hit.pos.z - dir.z * back);
+    // Light returned from the spot falls off with its distance (the spot's area grows) and lights the near room.
+    this.bounce.light.intensity = this.power * Math.min(0.5, 0.9 / (d * d)) ;
+  }
+
+  march(from, dir) {
+    const g = this.grid, pos = new Vec3();
+    for (let s = 0.15; s < 12; s += 0.05) {
+      pos.set(from.x + dir.x * s, from.y + dir.y * s, from.z + dir.z * s);
+      const floor = g ? g.floorAt(pos.x, pos.z) : 0, ceil = g ? g.ceilingAt(pos.x, pos.z) : 2.8;
+      if (!g || g.blockedAt(pos.x, pos.z) || pos.y < (floor ?? 0) || pos.y > (ceil ?? 2.8) || !g.clearOfBlockers(pos.x, pos.z, 0.02)) return { pos, dist: s };
+    }
+    return { pos, dist: 12 };
   }
 }

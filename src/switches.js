@@ -14,7 +14,8 @@ export const ROOMS = [
   { id: 'office', label: 'Office lights', lights: ['desk lamp'], glow: 'Light.office', from: [3.0, 2.3], dir: [0, 1], on: true },
   { id: 'hall', label: 'Hall lights', lights: ['hall night light'], from: [11.8, 3.6], dir: [0, 1], on: true },
   { id: 'bathroom', label: 'Bathroom lights', lights: ['bathroom mirror'], glow: 'Light.bathroom', at: [6.80, 1.22, 1.76], on: true },
-  { id: 'bedroom', label: 'Bedroom lights', lights: ['bedside strip', 'closet light'], glow: 'Light.bedroom', at: [11.67, 1.17, 2.37], on: true },
+  // The two bedside reading lamps have their own switches (devices.js); this is the ceiling and the shoe-closet LED.
+  { id: 'bedroom', label: 'Bedroom lights', lights: ['closet light'], at: [11.67, 1.17, 2.37], on: true },
 ];
 const PLATE_HEIGHT = 1.15;
 
@@ -45,7 +46,7 @@ export class Switches {
         return m;
       });
       const pos = def.at ? new Vec3(...def.at) : this.mountPlate(grid, def.from, def.dir, room);
-      interactions.add({ pos, size: 0.09, label: () => `E · ${room.label} · ${room.on ? 'turn off' : 'turn on'}`, use: () => this.toggle(room) });
+      interactions.add({ pos, size: 0.09, label: () => `${room.on ? 'Switch off' : 'Switch on'} · ${room.label}`, use: () => this.toggle(room) });
       this.apply(room);
       return room;
     });

@@ -14,24 +14,25 @@ const SCREEN = new Color(0.55, 0.70, 1.0);
 // [name, type, position, colour, intensity, range, shadows, extra]
 // Spot lights point straight down unless `dir` is given. Positions are world metres (see tools/inspect-model.mjs).
 export const LAMPS = [
-  ['arc lamp', 'spot', [-4.95, 1.58, 2.76], WARM, 5.0, 6.5, true, { inner: 25, outer: 62 }],
-  ['arc lamp shade', 'omni', [-4.95, 1.66, 2.76], WARM, 0.35, 2.2, false],
+  ['arc lamp', 'spot', [-4.95, 1.58, 2.76], WARM, 3.2, 6.0, true, { inner: 20, outer: 68 }],
+  ['arc lamp shade', 'omni', [-4.95, 1.66, 2.76], WARM, 0.22, 2.2, false],
   // Stand-in for the bounce off the lit sofa and rug, which the probe (placed in the darker middle) under-reports.
-  ['living bounce', 'omni', [-3.6, 1.3, 2.2], WARM, 0.45, 6.5, false],
-  ['dining pendant L', 'spot', [-0.44, 1.74, 1.52], WARM, 3.2, 5.5, true, { inner: 30, outer: 70 }],
-  ['dining pendant R', 'spot', [0.77, 1.74, 1.52], WARM, 3.2, 5.5, true, { inner: 30, outer: 70 }],
-  ['cooker hood', 'spot', [-0.93, 1.50, -1.10], NEUTRAL, 1.6, 3.0, true, { inner: 35, outer: 75 }],
-  ['bathroom mirror', 'omni', [6.95, 1.75, 1.25], NEUTRAL, 0.7, 3.2, true],
-  ['bedside strip', 'omni', [13.55, 0.95, 0.45], WARM, 0.9, 3.4, true],
+  ['living bounce', 'omni', [-3.6, 1.3, 2.2], WARM, 0.25, 6.0, false],
+  ['dining pendant L', 'spot', [-0.44, 1.74, 1.52], WARM, 2.0, 5.0, true, { inner: 24, outer: 72 }],
+  ['dining pendant R', 'spot', [0.77, 1.74, 1.52], WARM, 2.0, 5.0, true, { inner: 24, outer: 72 }],
+  ['cooker hood', 'spot', [-0.93, 1.50, -1.10], NEUTRAL, 1.1, 3.0, true, { inner: 30, outer: 78 }],
+  ['bathroom mirror', 'omni', [6.95, 1.75, 1.25], NEUTRAL, 0.45, 3.0, true],
+  // The bedside reading lamps are in devices.js (each has its own switch).
   // LED inside the bedroom's open shoe closet (where the flashlight lies), on the bedroom switch.
   ['closet light', 'omni', [9.62, 1.08, 1.75], WARM, 0.3, 1.2, false],
-  ['desk lamp', 'omni', [4.11, 1.36, -0.85], WARM, 0.55, 2.4, true],
+  ['desk lamp', 'omni', [4.11, 1.36, -0.85], WARM, 0.4, 2.4, true],
   ['iMac glow', 'omni', [5.24, 1.10, -0.90], SCREEN, 0.35, 2.2, false],
   ['laptop glow', 'omni', [-4.30, 0.70, 2.40], SCREEN, 0.18, 1.5, false],
-  ['hall night light', 'omni', [12.70, 2.30, 3.75], WARM, 0.35, 3.5, true],
+  ['hall night light', 'omni', [12.70, 2.30, 3.75], WARM, 0.22, 3.5, true],
 ];
 
-// Recessed ceiling downlights (3000 K), the main light of each area as in a real flat. [room, x, z]
+// Recessed ceiling downlights (2700 K, dimmed), the main light of each area as in a real flat. [room, x, z]
+// Soft and warm rather than bright: with everything on the flat reads as lived-in evening light, not an office.
 export const DOWNLIGHTS = [
   ['hall', 2.6, 3.65], ['hall', 4.6, 3.65], ['hall', 6.6, 3.65], ['hall', 8.6, 3.65], ['hall', 10.6, 3.65], ['hall', 12.6, 3.65],
   ['living', -5.4, 1.2], ['living', -3.2, 1.2], ['living', -5.4, 3.4], ['living', -3.2, 3.4],
@@ -40,7 +41,8 @@ export const DOWNLIGHTS = [
   ['bathroom', 7.3, -0.6], ['bathroom', 7.9, 1.0],
   ['bedroom', 10.8, -0.5], ['bedroom', 12.8, -0.5], ['bedroom', 10.8, 1.6], ['bedroom', 12.8, 1.6],
 ];
-const DOWN = new Color(1.0, 0.87, 0.72);
+const DOWN = new Color(1.0, 0.85, 0.70);
+export const DOWNLIGHT = { intensity: 1.35, glow: 2.2 };
 
 // Each downlight: a shadowed spot pointing down plus a small glowing disc in a bezel, flush with the ceiling.
 // Returns { [room]: [{ light, glow }] } for the switches.
@@ -52,14 +54,14 @@ export function addDownlights(app, grid) {
     const y = (grid.ceilingAt(x, z) ?? 2.76) - 0.004;
     const e = new Entity(`downlight ${room}`);
     e.addComponent('light', {
-      type: 'spot', color: DOWN, intensity: 3.2, range: 4.2, innerConeAngle: 28, outerConeAngle: 62, castShadows: true,
-      falloffMode: LIGHTFALLOFF_INVERSESQUARED, shadowResolution: 512, shadowBias: 0.25, normalOffsetBias: 0.04, volumetricScattering: 0.35,
+      type: 'spot', color: DOWN, intensity: DOWNLIGHT.intensity, range: 4.2, innerConeAngle: 14, outerConeAngle: 74, castShadows: true,
+      falloffMode: LIGHTFALLOFF_INVERSESQUARED, shadowResolution: 512, shadowBias: 0.25, normalOffsetBias: 0.04, volumetricScattering: 0.25,
     });
     e.setPosition(x, y - 0.01, z);
     e.light.shadowUpdateMode = SHADOWUPDATE_THISFRAME;
     app.root.addChild(e);
     const glow = new StandardMaterial();
-    glow.diffuse = Color.BLACK; glow.emissive = new Color(1, 0.9, 0.78); glow.emissiveIntensity = 5; glow.update();
+    glow.diffuse = Color.BLACK; glow.emissive = new Color(1, 0.86, 0.7); glow.emissiveIntensity = DOWNLIGHT.glow; glow.update();
     const ring = new Entity('downlight bezel');
     ring.addComponent('render', { type: 'cylinder', material: bezel, castShadows: false });
     ring.setLocalScale(0.11, 0.008, 0.11); ring.setPosition(x, y, z);
@@ -186,4 +188,14 @@ export function captureProbe(app, camera, pos, { size = 256, intensity = 1 } = {
       resolve(atlas);
     });
   });
+}
+
+// Lamps render their shadows once (static rooms). Something that moves (a door, the laptop lid) asks the shadowed lamps
+// within `radius` of `pos` to render theirs again this frame.
+export function refreshShadows(app, pos, radius) {
+  const list = refreshShadows.list ||= app.root.findComponents('light').filter(l => l.castShadows && l.shadowUpdateMode !== undefined && l.entity.name !== 'flashlight beam');
+  for (const l of list) {
+    if (!l.enabled || l.type === 'directional') continue;
+    if (l.entity.getPosition().distance(pos) < radius + l.range * 0.5) l.shadowUpdateMode = SHADOWUPDATE_THISFRAME;
+  }
 }
