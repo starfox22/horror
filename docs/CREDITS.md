@@ -6,6 +6,13 @@
   (http://creativecommons.org/licenses/by/4.0/). Source: https://sketchfab.com/3d-models/modern-apartment-1fbb649cd6624f2bb7b7d6e30c6533a5
   Changes: simplified, re-compressed (Draco geometry, KTX2 textures), the bathroom door swung open.
   The credit is also shown on the game's intro screen; keep it there.
+- **"Vintage Flashlight"** by Omar M. El-Safy, CC0 (Poly Haven, https://polyhaven.com/a/vintage_flashlight).
+  Downloaded from the GLB in https://github.com/miaikoo/hush (`public/models/vintage_flashlight.glb`); kept in
+  `assets/props/vintage_flashlight.glb`.
+- **"Door with frame"** by witnessk (https://sketchfab.com/witnessk), licensed CC BY 4.0. Source:
+  https://sketchfab.com/3d-models/door-with-frame-2f2f149f3ec44d658a02c1f924dfa449 . Downloaded from
+  https://github.com/pmndrs/xr (`examples/handle/public/door.glb`); kept in `assets/props/door_with_frame.glb`.
+  Used as the apartment's front door (scaled to the opening).
 - **PlayCanvas Engine** (MIT), https://github.com/playcanvas/engine
 - **Basis Universal transcoder** (Apache-2.0) and **Draco decoder** (Apache-2.0), as built by PlayCanvas
   (`public/lib/basis`, `public/lib/draco`, from playcanvas/engine `examples/assets/wasm`).
@@ -18,5 +25,6 @@ sharp (Apache-2.0), Vite (MIT), Playwright (Apache-2.0).
 ## Made in code (placeholders until downloadable assets are reachable)
 
 - Sound: all synthesised in `src/ambience.js` (no third-party audio).
-- The flashlight body (PlayCanvas primitives), the night city backdrop, rain drops, film grain and light cookies are
-  painted procedurally at runtime.
+- Rain drops, film grain and the flashlight's beam cookie are painted procedurally at runtime.
+- Small built pieces with no asset worth downloading: recessed ceiling downlight discs, light-switch plates, and the
+  wardrobe's inner carcass (shelf, rail, inner walls) in the model's own wood material.

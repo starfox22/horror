@@ -185,6 +185,29 @@ export class Ambience {
     n.onended = () => { out.disconnect(); send.disconnect(); };
   }
 
+  // Wardrobe door: a soft wooden creak (two detuned resonant noise bands gliding), then a catch click on closing.
+  wardrobe(opening) {
+    const t = this.ctx.currentTime, len = opening ? 0.7 : 0.5;
+    const n = this.ctx.createBufferSource(); n.buffer = this.noise;
+    const out = this.gain(0);
+    out.gain.setValueAtTime(0.0001, t); out.gain.exponentialRampToValueAtTime(0.22, t + 0.08); out.gain.exponentialRampToValueAtTime(0.0001, t + len);
+    for (const [f0, f1] of [[480, 620], [910, 760]]) {
+      const bp = this.filter('bandpass', f0, 18);
+      bp.frequency.setValueAtTime(f0, t); bp.frequency.linearRampToValueAtTime(f1, t + len);
+      n.connect(bp).connect(out);
+    }
+    const send = this.gain(0.3);
+    out.connect(this.master); out.connect(send).connect(this.reverb);
+    n.start(t, Math.random() * 5, len + 0.1);
+    n.onended = () => { out.disconnect(); send.disconnect(); };
+    if (!opening) setTimeout(() => this.click(1400, 0.45, 0.35), len * 900);
+  }
+
+  // A locked front door: the lever goes down and catches, the door knocks in its frame, twice.
+  lockedDoor() {
+    for (const [ms, f] of [[0, 1700], [90, 700], [380, 1800], [460, 650]]) setTimeout(() => this.click(f, f < 1000 ? 0.7 : 0.4, f < 1000 ? 0.8 : 0.2), ms);
+  }
+
   switchClick(on) { this.click(on ? 2400 : 2000, 0.5, 0.25); }
   flashlightClick(on) { this.click(on ? 3600 : 3000, 0.35, 0.08); }
 

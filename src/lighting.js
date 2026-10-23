@@ -2,7 +2,7 @@
 // from the model, see docs/areas/lighting.md), a night-sky cubemap outside the windows, and a reflection probe
 // captured from inside the lit room so ambient light and reflections carry the room's own colours.
 import {
-  Color, Entity, Quat, Vec3, Texture, RenderTarget, EnvLighting,
+  Color, Entity, Quat, Vec3, Texture, RenderTarget, EnvLighting, StandardMaterial,
   LIGHTFALLOFF_INVERSESQUARED, SHADOW_PCF3_32F, SHADOWUPDATE_THISFRAME, PIXELFORMAT_RGBA16F, PIXELFORMAT_RGBA8,
   FILTER_LINEAR, FILTER_LINEAR_MIPMAP_LINEAR, RENDERTARGET_ORIGIN_TOP, TONEMAP_LINEAR, GAMMA_NONE,
 } from 'playcanvas';
@@ -28,8 +28,49 @@ export const LAMPS = [
   ['desk lamp', 'omni', [4.11, 1.36, -0.85], WARM, 0.55, 2.4, true],
   ['iMac glow', 'omni', [5.24, 1.10, -0.90], SCREEN, 0.35, 2.2, false],
   ['laptop glow', 'omni', [-4.30, 0.70, 2.40], SCREEN, 0.18, 1.5, false],
-  ['hall night light', 'omni', [12.70, 2.30, 3.75], WARM, 0.75, 5.5, true],
+  ['hall night light', 'omni', [12.70, 2.30, 3.75], WARM, 0.35, 3.5, true],
 ];
+
+// Recessed ceiling downlights (3000 K), the main light of each area as in a real flat. [room, x, z]
+export const DOWNLIGHTS = [
+  ['hall', 2.6, 3.65], ['hall', 4.6, 3.65], ['hall', 6.6, 3.65], ['hall', 8.6, 3.65], ['hall', 10.6, 3.65], ['hall', 12.6, 3.65],
+  ['living', -5.4, 1.2], ['living', -3.2, 1.2], ['living', -5.4, 3.4], ['living', -3.2, 3.4],
+  ['kitchen', -3.0, 0.15], ['kitchen', -1.2, 0.15], ['kitchen', 0.6, 0.15], ['kitchen', 0.2, 2.9],
+  ['office', 3.6, -0.2], ['office', 5.2, 0.9], ['office', 3.4, 1.9],
+  ['bathroom', 7.3, -0.6], ['bathroom', 7.9, 1.0],
+  ['bedroom', 10.8, -0.5], ['bedroom', 12.8, -0.5], ['bedroom', 10.8, 1.6], ['bedroom', 12.8, 1.6],
+];
+const DOWN = new Color(1.0, 0.87, 0.72);
+
+// Each downlight: a shadowed spot pointing down plus a small glowing disc in a bezel, flush with the ceiling.
+// Returns { [room]: [{ light, glow }] } for the switches.
+export function addDownlights(app, grid) {
+  const bezel = new StandardMaterial();
+  bezel.diffuse = new Color(0.85, 0.85, 0.85); bezel.useMetalness = true; bezel.metalness = 0.6; bezel.gloss = 0.7; bezel.update();
+  const rooms = {};
+  for (const [room, x, z] of DOWNLIGHTS) {
+    const y = (grid.ceilingAt(x, z) ?? 2.76) - 0.004;
+    const e = new Entity(`downlight ${room}`);
+    e.addComponent('light', {
+      type: 'spot', color: DOWN, intensity: 3.2, range: 4.2, innerConeAngle: 28, outerConeAngle: 62, castShadows: true,
+      falloffMode: LIGHTFALLOFF_INVERSESQUARED, shadowResolution: 512, shadowBias: 0.25, normalOffsetBias: 0.04, volumetricScattering: 0.35,
+    });
+    e.setPosition(x, y - 0.01, z);
+    e.light.shadowUpdateMode = SHADOWUPDATE_THISFRAME;
+    app.root.addChild(e);
+    const glow = new StandardMaterial();
+    glow.diffuse = Color.BLACK; glow.emissive = new Color(1, 0.9, 0.78); glow.emissiveIntensity = 5; glow.update();
+    const ring = new Entity('downlight bezel');
+    ring.addComponent('render', { type: 'cylinder', material: bezel, castShadows: false });
+    ring.setLocalScale(0.11, 0.008, 0.11); ring.setPosition(x, y, z);
+    const disc = new Entity('downlight lens');
+    disc.addComponent('render', { type: 'cylinder', material: glow, castShadows: false });
+    disc.setLocalScale(0.085, 0.004, 0.085); disc.setPosition(x, y - 0.004, z);
+    app.root.addChild(ring); app.root.addChild(disc);
+    (rooms[room] ||= []).push({ light: e, glow });
+  }
+  return rooms;
+}
 
 // Moonlight enters through the north (z = -1.5) and west (x = -6.5) windows, heading south-east and down.
 const MOON_DIR = new Vec3(0.45, -0.62, 0.64).normalize();
@@ -40,8 +81,9 @@ export function setupLighting(app) {
   L.shadowsEnabled = true;
   L.shadowAtlasResolution = 4096;
   L.shadowType = SHADOW_PCF3_32F;
-  L.maxLightsPerCell = 12;
-  L.cells = new Vec3(16, 4, 8);
+  // ~45 lights in 21 x 6 m: fine cells and a generous per-cell budget so no lamp is dropped where many overlap.
+  L.maxLightsPerCell = 32;
+  L.cells = new Vec3(28, 3, 10);
   L.cookiesEnabled = true;          // flashlight beam pattern, rain on the windows (street lamps)
   L.cookieAtlasResolution = 1024;
   s.ambientLight = new Color(0.006, 0.007, 0.010);
@@ -63,7 +105,7 @@ export function setupLighting(app) {
 
   const moon = new Entity('moon');
   moon.addComponent('light', {
-    type: 'directional', color: new Color(0.52, 0.62, 1.0), intensity: 1.3, castShadows: true,
+    type: 'directional', color: new Color(0.52, 0.62, 1.0), intensity: 0.45, castShadows: true,
     shadowResolution: 2048, shadowDistance: 24, numCascades: 1, shadowBias: 0.3, normalOffsetBias: 0.05,
   });
   moon.setRotation(rotationBetween(Vec3.DOWN, MOON_DIR));

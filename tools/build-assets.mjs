@@ -5,8 +5,8 @@
 //   --fast skips texture compression (PNG/JPEG kept, max 1024 px): quick iteration on geometry or collision.
 import { NodeIO, getBounds } from '@gltf-transform/core';
 import { ALL_EXTENSIONS, KHRTextureBasisu } from '@gltf-transform/extensions';
-import { dedup, prune, flatten, weld, simplify, join, draco, textureCompress, listTextureSlots } from '@gltf-transform/functions';
-import { MeshoptSimplifier } from 'meshoptimizer';
+import { dedup, prune, flatten, weld, simplify, join, draco, textureCompress, listTextureSlots, mergeDocuments, unpartition } from '@gltf-transform/functions';
+import { MeshoptSimplifier, MeshoptDecoder } from 'meshoptimizer';
 import { encodeToKTX2 } from 'ktx2-encoder';
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
@@ -20,17 +20,34 @@ const SRC = arg('--src', 'assets-src/modern_apartment/scene.gltf');
 const FAST = process.argv.includes('--fast');
 const OUT = arg('--out', 'public/assets/apartment');
 const CHUNK = 12 * 1024 * 1024;
+// Downloaded props merged into the apartment (assets/props/, credited in docs/CREDITS.md), placed in world metres.
+// The front door replaces the model's own entrance door (a flat panel with only a thin bar for a handle).
+const PROPS = [
+  { file: 'assets/props/vintage_flashlight.glb', name: 'Prop_flashlight', at: [0, -10, 0], scale: [1, 1, 1], yaw: 0 },
+  { file: 'assets/props/door_with_frame.glb', name: 'Prop_front_door', at: [12.88, 0.14, 4.40], scale: [0.01155, 0.0120, 0.01], yaw: 180 },
+];
+const REMOVE = /^EnteranceDoor_/;
+// Bedroom wardrobe doors cut out of the carcass so the game can swing them open: front panels (x > 9.70) and their
+// chrome handles inside each box. Hinge edges are the outer edges (handles sit at the inner edges).
+const WARDROBE = [
+  { id: 'left', z: [-1.323, -0.544], y: [0.14, 2.28] },
+  { id: 'right', z: [-0.502, 0.277], y: [0.14, 2.28] },
+  { id: 'upperleft', z: [1.341, 1.830], y: [1.205, 2.28] },
+  { id: 'upperright', z: [1.866, 2.357], y: [1.205, 2.28] },
+];
 // Glowing lamp parts per room (see separateMaterials).
 const FIXTURES = { BathroomFurnitures_Light_0: 'bathroom', BedDecors_Light_0: 'bedroom', Hood_Light_0: 'kitchen',
   OficeDecors_Light_0: 'office' };
 
 const t0 = Date.now();
 const log = (...a) => console.log(`[${((Date.now() - t0) / 1000).toFixed(0)}s]`, ...a);
+await MeshoptSimplifier.ready;
+await MeshoptDecoder.ready;
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({
   'draco3d.encoder': await draco3d.createEncoderModule(),
   'draco3d.decoder': await draco3d.createDecoderModule(),
+  'meshopt.decoder': MeshoptDecoder,
 });
-await MeshoptSimplifier.ready;
 
 const doc = await io.read(SRC);
 const tris = () => doc.getRoot().listMeshes().flatMap(m => m.listPrimitives())
@@ -39,7 +56,10 @@ log('read', SRC, 'triangles', tris());
 
 // Geometry: drop duplicates, bake the Sketchfab root transform into flat nodes, then simplify within 0.4 mm per metre of
 // mesh radius (removes the 1M-triangle door's redundant tessellation without visible change) and join by material.
-await doc.transform(dedup(), prune(), flatten());
+for (const n of doc.getRoot().listNodes()) if (REMOVE.test(n.getName())) n.dispose();
+await mergeProps(doc);
+await doc.transform(dedup(), prune(), flatten(), unpartition());
+extractWardrobeDoors(doc);
 // The bathroom's only door (bedroom side) is modelled shut: swing its leaf and handle 90 degrees into the bathroom.
 // Leaf = the white door pieces; the black piece that starts at the hinge edge holds the handles (the other is the frame).
 openDoor(doc, (n, b) => /^Door\.001_White1/.test(n.getName()) || (/^Door\.001_Black/.test(n.getName()) && b.min[2] > 0.38),
@@ -48,6 +68,60 @@ separateMaterials(doc);
 await doc.transform(weld(), simplify({ simplifier: MeshoptSimplifier, ratio: 0, error: 0.0004 }),
   join({ keepNamed: false }), dedup({ keepUniqueNames: true }), prune({ keepAttributes: true }));   // keep the window UVs (no texture uses them in the file)
 log('simplified + joined: triangles', tris(), 'meshes', doc.getRoot().listMeshes().length);
+
+async function mergeProps(doc) {
+  const scene = doc.getRoot().listScenes()[0];
+  for (const p of PROPS) {
+    const src = await io.read(p.file);
+    for (const e of src.getRoot().listExtensionsUsed()) if (e.extensionName === 'EXT_meshopt_compression') e.dispose();
+    // Material names get a prefix so they never collide with (or dedup into) the apartment's own.
+    for (const m of src.getRoot().listMaterials()) m.setName(`${p.name}.${m.getName() || 'material'}`);
+    const srcScene = src.getRoot().listScenes()[0];
+    const map = mergeDocuments(doc, src);
+    const holder = doc.createNode(p.name).setTranslation(p.at).setScale(p.scale)
+      .setRotation([0, Math.sin(p.yaw * Math.PI / 360), 0, Math.cos(p.yaw * Math.PI / 360)]);
+    const merged = map.get(srcScene);
+    for (const c of merged.listChildren()) holder.addChild(c);
+    merged.dispose();
+    scene.addChild(holder);
+  }
+  for (const s of doc.getRoot().listScenes()) if (s !== scene) s.dispose();
+  log(`merged props: ${PROPS.map(p => p.name).join(', ')}`);
+}
+
+function extractWardrobeDoors(doc) {
+  const scene = doc.getRoot().listScenes()[0];
+  let made = 0;
+  for (const n of scene.listChildren()) {
+    const mesh = n.getMesh();
+    if (!mesh || !/^BedroomWardrobes_(Wood049|Chrome)/.test(n.getName())) continue;
+    const m = n.getMatrix();
+    for (const prim of mesh.listPrimitives()) {
+      const pos = prim.getAttribute('POSITION'), idx = prim.getIndices(), e = [0, 0, 0];
+      const keep = [], take = WARDROBE.map(() => []);
+      for (let t = 0; t < idx.getCount(); t += 3) {
+        let cx = 0, cy = 0, cz = 0;
+        for (let k = 0; k < 3; k++) {
+          pos.getElement(idx.getScalar(t + k), e);
+          cx += (m[0] * e[0] + m[4] * e[1] + m[8] * e[2] + m[12]) / 3; cy += (m[1] * e[0] + m[5] * e[1] + m[9] * e[2] + m[13]) / 3; cz += (m[2] * e[0] + m[6] * e[1] + m[10] * e[2] + m[14]) / 3;
+        }
+        const d = cx > 9.70 ? WARDROBE.findIndex(w => cz > w.z[0] && cz < w.z[1] && cy > w.y[0] && cy < w.y[1]) : -1;
+        (d < 0 ? keep : take[d]).push(idx.getScalar(t), idx.getScalar(t + 1), idx.getScalar(t + 2));
+      }
+      WARDROBE.forEach((w, d) => {
+        if (!take[d].length) return;
+        const part = doc.createPrimitive().setMode(prim.getMode())
+          .setMaterial(prim.getMaterial().clone().setName(`${prim.getMaterial().getName()}.wardrobe-${w.id}`))
+          .setIndices(doc.createAccessor().setType('SCALAR').setArray(new Uint32Array(take[d])).setBuffer(idx.getBuffer()));
+        for (const sem of prim.listSemantics()) part.setAttribute(sem, prim.getAttribute(sem).clone());
+        scene.addChild(doc.createNode(`Wardrobe_${w.id}`).setMatrix(m).setMesh(doc.createMesh(`Wardrobe_${w.id}`).addPrimitive(part)));
+        made++;
+      });
+      prim.setIndices(doc.createAccessor().setType('SCALAR').setArray(new Uint32Array(keep)).setBuffer(idx.getBuffer()));
+    }
+  }
+  log(`wardrobe doors: ${made} door parts cut out`);
+}
 
 function openDoor(doc, pick, { hinge: [hx, hz], degrees }) {
   const a = degrees * Math.PI / 180, c = Math.cos(a), s = Math.sin(a);

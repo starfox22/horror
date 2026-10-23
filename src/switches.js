@@ -1,4 +1,4 @@
-// Light switches, one per area. Each switch fades its lamps, the glowing parts of their fixtures (the per-room 'Light.*'
+// Light switches, one per area. Each switch fades its ceiling downlights (lighting.js DOWNLIGHTS), its lamps, the glowing parts of their fixtures (the per-room 'Light.*'
 // materials made by tools/build-assets.mjs, plus a small bulb at lamps whose glow is not a separate mesh) and then asks for
 // the room reflection probe to be captured again, so bounce light follows the lamps.
 // The bathroom and bedroom use the model's own switch plates; elsewhere a plate is mounted where a probe from `from`
@@ -6,20 +6,20 @@
 import { Color, Entity, StandardMaterial, Vec3 } from 'playcanvas';
 
 export const ROOMS = [
-  { id: 'living', label: 'Living room lamp', lights: ['arc lamp', 'arc lamp shade', 'living bounce'], bulbs: [[-4.95, 1.6, 2.76]],
+  { id: 'living', label: 'Living room lights', lights: ['arc lamp', 'arc lamp shade', 'living bounce'], bulbs: [[-4.95, 1.6, 2.76]],
     from: [0.95, 3.9], dir: [0, 1], on: true },
   { id: 'dining', label: 'Dining pendants', lights: ['dining pendant L', 'dining pendant R'], bulbs: [[-0.44, 1.8, 1.52], [0.77, 1.8, 1.52]],
-    from: [1.13, 3.9], dir: [0, 1], on: false },
-  { id: 'kitchen', label: 'Kitchen light', lights: ['cooker hood'], glow: 'Light.kitchen', from: [1.31, 3.9], dir: [0, 1], on: true },
-  { id: 'office', label: 'Desk lamp', lights: ['desk lamp'], glow: 'Light.office', from: [3.0, 2.3], dir: [0, 1], on: true },
-  { id: 'hall', label: 'Hall light', lights: ['hall night light'], from: [11.8, 3.6], dir: [0, 1], on: true },
-  { id: 'bathroom', label: 'Bathroom mirror light', lights: ['bathroom mirror'], glow: 'Light.bathroom', at: [6.80, 1.22, 1.76], on: false },
-  { id: 'bedroom', label: 'Bedroom light', lights: ['bedside strip', 'closet light'], glow: 'Light.bedroom', at: [11.67, 1.17, 2.37], on: true },
+    from: [1.13, 3.9], dir: [0, 1], on: true },
+  { id: 'kitchen', label: 'Kitchen lights', lights: ['cooker hood'], glow: 'Light.kitchen', from: [1.31, 3.9], dir: [0, 1], on: true },
+  { id: 'office', label: 'Office lights', lights: ['desk lamp'], glow: 'Light.office', from: [3.0, 2.3], dir: [0, 1], on: true },
+  { id: 'hall', label: 'Hall lights', lights: ['hall night light'], from: [11.8, 3.6], dir: [0, 1], on: true },
+  { id: 'bathroom', label: 'Bathroom lights', lights: ['bathroom mirror'], glow: 'Light.bathroom', at: [6.80, 1.22, 1.76], on: true },
+  { id: 'bedroom', label: 'Bedroom lights', lights: ['bedside strip', 'closet light'], glow: 'Light.bedroom', at: [11.67, 1.17, 2.37], on: true },
 ];
 const PLATE_HEIGHT = 1.15;
 
 export class Switches {
-  constructor(app, grid, apartment, interactions, sounds, onChange) {
+  constructor(app, grid, apartment, interactions, sounds, onChange, downlights = {}) {
     this.app = app;
     this.onChange = onChange;
     this.sounds = sounds;
@@ -30,8 +30,10 @@ export class Switches {
     bulbMat.diffuse = Color.BLACK; bulbMat.emissive = new Color(1, 0.82, 0.62); bulbMat.update();
 
     this.rooms = ROOMS.map((def) => {
-      const room = { ...def, lights: def.lights.map(n => app.root.findByName(n)).filter(Boolean), level: def.on ? 1 : 0 };
+      const down = downlights[def.id] || [];
+      const room = { ...def, lights: [...def.lights.map(n => app.root.findByName(n)).filter(Boolean), ...down.map(d => d.light)], level: def.on ? 1 : 0 };
       room.base = room.lights.map(l => l.light.intensity);
+      room.glows = down.map(d => ({ mat: d.glow, base: d.glow.emissiveIntensity }));
       room.glowMat = def.glow ? materials.get(def.glow) : null;
       room.glowBase = room.glowMat ? room.glowMat.emissiveIntensity : 0;
       room.bulbs = (def.bulbs || []).map(([x, y, z]) => {
@@ -102,6 +104,7 @@ export class Switches {
     room.lights.forEach((l, i) => { l.light.intensity = room.base[i] * k; l.light.enabled = k > 0.001; });
     if (room.glowMat) { room.glowMat.emissiveIntensity = room.glowBase * k; room.glowMat.update(); }
     for (const m of room.bulbs) { m.emissiveIntensity = 6 * k; m.update(); }
+    for (const g of room.glows) { g.mat.emissiveIntensity = g.base * k; g.mat.update(); }
     this.tilt(room);
   }
 }

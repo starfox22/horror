@@ -12,6 +12,9 @@ works with AI agents; whoever picks this up continues from the state below and k
   scary yet: no enemies, story or puzzles until the owner asks.
 - Build 0.2 (done): light switches per area, a flashlight to find and carry, rain on and outside the windows,
   lightning and thunder, general polish.
+- Build 0.3 (done, owner feedback on 0.2): no skyline, pitch-black outside like P.T. with rain on the glass; a real
+  apartment's lighting (ceiling downlights everywhere, the corridor included); the bedroom wardrobe opens; a
+  downloaded front door with a handle; a downloaded flashlight. Owner rule: download assets instead of building them.
 - Show screenshots and links before big decisions; publish each prototype to a web link.
 - Keep everything documented so another AI can continue.
 
@@ -53,19 +56,32 @@ The host serves no .bin/.ktx2 files, so make-artifact packs the model into one G
   fridge cycling, dripping tap, footsteps by floor finish), HRTF-positioned with a generated reverb. Replace with
   downloaded CC0 recordings when a source is reachable.
 
+## Build 0.3 changes (where they live)
+- **Downloaded props** (`assets/props/`, merged into the apartment file by `tools/build-assets.mjs` PROPS): the front door
+  ("Door with frame", witnessk, CC BY 4.0, from github.com/pmndrs/xr) replaces the model's entrance door (REMOVE);
+  the flashlight is Poly Haven's "Vintage Flashlight" (CC0, from github.com/miaikoo/hush). Prop materials are prefixed
+  `Prop_<name>.` so the game finds them. Only GitHub is reachable from the cloud session: look for asset repos there.
+- **Ceiling lights** (`src/lighting.js` DOWNLIGHTS): 23 recessed downlights at the ceiling height baked into
+  collision.json (`ceilCm`, WalkGrid.ceilingAt), on each area's switch; everything starts on. Clustered lighting needs
+  `maxLightsPerCell` 32 and cells 28x3x10, or lamps are dropped where many overlap (the bedroom went dark).
+- **Wardrobe** (`src/closets.js`): the pipeline cuts four door panels and their handles out of `BedroomWardrobes_*`
+  (WARDROBE boxes, materials `<name>.wardrobe-<id>`); the game hangs them on hinge pivots and swings them with E.
+  The model is hollow behind the doors, so a carcass (floor, top, sides, divider, shelf, rail) is added in its wood;
+  an LED comes on while a section is open. The flashlight lies on the tall section's shelf, behind the left door.
+- **Windows**: city backdrop and street lamps removed; sheer curtains hidden; drops are grey water lit by the room
+  (emissive only during lightning); the rain outside is visible only in a flash. The front door is locked (E rattles it).
+
 ## Build 0.2 features (where they live)
 - **Interaction** (`src/interact.js`): look at a thing within 2.1 m and press E (or click). Prompt under the reticle.
 - **Light switches** (`src/switches.js`, `ROOMS`): living lamp, dining pendants, kitchen, desk lamp, hall, bathroom,
   bedroom (+ closet light). Bathroom and bedroom use the model's own switch plates; the rest get a plate mounted on the
   first wall the walk grid meets from `from` along `dir`. A toggle fades the lamps and the fixture glow (per-room
   `Light.<room>` materials split off in the pipeline) and re-captures the room probe (ambient + reflections).
-- **Flashlight** (`src/flashlight.js`): on the middle shelf of the bedroom's open shoe closet (9.56, 0.85, 1.56), lit
-  by the closet LED. E takes it, F toggles. Shadow-casting spot with a cookie and volumetric scattering; the hand lags
-  the view. The body is built from primitives (placeholder: replace with a downloaded CC0 model when one is reachable).
-- **Rain** (`src/rain.js`): drops simulated on a 512 px canvas (1.4 m of glass) → normal map + "bead" emissive/opacity
-  on the `WindowGlass` material (planar UVs from the pipeline); two street lamps outside with the drop pattern as their
-  cookie (moving rain shadows inside); rain streak particles outside; a procedural night city on two emissive
-  backdrops 40 m out; lightning every 25-70 s (moon light spikes) with synthesised thunder.
+- **Flashlight** (`src/flashlight.js`): (0.3: now the downloaded model, in the wardrobe.) E takes it, F toggles.
+  Shadow-casting spot with a cookie and volumetric scattering; the hand lags the view.
+- **Rain** (`src/rain.js`): drops simulated on a 512 px canvas (1.4 m of glass) → normal map + opacity on the
+  `WindowGlass` material (planar UVs from the pipeline); rain streak particles outside; lightning every 25-70 s
+  (moon light spikes) with synthesised thunder. (0.2's city backdrop and street lamps were removed in 0.3.)
 - **Polish**: static (render-once) shadows on every lamp, film grain overlay, idle breathing sway, sheer curtains
   thinned to 0.1 opacity, shorter volumetric haze (12 m) so the city stays visible.
 - Blender was not used: baked lighting cannot follow the new light switches. If baking is wanted later, bake only
@@ -88,9 +104,9 @@ The host serves no .bin/.ktx2 files, so make-artifact packs the model into one G
   Sketchfab, Poly Haven, Zenodo and Hugging Face are blocked unless the owner allows them.
 
 ## Next steps (suggested, not started)
-1. Owner feedback on build 0.2.
-2. Replace the primitive flashlight, synthesised sounds and procedural city with downloaded CC0 assets once the
-   owner allows Sketchfab / Poly Haven / Freesound-type hosts in the environment.
+1. Owner feedback on build 0.3.
+2. Replace the synthesised sounds with downloaded CC0 recordings (search GitHub game repos, as for the props).
+3. Kitchen cabinets and the wardrobe's top row could open the same way as the wardrobe doors.
 3. Mirror reflections (bathroom) with a planar reflection; per-room reflection probes.
 4. Upgrade PlayCanvas when `CameraFrameEffect` ships in a release (true film grain / lens effects in the compose pass).
 5. Then the horror layer (the P.T. loop through the corridor), only when the owner asks.

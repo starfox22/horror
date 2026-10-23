@@ -1,15 +1,15 @@
 # horror
 True horror game
 
-A first-person browser horror game in the spirit of P.T., built on PlayCanvas. Current state: **build 0.2, a walkable
-night-time apartment** (no scares yet): light switches in every area, a flashlight to find, rain on the windows,
+A first-person browser horror game in the spirit of P.T., built on PlayCanvas. Current state: **build 0.3, a walkable
+night-time apartment** (no scares yet): light switches in every area, an opening wardrobe, a flashlight to find, rain on the windows,
 lightning and thunder, night lighting, post-processing and ambient sound.
 
 Read `docs/HANDOFF.md` first if you are picking this up (state, owner's preferences, how things fit together).
 
 ## Play
 
-- claude.ai link (build 0.1): https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9
+- claude.ai link (latest build): https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9
 - Locally: `npm install && npm run dev`, open the printed URL. Click to enter.
 
 Controls: WASD or arrows move · mouse look · Shift walk faster · E use (switches, objects) · F flashlight (once found)
@@ -47,8 +47,10 @@ node tools/shoot.mjs dist out name=x,z,yaw ...   # headless screenshots (softwar
 | `src/post.js` | Camera effects (TAA, SSAO, bloom, volumetric haze, grading, vignette) and quality levels |
 | `src/ambience.js` | Synthesised sound: rain, room tone, fridge, tap, footsteps, switches, thunder |
 | `src/interact.js`, `src/switches.js` | Look-and-press-E interaction; light switches per area |
-| `src/flashlight.js` | The flashlight (pickup, viewmodel, beam with cookie and shadows) |
-| `src/rain.js` | Rain on the glass, street lamps with rain shadows, rain outside, night city, lightning |
+| `src/flashlight.js` | The flashlight (downloaded model: pickup, viewmodel, beam with cookie and shadows) |
+| `src/closets.js` | Bedroom wardrobe: doors on hinges, interior, LED; the flashlight's shelf |
+| `src/rain.js` | Rain on the glass (dark outside), rain outside seen in lightning, thunder |
+| `assets/props/` | Downloaded models merged into the apartment by the pipeline (credits in docs/CREDITS.md) |
 | `tools/` | Asset pipeline and checks (see Build) |
 | `public/assets/apartment/` | Built model: `scene.gltf`, `geometry-*.bin`, `textures/*.ktx2`, `collision.json` |
 | `public/lib/` | PlayCanvas's Basis (KTX2) and Draco decoders |

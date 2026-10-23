@@ -1,6 +1,7 @@
 // Walk grid for the first-person controller, baked from the final geometry (world space, Y up, metres).
 // A cell is blocked when any surface passes through the body band (0.25-1.9 m above the lowest floor); its floor height
 // is the highest upward-facing surface below 0.5 m. Cells with no floor are blocked too (outside the walls).
+// Ceiling height per cell (lowest downward-facing surface above 2 m) lets lights be mounted flush with the ceiling.
 import sharp from 'sharp';
 
 export const CELL = 0.05;
@@ -13,13 +14,15 @@ export function buildCollision(doc, bounds) {
   const w = Math.ceil((bounds.max[0] + 0.2 - x0) / CELL), h = Math.ceil((bounds.max[2] + 0.2 - z0) / CELL);
   const blocked = new Uint8Array(w * h);
   const floorCm = new Uint8Array(w * h).fill(NO_FLOOR);
+  const ceilCm = new Uint8Array(w * h).fill(NO_FLOOR);   // centimetres above 2 m
   const a = [0, 0, 0], b = [0, 0, 0], c = [0, 0, 0], p = [0, 0, 0];
-  const mark = (x, y, z, up) => {
+  const mark = (x, y, z, up, down) => {
     const i = Math.floor((x - x0) / CELL), j = Math.floor((z - z0) / CELL);
     if (i < 0 || j < 0 || i >= w || j >= h) return;
     const k = j * w + i;
     if (y > BAND[0] && y < BAND[1]) blocked[k] = 1;
     if (up && y < FLOOR_MAX) { const cm = Math.max(0, Math.round(y * 100)); if (floorCm[k] === NO_FLOOR || cm > floorCm[k]) floorCm[k] = cm; }
+    if (down && y > 2 && y < 4.5) { const cm = Math.round((y - 2) * 100); if (ceilCm[k] === NO_FLOOR || cm < ceilCm[k]) ceilCm[k] = cm; }
   };
   for (const node of doc.getRoot().listScenes()[0].listChildren()) {
     node.traverse(n => {
@@ -37,13 +40,13 @@ export function buildCollision(doc, bounds) {
           get(t, a); get(t + 1, b); get(t + 2, c);
           const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2], vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2];
           const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
-          const up = ny > 0.7 * Math.hypot(nx, ny, nz);
+          const up = ny > 0.7 * Math.hypot(nx, ny, nz), down = ny < -0.7 * Math.hypot(nx, ny, nz);
           const edge = Math.max(Math.hypot(ux, uy, uz), Math.hypot(vx, vy, vz), Math.hypot(c[0] - b[0], c[1] - b[1], c[2] - b[2]));
           const n = Math.max(1, Math.ceil(edge / (CELL * 0.5)));
           for (let s = 0; s <= n; s++) for (let r = 0; r <= n - s; r++) {
             const fs = s / n, fr = r / n;
             p[0] = a[0] + ux * fs + vx * fr; p[1] = a[1] + uy * fs + vy * fr; p[2] = a[2] + uz * fs + vz * fr;
-            mark(p[0], p[1], p[2], up);
+            mark(p[0], p[1], p[2], up, down);
           }
         }
       }
@@ -51,7 +54,8 @@ export function buildCollision(doc, bounds) {
   }
   for (let k = 0; k < w * h; k++) if (floorCm[k] === NO_FLOOR) blocked[k] = 1;
   return { cell: CELL, x0, z0, w, h, noFloor: NO_FLOOR,
-    blocked: Buffer.from(blocked).toString('base64'), floorCm: Buffer.from(floorCm).toString('base64') };
+    blocked: Buffer.from(blocked).toString('base64'), floorCm: Buffer.from(floorCm).toString('base64'),
+    ceilCm: Buffer.from(ceilCm).toString('base64') };
 }
 
 // Debug picture: white = walkable, black = blocked, red tint = raised floor. Used by tools/check-collision.mjs.

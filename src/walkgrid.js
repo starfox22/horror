@@ -6,6 +6,7 @@ export class WalkGrid {
     Object.assign(this, json);
     this.blockedCells = Uint8Array.from(atob(json.blocked), c => c.charCodeAt(0));
     this.floorCells = Uint8Array.from(atob(json.floorCm), c => c.charCodeAt(0));
+    this.ceilCells = json.ceilCm ? Uint8Array.from(atob(json.ceilCm), c => c.charCodeAt(0)) : null;
   }
 
   index(x, z) {
@@ -24,6 +25,13 @@ export class WalkGrid {
     if (k < 0) return null;
     const cm = this.floorCells[k];
     return cm === this.noFloor ? null : cm / 100;
+  }
+
+  // Ceiling height in metres above (x, z) (lowest overhead surface above 2 m), or null.
+  ceilingAt(x, z) {
+    const k = this.index(x, z);
+    if (k < 0 || !this.ceilCells || this.ceilCells[k] === this.noFloor) return null;
+    return 2 + this.ceilCells[k] / 100;
   }
 
   // A body of `radius` fits at (x, z): the centre and 8 points on the rim are free, and no floor under it is more

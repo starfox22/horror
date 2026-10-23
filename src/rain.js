@@ -1,7 +1,7 @@
-// Rain: drops gathering and running down the window panes (an animated normal map + opacity on the 'WindowGlass'
-// material, which tools/build-assets.mjs gives world-planar UVs in metres), street lamps outside two windows whose
-// cookies project the moving drops onto the walls and floor inside, streaks of rain falling past the windows, and
-// lightning with thunder (through `sounds`).
+// Rain, P.T.-style: outside is pitch black; water gathers and runs down the window panes (an animated normal map +
+// opacity on the 'WindowGlass' material, which tools/build-assets.mjs gives world-planar UVs in metres), visible only
+// by the room's own light on it. Lightning (with thunder through `sounds`) briefly lights the drops and the rain
+// falling outside.
 import {
   Color, Entity, Texture, Vec3, Quat, Mat4, Curve, CurveSet, PIXELFORMAT_RGBA8, ADDRESS_REPEAT, ADDRESS_CLAMP_TO_EDGE,
   FILTER_LINEAR, FILTER_LINEAR_MIPMAP_LINEAR, EMITTERSHAPE_BOX, BLEND_ADDITIVE, BLEND_NORMAL, StandardMaterial, LIGHTFALLOFF_INVERSESQUARED, SHADOWUPDATE_THISFRAME,
@@ -9,13 +9,7 @@ import {
 
 const N = 512;               // glass texture pixels; it spans TILE metres of glass
 const TILE = 1.4;
-const COOKIE = 256;
 
-// Street lamps outside: west of the living room and north of the bedroom. [position, aim at, colour, intensity]
-const STREET = [
-  [[-9.5, 4.2, 1.4], [-4.5, 0.2, 1.6], new Color(1.0, 0.66, 0.36), 9],
-  [[11.6, 4.0, -4.6], [11.6, 0.2, 0.6], new Color(0.75, 0.82, 1.0), 6],
-];
 // Rain volumes outside the glass: [centre, half extents]
 const VOLUMES = [[[-8.0, 1.8, 1.4], [1.0, 2.4, 3.2]], [[3.5, 1.8, -2.9], [10, 2.4, 1.0]]];
 
@@ -35,47 +29,31 @@ export class Rain {
     this.ctx = this.canvas.getContext('2d');
     this.glassTex = new Texture(app.graphicsDevice, { width: N, height: N, format: PIXELFORMAT_RGBA8, mipmaps: true,
       addressU: ADDRESS_REPEAT, addressV: ADDRESS_REPEAT, minFilter: FILTER_LINEAR_MIPMAP_LINEAR, magFilter: FILTER_LINEAR, name: 'rain-glass' });
-    // Bead colour: each drop holds a tiny bright image of the city behind it (warm or cool), with a darker rim.
-    this.beads = [this.beadSprite(32, [255, 196, 140]), this.beadSprite(32, [170, 200, 255])];
+    // Drop coverage (alpha) and the colour a drop shows when lightning lights it from behind.
+    this.beads = [this.beadSprite(32, [235, 240, 255]), this.beadSprite(32, [210, 220, 235])];
     this.glowCanvas = document.createElement('canvas'); this.glowCanvas.width = this.glowCanvas.height = N;
     this.glowCtx = this.glowCanvas.getContext('2d');
     this.glowTex = new Texture(app.graphicsDevice, { width: N, height: N, format: PIXELFORMAT_RGBA8, mipmaps: true,
       addressU: ADDRESS_REPEAT, addressV: ADDRESS_REPEAT, minFilter: FILTER_LINEAR_MIPMAP_LINEAR, magFilter: FILTER_LINEAR, name: 'rain-beads' });
-    this.cookieCanvas = document.createElement('canvas'); this.cookieCanvas.width = this.cookieCanvas.height = COOKIE;
-    this.cookieCtx = this.cookieCanvas.getContext('2d');
-    this.cookieTex = new Texture(app.graphicsDevice, { width: COOKIE, height: COOKIE, format: PIXELFORMAT_RGBA8, mipmaps: false,
-      addressU: ADDRESS_CLAMP_TO_EDGE, addressV: ADDRESS_CLAMP_TO_EDGE, name: 'rain-cookie' });
     for (let i = 0; i < 260; i++) this.spawn(true);
     this.draw();
 
     for (const r of apartment.findComponents('render')) for (const mi of r.meshInstances) {
       const m = mi.material;
       if (m.name !== 'WindowGlass') continue;
-      // Clear glass between the drops; each drop is a bead of light (emissive + opacity from the bead canvas) whose
-      // normal map also catches the room's lamps. (Dynamic refraction was tried: through CameraFrame it blurred the
-      // city into a flat haze, and a lit diffuse film washed it out, so drops stay dark-diffuse and self-lit.)
+      // Clear glass between the drops; the drops are water, seen by the room's light (grey diffuse + sharp specular
+      // from the normal map) against the black outside. Their emissive is only raised during a lightning flash.
       const tile = (t) => t.set(1 / TILE, 1 / TILE);
-      m.normalMap = this.glassTex; tile(m.normalMapTiling); m.bumpiness = 1.6;
-      m.emissiveMap = this.glowTex; tile(m.emissiveMapTiling); m.emissive = Color.WHITE; m.emissiveIntensity = 0.8;
-      m.opacityMap = this.glowTex; m.opacityMapChannel = 'a'; tile(m.opacityMapTiling); m.opacity = 1;
+      m.normalMap = this.glassTex; tile(m.normalMapTiling); m.bumpiness = 1.8;
+      m.emissiveMap = this.glowTex; tile(m.emissiveMapTiling); m.emissive = new Color(0.7, 0.8, 1); m.emissiveIntensity = 0;
+      m.opacityMap = this.glowTex; m.opacityMapChannel = 'a'; tile(m.opacityMapTiling); m.opacity = 0.75;
       m.blendType = BLEND_NORMAL; m.depthWrite = false;
-      m.diffuse = new Color(0.01, 0.01, 0.012); m.gloss = 0.95; m.useMetalness = true; m.metalness = 0;
+      m.diffuse = new Color(0.32, 0.34, 0.36); m.gloss = 0.97; m.useMetalness = true; m.metalness = 0;
       m.update();
+      this.glass = m;
     }
 
-    this.lamps = STREET.map(([p, at, color, intensity]) => {
-      const e = new Entity('street lamp');
-      e.addComponent('light', { type: 'spot', color, intensity, range: 14, innerConeAngle: 20, outerConeAngle: 42,
-        falloffMode: LIGHTFALLOFF_INVERSESQUARED, castShadows: true, shadowResolution: 1024, shadowBias: 0.2,
-        normalOffsetBias: 0.05, cookie: this.cookieTex, cookieIntensity: 0.85, volumetricScattering: 0.7 });
-      e.setPosition(...p);
-      e.lookAt(new Vec3(...at)); e.rotateLocal(90, 0, 0);    // spot lights shine along -Y: turn it onto -Z (the look direction)
-      app.root.addChild(e);
-      e.light.shadowUpdateMode = SHADOWUPDATE_THISFRAME;   // render the shadow once: the walls do not move
-      return e;
-    });
     this.streaks = VOLUMES.map(([c, ext]) => this.rainVolume(c, ext));
-    this.city();
     app.on('update', (dt) => this.update(dt));
   }
 
@@ -156,18 +134,6 @@ export class Rain {
     this.glassTex.setSource(this.canvas);
     this.glowTex.setSource(this.glowCanvas);
 
-    // Cookie: drops as dark cores with bright rims on a slightly mottled window light, plus mullions.
-    const c = this.cookieCtx;
-    c.fillStyle = '#d8d8d8'; c.fillRect(0, 0, COOKIE, COOKIE);
-    c.globalAlpha = 0.85;
-    c.drawImage(this.canvas, 0, 0, COOKIE, COOKIE);
-    c.globalAlpha = 1;
-    c.fillStyle = 'rgba(0,0,0,0.85)';
-    c.fillRect(COOKIE * 0.49, 0, COOKIE * 0.03, COOKIE); c.fillRect(0, COOKIE * 0.32, COOKIE, COOKIE * 0.025);
-    const grad = c.createRadialGradient(COOKIE / 2, COOKIE / 2, COOKIE * 0.3, COOKIE / 2, COOKIE / 2, COOKIE * 0.5);
-    grad.addColorStop(0, 'rgba(0,0,0,0)'); grad.addColorStop(1, 'rgba(0,0,0,1)');
-    c.fillStyle = grad; c.fillRect(0, 0, COOKIE, COOKIE);
-    this.cookieTex.setSource(this.cookieCanvas);
   }
 
   rainVolume(centre, ext) {
@@ -191,53 +157,6 @@ export class Rain {
     return e;
   }
 
-  // The city at night beyond the windows, so the panes have lights to bend: two big emissive backdrops (west, north)
-  // painted once on a canvas with dark towers, lit windows, red aircraft lights and a sodium glow down at street level.
-  city() {
-    const W = 2048, H = 1024, c = document.createElement('canvas'); c.width = W; c.height = H;
-    const g = c.getContext('2d');
-    const sky = g.createLinearGradient(0, 0, 0, H);
-    sky.addColorStop(0, '#05070c'); sky.addColorStop(0.55, '#0d0f16'); sky.addColorStop(0.8, '#2a1d14'); sky.addColorStop(1, '#3a2614');
-    g.fillStyle = sky; g.fillRect(0, 0, W, H);
-    const rnd = (a, b) => a + Math.random() * (b - a);
-    for (let layer = 0; layer < 3; layer++) {
-      const far = 2 - layer, shade = 6 + layer * 5;
-      for (let x = -40; x < W; ) {
-        const w = rnd(70, 220) / (far + 1), top = H * (0.25 + 0.3 * Math.random() + far * 0.12);
-        g.fillStyle = `rgb(${shade},${shade + 1},${shade + 4})`; g.fillRect(x, top, w, H - top);
-        const lit = 0.18 + Math.random() * 0.25;
-        for (let wy = top + 8; wy < H; wy += 16 / (far + 1)) for (let wx = x + 5; wx < x + w - 5; wx += 12 / (far + 1)) {
-          if (Math.random() > lit) continue;
-          const warm = Math.random() < 0.75, a = rnd(0.35, 0.95) / (far * 0.6 + 1);
-          g.fillStyle = warm ? `rgba(255,${rnd(170, 210) | 0},${rnd(100, 150) | 0},${a})` : `rgba(170,200,255,${a})`;
-          g.fillRect(wx, wy, 6 / (far + 1), 8 / (far + 1));
-        }
-        if (top < H * 0.4 && Math.random() < 0.5) { g.fillStyle = 'rgba(255,40,30,0.9)'; g.fillRect(x + w / 2 - 1.5, top - 3, 3, 3); }
-        x += w + rnd(0, 30);
-      }
-    }
-    const glow = g.createLinearGradient(0, H * 0.75, 0, H);
-    glow.addColorStop(0, 'rgba(255,140,60,0)'); glow.addColorStop(1, 'rgba(255,140,60,0.35)');
-    g.fillStyle = glow; g.fillRect(0, H * 0.75, W, H * 0.25);
-    const tex = new Texture(this.app.graphicsDevice, { width: W, height: H, format: PIXELFORMAT_RGBA8, mipmaps: true,
-      minFilter: FILTER_LINEAR_MIPMAP_LINEAR, magFilter: FILTER_LINEAR, name: 'city' });
-    tex.setSource(c);
-    const mat = new StandardMaterial();
-    mat.useLighting = false; mat.useFog = false; mat.useSkybox = false;
-    mat.diffuse = Color.BLACK; mat.emissiveMap = tex; mat.emissive = Color.WHITE; mat.emissiveIntensity = 3;
-    mat.update();
-    // A plane's normal is its local +Y and its image runs along local X (across) and Z (down the picture):
-    // [position, normal (towards the apartment), width, height]
-    for (const [p, n, w, h] of [[[-40, 4, 1.5], [1, 0, 0], 110, 55], [[4, 4, -40], [0, 0, 1], 120, 60]]) {
-      const y = new Vec3(...n), z = new Vec3(0, -1, 0), x = new Vec3().cross(y, z);
-      const rot = new Quat().setFromMat4(new Mat4().set([x.x, x.y, x.z, 0, y.x, y.y, y.z, 0, z.x, z.y, z.z, 0, 0, 0, 0, 1]));
-      const e = new Entity('city');
-      e.addComponent('render', { type: 'plane', material: mat, castShadows: false, receiveShadows: false });
-      e.setPosition(...p); e.setRotation(rot); e.setLocalScale(w, 1, h);
-      this.app.root.addChild(e);
-    }
-  }
-
   // Lightning every 25-70 s: two or three flickers of cold light from the sky, thunder a few seconds later.
   lightning(dt) {
     const f = this.flash;
@@ -259,6 +178,7 @@ export class Rain {
       if (f.time > 2) f.seq = [];
     }
     this.moon.light.intensity = this.moonBase + power;
-    for (const s of this.streaks) s.particlesystem.intensity = 1 + power * 0.8;
+    for (const s of this.streaks) s.particlesystem.intensity = power * 0.9;   // the rain outside shows only in a flash
+    if (this.glass && (power > 0 || this.glass.emissiveIntensity > 0)) { this.glass.emissiveIntensity = power * 0.12; this.glass.update(); }
   }
 }

@@ -1,14 +1,13 @@
-// The flashlight: lies on a shelf of the bedroom's open shoe closet until picked up (E), then is held in the right
-// hand (viewmodel) and toggled with F. A shadow-casting spot light with a cookie (hot spot, soft rings, lens smudges)
+// The flashlight: lies on the shelf behind the bedroom wardrobe's left door until picked up (E), then is held in the
+// right hand (viewmodel) and toggled with F. A shadow-casting spot light with a cookie (hot spot, soft rings, lens smudges)
 // scatters in the room haze, so the beam is visible. The hand trails the view slightly and sways with each step.
-// The body is built from primitives as a placeholder until a downloaded model can replace it (docs/HANDOFF.md).
-import { Color, Entity, Quat, StandardMaterial, Texture, Vec3, PIXELFORMAT_RGBA8, ADDRESS_CLAMP_TO_EDGE } from 'playcanvas';
+import { Color, Entity, Quat, Texture, Vec3, PIXELFORMAT_RGBA8, ADDRESS_CLAMP_TO_EDGE } from 'playcanvas';
 
-const SHELF = new Vec3(9.56, 0.848, 1.56);     // bedroom shoe closet, middle shelf, next to the shoes
-const HOLD = new Vec3(0.16, -0.19, -0.34);    // hand position relative to the eye
+const HOLD = new Vec3(0.17, -0.21, -0.38);    // hand position relative to the eye (the lantern hangs from its handle)
 
 export class Flashlight {
-  constructor(app, camera, interactions, sounds, hud) {
+  // spot: { x, z, shelf (height of the shelf top), yaw }
+  constructor(app, camera, apartment, interactions, sounds, hud, spot) {
     this.app = app;
     this.camera = camera;
     this.sounds = sounds;
@@ -16,47 +15,44 @@ export class Flashlight {
     this.held = false;
     this.on = false;
     this.rot = new Quat();
-    this.model = this.build();
-    this.model.setPosition(SHELF);
-    this.model.setEulerAngles(0, 20, 90);   // lying on its side, roughly along the shelf
+    this.halfHeight = 0.07;
+    this.model = this.build(apartment);
+    const rest = new Vec3(spot.x, spot.shelf + this.halfHeight, spot.z);
+    this.model.setPosition(rest);
+    this.model.setEulerAngles(0, spot.yaw, 0);
     app.root.addChild(this.model);
-    this.item = interactions.add({ pos: SHELF.clone(), size: 0.14, label: () => 'E · Take the flashlight', use: () => this.pickUp() });
+    this.item = interactions.add({ pos: rest, size: 0.16, label: () => 'E · Take the flashlight', use: () => this.pickUp() });
     this.interactions = interactions;
     window.addEventListener('keydown', (e) => { if (e.code === 'KeyF' && !e.repeat && this.held) this.toggle(); });
     app.on('update', (dt) => this.update(dt));
   }
 
-  build() {
-    const mat = (r, g, b, gloss, metal, emissive) => {
-      const m = new StandardMaterial();
-      m.diffuse = new Color(r, g, b); m.gloss = gloss; m.useMetalness = true; m.metalness = metal;
-      if (emissive) { m.emissive = emissive; m.emissiveIntensity = 0; }
-      m.update(); return m;
-    };
-    const body = mat(0.05, 0.05, 0.055, 0.55, 0.8), grip = mat(0.02, 0.02, 0.02, 0.2, 0), chrome = mat(0.8, 0.8, 0.82, 0.9, 1);
-    this.lensMat = mat(0.9, 0.92, 0.95, 0.95, 0, new Color(1, 0.95, 0.85));
+  // The model is Poly Haven's "Vintage Flashlight" (CC0), merged into the apartment file by the asset pipeline
+  // (materials 'Prop_flashlight.*'); its lens faces the model's +Z, turned here so the beam runs along -Z.
+  build(apartment) {
     const root = new Entity('flashlight');
-    // PlayCanvas cylinders/cones stand along +Y; the model points its beam along -Z, so parts are tipped by -90 deg X.
-    const part = (type, mat, sx, sy, sz, z) => {
-      const e = new Entity(); e.addComponent('render', { type, material: mat, castShadows: true });
-      e.setLocalScale(sx, sy, sz); e.setLocalEulerAngles(-90, 0, 0); e.setLocalPosition(0, 0, z); root.addChild(e); return e;
-    };
-    part('cylinder', body, 0.032, 0.15, 0.032, 0.06);       // barrel
-    part('cylinder', grip, 0.034, 0.06, 0.034, 0.07);       // rubber grip
-    part('cone', body, 0.05, 0.045, 0.05, -0.035);          // flared head
-    part('cylinder', chrome, 0.052, 0.012, 0.052, -0.058);  // bezel
-    part('cylinder', this.lensMat, 0.046, 0.004, 0.046, -0.063);
-    const button = new Entity(); button.addComponent('render', { type: 'box', material: grip });
-    button.setLocalScale(0.01, 0.006, 0.016); button.setLocalPosition(0, 0.017, 0.02); root.addChild(button);
+    const r = apartment.findComponents('render').find(c => c.meshInstances.some(mi => mi.material.name.startsWith('Prop_flashlight.')));
+    if (r) {
+      const e = r.entity;
+      e.reparent(root);
+      e.setLocalPosition(0, 0, 0); e.setLocalEulerAngles(0, 180, 0);
+      // Centre the body on the root, so the root is the point it is held by and rests on.
+      const box = r.meshInstances[0].aabb.clone();
+      for (const mi of r.meshInstances.slice(1)) box.add(mi.aabb);
+      e.setLocalPosition(-box.center.x, -box.center.y, -box.center.z);
+      this.halfHeight = box.halfExtents.y;
+      this.lensMat = r.meshInstances.map(mi => mi.material).find(m => /glass/i.test(m.name));
+    }
+    if (this.lensMat) { this.lensMat.emissive = new Color(1, 0.93, 0.8); this.lensMat.emissiveIntensity = 0; this.lensMat.update(); }
 
     this.beam = new Entity('flashlight beam');
     this.beam.addComponent('light', {
-      type: 'spot', color: new Color(1, 0.95, 0.86), intensity: 0, range: 16, innerConeAngle: 9, outerConeAngle: 30,
+      type: 'spot', color: new Color(1, 0.93, 0.82), intensity: 0, range: 16, innerConeAngle: 9, outerConeAngle: 30,
       castShadows: true, shadowResolution: 1024, shadowBias: 0.2, normalOffsetBias: 0.03, volumetricScattering: 1.3,
       cookie: this.cookie(), cookieIntensity: 1, enabled: false,
     });
     this.beam.setLocalEulerAngles(90, 0, 0);   // spot lights shine along -Y: turn that to -Z
-    this.beam.setLocalPosition(0, 0, -0.07);
+    this.beam.setLocalPosition(0, 0.035, -0.17);   // just in front of the lens
     root.addChild(this.beam);
     return root;
   }
@@ -84,7 +80,7 @@ export class Flashlight {
     this.held = true;
     this.interactions.remove(this.item);
     this.model.reparent(this.app.root);
-    this.model.findComponents('render').forEach(r => { r.castShadows = false; });
+    this.model.findComponents('render').forEach(r => { r.castShadows = false; });   // its own beam must not hit it
     this.rot.copy(this.camera.getRotation());
     this.sounds?.pickUp();
     this.hud?.('F · Flashlight on / off');
@@ -96,8 +92,7 @@ export class Flashlight {
     this.sounds?.flashlightClick(this.on);
     this.beam.light.enabled = this.on;
     this.beam.light.intensity = this.on ? 7 : 0;
-    this.lensMat.emissiveIntensity = this.on ? 8 : 0;
-    this.lensMat.update();
+    if (this.lensMat) { this.lensMat.emissiveIntensity = this.on ? 6 : 0; this.lensMat.update(); }
   }
 
   // Disable the beam briefly (the room probe must not capture it).

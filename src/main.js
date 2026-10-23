@@ -2,15 +2,16 @@
 // Hash options (the only URL part that survives in a claude.ai artifact): #webgl forces WebGL2, #stats shows timings,
 // #shot=x,z,yaw[,pitch] places the camera and skips the intro (used by tools/shoot.mjs for screenshots),
 // #q=1|2|3 picks the quality level, #ev=<number> and #amb=<number> override exposure and bounce light (for tuning),
-// #dark switches every light off, #flash starts with the flashlight in hand.
+// #dark switches every light off, #flash starts with the flashlight in hand, #open opens the wardrobe.
 import * as pc from 'playcanvas';
 import { WalkGrid } from './walkgrid.js';
 import { Player } from './player.js';
-import { setupLighting, captureProbe } from './lighting.js';
+import { setupLighting, captureProbe, addDownlights } from './lighting.js';
 import { setupPost, setQuality } from './post.js';
 import { Ambience } from './ambience.js';
 import { Interactions } from './interact.js';
 import { Switches } from './switches.js';
+import { Closets, FLASHLIGHT_SPOT } from './closets.js';
 import { Flashlight } from './flashlight.js';
 import { Rain } from './rain.js';
 
@@ -87,6 +88,7 @@ const camera = new pc.Entity('camera');
 camera.addComponent('camera', { fov: 68, nearClip: 0.05, farClip: 60, clearColor: new pc.Color(0, 0, 0) });
 app.root.addChild(camera);
 const lit = setupLighting(app);
+const downlights = addDownlights(app, grid);
 const frame = setupPost(app, camera);
 if (hash.has('q')) setQuality(frame, Number(hash.get('q')));
 
@@ -97,7 +99,11 @@ if (shot && shot.length > 3) { player.pitch = shot[3]; player.apply(0); }
 const ambience = new Ambience();
 const interactions = new Interactions(camera, $('prompt'));
 const toast = (text) => { const t = $('toast'); t.textContent = text; t.hidden = false; t.classList.remove('fade'); clearTimeout(toast.timer); toast.timer = setTimeout(() => t.classList.add('fade'), 4000); };
-const flashlight = new Flashlight(app, camera, interactions, ambience, toast);
+const closets = new Closets(app, apartment, interactions, ambience);
+if (hash.has('open')) closets.doors.forEach(d => closets.toggle(d));
+const flashlight = new Flashlight(app, camera, apartment, interactions, ambience, toast,
+  { x: FLASHLIGHT_SPOT.pos.x, z: FLASHLIGHT_SPOT.pos.z, shelf: 1.84, yaw: -90 });
+frontDoor(apartment);
 
 // The room probe (ambient bounce + reflections) is captured from the lit room, and again whenever a switch changes
 // the lighting, with the flashlight beam held out of it.
@@ -117,7 +123,7 @@ const recapture = async () => {
   } while (capturing.again);
   capturing = null;
 };
-const switches = new Switches(app, grid, apartment, interactions, ambience, recapture);
+const switches = new Switches(app, grid, apartment, interactions, ambience, recapture, downlights);
 if (hash.has('dark')) switches.rooms.forEach(r => { if (r.on) switches.toggle(r); });
 if (hash.has('flash')) flashlight.pickUp();
 const rain = new Rain(app, apartment, ambience, lit);
@@ -194,6 +200,17 @@ async function modelFile() {
   return { url: URL.createObjectURL(new Blob([glb], { type: 'model/gltf-binary' })), filename: 'apartment.glb' };
 }
 
+// The front door (downloaded model, materials 'Prop_front_door.*') is the way out, and it is locked.
+function frontDoor(root) {
+  const parts = root.findComponents('render').filter(r => r.meshInstances.some(mi => mi.material.name.startsWith('Prop_front_door.')));
+  if (!parts.length) return;
+  const box = parts[0].meshInstances[0].aabb.clone();
+  for (const r of parts) for (const mi of r.meshInstances) box.add(mi.aabb);
+  const c = box.center;
+  interactions.add({ pos: new pc.Vec3(c.x, 1.05, box.getMin().z), size: 0.45, label: () => 'E · Front door',
+    use: () => { ambience.lockedDoor(); toast('It is locked.'); } });
+}
+
 function showHint() {
   const h = $('hint');
   if (h.dataset.shown) return;
@@ -203,7 +220,7 @@ function showHint() {
 
 // Glass stays see-through but reflective; screens and lamp emitters glow into the bloom without blinding.
 function tuneMaterials(root) {
-  const seen = new Set();
+  const seen = new Set(), hidden = new Set();
   for (const r of root.findComponents('render')) for (const mi of r.meshInstances) {
     const m = mi.material;
     if (seen.has(m)) continue;
@@ -212,9 +229,10 @@ function tuneMaterials(root) {
     if (/Screen/i.test(m.name)) m.emissiveIntensity = 0.35;
     if (m.name === 'Keylight') m.emissiveIntensity = 0.6;
     if (m.name === 'Light') m.emissiveIntensity = 3;
-    if (m.name === '97.001') m.opacity = 0.1;   // sheer curtains drawn across the windows: thin enough to see the rain
+    if (m.name === '97.001') { m.opacity = 0; m.update(); hidden.add(m); }   // sheer curtains across the windows: drawn back, so the rain shows
     m.update();
   }
+  for (const r of root.findComponents('render')) for (const mi of r.meshInstances) if (hidden.has(mi.material)) mi.visible = false;
 }
 
 function stats(app, device) {
