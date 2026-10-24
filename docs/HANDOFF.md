@@ -1,7 +1,8 @@
 # Hand-off: read this first
 
 A browser horror game in the spirit of Konami's P.T. (first person, one quiet home, photoreal, AAA look). The owner
-works with AI agents; whoever picks this up continues from the state below and keeps this file current.
+works with AI agents; whoever picks this up continues from the state below and keeps this file current. A new Claude
+session starts from `CLAUDE.md` (repo root: what to read, rules, commands, publishing); keep it current too.
 
 ## Main promotion and Claude continuation — 2026-10-24
 

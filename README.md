@@ -7,7 +7,7 @@ open, a laptop, computer and coffee machine to use, a flashlight to find (only i
 down the windows, lightning and thunder, warm night lighting that fades softly into darkness (bounce light from probes
 around the flat, eye adaptation), post-processing and ambient sound.
 
-Read `docs/HANDOFF.md` first if you are picking this up (state, owner's preferences, how things fit together).
+Read `docs/HANDOFF.md` first if you are picking this up (state, owner's preferences, how things fit together). Claude Code sessions load `CLAUDE.md` automatically: it lists what to read, the working rules, commands and how to publish.
 For Claude's continuation after the owner-approved 0.11 promotion, read [CLAUDE_HANDOFF.md](docs/CLAUDE_HANDOFF.md); build 0.12 is described in [BUILD_012.md](docs/BUILD_012.md).
 
 All Codex reviews continue on `codex-review`, while Claude works on its own branch. Codex merges into or pushes to `main` only when the owner explicitly asks. The first review adds a lighting/material pass and interaction fixes. See [the change list and validation guide](docs/CODEX_ENVIRONMENT_PASS.md), [side-by-side screenshots](docs/review/README.md), and [preview deployment instructions](docs/PREVIEW_DEPLOYMENT.md).
