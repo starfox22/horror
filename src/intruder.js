@@ -57,6 +57,7 @@ export class Intruder {
     this.pos = new Vec3(); this.yaw = 0; this.clip = null; this.speed = 0;
     this.torchYaw = null;            // where his light points (stalker.js sweeps it); null: where he faces
     this.headPitch = 0;              // degrees added to the animated head (seccam.js: looking up into the lens)
+    this.torchUnder = false;         // his light held under his chin, up into the mask (death.js)
     this._q = new Quat(); this._v = new Vec3();
   }
 
@@ -91,6 +92,14 @@ export class Intruder {
     // A head turned on top of the animation (looking up into the camera's lens): Biped head bones nod about local Z.
     if (this.headPitch && this.head) this.head.rotateLocal(0, 0, this.headPitch);
     if (!this.torchOn) return;
+    // Held under his chin (death.js: the grab): the light from below his face, up into the mask.
+    if (this.torchUnder) {
+      const f = this.head.getPosition(), fx = Math.sin(this.yaw * Math.PI / 180), fz = Math.cos(this.yaw * Math.PI / 180);
+      this.torch.setPosition(f.x + fx * 0.32, f.y - 0.42, f.z + fz * 0.32);
+      this.torch.lookAt(f.x + fx * 0.12, f.y + 0.02, f.z + fz * 0.12);
+      this.torch.rotateLocal(90, 0, 0);
+      return;
+    }
     const p = this.hand ? this.hand.getPosition() : this.root.getPosition();
     this.torch.setPosition(p.x, Math.max(0.9, p.y), p.z);
     // The model faces +Z at yaw 0 (heading (sin yaw, cos yaw) in x, z); a spot shines along its local -Y, which

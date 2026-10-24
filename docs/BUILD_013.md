@@ -162,4 +162,39 @@ The owner asked to keep assets that were downloaded along the way:
 
 ## 7. Verification
 
-See the end of this file; it is filled in after the runs.
+### Node regressions
+
+`node --test tools/check-*.mjs`: 127 tests pass. They include the new tests:
+- `check-power.mjs`: the RCD trips the flat, the label's way and the shortcut both work, the cascade.
+- `check-stalker.mjs`: his senses and states, and a smart player versus a careless one.
+- `check-story.mjs`: the beats with their timers and fallbacks, the front door before and during the hunt, the key bowl,
+  the seeds, checkpoints, caught and waking.
+- `check-story-wiring.mjs`: every `sys.<system>.<method>()` the story calls exists. It catches what stubs hide: the first
+  play-through found the hatch asked of the world instead of the nest.
+
+### A whole night, headless
+
+The night is played headless on the built game: `#play`, with the systems stepped by hand because software
+rendering runs at about a frame a second. Every check passes and there are no page errors:
+
+| Act | Checks |
+| --- | --- |
+| Menus | Title, difficulty, settings, journal and endings, credits |
+| I | Act I begins. Phone found in the fridge. The glass breaks 3 s after the fridge shuts. It plays routed to the kitchen with a floor of 0.32. The shards are seen. The knock is answered by the cut (Act II). |
+| II | Fuse box opened. The figure at the end of the corridor, then gone. Power restored the label's way, the wet circuit off (Act III). |
+| III | The wiped mirror. The nest found. Polaroids. The phone boots on the alerts. LIVE, then the hunt (Act IV). |
+| IV | Caught, waking in bed. The police come: "The Lodger" card (time, clock, caught, evidence, what it points to). |
+
+The first run found two problems: the hatch bug above, and the pause screen. The headless browser drops pointer lock;
+pausing then is the right behaviour, so the test keeps the pause screen away. The captures from these runs are in
+`build-013/`.
+
+### The props in place
+
+Staging renders of every placed prop are in `build-013/`. Each is shot from the floor beside it, with the camera set
+directly: `place()` would move a camera standing on furniture to the nearest free cell.
+
+### No shaders or shadow bursts in play
+
+`tools/perf/final-check.mjs`, after the warm-up. The steps are Act I's interactions plus the night's: the cut, the fuse
+box, the levers, the figure, the phone, LIVE, the hunt and the grab. Results are below.

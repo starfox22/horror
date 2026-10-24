@@ -30,6 +30,13 @@ const PRINTS = [
   [12.42, 3.38, -90, 'L'], [12.42, 3.66, -90, 'R'],
   [12.1, 3.7, -105, 'R'], [11.6, 3.62, -100, 'L'], [11.15, 3.42, -115, 'R'], [10.75, 3.1, -125, 'L'], [10.45, 2.75, -140, 'R'],
 ];
+// The story's things are small and come and go: the reflection probes leave them out (a probe capture would otherwise
+// draw them for the first time mid-game, and build their shaders then).
+export function noProbes(root) {
+  for (const r of root.findComponents('render')) for (const mi of r.meshInstances) {
+    mi.isVisibleFunc = cam => !cam.node?.name?.startsWith('probe-') && cam.frustum.containsAabb(mi.aabb);
+  }
+}
 const paper = (w, h, draw) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); draw(g, w, h); return c; };
 
 export class World {
@@ -45,6 +52,7 @@ export class World {
     this.buildSpareKey();
     this.buildThings();
     this.shards(false); this.flood(0); this.prints(false); this.mirrorFog(false);
+    noProbes(this.root);
     app.on('update', dt => this.update(dt));
   }
 

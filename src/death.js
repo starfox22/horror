@@ -1,5 +1,5 @@
-// Caught (docs/STORY.md Act IV): the view is wrenched round to him in a quarter of a second, his phone light full in the
-// face, his breath, the sting; black. Then the bedroom: you jerk awake in bed, gasping, the bedside clock glowing 03:07
+// Caught (docs/STORY.md Act IV): the view is wrenched round to him in a quarter of a second, his phone light under his
+// chin lighting the white mask from below, his breath, the sting; black. Then the bedroom: you jerk awake in bed, gasping, the bedside clock glowing 03:07
 // for a second in a flat with no power; under eight seconds in all, any key skips the wake. The hunt then resumes
 // (story.js wake) with the player's progress intact.
 import { Vec3 } from 'playcanvas';
@@ -27,7 +27,9 @@ export class Death {
     toHim.normalize();
     man.show(true);
     man.place(eye.x + toHim.x * d, eye.z + toHim.z * d, Math.atan2(-toHim.x, -toHim.z) * 180 / Math.PI, man.pos.y);
-    man.torchYaw = null; man.torchPitch = 8; man.setTorch(true, 4.5);
+    // His phone light comes up under his chin: the white mask lit from below is the last thing you see.
+    man.torchYaw = null; man.torchPitch = 8; man.torchUnder = true; man.setTorch(true, 3.2);
+    man.headPitch = 14;                         // looking down into your eyes
     man.play('idle_breathe_01', { blend: 0.05 });
     this.bank?.play('his_breath_2', { gain: 1, bus: 'sfx' });
     this.music?.sting('scare');
@@ -37,7 +39,7 @@ export class Death {
 
   // The wake: lying in bed, eyes opening, sitting up to the bedside (3 s). done() when standing.
   wakeUp(done) {
-    this.intruder.show(false); this.intruder.setTorch(false);
+    this.intruder.torchUnder = false; this.intruder.headPitch = 0; this.intruder.show(false); this.intruder.setTorch(false);
     this.running = { t: 0, wake: true, wakeEnd: 3.2, done };
     this.bank?.play('gasp', { gain: 0.9, delay: 0.25 });
     this.bank?.play('bed_move', { gain: 0.6, delay: 0.4 });

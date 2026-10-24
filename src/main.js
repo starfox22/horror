@@ -366,6 +366,8 @@ if (!shot || hash.has('warm')) {
     // The intruder two metres in front of each view, so every angle of him (and his light's shadow) is built.
     const c = camera.getPosition(), fw = camera.forward;
     intruder.place(c.x + fw.x * 2, c.z + fw.z * 2, Math.atan2(-fw.x, -fw.z) * 180 / Math.PI, Math.max(0.16, c.y - 1.5));
+    // The home camera looks at him too (its own tone mapping makes its own shader variants: LIVE shows him).
+    seccam.entity.lookAt(intruder.pos.x, intruder.pos.y + 1.2, intruder.pos.z);
   }, reveal: [
     revealInFront(drink.handCarrier),
     () => {
@@ -378,6 +380,7 @@ if (!shot || hash.has('warm')) {
     () => { rain.revealing = true; return () => { rain.revealing = false; }; },
     // Build 0.13: the story's later things on view for the sweep (their shaders, and the intruder's light's shadows).
     revealInFront(phone.holder, new pc.Vec3(0.05, -0.1, -0.35)),
+    () => { const was = phone.video.enabled; phone.video.enabled = true; return () => { phone.video.enabled = was; }; },
     () => {
       const was = { shards: world.hasShards, flood: world.floodLevel, prints: world.printRoot.enabled, fog: world.fog.enabled, hatch: nest.hatchOpen, dryer: !!world.dryer?.enabled, charging: phone.onCharger };
       world.shards(true); world.flood(1); world.prints(true); world.mirrorFog(true); nest.hatch(true); nest.dustEntity.particlesystem.play();
@@ -387,7 +390,7 @@ if (!shot || hash.has('warm')) {
       return () => {
         world.shards(was.shards); world.flood(was.flood); world.prints(was.prints); world.mirrorFog(was.fog); nest.hatch(was.hatch); nest.dustEntity.particlesystem.stop();
         world.dryerInBasin(was.dryer); phone.charger?.(was.charging);
-        intruder.setTorch(false); intruder.show(false); seccam.entity.camera.enabled = false;
+        intruder.setTorch(false); intruder.show(false); seccam.entity.camera.enabled = false; seccam.aimHome();
       };
     },
     // Every shadowed lamp that starts off, on at zero for the sweep: its shadow is drawn (and its shadow shaders built)

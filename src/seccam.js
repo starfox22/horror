@@ -100,6 +100,9 @@ fn hash(p: vec2f) -> f32 { return fract(sin(dot(p, vec2f(12.9898, 78.233)) + uni
     app.on('update', dt => this.update(dt));
   }
 
+  // Back on its bracket's view (the warm-up turns it to look at him).
+  aimHome() { this.entity.setPosition(...CAM.pos); this.entity.lookAt(new Vec3(...CAM.look)); }
+
   // The infrared pass after the camera has drawn (every other frame while LIVE is on).
   blit() {
     if (!this.entity.camera.enabled) return;

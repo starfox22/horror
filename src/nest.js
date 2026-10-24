@@ -6,6 +6,7 @@
 // The things are downloaded models (props.js: tools/props), with simple stand-ins if one is missing.
 import { BLEND_NORMAL, Color, Curve, CurveSet, Entity, StandardMaterial, Texture, Vec3, EMITTERSHAPE_BOX, PIXELFORMAT_RGBA8 } from 'playcanvas';
 import { effectsLayers } from './lighting.js';
+import { noProbes } from './world.js';
 
 // The rail half of the tall section (closets.js SECTIONS.tall: z from the divider -0.523 to 0.276), its roof at 2.27.
 export const NEST = { x0: 9.29, x1: 9.70, z0: -0.51, z1: 0.26, floor: 0.17, roof: 2.27, hatch: { x: 9.5, z: -0.12, size: 0.36 } };
@@ -45,6 +46,7 @@ export class Nest {
     item(this.props.key, 'Pick up the key', () => { this.story?.oldKey(); this.hud?.examine({ className: 'typed', html: '<h1>A key</h1>Brass, worn. A front-door key.<br><br>It doesn’t fit my door: the landlord changed the lock in the spring.' }); });
     item(this.props.letter, 'Read the envelope', () => { this.story?.letter(); this.hud?.examine({ className: 'typed', html: '<h1>RETURN TO SENDER</h1>Mr D. Kessler<br>Flat 5C<br><br><i>Not known at this address.</i><br><br>Postmarked in April.' }); });
     item(this.props.blanket, 'The blanket', () => { this.story?.nestSeen(); this.story?.say('It’s warm.'); });
+    noProbes(this.root);
     this.reset();
   }
 

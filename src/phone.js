@@ -281,8 +281,10 @@ export class Phone {
     this.holder.enabled = this.raiseK > 0.02;
     if (this.holder.enabled) {
       const k = this.raiseK, t = performance.now() / 1000;
-      this.holder.setLocalPosition(0.075, -0.13 - (1 - k) * 0.18 + Math.sin(t * 1.3) * 0.002, -0.27);
-      this.holder.setLocalEulerAngles(8 + (1 - k) * 25, -6, Math.sin(t * 0.9) * 0.6);
+      // Held up in front of you while you watch the camera (clips, LIVE), lower to the right otherwise.
+      const watch = this.watchK = (this.watchK ?? 0) + (((this.app_ === 'clip' || this.app_ === 'live') ? 1 : 0) - (this.watchK ?? 0)) * (1 - Math.exp(-dt * 6));
+      this.holder.setLocalPosition(0.075 - 0.045 * watch, -0.13 + 0.035 * watch - (1 - k) * 0.18 + Math.sin(t * 1.3) * 0.002, -0.27 + 0.03 * watch);
+      this.holder.setLocalEulerAngles(8 - 4 * watch + (1 - k) * 25, -6 + 4 * watch, Math.sin(t * 0.9) * 0.6);
     }
     if (this.raised && (this.app_ === 'clip' || this.app_ === 'live' || this.app_ === 'call')) this.dirty = true;
     if (this.dirty && this.holder.enabled) { this.draw(); this.dirty = false; }

@@ -40,7 +40,7 @@ jh.writeUInt32LE(json.length, 0); jh.writeUInt32LE(0x4e4f534a, 4);
 bh.writeUInt32LE(bin.length, 0); bh.writeUInt32LE(0x004e4942, 4);
 const glb = Buffer.concat([header, jh, json, bh, bin]);
 
-for (const f of readdirSync(APT)) if (f !== 'collision.json') rmSync(`${APT}/${f}`, { recursive: true });
+for (const f of readdirSync(APT)) if (f !== 'collision.json' && f !== 'sight.json') rmSync(`${APT}/${f}`, { recursive: true });
 const parts = [];
 for (let at = 0, n = 0; at < glb.length; at += PART, n++) {
   const file = `apartment-${n}.txt`;

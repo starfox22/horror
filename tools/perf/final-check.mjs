@@ -22,10 +22,18 @@ const [url, mode = 'webgl'] = process.argv.slice(2);
     sr.renderFace = (...a) => { faces++; frameFaces++; return rf(...a); };
     app.on('frameend', () => { maxFaces = Math.max(maxFaces, frameFaces); frameFaces = 0; });
     const frames = n => new Promise(r => { let k = 0; const f = () => { if (++k >= n) { app.off('frameend', f); r(); } }; app.on('frameend', f); });
+    // Which material (and pass, camera) built each new shader.
+    const built = [];
+    const proto = Object.getPrototypeOf(s.pc.StandardMaterial.prototype);
+    for (const P of [s.pc.StandardMaterial.prototype, proto]) {
+      const orig = P.getShaderVariant; if (!orig || orig.__wrapped) continue;
+      P.getShaderVariant = function (params) { const before = dev.shaders.length, sh = orig.call(this, params); if (dev.shaders.length > before) built.push(`${this.name}|pass ${params?.pass}|${params?.cameraShaderParams?.toneMapping ?? ''}`); return sh; };
+      P.getShaderVariant.__wrapped = true;
+    }
     const step = async (name, fn, n = 6) => {
       const before = dev.shaders.length; faces = 0; maxFaces = 0;
       await fn(); await frames(n);
-      out.steps.push({ name, shaders: dev.shaders.slice(before).map(x => x.name), shadowFaces: faces, maxFacesPerFrame: maxFaces });
+      out.steps.push({ name, shaders: dev.shaders.slice(before).map(x => x.name), materials: built.splice(0), shadowFaces: faces, maxFacesPerFrame: maxFaces });
     };
     s.player.camera = s.camera;
     await step('open fridge', async () => { s.fridge.toggle(); for (let i = 0; i < 400 && s.fridge.moving; i++) { s.fridge.update(1 / 60); await frames(1); } });
@@ -49,7 +57,7 @@ const [url, mode = 'webgl'] = process.argv.slice(2);
     await step('caught', async () => { s.story.caught(); }, 20);
     return out;
   });
-  for (const st of result.steps) console.log(st.name.padEnd(16), JSON.stringify({ shaders: st.shaders, shadowFaces: st.shadowFaces, maxFacesPerFrame: st.maxFacesPerFrame }));
+  for (const st of result.steps) console.log(st.name.padEnd(16), JSON.stringify({ shaders: st.shaders, materials: st.materials, shadowFaces: st.shadowFaces, maxFacesPerFrame: st.maxFacesPerFrame }));
   console.log('problems', JSON.stringify(problems));
   await browser.close();
 })();
