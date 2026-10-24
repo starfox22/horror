@@ -372,14 +372,19 @@ Full list, measurements and before/after renders: [BUILD_012.md](BUILD_012.md). 
 
 ## Continuation
 
-1. Build 0.12 (Claude) is on `main` at the owner's request (2026-10-24) and on `claude/pensive-volta-et0etl`; read
-   [BUILD_012.md](BUILD_012.md) and [CLAUDE_HANDOFF.md](CLAUDE_HANDOFF.md). Codex continues on `codex-review`: merge the
-   current `main` into it before its next pass.
-2. All items of the owner's 0.12 request are done; 107 Node regressions pass (`node --test tools/check-*.mjs`) and the
-   browser checks in `tools/perf/` pass on WebGL 2 and WebGPU (software rendering).
-3. More scripted events go into `src/story-events.js` in story order (the developer menu lists them). Further scares,
-   enemies, puzzles and the P.T. loop need a new owner request. Remaining ambience recordings, opening more cabinets,
-   mirror reflections and engine upgrades are future ideas, not active tasks.
+1. Build 0.13 (Claude) is on `claude/pensive-volta-et0etl` and, at the owner's request ("publish directly to main"),
+   on `main`; read [BUILD_013.md](BUILD_013.md) and [STORY.md](STORY.md) first. Codex continues on `codex-review`:
+   merge the current `main` into it before its next pass.
+2. The night is complete: four endings, deaths that wake you at 03:07, checkpoints per act, chapters after a first
+   ending, a journal of 18 pieces of evidence, three difficulties. Node regressions: `node --test tools/check-*.mjs`;
+   browser checks: `tools/perf/final-check.mjs` (WebGL and WebGPU) and the headless play-through described in
+   BUILD_013.md (Verification).
+3. Ideas not yet asked for (need an owner request): more rooms for him to use (the bathroom ceiling, the balcony), a
+   mirror reflection pass, voice acting for the dispatcher and police (captions only today), more polaroid photos (only
+   one shot is baked), more replay variations (where he starts, which circuit is wet), localisation.
+4. Assets to keep in mind: the unmasked Rocketbox man (`assets-src/intruder/intruder-plain.glb`, used only for the
+   sleeper in the baked clips) and every candidate model the scout found (masks, phones, cameras, papers: the
+   list and their licences are recorded in BUILD_013.md, Assets kept for later).
 
 ## History
 - 2026-10-22: proposal (docs/PROPOSAL.md) → owner picked Visthétique's apartment → build 0.1 walkable apartment.

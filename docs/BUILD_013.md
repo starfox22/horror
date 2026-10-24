@@ -116,6 +116,32 @@ Every prop sits on a surface measured in the built flat (the up-facing triangles
 
 The staging renders are in `build-013/`.
 
-## 5. Verification
+## 5. Menus, HUD, saving
+
+- **Title** (`menu.js`): New night (choose how you sleep: Story, Normal, Hard), Continue (the act's checkpoint),
+  Chapters (after a first ending), Journal & endings, Settings, Credits.
+- **Settings**: volumes per bus, mouse sensitivity, invert Y, head bob, subtitle size and backing, reduced flashes,
+  brightness (with a calibration screen), and graphics (the native dialog).
+- **Pause** (Esc, or when pointer lock is lost): resume, restart from the checkpoint, journal, settings, title.
+- **HUD** (`hud.js`): key prompts that fade, the crouch mark, captions for voices (the dispatcher, the police), and
+  documents read full-screen (typed and handwritten papers, the pill label, photographs, with F to turn them over).
+- **Persistence**: settings in `horror.settings.v1`, the run in `horror.save.v1` (one checkpoint per act),
+  endings and best times in `horror.progress.v1`, evidence ever found in `horror.evidence.v1`.
+- The big title shows on the title screen only; every other screen has its own heading.
+
+## 6. Assets kept for later
+
+The owner asked to keep assets that were downloaded along the way:
+- **`docs/asset-candidates.json`** lists the 78 models the scout found, with author, licence, how the licence was
+  confirmed, raw download URLs and notes. It includes:
+  - other masks: porcelain, rotten rubber, gas masks, a plague mask;
+  - rigged characters, hoodies and gloves;
+  - phones, cameras, pills, notebooks, keys, papers and clocks;
+  - the gaps (an indoor Wi-Fi camera, a digital clock and a hockey or sack mask were not found on GitHub).
+- **`docs/sound-candidates.json`** does the same for the sounds.
+- **The unmasked intruder** is rebuilt by `node tools/intruder/build.mjs plain` into
+  `assets-src/intruder/intruder-plain.glb`.
+
+## 7. Verification
 
 See the end of this file; it is filled in after the runs.

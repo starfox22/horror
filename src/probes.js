@@ -222,12 +222,16 @@ export class Probes {
     }
     // The flashlight (light mask with the lightmapped bit, flashlight.js) lights the player's view only: the clustered
     // light loop skips it while a probe captures, so a capture can take several frames without switching the torch off.
+    // A light with only the lightmapped bit (the home camera's infrared lamp, seccam.js) lights the security camera's
+    // view only (irView 1 while it renders): the player and the probes never see it.
     for (const lang of ['glsl', 'wgsl']) {
       const chunks = ShaderChunks.get(device, lang), code = chunks.get('clusteredLightPS');
       const decl = lang === 'glsl' ? 'uniform float bounceLive;' : 'uniform bounceLive: f32;';
-      const live = lang === 'glsl' ? 'bounceLive' : 'uniform.bounceLive';
-      const patched = code?.replace(/(acceptLightMask(?:: bool)? = clusterLightData\.isDynamic);/, `$1 && (${live} > 0.5 || !clusterLightData.isLightmapped);`);
-      if (patched && patched !== code) chunks.set('clusteredLightPS', `#ifndef BOUNCE_LIVE\n#define BOUNCE_LIVE\n${decl}\n#endif\n${patched}`);
+      const irDecl = lang === 'glsl' ? 'uniform float irView;' : 'uniform irView: f32;';
+      const live = lang === 'glsl' ? 'bounceLive' : 'uniform.bounceLive', ir = lang === 'glsl' ? 'irView' : 'uniform.irView';
+      const patched = code?.replace(/(acceptLightMask(?:: bool)? = )clusterLightData\.isDynamic;/,
+        `$1(clusterLightData.isDynamic && (${live} > 0.5 || !clusterLightData.isLightmapped)) || (${ir} > 0.5 && clusterLightData.isLightmapped && !clusterLightData.isDynamic);`);
+      if (patched && patched !== code) chunks.set('clusteredLightPS', `#ifndef BOUNCE_LIVE\n#define BOUNCE_LIVE\n${decl}\n#endif\n#ifndef IR_VIEW\n#define IR_VIEW\n${irDecl}\n#endif\n${patched}`);
       else console.warn(`probes: ${lang} clusteredLightPS not patched`);
     }
     this.rig = new ProbeRig(app, camera);
@@ -235,9 +239,9 @@ export class Probes {
     for (const z of Object.values(ZONES)) { z.next = equirect(`probe-${z.id}-next`, 512, 512); z.from = equirect(`probe-${z.id}-from`, 512, 512); }
     this.bounceNext = equirect('bounce-light-next', ATLAS_W, SLOT_H);
     this.bounceFrom = equirect('bounce-light-from', ATLAS_W, SLOT_H);
-    const live = device.scope.resolve('bounceLive');
-    live.setValue(1);
-    app.scene.on('prerender', (cam) => live.setValue(cam.entity.name.startsWith('probe-') ? 0 : 1));
+    const live = device.scope.resolve('bounceLive'), irView = device.scope.resolve('irView');
+    live.setValue(1); irView.setValue(0);
+    app.scene.on('prerender', (cam) => { live.setValue(cam.entity.name.startsWith('probe-') ? 0 : 1); irView.setValue(cam.entity.name === 'security camera' ? 1 : 0); });
     // Every apartment material: its room from the '@room' suffix, else from where its meshes are.
     this.materials = [];
     const seen = new Set();

@@ -5,6 +5,7 @@
 // LIVE is also a scene: he comes out of the wardrobe, crosses the room to the lens, looks up into it, and leaves the frame;
 // with the cloud camera's 8 s lag, the power dies the moment he is gone (story.js huntStart).
 import { Color, Entity, RenderTarget, Texture, Vec3, PIXELFORMAT_RGBA8, FILTER_LINEAR, ADDRESS_CLAMP_TO_EDGE, TONEMAP_ACES, GAMMA_SRGB,
+  LIGHTFALLOFF_LINEAR, MASK_AFFECT_LIGHTMAPPED,
   ShaderUtils, SEMANTIC_POSITION, BlendState, drawQuadWithShader } from 'playcanvas';
 
 // The lens (the camera model's front: props.js 'camera', its bracket on the bed wall's panel at x 14.11) and what it looks at.
@@ -34,6 +35,14 @@ export class Seccam {
     this.entity.camera.enabled = false;
     this.entity.setPosition(...CAM.pos); this.entity.lookAt(new Vec3(...CAM.look));
     app.root.addChild(this.entity);
+    // Its infrared lamp (the ring of LEDs round a night camera's lens): a light only this camera sees (mask: the
+    // lightmapped bit alone; probes.js lets the clustered loop take it while 'security camera' renders). No shadow
+    // needed: from the lens it reaches exactly what the lens sees.
+    this.irLamp = new Entity('security camera infrared');
+    this.irLamp.addComponent('light', { type: 'spot', color: new Color(1, 1, 1), intensity: 1.4, range: 9, innerConeAngle: 38, outerConeAngle: 62,
+      castShadows: false, falloffMode: LIGHTFALLOFF_LINEAR, mask: MASK_AFFECT_LIGHTMAPPED, volumetricScattering: 0 });
+    this.irLamp.setPosition(...CAM.pos); this.irLamp.lookAt(new Vec3(...CAM.look)); this.irLamp.rotateLocal(90, 0, 0);
+    app.root.addChild(this.irLamp);
     this.shader = ShaderUtils.createShader(device, {
       uniqueName: 'seccamInfrared', attributes: { vertex_position: SEMANTIC_POSITION },
       vertexGLSL: `attribute vec2 vertex_position; varying vec2 vUv0;

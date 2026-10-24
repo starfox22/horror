@@ -31,7 +31,7 @@ Your doctor told you to film your nights; **the camera arrived today and tonight
 
 | Time | Truth | What the player can find |
 | --- | --- | --- |
-| 00:47 | The camera's motion alert buzzes your phone on the nightstand. He takes the phone and shuts it in the fridge to silence it. | Clip 00:47: the wardrobe's right door opens a hand's width, a pale hand, it closes. The phone in the fridge, dead with cold. |
+| 00:47 | The camera's motion alert buzzes your phone on the nightstand. He takes the phone and shuts it in the fridge to silence it. | Clip 00:47: the wardrobe's left door opens a hand's width, a white face low in the gap, it closes. The phone in the fridge, dead with cold. |
 | 02:58 | You are sleepwalking (you are in the kitchen). He stands at the foot of your empty bed, then notices the camera and turns to it. | Clip 02:58: duvet thrown back, a figure at the foot of the empty bed, face whited out by the infrared, it turns to the lens. "...Is that me?" |
 | 03:07 | You wake in bed (you went back to sleep at 03:01). He is behind the right wardrobe door, holding it shut. | The start. The right wardrobe door is "Stuck." |
 | ~03:09 | You are in the kitchen. He comes out to fetch his glass of water (yours) from the nightstand, knocks it over in the dark, cuts his bare foot. He goes into the bathroom to wash the cut and locks it. | The shattered glass and blood-pink water. "I didn't bring a glass to bed." Tap running behind the locked door. |

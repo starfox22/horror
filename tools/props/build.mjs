@@ -310,28 +310,48 @@ const OPS = {
     t.setImage(await img.composite([{ input: Buffer.from(svg) }]).png().toBuffer()).setMimeType('image/png');
   } },
 
-  // Seven photos in the model: keep three; red smears painted to the card's white; photo areas filled with our shot.
+  // Seven photos in the model: keep three. The photo areas (dark rectangles, the blood smears on them counted as dark)
+  // get our shot, turned so its bottom faces the card's wide margin as on a real print; smears elsewhere are painted
+  // out to the card's white.
   polaroids: { async post(doc, top) {
-    const nodes = meshNodes(doc);
-    for (const n of nodes.slice(3)) n.dispose();
+    for (const n of meshNodes(doc).slice(3)) n.dispose();
     const t = doc.getRoot().listMaterials()[0].getBaseColorTexture();
-    const { data, info } = await sharp(Buffer.from(t.getImage())).raw().toBuffer({ resolveWithObject: true });
-    const W = info.width, H = info.height, C = info.channels;
-    // The photo areas: dark rectangles (found by scanning rows and columns for long dark runs).
-    const dark = (x, y) => { const i = (y * W + x) * C; return data[i] + data[i + 1] + data[i + 2] < 3 * 90 && !(data[i] > data[i + 1] * 1.6); };
+    const { data, info } = await sharp(Buffer.from(t.getImage())).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+    const W = info.width, H = info.height, C = info.channels, at = (x, y) => (y * W + x) * C;
     const red = (i) => data[i] > 38 && data[i] > data[i + 1] * 1.45 && data[i] > data[i + 2] * 1.3;
-    for (let i = 0; i < W * H * C; i += C) if (red(i)) { data[i] = 226; data[i + 1] = 225; data[i + 2] = 221; }
-    const rects = [], step = Math.round(W / 256);
-    for (let y = 0; y < H; y += step) for (let x = W >> 1; x < W; x += step) {
-      if (!dark(x, y) || rects.some(r => x >= r[0] - step && x <= r[2] + step && y >= r[1] - step && y <= r[3] + step)) continue;
-      let x1 = x, y1 = y; while (x1 + step < W && dark(x1 + step, y)) x1 += step; while (y1 + step < H && dark(x, y1 + step)) y1 += step;
-      if (x1 - x > W * 0.08 && y1 - y > H * 0.08) rects.push([x, y, x1, y1]);
+    const darkish = (x, y) => { const i = at(x, y); return red(i) || data[i] + data[i + 1] + data[i + 2] < 3 * 95; };
+    const light = (x, y) => { const i = at(x, y); return !red(i) && data[i] + data[i + 1] + data[i + 2] > 3 * 170; };
+    const rects = [], step = Math.max(1, Math.round(W / 512));
+    for (let y = 0; y < H; y += step) for (let x = 0; x < W; x += step) {
+      if (!darkish(x, y) || rects.some(r => x >= r[0] - 2 * step && x <= r[2] + 2 * step && y >= r[1] - 2 * step && y <= r[3] + 2 * step)) continue;
+      // Grow a box while its edges are mostly dark.
+      let [x0, y0, x1, y1] = [x, y, x, y];
+      const frac = (ax, ay, bx, by) => { let n = 0, d = 0; for (let yy = ay; yy <= by; yy += step) for (let xx = ax; xx <= bx; xx += step) { n++; if (darkish(xx, yy)) d++; } return d / n; };
+      for (let grew = true; grew;) {
+        grew = false;
+        if (x1 + step < W && frac(x1 + step, y0, x1 + step, y1) > 0.8) { x1 += step; grew = true; }
+        if (y1 + step < H && frac(x0, y1 + step, x1, y1 + step) > 0.8) { y1 += step; grew = true; }
+        if (x0 - step >= 0 && frac(x0 - step, y0, x0 - step, y1) > 0.8) { x0 -= step; grew = true; }
+        if (y0 - step >= 0 && frac(x0, y0 - step, x1, y0 - step) > 0.8) { y0 -= step; grew = true; }
+      }
+      if (x1 - x0 > W * 0.07 && y1 - y0 > H * 0.07 && Math.abs((x1 - x0) / (y1 - y0) - 1) < 0.35) rects.push([x0, y0, x1, y1]);
     }
+    const inside = (x, y) => rects.some(r => x >= r[0] && x <= r[2] && y >= r[1] && y <= r[3]);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const i = at(x, y); if (red(i) && !inside(x, y)) { data[i] = 226; data[i + 1] = 225; data[i + 2] = 221; } }
     let image = sharp(data, { raw: info });
     const shot = 'public/assets/clips/polaroid.jpg';
     if (existsSync(shot)) {
       const layers = [];
-      for (const [x0, y0, x1, y1] of rects) layers.push({ input: await sharp(shot).resize(x1 - x0 + 1, y1 - y0 + 1, { fit: 'cover' }).modulate({ brightness: 0.9 }).toBuffer(), left: x0, top: y0 });
+      for (const [x0, y0, x1, y1] of rects) {
+        // The card's wide margin: the side with the most white beyond the photo.
+        const run = (sx, sy, dx, dy) => { let n = 0, x = sx, y = sy; while (x >= 0 && y >= 0 && x < W && y < H && light(x, y) && n < W) { x += dx; y += dy; n++; } return n; };
+        const cx = (x0 + x1) >> 1, cy = (y0 + y1) >> 1;
+        const margin = { down: run(cx, y1 + 2, 0, 1), up: run(cx, y0 - 2, 0, -1), left: run(x0 - 2, cy, -1, 0), right: run(x1 + 2, cy, 1, 0) };
+        const side = Object.entries(margin).sort((a, b) => b[1] - a[1])[0][0];
+        const turn = { down: 0, left: 90, up: 180, right: 270 }[side];
+        const photo = await sharp(shot).rotate(turn).resize(x1 - x0 + 1, y1 - y0 + 1, { fit: 'cover' }).modulate({ brightness: 0.92 }).toBuffer();
+        layers.push({ input: photo, left: x0, top: y0 });
+      }
       image = sharp(await image.png().toBuffer()).composite(layers);
     }
     t.setImage(await image.jpeg({ quality: 90 }).toBuffer()).setMimeType('image/jpeg');

@@ -1,0 +1,1836 @@
+{
+ "_": "Models the 0.13 scout found on GitHub mirrors (licence checked; see notes and licenseConfirmedVia). Used ones are in tools/props/props.json and tools/intruder/mask.json; the rest are kept for later (the owner asked to keep downloaded assets for future use). rawUrl (+ rawUrlExtra siblings) downloads each; gaps list what was not found.",
+ "candidates": [
+  {
+   "need": "intruder: A mask (pale expressionless)",
+   "title": "White Mask",
+   "author": "shedmon (https://sketchfab.com/shedmon)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/white-mask-c0d85900a7be438c8d2400bb71649d31",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/discover3d/godot_game_101/HEAD/nc5432__Godot-Multiplayer/Models/white_mask/scene.gltf",
+   "format": "glTF (scene.gltf + scene.bin + PNG textures)",
+   "sizeBytes": 21584864,
+   "triangles": 3430,
+   "textures": "3x 4096x4096",
+   "notes": "BEST MASK PICK. Glossy white, expressionless full-face mask (eye holes, sculpted nose/lips) with a dark strap that wraps round the back of the head, so it reads as worn. Real scale (about 0.22 x 0.25 m face, strap depth 0.37 m). 3.4k tris, one PBR material (base/normal/metal-rough at 4096 px: downscale to 1k). Generic design, not Ghostface. Attach to the head bone; strap may need a small scale tweak for the Rocketbox head.",
+   "rawUrlExtra": [
+    "(siblings) white_mask/scene.bin, textures/Default_baseColor.jpeg, textures/Default_metallicRoughness.png, textures/Default_normal.png"
+   ],
+   "boundsXYZ": [
+    0.2166,
+    0.246,
+    0.3709
+   ],
+   "materials": 1
+  },
+  {
+   "need": "intruder: A mask (porcelain)",
+   "title": "Porcelain Mask",
+   "author": "sleepwalker77 (https://sketchfab.com/sleepwalker77)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/porcelain-mask-596d7fbddfdd4cbab5a81878e1bd7741",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/LucasTBorges/VideoPlayground/HEAD/src/assets/mask/scene.gltf",
+   "format": "glTF",
+   "sizeBytes": 5540231,
+   "triangles": 47634,
+   "textures": "3x 2048x2048",
+   "notes": "Ivory porcelain full-face mask with fine crackle glaze, calm closed-mouth expression, and a dribble of blood from one eye (the blood is a separate mesh, Mball.007_0, with its own dark-red material: delete it for a clean mask). Very photoreal, the creepiest \"doll\" look. 47.6k tris, 2 materials, 2048 px PBR. Authored in centimetre-ish units (14.6 x 17.9 units): scale about 0.012. No strap (face shell only), so it needs to sit flush on the face.",
+   "rawUrlExtra": [
+    "(siblings) mask/scene.bin, textures/Material.000_baseColor.png, textures/Material.000_metallicRoughness.png, textures/Material.000_normal.png"
+   ],
+   "boundsXYZ": [
+    14.6014,
+    9.3166,
+    17.9423
+   ],
+   "materials": 2
+  },
+  {
+   "need": "intruder: A mask (creepy rubber/decayed)",
+   "title": "Horror mask",
+   "author": "Bulat.Shakirov (https://sketchfab.com/Bulat.Shakirov)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/horror-mask-c548becf104644dd802e158848c8f6b4",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/lucianIrsigler/CGV-game/HEAD/public_html/src/levels/assets/horror_mask/scene.gltf",
+   "format": "glTF",
+   "sizeBytes": 62994498,
+   "triangles": 63452,
+   "textures": "3x 4096x4096",
+   "notes": "Grey, peeling, rotted-latex face mask with hollow eyes and exposed yellow teeth: the \"creepy rubber mask\" option. Real scale (0.16 x 0.22 m). 63k tris (decimate), one PBR set at 4096 px (63 MB source; downscale). Very scary in close-up; less \"Scream\"-like than a pale mask.",
+   "rawUrlExtra": [
+    "(siblings) horror_mask/scene.bin, textures/None_baseColor.png, textures/None_metallicRoughness.png, textures/None_normal.png"
+   ],
+   "boundsXYZ": [
+    0.1601,
+    0.2221,
+    0.1275
+   ],
+   "materials": 1
+  },
+  {
+   "need": "intruder: A featureless hood/balaclava",
+   "title": "Mask (cloth head wrap)",
+   "author": "Shedmon (https://sketchfab.com/shedmon)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/mask-724a39fedf834c83be2b1c29509914ba",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/discover3d/godot_game_101/HEAD/nc5432__Godot-Multiplayer/Models/mask/scene.gltf",
+   "format": "glTF",
+   "sizeBytes": 42747393,
+   "triangles": 854,
+   "textures": "3x 4096x4096",
+   "notes": "Black wrapped-cloth head covering (balaclava / scarf hood) that hides the whole face: a featureless dark head. Good under or instead of a mask, or combined with the white mask. Only 854 tris but a 4096 px PBR set (42 MB source: downscale). Units about 4.2 tall: scale about 0.06.",
+   "rawUrlExtra": [
+    "(siblings) mask/scene.bin, textures/mask_with_hat_baseColor.png, textures/mask_with_hat_metallicRoughness.png, textures/mask_with_hat_normal.png"
+   ],
+   "boundsXYZ": [
+    2.7724,
+    4.2446,
+    3.5122
+   ],
+   "materials": 1
+  },
+  {
+   "need": "intruder: A mask (old gas mask)",
+   "title": "GP-5 gas mask",
+   "author": "Mirai (Sketchfab, short link https://skfb.ly/ooX7Y)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://skfb.ly/ooX7Y",
+   "licenseConfirmedVia": "credits.txt beside the model in github.com/gramble69/Terrarists (main/Scenes/player/gasMask/credits.txt): \"GP-5 gas mask by Mirai is licensed under Creative Commons Attribution\". Licence is NOT embedded in the FBX: confirm on the Sketchfab page before shipping.",
+   "rawUrl": "https://raw.githubusercontent.com/gramble69/Terrarists/HEAD/main/Scenes/player/gasMask/source/m39mask.fbx",
+   "format": "FBX (m39mask.fbx) + 4096 px PNG maps (base, normal DirectX, roughness, metallic)",
+   "sizeBytes": 28567732,
+   "triangles": 24288,
+   "textures": "1x 1x1, 2x 4096x4096",
+   "notes": "Realistic olive Soviet GP-5 rubber gas mask with round glass eyes and screw-on filter canister. 24k tris. The FBX also holds a second copy/shell and the loose filter (see preview): keep the assembled mask only. Normal map is DirectX (flip green). Real scale (~0.35 m). Old-gas-mask option; less human-face creepiness than the white masks.",
+   "rawUrlExtra": [
+    "https://raw.githubusercontent.com/gramble69/Terrarists/HEAD/main/Scenes/player/gasMask/textures/low_Base_color.png",
+    "https://raw.githubusercontent.com/gramble69/Terrarists/HEAD/main/Scenes/player/gasMask/textures/low_Normal_DirectX.png",
+    "https://raw.githubusercontent.com/gramble69/Terrarists/HEAD/main/Scenes/player/gasMask/textures/low_Roughness.png",
+    "https://raw.githubusercontent.com/gramble69/Terrarists/HEAD/main/Scenes/player/gasMask/textures/low_Metallic.png",
+    "https://raw.githubusercontent.com/gramble69/Terrarists/HEAD/main/Scenes/player/gasMask/textures/gas_mask.png",
+    "https://raw.githubusercontent.com/gramble69/Terrarists/HEAD/main/Scenes/player/gasMask/credits.txt"
+   ],
+   "boundsXYZ": [
+    0.353,
+    0.3529,
+    0.7183
+   ],
+   "materials": 2
+  },
+  {
+   "need": "intruder: A mask (gas mask/hood)",
+   "title": "Gas Mask",
+   "author": "TM05 (https://sketchfab.com/TM05)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/gas-mask-0565218a14114608b5e58c54de321fa4",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/tdM05/taddmao.com/HEAD/public/gasMask.gltf",
+   "format": "glTF",
+   "sizeBytes": 18269055,
+   "triangles": 44460,
+   "textures": "4x 4096x4096",
+   "notes": "Full-head grimy white rubber hood/respirator (bulbous, no visible eyes in our render). 44k tris, 4096 px PBR + emissive. Units ~3 tall (scale ~0.1). Odd silhouette; secondary option.",
+   "rawUrlExtra": [
+    "(siblings) public/gasMask.bin, textures/helmet_mat_baseColor.png, textures/helmet_mat_metallicRoughness.png, textures/helmet_mat_emissive.png, textures/helmet_mat_normal.png"
+   ],
+   "boundsXYZ": [
+    2.2568,
+    3.0588,
+    2.5356
+   ],
+   "materials": 1
+  },
+  {
+   "need": "intruder: A mask (theatre/demon)",
+   "title": "Mask Low",
+   "author": "robk (Sketchfab, https://skfb.ly/69WvW)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://skfb.ly/69WvW",
+   "licenseConfirmedVia": "attribution.txt beside the model in github.com/marco-brunetti/Cursed-Silence-Chapter-1 (Assets/Imported/Props/mask/attribution.txt). Not embedded in the FBX.",
+   "rawUrl": "https://raw.githubusercontent.com/marco-brunetti/Cursed-Silence-Chapter-1/HEAD/Assets/Imported/Props/mask/Mask_low.fbx",
+   "format": "FBX + 2048 px PNG (BaseColor, Normal, Roughness)",
+   "sizeBytes": 6659252,
+   "triangles": 512,
+   "textures": "3x 2048x2048",
+   "notes": "White Japanese-style (hannya/kitsune) mask with red markings and two red horns. 512 tris with baked normals, 2k maps. ~0.1 x 0.16 m. Creepy but stylised/cultural; the horns make it read \"demon\" rather than Scream-style.",
+   "rawUrlExtra": [
+    "https://raw.githubusercontent.com/marco-brunetti/Cursed-Silence-Chapter-1/HEAD/Assets/Imported/Props/mask/textures/Mask_low_Low_Mtl_BaseColor.png",
+    "https://raw.githubusercontent.com/marco-brunetti/Cursed-Silence-Chapter-1/HEAD/Assets/Imported/Props/mask/textures/Mask_low_Low_Mtl_Normal.png",
+    "https://raw.githubusercontent.com/marco-brunetti/Cursed-Silence-Chapter-1/HEAD/Assets/Imported/Props/mask/textures/Mask_low_Low_Mtl_Roughness.png",
+    "https://raw.githubusercontent.com/marco-brunetti/Cursed-Silence-Chapter-1/HEAD/Assets/Imported/Props/mask/attribution.txt"
+   ],
+   "boundsXYZ": [
+    0.0977,
+    0.1553,
+    0.0733
+   ],
+   "materials": 2
+  },
+  {
+   "need": "intruder: A mask (demon)",
+   "title": "Scary Asian Mask",
+   "author": "jungle_jim (https://sketchfab.com/jungle_jim)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/scary-asian-mask-eb84642841db4e2e8f1cc973353b8091",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/lucianIrsigler/CGV-game/HEAD/public_html/src/levels/assets/scary_asian_mask/scene.gltf",
+   "format": "glTF",
+   "sizeBytes": 7637490,
+   "triangles": 50000,
+   "textures": "1x 4096x4096",
+   "notes": "Highly detailed red/white ornamental oni mask with horns and fangs (50k tris, single 4096 px texture). Too colourful and ornate for a home intruder; listed for completeness.",
+   "rawUrlExtra": [
+    "(siblings) scary_asian_mask/scene.bin, textures/material_0_baseColor.jpeg"
+   ],
+   "boundsXYZ": [
+    0.5324,
+    0.8342,
+    0.6711
+   ],
+   "materials": 1
+  },
+  {
+   "need": "intruder: A mask (skull face plate) - FLAG",
+   "title": "Skull Mask",
+   "author": "T-Art (https://sketchfab.com/person-x)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/skull-mask-31356fbc95e7490c8ca2f75199c2b23a",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/Magic-Mirror-HKA/magic-mirror/HEAD/public/gltf_models/skull-mask/scene.gltf",
+   "format": "glTF",
+   "sizeBytes": 29456716,
+   "triangles": 1582,
+   "textures": "6x 4096x4096",
+   "notes": "Dark plate with a painted white skull that closely resembles the Punisher logo (trademark look). 1.6k tris, 4096 px maps. Not recommended.",
+   "rawUrlExtra": [
+    "(siblings) skull-mask/scene.bin, textures/Mask_baseColor.jpeg, textures/Mask_metallicRoughness.png, textures/Mask_normal.png, textures/Skull_baseColor.jpeg, textures/Skull_metallicRoughness.png, textures/Skull_normal.png"
+   ],
+   "boundsXYZ": [
+    33.466,
+    50.3357,
+    17.4868
+   ],
+   "materials": 2
+  },
+  {
+   "need": "intruder: B rigged masked man in dark clothes",
+   "title": "Rocketbox Police_Male_02 (black SWAT, balaclava)",
+   "author": "Microsoft (Rocketbox Avatar Library)",
+   "license": "MIT",
+   "originalUrl": "https://github.com/microsoft/Microsoft-Rocketbox/tree/master/Assets/Avatars/Professions/Police_Male_02",
+   "licenseConfirmedVia": "Microsoft Rocketbox Avatar Library, MIT License (LICENSE.md in github.com/microsoft/Microsoft-Rocketbox; already used by the game for the arm and the intruder)",
+   "rawUrl": "https://raw.githubusercontent.com/microsoft/Microsoft-Rocketbox/HEAD/Assets/Avatars/Professions/Police_Male_02/Export/Police_Male_02.fbx",
+   "format": "FBX (Biped skeleton, skinned) + TGA texture sets: body, head, helmet, equipment, opacity, pistol (color/normal/specular each)",
+   "sizeBytes": 695888,
+   "triangles": null,
+   "textures": null,
+   "notes": "BEST DROP-IN BODY FOR A MASKED MAN: all-black clothing, black balaclava over the face (only the eyes show), black fingerless gloves, same Rocketbox Biped skeleton and animation set the intruder already uses (tools/intruder/build.mjs works unchanged). Helmet+goggles, tactical vest (yellow S.W.A.T. patch), holster/pistol live on separate texture sets/submeshes and should be hidden so he reads as an intruder, not police. Pair with the White Mask for the Scream-like look."
+  },
+  {
+   "need": "intruder: B rigged man, hoodie with hood up",
+   "title": "Rocketbox Male_Adult_18 (hoodie, hood up)",
+   "author": "Microsoft (Rocketbox Avatar Library)",
+   "license": "MIT",
+   "originalUrl": "https://github.com/microsoft/Microsoft-Rocketbox/tree/master/Assets/Avatars/Adults/Male_Adult_18",
+   "licenseConfirmedVia": "Microsoft Rocketbox Avatar Library, MIT License (LICENSE.md in github.com/microsoft/Microsoft-Rocketbox; already used by the game for the arm and the intruder)",
+   "rawUrl": "https://raw.githubusercontent.com/microsoft/Microsoft-Rocketbox/HEAD/Assets/Avatars/Adults/Male_Adult_18/Export/Male_Adult_18.fbx",
+   "format": "FBX (Biped skeleton, skinned) + TGA body/head maps",
+   "sizeBytes": 475888,
+   "triangles": null,
+   "textures": null,
+   "notes": "Grey henley hoodie WITH THE HOOD UP, dark trousers, sneakers. Same skeleton/animations as the current intruder (Male_Adult_20, whose hood is down). Dye the hoodie black in build.mjs (as done for 0.12) and attach a mask to Bip01 Head: the simplest route to \"masked figure in a black hood\"."
+  },
+  {
+   "need": "intruder: B rigged masked figure (hooded, dark)",
+   "title": "Cultist armed",
+   "author": "DJMaesen (https://sketchfab.com/bumstrum)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/cultist-armed-63af0c04ad5d4d6180c15dd0c09d6a3a",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/VixidDev/Heatstroke/HEAD/Game/assets/characters/cultist/scene.gltf",
+   "format": "glTF (skinned, 65-joint custom skeleton, 1 idle clip)",
+   "sizeBytes": 31039377,
+   "triangles": 9648,
+   "textures": "6x 2048x2048, 3x 1024x1024",
+   "notes": "Dark leather/cloth hooded figure whose face is a beaked plague-doctor/gas-mask hood; 9.6k tris, 2k PBR, real scale 1.84 m. Very creepy silhouette. The mask is its own mesh (mask_plaguemask_0, own 2k material), so it can also be detached as a standalone beaked mask for need A. The rifle is separate meshes (*_smglow_0): remove. Skeleton is custom (hips_01, L_leg_02 ...), so Rocketbox clips would need retargeting.",
+   "rawUrlExtra": [
+    "(siblings) cultist/scene.bin, textures/plaguemask_baseColor.png, textures/plaguemask_metallicRoughness.png, textures/plaguemask_normal.png, textures/cultistbody_baseColor.png, textures/cultistbody_metallicRoughness.png, textures/cultistbody_normal.png, textures/smglow_baseColor.png, textures/smglow_metallicRoughness.png, textures/smglow_normal.png"
+   ],
+   "boundsXYZ": [
+    1.1793,
+    1.8371,
+    0.8807
+   ],
+   "materials": 3,
+   "rigged": "skinned (1 skin), 1 clip(s)"
+  },
+  {
+   "need": "intruder: B rigged hooded horror figure",
+   "title": "Terrifying Hooded Horror Woman",
+   "author": "PurplePoint (https://sketchfab.com/tyajik)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/terrifying-hooded-horror-woman-f59d17be392f4494a5b85d927df48ffd",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/fuzeonspotify/outoftime/HEAD/assets/models/characters/terrifying_hooded_horror_woman/scene.gltf",
+   "format": "glTF (skinned, 25-joint humanoid: Hips/Spine/Head..., 1 clip \"RunFast\")",
+   "sizeBytes": 5735959,
+   "triangles": 39986,
+   "textures": "1x 2048x2048",
+   "notes": "Skeletal grinning ghoul in a long black hooded dress; 40k tris, a single 2048 px colour texture (no normal/roughness). Rig and texture look auto-generated (likely an AI-generated model). A monster, not a masked human, so off-brief; very scary though.",
+   "rawUrlExtra": [
+    "(siblings) terrifying_hooded_horror_woman/scene.bin, textures/Material_1_baseColor.png"
+   ],
+   "boundsXYZ": [
+    0.0077,
+    0.017,
+    0.0066
+   ],
+   "materials": 1,
+   "rigged": "skinned (1 skin), 1 clip(s)"
+  },
+  {
+   "need": "intruder: B rigged faceless suit",
+   "title": "Hazmat suit 2",
+   "author": "impulsio (https://sketchfab.com/impulsio)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/hazmat-suit-2-1aa8bc1869df40fbad8f2f969479f83a",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/RedstoneWizard08/backrooms/HEAD/public/gltf/HAZMAT.gltf",
+   "format": "glTF (skinned, Mixamo-named skeleton, no clips)",
+   "sizeBytes": 5225462,
+   "triangles": 42248,
+   "textures": "4x 2048x2048",
+   "notes": "Full yellow hazmat suit with dark visor, boots and gloves; Mixamo skeleton (mixamorig:*) so any Mixamo-compatible clip retargets; 42k tris, 2k PBR. Recolour black for a faceless intruder. Mixamo rig on the author's own mesh is fine; it is not a Mixamo character.",
+   "rawUrlExtra": [
+    "(siblings) gltf/HAZMAT.bin, textures/gloves.003_baseColor.png, textures/boots.003_baseColor.png, textures/suitmain.003_baseColor.png, textures/visor.003_baseColor.png"
+   ],
+   "boundsXYZ": [
+    1.3226,
+    2.0154,
+    0.6288
+   ],
+   "materials": 4,
+   "rigged": "skinned (1 skin), 0 clip(s)"
+  },
+  {
+   "need": "intruder: B rigged man in black hoodie",
+   "title": "BW Idle",
+   "author": "impoimpo (https://sketchfab.com/impoimpo)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/bw-idle-6e379848bcb84df082a57b77769b8d98",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/skycoin/cxfx/HEAD/resources/models/skylight/bw/idle/scene.gltf",
+   "format": "glTF (skinned, Mixamo skeleton, 1 Mixamo idle clip)",
+   "sizeBytes": 4289668,
+   "triangles": 31793,
+   "textures": "5x 1024x512",
+   "notes": "Grey-haired man in a black hoodie (hood down, small yellow chest print) and black trousers; 31.8k tris, 1k textures; centimetre units (186 tall). Unmasked; Rocketbox Male_Adult_18 is the better base.",
+   "rawUrlExtra": [
+    "(siblings) idle/scene.bin, textures/Sneakers_baseColor.png, textures/Sneakers_metallicRoughness.png, textures/Sneakers_normal.png, textures/Std_Nails_metallicRoughness.png, textures/glasses_baseColor.png"
+   ],
+   "boundsXYZ": [
+    171.8311,
+    186.1228,
+    45.0611
+   ],
+   "materials": 9,
+   "rigged": "skinned (1 skin), 1 clip(s)"
+  },
+  {
+   "need": "intruder: B rigged masked man",
+   "title": "Character with animation",
+   "author": "Yury Misiyuk (https://sketchfab.com/Tim0)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/character-with-animation-31ea9ee9c82340bc8fd8da2343f9234d",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/VixidDev/Heatstroke/HEAD/Game/assets/characters/char1/scene.gltf",
+   "format": "glTF (skinned, Mixamo skeleton, 4 clips: idle, run, 2 melee)",
+   "sizeBytes": 19640022,
+   "triangles": 32336,
+   "textures": "4x 2048x2048, 3x 1024x1024",
+   "notes": "Shirtless scarred survivor in a respirator mask and camo trousers. 32k tris. Masked but not dark-clothed; post-apocalyptic rather than home intruder.",
+   "rawUrlExtra": [
+    "(siblings) char1/scene.bin, textures/PackedMaterial0_baseColor.png, textures/PackedMaterial0_metallicRoughness.png, textures/PackedMaterial0_normal.png, textures/PackedMaterial0_transmission.png, textures/Crowbar_baseColor.jpeg, textures/Crowbar_metallicRoughness.png, textures/Crowbar_normal.png"
+   ],
+   "boundsXYZ": [
+    3.2989,
+    3.0773,
+    1.0983
+   ],
+   "materials": 2,
+   "rigged": "skinned (1 skin), 4 clip(s)"
+  },
+  {
+   "need": "intruder: B rigged man in black with balaclava",
+   "title": "S.W.A.T. Operator",
+   "author": "Mateusz Woliński (https://sketchfab.com/jeandiz)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/swat-operator-9e82fabf26194896b5ad4a364d864eab",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/Nik-WEBJS/web3-telegram-game/HEAD/frontend/public/assets/swat/scene.gltf",
+   "format": "glTF (skinned, Mixamo skeleton, 1 clip)",
+   "sizeBytes": 111283446,
+   "triangles": 106711,
+   "textures": "36x 2048x2048, 2x 1024x1024, 5x 4096x4096, 2x 2048x1024",
+   "notes": "All-black tactical operator with balaclava, NVG helmet and rifle; 107k tris, 45 textures (111 MB source). Too military; Rocketbox Police_Male_02 gives the same idea far lighter and on our skeleton.",
+   "rawUrlExtra": [
+    "(siblings) swat/scene.bin, textures/boots_baseColor.jpeg, textures/boots_metallicRoughness.png, textures/boots_normal.jpeg, textures/helmet_baseColor.jpeg, textures/helmet_metallicRoughness.png, textures/helmet_normal.jpeg, textures/face_baseColor.jpeg, textures/face_metallicRoughness.png, textures/face_normal.jpeg, textures/eyes_baseColor.png, textures/eyes_transmission.png, textures/lambert1.003_baseColor.jpeg, textures/lambert1.003_metallicRoughness.png, textures/lambert1.003_normal.jpeg, textures/mask_baseColor.jpeg, textures/mask_metallicRoughness.png, textures/mask_normal.jpeg, textures/night_vis_goggles_baseColor.jpeg, textures/night_vis_goggles_metallicRoughness.png, textures/night_vis_goggles_emissive.jpeg, textures/night_vis_goggles_normal.jpeg, textures/pouch_baseColor.jpeg, textures/pouch_metallicRoughness.png, textures/pouch_normal.jpeg, textures/uniform_baseColor.jpeg, textures/uniform_metallicRoughness.png, textures/uniform_normal.png, textures/gloves_baseColor.jpeg, textures/gloves_metallicRoughness.png, textures/gloves_normal.jpeg, textures/material_baseColor.jpeg, textures/material_metallicRoughness.png, textures/material_normal.jpeg, textures/material_11_baseColor.jpeg, textures/material_11_metallicRoughness.png, textures/material_11_normal.jpeg, textures/material_12_baseColor.jpeg, textures/material_12_metallicRoughness.png, textures/material_12_normal.jpeg, textures/material_13_baseColor.png, textures/material_13_metallicRoughness.png, textures/material_13_emissive.jpeg, textures/material_13_normal.jpeg, textures/patch_baseColor.jpeg, textures/patch_normal.jpeg"
+   ],
+   "boundsXYZ": [
+    0.4753,
+    1.5259,
+    0.4876
+   ],
+   "materials": 15,
+   "rigged": "skinned (1 skin), 1 clip(s)"
+  },
+  {
+   "need": "intruder: B rigged plague doctor (stylised)",
+   "title": "Plague Doctor",
+   "author": "BeardenInc (https://sketchfab.com/BeardenInc)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/plague-doctor-41f7a1dfd6984135b876f334908e3ca4",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/Developer-Students-Club-MAIT/halloween/HEAD/public/plague_doctor/scene.gltf",
+   "format": "glTF (skinned, 46 joints, 1 clip)",
+   "sizeBytes": 2523121,
+   "triangles": 6205,
+   "textures": "2x 1024x1024, 1x 512x512",
+   "notes": "Hand-painted stylised plague doctor on a grass base with a crow and staff; 6.2k tris. Not photoreal: reject.",
+   "rawUrlExtra": [
+    "(siblings) plague_doctor/scene.bin, textures/07_-_Default_baseColor.png, textures/07_-_Default_emissive.jpeg, textures/09_-_Default_baseColor.png"
+   ],
+   "boundsXYZ": [
+    1.8913,
+    2.3208,
+    1.4582
+   ],
+   "materials": 2,
+   "rigged": "skinned (1 skin), 1 clip(s)"
+  },
+  {
+   "need": "intruder: B hooded figure (static, reference)",
+   "title": "Hooded Shadow Assassin",
+   "author": "iRahulRajput (https://sketchfab.com/rt699448)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/hooded-shadow-assassin-d3d3c1efefa34f95a0b0ebc0dbae620d",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf (fetched and parsed, not downloaded in full)",
+   "rawUrl": "https://raw.githubusercontent.com/brornski/ashenhold-dragonfall/HEAD/assets/models/hooded-shadow-assassin/scene.gltf",
+   "format": "glTF (not rigged)",
+   "sizeBytes": 44361408,
+   "triangles": 780964,
+   "textures": null,
+   "notes": "Hooded cloaked figure, 781k tris, 3 textures, NO skeleton. Only useful as a static scare prop or a cloak source after heavy decimation; not previewed."
+  },
+  {
+   "need": "intruder: C hoodie with hood up (garment)",
+   "title": "Hoodie with hood up",
+   "author": "chop24 (https://sketchfab.com/chop24)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/hoodie-with-hood-up-237449b193714dfaa13b9a4d9d2b9a90",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/jackson-jnj/ducks-apparel-design/HEAD/public/hoodie_with_hood_up/scene.gltf",
+   "format": "glTF (static garment)",
+   "sizeBytes": 37327627,
+   "triangles": 465316,
+   "textures": "3x 4096x4096",
+   "notes": "Separate hoodie mesh with the hood raised, 4096 px fabric PBR; 465k tris (decimate to ~20k) and it is not skinned, so it would have to be weighted to the intruder skeleton. Real scale (0.95 m tall incl. hood). Previewed after simplifying to 8%: clean cotton folds, white fabric (recolour black). Prefer Rocketbox Male_Adult_18, whose hood is already skinned.",
+   "rawUrlExtra": [
+    "(siblings) hoodie_with_hood_up/scene.bin, textures/Material238904.005_baseColor.png, textures/Material238904.005_metallicRoughness.png, textures/Material238904.005_normal.png"
+   ],
+   "boundsXYZ": [
+    0.299,
+    0.9485,
+    0.6058
+   ],
+   "materials": 1
+  },
+  {
+   "need": "intruder: C hoodie with hood up (garment)",
+   "title": "Hoodie",
+   "author": "kapitanzapupa (https://sketchfab.com/kapitanzapupa)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/hoodie-5a59576dc695462786c7b48db45f3d97",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/DanielPCoyle/coyle-monorepo/HEAD/applications/web/public/hoodie/scene.gltf",
+   "format": "glTF (static, untextured)",
+   "sizeBytes": 298936,
+   "triangles": 10278,
+   "textures": "none (material colours only)",
+   "notes": "Clean low-poly hoodie with the hood up (10k tris), no textures (plain white material). Easy to tint black and skin; centimetre units (scale 0.01). Plain-looking without a fabric normal map.",
+   "rawUrlExtra": [
+    "(siblings) hoodie/scene.bin"
+   ],
+   "boundsXYZ": [
+    110.2891,
+    89.7855,
+    28.384
+   ],
+   "materials": 1
+  },
+  {
+   "need": "intruder: C black hoodie (garment, reference)",
+   "title": "Classic Black Flame Hoodie",
+   "author": "kril (https://sketchfab.com/krrril_)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/classic-black-flame-hoodie-0fd0effa321e456cb2a7467e2899b658",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf (fetched and parsed only)",
+   "rawUrl": "https://raw.githubusercontent.com/akio-fe/IMPERIUM-T.C.C./HEAD/storage/models/streetwears/classic_black_flame_hoodie/scene.gltf",
+   "format": "glTF (static)",
+   "sizeBytes": null,
+   "triangles": 1339224,
+   "textures": null,
+   "notes": "Black hoodie with a flame print, 1.34M tris: too heavy and the print is wrong for the brief. Reference only."
+  },
+  {
+   "need": "intruder: C glove",
+   "title": "Glove",
+   "author": "Mikko Haapoja (https://sketchfab.com/mikkoh)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/glove-7c4bd952fd9f42f9b709494b29593c46",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/Andrex-095/Progetto-Computer-Graphics/HEAD/glove/scene.gltf",
+   "format": "glTF (static)",
+   "sizeBytes": 8891252,
+   "triangles": 130270,
+   "textures": "3x 4096x4096, 1x 256x256",
+   "notes": "Knitted work glove with dark rubberised palm (pink/red knit in the source texture), 130k tris (decimate), 4096 px maps, real scale (34 cm incl. cuff). Static, single left glove; recolour to black for the intruder. Mediocre fit.",
+   "rawUrlExtra": [
+    "(siblings) glove/scene.bin, textures/GeneratedMat2_baseColor.png, textures/GeneratedMat3_baseColor.png, textures/material0000_baseColor.jpeg, textures/material0001_baseColor.jpeg"
+   ],
+   "boundsXYZ": [
+    0.2261,
+    0.3397,
+    0.1347
+   ],
+   "materials": 4
+  },
+  {
+   "need": "intruder: C gloves (black nitrile possible)",
+   "title": "Rubber Med Gloves (free to download)",
+   "author": "KOMODOZ (https://sketchfab.com/komodoz)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/rubber-med-gloves-free-to-download-ef128b0efbb1461c8c0f37b83b5f17af",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/miffyKing/pong-localServer/HEAD/three.js-master/study/gloves/scene.gltf",
+   "format": "glTF (static)",
+   "sizeBytes": 2920126,
+   "triangles": null,
+   "textures": null,
+   "notes": "Pair of rubber medical gloves, 37k tris, normal + metal-rough at 2048 px. The mirror replaced the base-colour texture with a 240 px PNG saved as .jpeg (breaks loaders), so use a flat black base colour (black nitrile reads very sinister). Static (not skinned); not previewed because of that broken file.",
+   "rawUrlExtra": [
+    "(siblings) gloves/scene.bin, textures/Glove_rubber_baseColor2.jpeg, textures/Glove_rubber_metallicRoughness.png, textures/Glove_rubber_normal.png"
+   ]
+  },
+  {
+   "need": "intruder: C gloves (rigged, camo)",
+   "title": "Gloves for fps game",
+   "author": "bobeer (https://sketchfab.com/bobeer)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/gloves-for-fps-game-3b321da343714e9597e3e86af8a0a7a6",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/TwistedTwigleg/Godot_GSOC_2020_Project/HEAD/skeleton_modification/art/FPS_Gloves_and_Gun/FPS_Gloves/scene.gltf",
+   "format": "glTF (skinned hands, 47 joints)",
+   "sizeBytes": 15092384,
+   "triangles": 4354,
+   "textures": "3x 2048x2048",
+   "notes": "First-person camo sleeves with dark gloves, rigged per finger; 4.4k tris, 2k PBR. Camo sleeves do not fit; only the glove part is usable.",
+   "rawUrlExtra": [
+    "(siblings) FPS_Gloves/scene.bin, textures/hands_baseColor.png, textures/hands_metallicRoughness.png, textures/hands_normal.png"
+   ],
+   "boundsXYZ": [
+    67.632,
+    84.3532,
+    20.6876
+   ],
+   "materials": 1,
+   "rigged": "skinned (1 skin), 0 clip(s)"
+  },
+  {
+   "need": "intruder: C gloves (reject)",
+   "title": "Gloves",
+   "author": "LucieB (https://sketchfab.com/LucieB)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/gloves-a6e44b960f154750aeadb32ebbe0ca9d",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/vonerikbarren/RealityCenter/HEAD/assets/models/gloves/scene.gltf",
+   "format": "glTF",
+   "sizeBytes": 40627870,
+   "triangles": 29226,
+   "textures": "4x 4096x4096",
+   "notes": "Steampunk leather-and-brass gauntlets with fur cuffs. Wrong style.",
+   "rawUrlExtra": [
+    "(siblings) gloves/scene.bin, textures/Material_6_baseColor.png, textures/Material_6_metallicRoughness.png, textures/Material_6_emissive.png, textures/Material_6_normal.png"
+   ],
+   "boundsXYZ": [
+    0.9725,
+    0.4928,
+    0.2065
+   ],
+   "materials": 1
+  },
+  {
+   "need": "1 smartphone",
+   "title": "Smartphone",
+   "author": "Naudaff3D (https://sketchfab.com/Naudaff3D)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/smartphone-793ce4333ddb4cb8ab30c6b1da96df81",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf (same file mirrored in two repos)",
+   "rawUrl": "https://raw.githubusercontent.com/husnimubaraq/ar-app/HEAD/public/assets/models/smartphone/scene.gltf",
+   "format": "glTF",
+   "sizeBytes": 3803429,
+   "triangles": 95392,
+   "textures": "2x 1024x2048",
+   "notes": "BEST PICK. Generic, unbranded black notch phone (iPhone-X-like) with glass, camera lenses and a separate \"Lock_Screen\" material (base + emissive, 1024x2048): the screen is easy to replace with a runtime texture. 95k tris (decimate the body to ~10k for first-person). Units 2.41 x 4.79: scale about 0.03 for a 144 mm phone.",
+   "rawUrlExtra": [
+    "(siblings) smartphone/scene.bin, textures/Lock_Screen_baseColor.jpeg, textures/Lock_Screen_emissive.jpeg"
+   ],
+   "boundsXYZ": [
+    2.4122,
+    4.7887,
+    0.2637
+   ],
+   "materials": 8
+  },
+  {
+   "need": "1 smartphone",
+   "title": "Apple iPhone based mobile phone",
+   "author": "Rescue3D Assets (https://sketchfab.com/rescue3d)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/apple-iphone-based-mobile-phone-ae46f6a92de042d8bc8082226f7d3489",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf (also credited in Cursed-Silence-Chapter-1 phone_mobile/credits.txt)",
+   "rawUrl": "https://raw.githubusercontent.com/sethteo/personalportfolio/HEAD/public/phone/scene.gltf",
+   "format": "glTF",
+   "sizeBytes": 33051994,
+   "triangles": 4994,
+   "textures": "3x 4096x4096, 6x 2048x2048",
+   "notes": "Real scale (73.5 x 147 mm), only 5k tris, 3 materials (Phone_Main, Phone_Emission screen, Phone_Alpha), 4096 px maps (33 MB: downscale). Screen texture shows an iOS home screen with app logos: must be replaced. iPhone 12-like shape; trade-dress closer to Apple than the Naudaff3D phone.",
+   "rawUrlExtra": [
+    "(siblings) phone/scene.bin, textures/Phone_Main_baseColor.png, textures/Phone_Main_metallicRoughness.png, textures/Phone_Main_normal.png, textures/Phone_Emission_baseColor.png, textures/Phone_Emission_metallicRoughness.png, textures/Phone_Emission_emissive.png, textures/Phone_Emission_normal.png, textures/Phone_Alpha_baseColor.png, textures/Phone_Alpha_metallicRoughness.png"
+   ],
+   "boundsXYZ": [
+    0.0735,
+    0.147,
+    0.0075
+   ],
+   "materials": 3
+  },
+  {
+   "need": "1 smartphone",
+   "title": "Samsung Galaxy S21 Ultra",
+   "author": "DatSketch (https://sketchfab.com/DatSketch)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/samsung-galaxy-s21-ultra-cd962832be7744efb6b37fe0ee2027e7",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/Divsonar/BallDivsonar/HEAD/textures/samsung_galaxy_s21_ultra/scene.gltf",
+   "format": "glTF",
+   "sizeBytes": 4327456,
+   "triangles": 24409,
+   "textures": "1x 512x256, 1x 512x512, 2x 32x32, 1x 1024x2048",
+   "notes": "Black phone with big camera bump, separate screen material (Samsung wallpaper: replace), 24k tris, 15 materials; units 99 tall (scale ~0.0016). Branded product name; logo not obvious in render.",
+   "rawUrlExtra": [
+    "(siblings) samsung_galaxy_s21_ultra/scene.bin, textures/Speaker_baseColor.jpeg, textures/CameraModule_baseColor.png, textures/Lens_baseColor.png, textures/Flash_baseColor.png, textures/Screen_baseColor.png"
+   ],
+   "boundsXYZ": [
+    45.5796,
+    99.0873,
+    5.9557
+   ],
+   "materials": 15
+  },
+  {
+   "need": "1 smartphone",
+   "title": "Brand New Mobile Phone",
+   "author": "Audrey Gonçalves (https://sketchfab.com/audreyfv10)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/brand-new-mobile-phone-1f20dcd41aa94a2c93f4abdc135f90d0",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/SeptAlfauzan/septaalfauzan.dev/HEAD/public/models/phone/scene.gltf",
+   "format": "glTF (no textures)",
+   "sizeBytes": 640626,
+   "triangles": 16342,
+   "textures": "none (material colours only)",
+   "notes": "Untextured (flat materials), 16k tris, triangle logo on the back. Weakest option.",
+   "rawUrlExtra": [
+    "(siblings) phone/scene.bin"
+   ],
+   "boundsXYZ": [
+    1.4341,
+    2.7172,
+    0.189
+   ],
+   "materials": 12
+  },
+  {
+   "need": "2 security camera (fallback: CCTV, not a home cloud cam)",
+   "title": "Security Camera 02",
+   "author": "Poly Haven",
+   "license": "CC0 1.0",
+   "originalUrl": "https://polyhaven.com/a/security_camera_02",
+   "licenseConfirmedVia": "Poly Haven assets are all CC0 (polyhaven.com/license); mirror repo Geadas11/Claude_steam_game lists it in assets/3d/CREDITS.md as Poly Haven CC0. Download from mirror is the original 2k glTF (gltf+bin+jpg textures).",
+   "rawUrl": "https://raw.githubusercontent.com/Geadas11/Claude_steam_game/HEAD/assets/3d/models/security_camera_02/security_camera_02.gltf",
+   "format": "glTF 2k",
+   "sizeBytes": 6882979,
+   "triangles": 12477,
+   "textures": "4x 2048x2048",
+   "notes": "Photoreal white outdoor CCTV housing on a wall bracket, 12.5k tris, real scale (0.39 m long). Not a small indoor Wi-Fi cam; GAP for that need (no CC/MIT round or cube home camera found on GitHub).",
+   "rawUrlExtra": [
+    "(siblings) security_camera_02/security_camera_02.bin, textures/security_camera_02_nor_gl_2k.jpg, textures/security_camera_02_diff_2k.jpg, textures/security_camera_02_arm_2k.jpg, textures/security_camera_02_diff_2k.jpg"
+   ],
+   "boundsXYZ": [
+    0.1407,
+    0.2086,
+    0.3938
+   ],
+   "materials": 2
+  },
+  {
+   "need": "2 security camera (fallback)",
+   "title": "CCTV Camera",
+   "author": "Smoggybeard (https://sketchfab.com/Smoggybeard)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/cctv-camera-e69d5eb37ffb4f188e4d3c84a5d79cdc",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/kyle-robinson/molecularity/HEAD/Molecularity/Resources/Models/Camera/scene.gltf",
+   "format": "glTF",
+   "sizeBytes": 11842748,
+   "triangles": 3166,
+   "textures": "7x 2048x2048",
+   "notes": "Box CCTV camera, 3.2k tris; renders bright green/blue (texture set looks like an ID/colour map): poor.",
+   "rawUrlExtra": [
+    "(siblings) Camera/scene.bin, textures/Camera_Plastic_baseColor.jpeg, textures/Camera_Plastic_metallicRoughness.png, textures/Camera_Plastic_normal.png, textures/Black_Glass_baseColor.png, textures/Black_Glass_metallicRoughness.png, textures/Black_Glass_emissive.jpeg, textures/Black_Glass_normal.png"
+   ],
+   "boundsXYZ": [
+    0.663,
+    1.3264,
+    2
+   ],
+   "materials": 2
+  },
+  {
+   "need": "2 security camera (fallback: desk webcam)",
+   "title": "Webcam",
+   "author": "7124115 (https://sketchfab.com/7124115)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/webcam-89d6eaf640c64d9aa6549e0b3fa54415",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf (fetched and parsed only)",
+   "rawUrl": "https://raw.githubusercontent.com/3digitaltwin/assets/HEAD/asset/webcam/scene.gltf",
+   "format": "glTF (untextured materials: PVC black matte/glossy, clear glass)",
+   "sizeBytes": 15139232,
+   "triangles": 469584,
+   "textures": null,
+   "notes": "High-poly PC webcam (470k tris) with material-only PBR. Could sit on a shelf as an indoor camera after decimation. Not previewed."
+  },
+  {
+   "need": "3 consumer unit / breaker panel",
+   "title": "Power Box 01",
+   "author": "Poly Haven: Rico Cilliers (modelling, texturing), Yann Kervran (rigging)",
+   "license": "CC0 1.0",
+   "originalUrl": "https://polyhaven.com/a/power_box_01",
+   "licenseConfirmedVia": "Poly Haven (CC0); mirror github.com/f3nta1/5-nochey-s-youranom; Poly Haven tags: \"db board, circuit, breakers, switch\", category \"rigged\"",
+   "rawUrl": "https://raw.githubusercontent.com/f3nta1/5-nochey-s-youranom/HEAD/world/props/power_box_01/power_box_01_2k.gltf",
+   "format": "glTF 2k (2 meshes: box \"Cube.002\" and cover \"Plane\")",
+   "sizeBytes": 8415922,
+   "triangles": 21272,
+   "textures": "3x 2048x2048",
+   "notes": "BEST PICK. Wall-mounted distribution board (DB board) with a row of DIN-style breakers and a hinged cover (separate mesh, Poly Haven lists it as rigged), weathered metal. 21k tris, 2048 px base/normal/ARM. Real scale ~0.46 x 0.50 x 0.40 m (bounds include the opened cover). Slightly worn/industrial: tone down dirt for a modern flat.",
+   "rawUrlExtra": [
+    "(siblings) power_box_01/power_box_01.bin, textures/power_box_01_nor_gl_2k.jpg, textures/power_box_01_diff_2k.jpg, textures/power_box_01_arm_2k.jpg"
+   ],
+   "boundsXYZ": [
+    0.4613,
+    0.5031,
+    0.399
+   ],
+   "materials": 1
+  },
+  {
+   "need": "3 consumer unit (fallback)",
+   "title": "Wall electrical panel",
+   "author": "okulusvirt (https://sketchfab.com/okulusvirt)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/wall-electrical-panel-28b2381209ed4a87be866b759621d3e0",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/IESP9/repo_equip7/HEAD/nou-projecte-de-joc1/wall_electrical_panel/scene.gltf",
+   "format": "glTF",
+   "sizeBytes": 68766092,
+   "triangles": 574,
+   "textures": "2x 8192x8192",
+   "notes": "Plain white wall-mounted electrical enclosure with a closed door, lock and lightning warning sticker. 574 tris but an 8192 px texture (68 MB: downscale). No breakers inside (door does not open). Units ~6.6 tall (scale ~0.08). Fallback if only the closed box is ever seen.",
+   "rawUrlExtra": [
+    "(siblings) wall_electrical_panel/scene.bin, textures/Material.003_baseColor.png, textures/Material.003_normal.png"
+   ],
+   "boundsXYZ": [
+    5.1938,
+    6.6407,
+    2.855
+   ],
+   "materials": 1
+  },
+  {
+   "need": "4 hair dryer",
+   "title": "Remington T|Studio Hair Dryer (scan)",
+   "author": "Google Research (Google Scanned Objects)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://app.gazebosim.org/GoogleResearch/fuel/models/Remington_TStudio_Hair_Dryer",
+   "licenseConfirmedVia": "README of github.com/kevinzakka/mujoco_scanned_objects: \"The 3D assets (obj and png) are licensed under CC-BY 4.0\"; dataset paper arXiv:2204.11918",
+   "rawUrl": "https://raw.githubusercontent.com/kevinzakka/mujoco_scanned_objects/HEAD/models/Remington_TStudio_Hair_Dryer/model.obj",
+   "format": "OBJ + 1 PNG albedo (photogrammetry scan, Z-up, metres)",
+   "sizeBytes": 5425846,
+   "triangles": 49084,
+   "textures": "1x 1024x1024",
+   "notes": "ONLY CANDIDATE FOUND. Photogrammetry scan of a red hair dryer with its cord and a US GFCI plug with a paper tag. 49k tris, 1024 px albedo only (no normal/roughness), real scale 0.33 m. Body is good; the cord/tag are scan mush (crop them, or hide by placement). Small brand text on the body. Z-up.",
+   "rawUrlExtra": [
+    "https://raw.githubusercontent.com/kevinzakka/mujoco_scanned_objects/HEAD/models/Remington_TStudio_Hair_Dryer/texture.png"
+   ],
+   "boundsXYZ": [
+    0.33,
+    0.2513,
+    0.0897
+   ],
+   "materials": 1
+  },
+  {
+   "need": "5 prescription pill bottle",
+   "title": "Pill Bottle",
+   "author": "stfuaahil (Sketchfab, https://skfb.ly/o6yX9)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://skfb.ly/o6yX9",
+   "licenseConfirmedVia": "Credits.txt beside the model in github.com/marco-brunetti/Cursed-Silence-Chapter-1 (Assets/Imported/Props/pills/Credits.txt). Not embedded in the FBX.",
+   "rawUrl": "https://raw.githubusercontent.com/marco-brunetti/Cursed-Silence-Chapter-1/HEAD/Assets/Imported/Props/pills/pillbottle.fbx",
+   "format": "FBX + PNG maps (bottle base/normal/roughness, cap base/metal/normal/roughness, label PNG + layered PSD)",
+   "sizeBytes": 48727177,
+   "triangles": 34916,
+   "textures": "6x 2048x2048, 1x 2000x2000",
+   "notes": "BEST PICK. Amber prescription bottle with white child-proof cap and a printed pharmacy label (label also supplied as a layered PSD, so the text can be rewritten), red/white capsules inside plus a few spilled. 35k tris (pills are separate meshes: delete or keep), 2048 px PBR; label/bottle use BLEND alpha. Units ~1.6 tall (scale ~0.05).",
+   "rawUrlExtra": [
+    "https://raw.githubusercontent.com/marco-brunetti/Cursed-Silence-Chapter-1/HEAD/Assets/Imported/Props/pills/textures/pillbottle_pillbottle_BaseColor.png",
+    "https://raw.githubusercontent.com/marco-brunetti/Cursed-Silence-Chapter-1/HEAD/Assets/Imported/Props/pills/textures/pillbottle_pillbottle_Normal.png",
+    "https://raw.githubusercontent.com/marco-brunetti/Cursed-Silence-Chapter-1/HEAD/Assets/Imported/Props/pills/textures/pillbottle_pillbottle_Roughness.png",
+    "https://raw.githubusercontent.com/marco-brunetti/Cursed-Silence-Chapter-1/HEAD/Assets/Imported/Props/pills/textures/pillbottle_pillbottlecap_BaseColor.png",
+    "https://raw.githubusercontent.com/marco-brunetti/Cursed-Silence-Chapter-1/HEAD/Assets/Imported/Props/pills/textures/pillbottle_pillbottlecap_Roughness.png",
+    "https://raw.githubusercontent.com/marco-brunetti/Cursed-Silence-Chapter-1/HEAD/Assets/Imported/Props/pills/textures/pillbottlelabelunwarplabel.png",
+    "https://raw.githubusercontent.com/marco-brunetti/Cursed-Silence-Chapter-1/HEAD/Assets/Imported/Props/pills/Credits.txt"
+   ],
+   "boundsXYZ": [
+    1.1693,
+    1.5693,
+    1.7124
+   ],
+   "materials": 5
+  },
+  {
+   "need": "5 prescription pill bottle",
+   "title": "Prescription Pill Bottle",
+   "author": "3Dexter (https://sketchfab.com/3Dexter3D)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/prescription-pill-bottle-b06f10f8b7b64973ba8ecca08e28ee8a",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/shuvam-kayal/Memento/HEAD/Assets/meds/scene.gltf",
+   "format": "glTF",
+   "sizeBytes": 339546,
+   "triangles": 790,
+   "textures": "1x 1024x1024",
+   "notes": "Orange Rx bottle with white push cap and printed label (fake patient 'Johnny Doe', 'Pain Relief Capsules'). Only 790 tris and one 1024 px colour texture: fine at arm's length, soft close up. Units ~1.6 tall (scale ~0.05).",
+   "rawUrlExtra": [
+    "(siblings) meds/scene.bin, textures/Material.023_baseColor.png"
+   ],
+   "boundsXYZ": [
+    0.9896,
+    1.6092,
+    1.1063
+   ],
+   "materials": 1
+  },
+  {
+   "need": "5 medicine bottle",
+   "title": "02 Medicine",
+   "author": "Yanisakri (https://sketchfab.com/Yanisakri)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/02-medicine-d1cf807743794ddea1dda06f22702f90",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/e-prescription-2-0/e-prescription-2.0/HEAD/public/pills/scene.gltf",
+   "format": "glTF (no textures)",
+   "sizeBytes": 1049478,
+   "triangles": 27672,
+   "textures": "none (material colours only)",
+   "notes": "Loose capsules and tablets only (no bottle), flat materials, 27.7k tris. Use as spilled pills next to a bottle.",
+   "rawUrlExtra": [
+    "(siblings) pills/scene.bin"
+   ],
+   "boundsXYZ": [
+    11.5842,
+    9.2879,
+    5.0307
+   ],
+   "materials": 4
+  },
+  {
+   "need": "5 medicine bottle",
+   "title": "Lab/medicine bottle",
+   "author": "Sousinho (https://sketchfab.com/sousinho)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/labmedicine-bottle-90d4bead93af4c69897d39688164d567",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/yigitik/MagaraJam_Cay/HEAD/MagaraJam_Cay/MagaraJam_Cay/Content/Fab/Lab_medicine_bottle-dc29c3fe/gltf/labmedicine_bottle_extracted/scene.gltf",
+   "format": "glTF",
+   "sizeBytes": 42545967,
+   "triangles": 1220,
+   "textures": "9x 4096x4096",
+   "notes": "Square brown-glass medicine/lab bottle with white cap and a printed label, 1.2k tris, 9 maps at 4096 px (42 MB: downscale). Pharmacy-bottle look rather than Rx; units in centimetres x10.",
+   "rawUrlExtra": [
+    "(siblings) labmedicine_bottle_extracted/scene.bin, textures/M_bottle_baseColor.png, textures/M_bottle_metallicRoughness.png, textures/M_bottle_normal.png, textures/M_cap_baseColor.jpeg, textures/M_cap_metallicRoughness.png, textures/M_cap_normal.png, textures/M_fluid_baseColor.png, textures/M_fluid_metallicRoughness.png, textures/M_fluid_normal.png"
+   ],
+   "boundsXYZ": [
+    50.5619,
+    191.8441,
+    92.2194
+   ],
+   "materials": 3
+  },
+  {
+   "need": "5 medicine bottle (scan)",
+   "title": "Quercetin 500 supplement bottle (scan)",
+   "author": "Google Research (Google Scanned Objects)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://app.gazebosim.org/GoogleResearch/fuel/models/Quercetin_500",
+   "licenseConfirmedVia": "README of github.com/kevinzakka/mujoco_scanned_objects: \"The 3D assets (obj and png) are licensed under CC-BY 4.0\"; dataset paper arXiv:2204.11918",
+   "rawUrl": "https://raw.githubusercontent.com/kevinzakka/mujoco_scanned_objects/HEAD/models/Quercetin_500/model.obj",
+   "format": "OBJ + 1 PNG albedo (photogrammetry scan, Z-up, metres)",
+   "sizeBytes": 1143605,
+   "triangles": 7850,
+   "textures": "1x 1024x1024",
+   "notes": "Scanned white supplement bottle with purple label; 7.9k tris, 1k albedo, real scale (8 x 14 cm), Z-up. Real-product branded label: repaint the label texture.",
+   "rawUrlExtra": [
+    "https://raw.githubusercontent.com/kevinzakka/mujoco_scanned_objects/HEAD/models/Quercetin_500/texture.png"
+   ],
+   "boundsXYZ": [
+    0.081,
+    0.0804,
+    0.1441
+   ],
+   "materials": 1
+  },
+  {
+   "need": "5 medicine bottle (scan)",
+   "title": "Jarrow Glucosamine 120 caps bottle (scan)",
+   "author": "Google Research (Google Scanned Objects)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://app.gazebosim.org/GoogleResearch/fuel/models/Jarrow_Glucosamine_Chondroitin_Combination_120_Caps",
+   "licenseConfirmedVia": "README of github.com/kevinzakka/mujoco_scanned_objects: \"The 3D assets (obj and png) are licensed under CC-BY 4.0\"; dataset paper arXiv:2204.11918",
+   "rawUrl": "https://raw.githubusercontent.com/kevinzakka/mujoco_scanned_objects/HEAD/models/Jarrow_Glucosamine_Chondroitin_Combination_120_Caps/model.obj",
+   "format": "OBJ + 1 PNG albedo (photogrammetry scan, Z-up, metres)",
+   "sizeBytes": 1042068,
+   "triangles": 6406,
+   "textures": "1x 1024x1024",
+   "notes": "Scanned white pill bottle with yellow label; 6.4k tris, 1k albedo, real scale (6.5 x 11.6 cm), Z-up. Branded label: repaint.",
+   "rawUrlExtra": [
+    "https://raw.githubusercontent.com/kevinzakka/mujoco_scanned_objects/HEAD/models/Jarrow_Glucosamine_Chondroitin_Combination_120_Caps/texture.png"
+   ],
+   "boundsXYZ": [
+    0.0651,
+    0.0647,
+    0.1162
+   ],
+   "materials": 1
+  },
+  {
+   "need": "5 medicine (related: medical box)",
+   "title": "Medical Box",
+   "author": "Poly Haven",
+   "license": "CC0 1.0",
+   "originalUrl": "https://polyhaven.com/a/medical_box",
+   "licenseConfirmedVia": "Poly Haven assets are all CC0 (polyhaven.com/license); mirror repo Geadas11/Claude_steam_game lists it in assets/3d/CREDITS.md as Poly Haven CC0. Download from mirror is the original 2k glTF (gltf+bin+jpg textures).",
+   "rawUrl": "https://raw.githubusercontent.com/Geadas11/Claude_steam_game/HEAD/assets/3d/models/medical_box/medical_box.gltf",
+   "format": "glTF 2k",
+   "sizeBytes": 7022999,
+   "triangles": 3718,
+   "textures": "3x 2048x2048",
+   "notes": "Green metal FIRST AID tin with white cross, 3.7k tris, 2k maps, real scale (52 x 35 cm). Bathroom-cabinet prop; not a pill bottle.",
+   "rawUrlExtra": [
+    "(siblings) medical_box/medical_box.bin, textures/medical_box_nor_gl_2k.jpg, textures/medical_box_diff_2k.jpg, textures/medical_box_arm_2k.jpg"
+   ],
+   "boundsXYZ": [
+    0.5255,
+    0.0975,
+    0.3502
+   ],
+   "materials": 1
+  },
+  {
+   "need": "6 notebook / journal",
+   "title": "Note Book [2K]",
+   "author": "Lyndschoko (https://sketchfab.com/Lyndschoko)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/note-book-2k-66f4d80e201848189d498563b5a72cf7",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/Yiliii/engl3500-hw6/HEAD/assets/note_book_2k/scene.gltf",
+   "format": "glTF",
+   "sizeBytes": 10074727,
+   "triangles": 8440,
+   "textures": "3x 2048x2048",
+   "notes": "BEST PICK. Closed black spiral-bound notebook with yellow sticky tabs, 8.4k tris, 2048 px PBR, real scale (18 x 16 cm). Modern and clean.",
+   "rawUrlExtra": [
+    "(siblings) note_book_2k/scene.bin, textures/Material_baseColor.png, textures/Material_metallicRoughness.png, textures/Material_normal.png"
+   ],
+   "boundsXYZ": [
+    0.182,
+    0.0899,
+    0.1579
+   ],
+   "materials": 1
+  },
+  {
+   "need": "6 notebook / journal",
+   "title": "Binder Notebook",
+   "author": "Poly Haven",
+   "license": "CC0 1.0",
+   "originalUrl": "https://polyhaven.com/a/binder_notebook",
+   "licenseConfirmedVia": "Poly Haven assets are all CC0 (polyhaven.com/license); mirror repo Geadas11/Claude_steam_game lists it in assets/3d/CREDITS.md as Poly Haven CC0. Download from mirror is the original 2k glTF (gltf+bin+jpg textures).",
+   "rawUrl": "https://raw.githubusercontent.com/Geadas11/Claude_steam_game/HEAD/assets/3d/models/binder_notebook/binder_notebook.gltf",
+   "format": "glTF 2k",
+   "sizeBytes": 5138446,
+   "triangles": 18077,
+   "textures": "3x 2048x2048",
+   "notes": "Worn brown leather ring-binder organiser, one open (lined pages, pen loop) and one closed, 18k tris, 2k maps, real scale. Older/personal-journal look; the open one gives pages to write on.",
+   "rawUrlExtra": [
+    "(siblings) binder_notebook/binder_notebook.bin, textures/binder_notebook_nor_gl_2k.jpg, textures/binder_notebook_diff_2k.jpg, textures/binder_notebook_arm_2k.jpg"
+   ],
+   "boundsXYZ": [
+    0.584,
+    0.0253,
+    0.2
+   ],
+   "materials": 1
+  },
+  {
+   "need": "6 notebook / notepads",
+   "title": "Office Notepads",
+   "author": "Poly Haven",
+   "license": "CC0 1.0",
+   "originalUrl": "https://polyhaven.com/a/office_notepads",
+   "licenseConfirmedVia": "Poly Haven assets are all CC0 (polyhaven.com/license); mirror repo Geadas11/Claude_steam_game lists it in assets/3d/CREDITS.md as Poly Haven CC0. Download from mirror is the original 2k glTF (gltf+bin+jpg textures).",
+   "rawUrl": "https://raw.githubusercontent.com/Geadas11/Claude_steam_game/HEAD/assets/3d/models/office_notepads/office_notepads.gltf",
+   "format": "glTF 2k",
+   "sizeBytes": 5724234,
+   "triangles": 666,
+   "textures": "3x 2048x2048",
+   "notes": "Set of flat white and yellow notepads/sheets, 666 tris, 2k maps. Good loose paper sheets.",
+   "rawUrlExtra": [
+    "(siblings) office_notepads/office_notepads.bin, textures/office_notepads_nor_gl_2k.jpg, textures/office_notepads_diff_2k.jpg, textures/office_notepads_arm_2k.jpg"
+   ],
+   "boundsXYZ": [
+    1.1028,
+    0.022,
+    0.6598
+   ],
+   "materials": 1
+  },
+  {
+   "need": "6 notebook (desk stationery set)",
+   "title": "Stationery Supplies",
+   "author": "Poly Haven",
+   "license": "CC0 1.0",
+   "originalUrl": "https://polyhaven.com/a/stationery_supplies",
+   "licenseConfirmedVia": "Poly Haven assets are all CC0 (polyhaven.com/license); mirror repo Geadas11/Claude_steam_game lists it in assets/3d/CREDITS.md as Poly Haven CC0. Download from mirror is the original 2k glTF (gltf+bin+jpg textures).",
+   "rawUrl": "https://raw.githubusercontent.com/Geadas11/Claude_steam_game/HEAD/assets/3d/models/stationery_supplies/stationery_supplies.gltf",
+   "format": "glTF 2k",
+   "sizeBytes": 7254223,
+   "triangles": 4412,
+   "textures": "3x 2048x2048",
+   "notes": "Pens, pencils, eraser and a black pen cup, 4.4k tris, 2k maps. Desk dressing.",
+   "rawUrlExtra": [
+    "(siblings) stationery_supplies/stationery_supplies.bin, textures/stationery_supplies_nor_gl_2k.jpg, textures/stationery_supplies_diff_2k.jpg, textures/stationery_supplies_arm_2k.jpg"
+   ],
+   "boundsXYZ": [
+    0.3019,
+    0.1643,
+    0.0837
+   ],
+   "materials": 1
+  },
+  {
+   "need": "7 metal tin with lid",
+   "title": "Cleaner Tin 01",
+   "author": "Poly Haven: Tom Phillips",
+   "license": "CC0 1.0",
+   "originalUrl": "https://polyhaven.com/a/cleaner_tin_01",
+   "licenseConfirmedVia": "Poly Haven (CC0); mirror github.com/HHSOLL/DeskteriorOnline is the 1k version re-packed with Draco by glTF-Transform (decoded here)",
+   "rawUrl": "https://raw.githubusercontent.com/HHSOLL/DeskteriorOnline/HEAD/apps/web/public/assets/models/cleaner_tin_01/cleaner_tin_01_1k.gltf",
+   "format": "glTF 1k (Draco-compressed in the mirror)",
+   "sizeBytes": 1749257,
+   "triangles": 3560,
+   "textures": "3x 1024x1024",
+   "notes": "Red metal tin with press-on lid ('PolyClean' fictional label, scuffed), 3.6k tris, 1024 px maps (only the 1k version is mirrored), real scale 8.8 x 13 cm. Reads as a paint/cleaner tin; repaint the label for a coffee/biscuit tin.",
+   "rawUrlExtra": [
+    "(siblings) cleaner_tin_01/cleaner_tin_01.bin, textures/cleaner_tin_01_nor_gl_1k.jpg, textures/cleaner_tin_01_diff_1k.jpg, textures/cleaner_tin_01_arm_1k.jpg"
+   ],
+   "boundsXYZ": [
+    0.0876,
+    0.1304,
+    0.0875
+   ],
+   "materials": 1
+  },
+  {
+   "need": "7 tin can",
+   "title": "Russian Food Cans 01",
+   "author": "Poly Haven: Kosan Aziz",
+   "license": "CC0 1.0",
+   "originalUrl": "https://polyhaven.com/a/russian_food_cans_01",
+   "licenseConfirmedVia": "Poly Haven assets are all CC0 (polyhaven.com/license); mirror repo Geadas11/Claude_steam_game lists it in assets/3d/CREDITS.md as Poly Haven CC0. Download from mirror is the original 2k glTF (gltf+bin+jpg textures).",
+   "rawUrl": "https://raw.githubusercontent.com/Geadas11/Claude_steam_game/HEAD/assets/3d/models/russian_food_cans_01/russian_food_cans_01.gltf",
+   "format": "glTF 2k",
+   "sizeBytes": 4791735,
+   "triangles": 1348,
+   "textures": "3x 2048x2048",
+   "notes": "Two food tins (pull-ring lids) and a salt box with Russian labels, 1.3k tris, 2k maps, real scale. Good tin-can geometry; labels are foreign-language.",
+   "rawUrlExtra": [
+    "(siblings) russian_food_cans_01/russian_food_cans_01.bin, textures/russian_food_cans_01_nor_gl_2k.jpg, textures/russian_food_cans_01_diff_2k.jpg, textures/russian_food_cans_01_arm_2k.jpg"
+   ],
+   "boundsXYZ": [
+    0.1424,
+    0.0849,
+    0.0462
+   ],
+   "materials": 1
+  },
+  {
+   "need": "7 tin cans",
+   "title": "Long Life Food",
+   "author": "Poly Haven",
+   "license": "CC0 1.0",
+   "originalUrl": "https://polyhaven.com/a/long_life_food",
+   "licenseConfirmedVia": "Poly Haven assets are all CC0 (polyhaven.com/license); mirror repo Geadas11/Claude_steam_game lists it in assets/3d/CREDITS.md as Poly Haven CC0. Download from mirror is the original 2k glTF (gltf+bin+jpg textures).",
+   "rawUrl": "https://raw.githubusercontent.com/Geadas11/Claude_steam_game/HEAD/assets/3d/models/long_life_food/long_life_food.gltf",
+   "format": "glTF 2k",
+   "sizeBytes": 6826467,
+   "triangles": 4712,
+   "textures": "3x 2048x2048",
+   "notes": "Group of food cans, a sardine tin and a milk carton with fictional labels, 4.7k tris, 2k maps, real scale. Separate meshes per item.",
+   "rawUrlExtra": [
+    "(siblings) long_life_food/long_life_food.bin, textures/long_life_food_nor_gl_2k.jpg, textures/long_life_food_diff_2k.jpg, textures/long_life_food_arm_2k.jpg"
+   ],
+   "boundsXYZ": [
+    0.5238,
+    0.2376,
+    0.1136
+   ],
+   "materials": 1
+  },
+  {
+   "need": "7 coffee tin (scan)",
+   "title": "YCB 002_master_chef_can (Google 16k scan)",
+   "author": "YCB Object and Model Set (Calli, Walsman, Singh, Srinivasa, Abbeel, Dollar)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://www.ycbbenchmarks.com/ (002_master_chef_can, google_16k)",
+   "licenseConfirmedVia": "SOURCE.md beside the mirror (github.com/wei-hsuan-cheng/m3t_ros2 assets/ycb/002_master_chef_can/SOURCE.md): \"The YCB data is licensed under CC BY 4.0\"; downloaded from ycb-benchmarks.s3.amazonaws.com",
+   "rawUrl": "https://raw.githubusercontent.com/wei-hsuan-cheng/m3t_ros2/HEAD/assets/ycb/002_master_chef_can/model.obj",
+   "format": "OBJ + 4096 px PNG albedo (scan, metres)",
+   "sizeBytes": 11615284,
+   "triangles": 16384,
+   "textures": "1x 4096x4096",
+   "notes": "Photoscanned coffee can (blue 'Master Chef' brand label), 16k tris, 4096 px albedo only, real scale 10 x 14 cm. Exact 'coffee tin' shape; the real brand label must be repainted. Z-up.",
+   "rawUrlExtra": [
+    "https://raw.githubusercontent.com/wei-hsuan-cheng/m3t_ros2/HEAD/assets/ycb/002_master_chef_can/texture_map.png"
+   ],
+   "boundsXYZ": [
+    0.1025,
+    0.1024,
+    0.1402
+   ],
+   "materials": 1
+  },
+  {
+   "need": "8 key ring with house keys",
+   "title": "Keys",
+   "author": "stfuaahil (https://sketchfab.com/stfuaahil)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/keys-2dbcae14689b42ba9b55912d8be15326",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf (also mirrored in AhmedDebrekey/Osiris)",
+   "rawUrl": "https://raw.githubusercontent.com/Yiliii/engl3500-hw6/HEAD/assets/keys/scene.gltf",
+   "format": "glTF",
+   "sizeBytes": 13212146,
+   "triangles": 14642,
+   "textures": "15x 2048x2048",
+   "notes": "Key ring with three modern house keys and a blue plastic key tag, 14.6k tris, 15 maps at 2048 px (per-part PBR). Units ~700 tall (scale ~1e-4 for 7 cm). Clean modern look; also used by another horror project (AhmedDebrekey/Osiris).",
+   "rawUrlExtra": [
+    "(siblings) keys/scene.bin, textures/key_1_baseColor.png, textures/key_1_metallicRoughness.png, textures/key_1_normal.png, textures/key_2_baseColor.png, textures/key_2_metallicRoughness.png, textures/key_2_normal.png, textures/key_3_baseColor.png, textures/key_3_metallicRoughness.png, textures/key_3_normal.png, textures/ring_baseColor.png, textures/ring_metallicRoughness.png, textures/ring_normal.png, textures/name_baseColor.png, textures/name_metallicRoughness.png, textures/name_normal.png"
+   ],
+   "boundsXYZ": [
+    208.2548,
+    703.311,
+    315.6814
+   ],
+   "materials": 5
+  },
+  {
+   "need": "8 key ring with house keys",
+   "title": "door keys",
+   "author": "artemtem (https://sketchfab.com/artemtem)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/door-keys-30afb0dd7d714f6bbbcd4acc891214da",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/deavae1/Final_Beginning_Code/HEAD/public/gltf/door_keys/scene.gltf",
+   "format": "glTF",
+   "sizeBytes": 11743381,
+   "triangles": 1290,
+   "textures": "12x 2048x2048",
+   "notes": "BEST 'HOUSE KEYS' PICK. Steel ring with three worn brass keys (two cylinder keys and one long double-bit key), 1.3k tris, per-key PBR at 2048 px, units 2 tall (scale ~0.05). Photoreal wear.",
+   "rawUrlExtra": [
+    "(siblings) door_keys/scene.bin, textures/key_001_baseColor.jpeg, textures/key_001_metallicRoughness.png, textures/key_001_normal.png, textures/key_003_baseColor.jpeg, textures/key_003_metallicRoughness.png, textures/key_003_normal.png, textures/ring_baseColor.jpeg, textures/ring_metallicRoughness.png, textures/ring_normal.png, textures/key_002_baseColor.jpeg, textures/key_002_metallicRoughness.png, textures/key_002_normal.png"
+   ],
+   "boundsXYZ": [
+    0.4137,
+    2,
+    0.9603
+   ],
+   "materials": 4
+  },
+  {
+   "need": "8 single old key",
+   "title": "Old Key",
+   "author": "TheFalkonett (https://sketchfab.com/TheFalkonett)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/old-key-d846b203f4754ee3825e8c4c76d21b21",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/Sergiodevelopersk8/godotcurso2/HEAD/terror-curso-3d/AssetsModels/Door/Key/old_key/scene.gltf",
+   "format": "glTF",
+   "sizeBytes": 1324826,
+   "triangles": 1360,
+   "textures": "3x 1024x256",
+   "notes": "BEST SINGLE OLD KEY. Ornate antique skeleton key with filigree bow, 1.4k tris, 1024x256 PBR, about 15 cm long. Slightly large for a door key; scale down.",
+   "rawUrlExtra": [
+    "(siblings) old_key/scene.bin, textures/material_baseColor.png, textures/material_metallicRoughness.png, textures/material_normal.png"
+   ],
+   "boundsXYZ": [
+    0.1478,
+    0.1181,
+    0.125
+   ],
+   "materials": 1
+  },
+  {
+   "need": "8 key with tag + ring (alternative)",
+   "title": "Key with Tag",
+   "author": "AxonDesigns (Sketchfab, https://skfb.ly/oAqSG)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://skfb.ly/oAqSG",
+   "licenseConfirmedVia": "attribution.txt beside the model in github.com/marco-brunetti/Cursed-Silence-Chapter-1 (Assets/Imported/Props/key_door/). Not embedded.",
+   "rawUrl": "https://raw.githubusercontent.com/marco-brunetti/Cursed-Silence-Chapter-1/HEAD/Assets/Imported/Props/key_door/Key.fbx",
+   "format": "FBX + PNG PBR per part (Key, KeyTag, Ring: Albedo/AO/Metalness/Normal/Roughness)",
+   "sizeBytes": 133228,
+   "triangles": null,
+   "textures": null,
+   "notes": "Not downloaded beyond a URL check. Single key on a ring with a paper/plastic tag: nice for a \"spare key\" beat."
+  },
+  {
+   "need": "9 plastic water bottle",
+   "title": "Plastic Water Bottle",
+   "author": "Jeremy E. Grayson (https://sketchfab.com/JeremyGrayson)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/plastic-water-bottle-efa1c4c1f2a947659ded2e61e20eff31",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf (mirrored in 5+ repos)",
+   "rawUrl": "https://raw.githubusercontent.com/ChrisTs8920/3d-gym/HEAD/assets/World/Gym/plastic_water_bottle/scene.gltf",
+   "format": "glTF (no textures)",
+   "sizeBytes": 305550,
+   "triangles": 10296,
+   "textures": "none (material colours only)",
+   "notes": "Ribbed 0.5 l PET bottle with cap, 10k tris, material colours only (no textures; renders tinted). Good geometry; needs our own transparent plastic material and a label. Units ~29 tall (scale ~0.007). Mirrored in 5+ repos.",
+   "rawUrlExtra": [
+    "(siblings) plastic_water_bottle/scene.bin"
+   ],
+   "boundsXYZ": [
+    10.394,
+    29.1537,
+    9.4271
+   ],
+   "materials": 2
+  },
+  {
+   "need": "9 plastic water bottles",
+   "title": "Water Bottles",
+   "author": "HGowl (https://sketchfab.com/hgowl22)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/water-bottles-300baac43615474c8fa3e4da94c78ce1",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/wimmevdv/vr-ai-bank-heist/HEAD/Assets/Models/water_bottles/scene.gltf",
+   "format": "glTF",
+   "sizeBytes": 921488,
+   "triangles": 17741,
+   "textures": "1x 1024x256",
+   "notes": "Shrink-wrapped multipack of 24 water bottles plus loose bottles, 17.7k tris, one 1024x256 label texture, real scale (49 cm pack). Good for a kitchen corner; loose bottles can be split out.",
+   "rawUrlExtra": [
+    "(siblings) water_bottles/scene.bin, textures/Labels_baseColor.jpeg"
+   ],
+   "boundsXYZ": [
+    0.2233,
+    0.2171,
+    0.4868
+   ],
+   "materials": 5
+  },
+  {
+   "need": "9 plastic water bottle",
+   "title": "Water Bottle",
+   "author": "Microsoft (https://sketchfab.com/microsoft)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/water-bottle-c002e2aa017d49ae8e6dbd295cca3914",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/dotdotslash/lug-love/HEAD/public/models/water_bottle/scene.gltf",
+   "format": "glTF",
+   "sizeBytes": 916967,
+   "triangles": 31310,
+   "textures": "1x 1024x1024",
+   "notes": "Single water bottle with label band, 31k tris, one 1024 px texture, units ~37 tall (scale ~0.0065). Looks opaque/pastel; needs a transparent material.",
+   "rawUrlExtra": [
+    "(siblings) water_bottle/scene.bin, textures/wire_145028177_baseColor.jpeg"
+   ],
+   "boundsXYZ": [
+    11.0466,
+    36.5853,
+    11.0469
+   ],
+   "materials": 1
+  },
+  {
+   "need": "9 plastic bottle (gallon jug)",
+   "title": "Plastic Bottle Gallon",
+   "author": "Poly Haven: Rahul Chaudhary",
+   "license": "CC0 1.0",
+   "originalUrl": "https://polyhaven.com/a/plastic_bottle_gallon",
+   "licenseConfirmedVia": "Poly Haven assets are all CC0 (polyhaven.com/license); mirror repo Geadas11/Claude_steam_game lists it in assets/3d/CREDITS.md as Poly Haven CC0. Download from mirror is the original 2k glTF (gltf+bin+jpg textures).",
+   "rawUrl": "https://raw.githubusercontent.com/Geadas11/Claude_steam_game/HEAD/assets/3d/models/plastic_bottle_gallon/plastic_bottle_gallon.gltf",
+   "format": "glTF 2k",
+   "sizeBytes": 4395075,
+   "triangles": 13728,
+   "textures": "3x 2048x2048",
+   "notes": "Dirty white plastic gallon jug with handle, 13.7k tris, 2k maps, real scale. Garage/shed look rather than drinking-water bottle.",
+   "rawUrlExtra": [
+    "(siblings) plastic_bottle_gallon/plastic_bottle_gallon.bin, textures/plastic_bottle_gallon_nor_gl_2k.jpg, textures/plastic_bottle_gallon_diff_2k.jpg, textures/plastic_bottle_gallon_arm_2k.jpg"
+   ],
+   "boundsXYZ": [
+    0.1663,
+    0.2745,
+    0.1264
+   ],
+   "materials": 1
+  },
+  {
+   "need": "10 folded blanket (stand-in: folded bath towel scan)",
+   "title": "Provence Bath Towel, Royal Blue (scan)",
+   "author": "Google Research (Google Scanned Objects)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://app.gazebosim.org/GoogleResearch/fuel/models/Provence_Bath_Towel_Royal_Blue",
+   "licenseConfirmedVia": "README of github.com/kevinzakka/mujoco_scanned_objects: \"The 3D assets (obj and png) are licensed under CC-BY 4.0\"; dataset paper arXiv:2204.11918",
+   "rawUrl": "https://raw.githubusercontent.com/kevinzakka/mujoco_scanned_objects/HEAD/models/Provence_Bath_Towel_Royal_Blue/model.obj",
+   "format": "OBJ + 1 PNG albedo (photogrammetry scan, Z-up, metres)",
+   "sizeBytes": 8007536,
+   "triangles": 101142,
+   "textures": "1x 1024x1024",
+   "notes": "Folded terry bath towel scan, convincing folds and pile; 101k tris (decimate), 1k albedo, real scale 26 x 36 x 9 cm, Z-up. Recolour for a folded blanket; too small/thin for a real blanket. Other GSO towels: Threshold_Textured_Damask_Bath_Towel_Pink, Threshold_Hand_Towel_Blue_Medallion.",
+   "rawUrlExtra": [
+    "https://raw.githubusercontent.com/kevinzakka/mujoco_scanned_objects/HEAD/models/Provence_Bath_Towel_Royal_Blue/texture.png"
+   ],
+   "boundsXYZ": [
+    0.263,
+    0.3562,
+    0.0882
+   ],
+   "materials": 1
+  },
+  {
+   "need": "10 crumpled blanket",
+   "title": "Picnic Blanket",
+   "author": "j8cov (https://sketchfab.com/j8cobcreative)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/picnic-blanket-af6221b3317249019e0614a1dab1bf98",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/Dplepler/5nightsat/HEAD/fivenightsatzixxxx9/assets/blanket/scene.gltf",
+   "format": "glTF",
+   "sizeBytes": 19597143,
+   "triangles": 7200,
+   "textures": "4x 2048x2048",
+   "notes": "Draped/crumpled cloth sheet with red gingham texture (base/normal/MR/emissive at 2048 px), 7.2k tris; units ~6.9 wide (scale ~0.25). Shape works as a thrown blanket after retexturing with a wool/fleece fabric.",
+   "rawUrlExtra": [
+    "(siblings) blanket/scene.bin, textures/initialShadingGroup_baseColor.png, textures/initialShadingGroup_metallicRoughness.png, textures/initialShadingGroup_emissive.jpeg, textures/initialShadingGroup_normal.png"
+   ],
+   "boundsXYZ": [
+    6.8812,
+    0.6509,
+    6.7299
+   ],
+   "materials": 1
+  },
+  {
+   "need": "11 bedside alarm clock (analog fallback)",
+   "title": "Alarm Clock 01",
+   "author": "Poly Haven: James Ray Cock (model/texture), Yann Kervran (rigging)",
+   "license": "CC0 1.0",
+   "originalUrl": "https://polyhaven.com/a/alarm_clock_01",
+   "licenseConfirmedVia": "Poly Haven assets are all CC0 (polyhaven.com/license); mirror repo Geadas11/Claude_steam_game lists it in assets/3d/CREDITS.md as Poly Haven CC0. Download from mirror is the original 2k glTF (gltf+bin+jpg textures).",
+   "rawUrl": "https://raw.githubusercontent.com/Geadas11/Claude_steam_game/HEAD/assets/3d/models/alarm_clock_01/alarm_clock_01.gltf",
+   "format": "glTF 2k (rigged hands in the original)",
+   "sizeBytes": 9082078,
+   "triangles": 8985,
+   "textures": "6x 2048x2048",
+   "notes": "Mint/aqua twin-bell mechanical alarm clock (\"90s\" in Poly Haven tags), 9k tris, 13 x 17 cm. Dial rendered black in our quick viewer (glass/dial alpha), check in game. Not digital: digital bedside clock is a GAP.",
+   "rawUrlExtra": [
+    "(siblings) alarm_clock_01/alarm_clock_01.bin, textures/alarm_clock_01_nor_gl_2k.jpg, textures/alarm_clock_01_diff_2k.jpg, textures/alarm_clock_01_arm_2k.jpg, textures/alarm_clock_01_nor_gl_2k.jpg, textures/alarm_clock_01_diff_2k.jpg, textures/alarm_clock_01_arm_2k.jpg"
+   ],
+   "boundsXYZ": [
+    0.1317,
+    0.1742,
+    0.0667
+   ],
+   "materials": 2
+  },
+  {
+   "need": "11 alarm clock (analog scan)",
+   "title": "Crosley vintage metal alarm clock (scan)",
+   "author": "Google Research (Google Scanned Objects)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://app.gazebosim.org/GoogleResearch/fuel/models/Crosley_Alarm_Clock_Vintage_Metal",
+   "licenseConfirmedVia": "README of github.com/kevinzakka/mujoco_scanned_objects: \"The 3D assets (obj and png) are licensed under CC-BY 4.0\"; dataset paper arXiv:2204.11918",
+   "rawUrl": "https://raw.githubusercontent.com/kevinzakka/mujoco_scanned_objects/HEAD/models/Crosley_Alarm_Clock_Vintage_Metal/model.obj",
+   "format": "OBJ + 1 PNG albedo (photogrammetry scan, Z-up, metres)",
+   "sizeBytes": 1348815,
+   "triangles": 10248,
+   "textures": "1x 1024x1024",
+   "notes": "Scan of a brushed-metal vintage alarm clock; 10k tris, 1k albedo. Mediocre; vintage, not digital.",
+   "rawUrlExtra": [
+    "https://raw.githubusercontent.com/kevinzakka/mujoco_scanned_objects/HEAD/models/Crosley_Alarm_Clock_Vintage_Metal/texture.png"
+   ],
+   "boundsXYZ": [
+    0.1095,
+    0.054,
+    0.1623
+   ],
+   "materials": 1
+  },
+  {
+   "need": "12 envelopes / letters / paper sheets",
+   "title": "Papers & Envelopes",
+   "author": "bossdeff (https://sketchfab.com/bossdeff)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/papers-envelopes-303f54d7a6e84aad9af3f341c2fa4ad7",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf (also in Cursed-Silence-Chapter-1 envelope/attribution.txt)",
+   "rawUrl": "https://raw.githubusercontent.com/IESP9/repo_equip7/HEAD/nou-projecte-de-joc1/Mapas/papers__envelopes/scene.gltf",
+   "format": "glTF",
+   "sizeBytes": 3793449,
+   "triangles": 460,
+   "textures": "1x 2048x2048, 2x 1024x1024",
+   "notes": "BEST PICK. A spread of printed letters/forms and white envelopes with bent corners, 460 tris, one 2048 px base + 1k normal/MR. Real scale (0.79 x 0.49 m spread). Text on the papers is generic; individual sheets are separate meshes.",
+   "rawUrlExtra": [
+    "(siblings) papers__envelopes/scene.bin, textures/Paper_Envelope_baseColor.png, textures/Paper_Envelope_metallicRoughness.png, textures/Paper_Envelope_normal.png"
+   ],
+   "boundsXYZ": [
+    0.794,
+    0.0282,
+    0.4889
+   ],
+   "materials": 1
+  },
+  {
+   "need": "12 envelope",
+   "title": "letter_envelope",
+   "author": "millernathan472 (https://sketchfab.com/millernathan472)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/letter-envelope-afbe0cda3df8473db028137db5c75130",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/RawabyRahal/Portfolio/HEAD/public/envelope/scene.gltf",
+   "format": "glTF (has an opening-flap animation)",
+   "sizeBytes": 2996235,
+   "triangles": 248,
+   "textures": "6x 1024x1024, 1x 512x512",
+   "notes": "Low-poly envelope (248 tris) with stamps and an animated flap; rendered nearly black in our viewer (dark paper texture or missing alpha). Weak.",
+   "rawUrlExtra": [
+    "(siblings) envelope/scene.bin, textures/wire_086086086_baseColor.jpeg, textures/wire_086086086_metallicRoughness.png, textures/wire_086086086_normal.png, textures/lowell_stamp_baseColor.png, textures/LetterFREE__0_baseColor.jpeg, textures/LetterFREE__0_metallicRoughness.png, textures/LetterFREE__0_normal.png"
+   ],
+   "boundsXYZ": [
+    3.671,
+    2.3024,
+    0.9764
+   ],
+   "materials": 3
+  },
+  {
+   "need": "12 paper / photos (postcards)",
+   "title": "Postcard Set 01",
+   "author": "Poly Haven: James Ray Cock (model/textures), Jurita Burger (graphic design)",
+   "license": "CC0 1.0",
+   "originalUrl": "https://polyhaven.com/a/postcard_set_01",
+   "licenseConfirmedVia": "Poly Haven assets are all CC0 (polyhaven.com/license); mirror repo Geadas11/Claude_steam_game lists it in assets/3d/CREDITS.md as Poly Haven CC0. Download from mirror is the original 2k glTF (gltf+bin+jpg textures).",
+   "rawUrl": "https://raw.githubusercontent.com/Geadas11/Claude_steam_game/HEAD/assets/3d/models/postcard_set_01/postcard_set_01.gltf",
+   "format": "glTF 2k",
+   "sizeBytes": 1684534,
+   "triangles": 2720,
+   "textures": "3x 2048x2048",
+   "notes": "19 separate photo postcards (travel photos on the front, written backs), 2.7k tris, 2k maps, real size. Usable as letters/photos scattered on a table.",
+   "rawUrlExtra": [
+    "(siblings) postcard_set_01/postcard_set_01.bin, textures/postcard_set_01_nor_gl_2k.jpg, textures/postcard_set_01_diff_2k.jpg, textures/postcard_set_01_rough_2k.jpg"
+   ],
+   "boundsXYZ": [
+    0.6767,
+    0.545,
+    0.0001
+   ],
+   "materials": 1
+  },
+  {
+   "need": "12 paper (clipboard)",
+   "title": "Clipboard",
+   "author": "Poly Haven",
+   "license": "CC0 1.0",
+   "originalUrl": "https://polyhaven.com/a/clipboard",
+   "licenseConfirmedVia": "Poly Haven assets are all CC0 (polyhaven.com/license); mirror repo Geadas11/Claude_steam_game lists it in assets/3d/CREDITS.md as Poly Haven CC0. Download from mirror is the original 2k glTF (gltf+bin+jpg textures).",
+   "rawUrl": "https://raw.githubusercontent.com/Geadas11/Claude_steam_game/HEAD/assets/3d/models/clipboard/clipboard.gltf",
+   "format": "glTF 2k",
+   "sizeBytes": 6768714,
+   "triangles": 6176,
+   "textures": "3x 2048x2048",
+   "notes": "Hardboard clipboard with metal clip, 6.2k tris, A4 size. Paper sheet not included.",
+   "rawUrlExtra": [
+    "(siblings) clipboard/clipboard.bin, textures/clipboard_nor_gl_2k.jpg, textures/clipboard_diff_2k.jpg, textures/clipboard_arm_2k.jpg"
+   ],
+   "boundsXYZ": [
+    0.2286,
+    0.042,
+    0.3366
+   ],
+   "materials": 1
+  },
+  {
+   "need": "12 crumpled letter (alternative)",
+   "title": "Folded Wrinkled Paper",
+   "author": "pozo3d (Sketchfab, https://skfb.ly/6WOZU)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://skfb.ly/6WOZU",
+   "licenseConfirmedVia": "attribution.txt beside it in github.com/marco-brunetti/Cursed-Silence-Chapter-1 (Assets/Imported/Props/paper_wrinkled/)",
+   "rawUrl": "https://raw.githubusercontent.com/marco-brunetti/Cursed-Silence-Chapter-1/HEAD/Assets/Imported/Props/paper_wrinkled/paper_wrinkled.obj",
+   "format": "OBJ + ppPaper_1001 BaseColor/Normal/Roughness/Height JPG",
+   "sizeBytes": 65917,
+   "triangles": null,
+   "textures": null,
+   "notes": "URL checked only (not previewed). A folded, wrinkled paper sheet: good for a note/letter on the floor."
+  },
+  {
+   "need": "13 polaroid photos",
+   "title": "Polaroid pictures",
+   "author": "maria.jardan (https://sketchfab.com/maria.jardan)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/polaroid-pictures-c94b9b50c5ac4e2a96ac44a5fc3618eb",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/Nkosbonile/Psycho-Hunter/HEAD/assets/models/polaroid_pictures/scene.gltf",
+   "format": "glTF",
+   "sizeBytes": 7359385,
+   "triangles": 1540,
+   "textures": "3x 2048x2048",
+   "notes": "Seven slightly curled instant photos (separate meshes) with dark/red photo content, 1.5k tris, 2048 px PBR; units ~7 wide (scale ~0.03). Swap the photo atlas for our own images.",
+   "rawUrlExtra": [
+    "(siblings) polaroid_pictures/scene.bin, textures/polaroids_baseColor.jpeg, textures/polaroids_metallicRoughness.png, textures/polaroids_normal.png"
+   ],
+   "boundsXYZ": [
+    7.2078,
+    5.1344,
+    1.6127
+   ],
+   "materials": 1
+  },
+  {
+   "need": "13 polaroid photo",
+   "title": "Polaroid Photo Sample",
+   "author": "Edoardo Galati (https://sketchfab.com/edoardogalati)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/polaroid-photo-sample-fe1d05e189dc4da197f6ba2717abe182",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/Chikki06/chikki06.github.io/HEAD/public/assets/polaroid/scene.gltf",
+   "format": "glTF",
+   "sizeBytes": 285684,
+   "triangles": 188,
+   "textures": "1x 2048x2048",
+   "notes": "Single instant photo (frame + photo materials), 188 tris; photo shows a real person: replace. A plane would do as well.",
+   "rawUrlExtra": [
+    "(siblings) polaroid/scene.bin, textures/Frameblinn2SG_baseColor.jpg"
+   ],
+   "boundsXYZ": [
+    27.2026,
+    18.1168,
+    31.5023
+   ],
+   "materials": 3
+  },
+  {
+   "need": "13 instant camera",
+   "title": "Polaroid Camera",
+   "author": "Big guy (https://sketchfab.com/ondra.lit)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/polaroid-camera-25424b0668804ae3a4d3c69a2cd17538",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/S4ndf1re/bezier_edit/HEAD/assets/polaroid_camera/scene.gltf",
+   "format": "glTF",
+   "sizeBytes": 10984386,
+   "triangles": 9075,
+   "textures": "3x 2048x2048",
+   "notes": "Folding SX-70-style instant camera, 9k tris, 2k PBR, real scale. Has \"Polaroid\" text on the front: brand, paint out.",
+   "rawUrlExtra": [
+    "(siblings) polaroid_camera/scene.bin, textures/Instant_camera_material_baseColor.png, textures/Instant_camera_material_metallicRoughness.png, textures/Instant_camera_material_normal.png"
+   ],
+   "boundsXYZ": [
+    0.3408,
+    0.2897,
+    0.4577
+   ],
+   "materials": 1
+  },
+  {
+   "need": "14 key bowl",
+   "title": "Wooden Bowl 01",
+   "author": "Poly Haven: Oliver Harries",
+   "license": "CC0 1.0",
+   "originalUrl": "https://polyhaven.com/a/wooden_bowl_01",
+   "licenseConfirmedVia": "Poly Haven assets are all CC0 (polyhaven.com/license); mirror repo Geadas11/Claude_steam_game lists it in assets/3d/CREDITS.md as Poly Haven CC0. Download from mirror is the original 2k glTF (gltf+bin+jpg textures).",
+   "rawUrl": "https://raw.githubusercontent.com/Geadas11/Claude_steam_game/HEAD/assets/3d/models/wooden_bowl_01/wooden_bowl_01.gltf",
+   "format": "glTF 2k",
+   "sizeBytes": 6465864,
+   "triangles": 14122,
+   "textures": "3x 2048x2048",
+   "notes": "Rustic carved root-wood bowl, 14k tris, 2k maps, 31 cm wide (scale to ~20 cm for a key bowl). Photoreal.",
+   "rawUrlExtra": [
+    "(siblings) wooden_bowl_01/wooden_bowl_01.bin, textures/wooden_bowl_01_nor_gl_2k.jpg, textures/wooden_bowl_01_diff_2k.jpg, textures/wooden_bowl_01_arm_2k.jpg"
+   ],
+   "boundsXYZ": [
+    0.3131,
+    0.0937,
+    0.3091
+   ],
+   "materials": 1
+  },
+  {
+   "need": "14 key bowl (ceramic scan)",
+   "title": "Now Designs Bowl, Akita Black (scan)",
+   "author": "Google Research (Google Scanned Objects)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://app.gazebosim.org/GoogleResearch/fuel/models/Now_Designs_Bowl_Akita_Black",
+   "licenseConfirmedVia": "README of github.com/kevinzakka/mujoco_scanned_objects: \"The 3D assets (obj and png) are licensed under CC-BY 4.0\"; dataset paper arXiv:2204.11918",
+   "rawUrl": "https://raw.githubusercontent.com/kevinzakka/mujoco_scanned_objects/HEAD/models/Now_Designs_Bowl_Akita_Black/model.obj",
+   "format": "OBJ + 1 PNG albedo (photogrammetry scan, Z-up, metres)",
+   "sizeBytes": 3566464,
+   "triangles": 42522,
+   "textures": "1x 1024x1024",
+   "notes": "Scanned ceramic bowl with white/black floral pattern, 16 cm, 42k tris, 1k albedo, Z-up. Looks good as a hallway catch-all bowl.",
+   "rawUrlExtra": [
+    "https://raw.githubusercontent.com/kevinzakka/mujoco_scanned_objects/HEAD/models/Now_Designs_Bowl_Akita_Black/texture.png"
+   ],
+   "boundsXYZ": [
+    0.1597,
+    0.1589,
+    0.0752
+   ],
+   "materials": 1
+  },
+  {
+   "need": "14 key bowl (ceramic scan)",
+   "title": "Threshold Bead Cereal Bowl, White (scan)",
+   "author": "Google Research (Google Scanned Objects)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://app.gazebosim.org/GoogleResearch/fuel/models/Threshold_Bead_Cereal_Bowl_White",
+   "licenseConfirmedVia": "README of github.com/kevinzakka/mujoco_scanned_objects: \"The 3D assets (obj and png) are licensed under CC-BY 4.0\"; dataset paper arXiv:2204.11918",
+   "rawUrl": "https://raw.githubusercontent.com/kevinzakka/mujoco_scanned_objects/HEAD/models/Threshold_Bead_Cereal_Bowl_White/model.obj",
+   "format": "OBJ + 1 PNG albedo (photogrammetry scan, Z-up, metres)",
+   "sizeBytes": 1335750,
+   "triangles": 14030,
+   "textures": "1x 1024x1024",
+   "notes": "Plain white ceramic bowl scan, 17 cm, 14k tris, 1k albedo. Underside shows a small sticker.",
+   "rawUrlExtra": [
+    "https://raw.githubusercontent.com/kevinzakka/mujoco_scanned_objects/HEAD/models/Threshold_Bead_Cereal_Bowl_White/texture.png"
+   ],
+   "boundsXYZ": [
+    0.1698,
+    0.1663,
+    0.0707
+   ],
+   "materials": 1
+  },
+  {
+   "need": "15 clothes hanger",
+   "title": "Wood Clothes Hanger",
+   "author": "tedpermana (https://sketchfab.com/tedpermana)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/wood-clothes-hanger-3b5ada364d634aa18007f9c8d8dc79ce",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/husnimubaraq/ar-app/HEAD/public/assets/models/hanger/scene.gltf",
+   "format": "glTF",
+   "sizeBytes": 7440864,
+   "triangles": 1128,
+   "textures": "3x 2048x2048",
+   "notes": "BEST PICK. Wooden suit hanger with chrome hook, 1.1k tris, 2048 px PBR; centimetre units (78 wide: scale 0.0057 for 44 cm). Instance a row on the wardrobe rail.",
+   "rawUrlExtra": [
+    "(siblings) hanger/scene.bin, textures/wire_228153184_baseColor.png, textures/wire_228153184_metallicRoughness.png, textures/wire_228153184_normal.png"
+   ],
+   "boundsXYZ": [
+    77.9702,
+    42.7183,
+    2.3169
+   ],
+   "materials": 1
+  },
+  {
+   "need": "15 coats on hangers",
+   "title": "Hangers W Clothes",
+   "author": "melaamory (https://sketchfab.com/melaamory)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/hangers-w-clothes-6df08ef8a8504504911ef520cd870aa8",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/LeonanFr/O-dia-em-que-o-Sol-se-foi/HEAD/assets/hangers_w_clothes/scene.gltf",
+   "format": "glTF (no textures)",
+   "sizeBytes": 7181933,
+   "triangles": 251176,
+   "textures": "none (material colours only)",
+   "notes": "Two white shirts/jackets on hangers with good cloth folds, untextured (single material), 251k tris (decimate to ~15k), centimetre units. Good wardrobe filler once recoloured/textured.",
+   "rawUrlExtra": [
+    "(siblings) hangers_w_clothes/scene.bin"
+   ],
+   "boundsXYZ": [
+    65.7237,
+    77.2919,
+    22.0562
+   ],
+   "materials": 1
+  },
+  {
+   "need": "15 coat stand (not a hanger)",
+   "title": "COAT HANGER (standing coat rack)",
+   "author": "tmacscad11 (https://sketchfab.com/tmacscad11)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://sketchfab.com/3d-models/coat-hanger-30ab527bd70842d7bd265bd15397b00e",
+   "licenseConfirmedVia": "glTF asset.extras (author/license/source) inside the mirrored scene.gltf",
+   "rawUrl": "https://raw.githubusercontent.com/santiagobenedetti/3d-room-designer/HEAD/public/models/coat_hanger/scene.gltf",
+   "format": "glTF (no textures)",
+   "sizeBytes": 824856,
+   "triangles": 23470,
+   "textures": "none (material colours only)",
+   "notes": "Actually a free-standing tripod coat rack, untextured, 23k tris, millimetre units. Could stand by the front door; not a wardrobe hanger.",
+   "rawUrlExtra": [
+    "(siblings) coat_hanger/scene.bin"
+   ],
+   "boundsXYZ": [
+    335.7688,
+    1722.4091,
+    320.3766
+   ],
+   "materials": 1
+  },
+  {
+   "need": "16 footprint decal (source to derive one; no ready CC0 decal found)",
+   "title": "Timberland Earthkeepers canvas oxford (shoe scan, used for its sole)",
+   "author": "Google Research (Google Scanned Objects)",
+   "license": "CC BY 4.0",
+   "originalUrl": "https://app.gazebosim.org/GoogleResearch/fuel/models/Timberland_Mens_Earthkeepers_Casco_Bay_Canvas_Oxford",
+   "licenseConfirmedVia": "README of github.com/kevinzakka/mujoco_scanned_objects: \"The 3D assets (obj and png) are licensed under CC-BY 4.0\"; dataset paper arXiv:2204.11918",
+   "rawUrl": "https://raw.githubusercontent.com/kevinzakka/mujoco_scanned_objects/HEAD/models/Timberland_Mens_Earthkeepers_Casco_Bay_Canvas_Oxford/model.obj",
+   "format": "OBJ + 1 PNG albedo (photogrammetry scan, Z-up, metres)",
+   "sizeBytes": 2598467,
+   "triangles": 27704,
+   "textures": "1x 1024x1024",
+   "notes": "No ready-made CC0 footprint image is reachable (OpenGameArt CC0 \"footprint shoeprint silhouette\" exists but is not mirrored on GitHub). This scan's 1024 px albedo holds the whole outsole as one clean, flat UV island with a waffle tread: crop it, threshold the tread into a mask, and tint it as a wet/dirty print (derivative of CC BY 4.0, credit Google). Other GSO soles: Mens_Bahama_in_Black, MARTIN_WEDGE_LACE_BOOT, Rayna_BootieWP. A small logo is moulded in the heel area: blur it out.",
+   "rawUrlExtra": [
+    "https://raw.githubusercontent.com/kevinzakka/mujoco_scanned_objects/HEAD/models/Timberland_Mens_Earthkeepers_Casco_Bay_Canvas_Oxford/texture.png"
+   ],
+   "boundsXYZ": [
+    0.11,
+    0.2926,
+    0.0845
+   ],
+   "materials": 1
+  },
+  {
+   "need": "2 small indoor Wi-Fi / baby-monitor camera (round or cube)",
+   "title": "GAP: nothing suitable found",
+   "author": null,
+   "license": null,
+   "originalUrl": null,
+   "licenseConfirmedVia": null,
+   "rawUrl": null,
+   "format": null,
+   "sizeBytes": null,
+   "triangles": null,
+   "textures": null,
+   "notes": "Searched GitHub glTF mirrors (security camera, CCTV, webcam, IP/PTZ camera, baby monitor) and Poly Haven: only outdoor bullet/box CCTV models exist under CC/MIT. Not mirrored but CC BY on Sketchfab: \"IP PTZ Camera\" by Deployer (c03415d20cda456aa9b592bcad27ace8, licence unconfirmed) and \"Raspberry Pi cam v2.1\" by F2A. Fallbacks listed: Poly Haven security_camera_02, the 470k-tri \"Webcam\" by 7124115. Primitive build of a cube cam would break the download-only rule; ask the owner."
+  },
+  {
+   "need": "11 digital bedside alarm clock",
+   "title": "GAP: nothing suitable found",
+   "author": null,
+   "license": null,
+   "originalUrl": null,
+   "licenseConfirmedVia": null,
+   "rawUrl": null,
+   "format": null,
+   "sizeBytes": null,
+   "triangles": null,
+   "textures": null,
+   "notes": "No CC0/CC BY digital (LED/LCD) alarm clock found mirrored on GitHub; Poly Haven has only analog ones (alarm_clock_01, mantel_clock_01, wall_clock). Option: Poly Haven alarm_clock_01, or ask the owner whether an emissive digit plane on a downloaded box/radio body is acceptable."
+  },
+  {
+   "need": "intruder: A burlap sack mask / blank hockey-style mask / rubber animal mask",
+   "title": "GAP: nothing suitable found",
+   "author": null,
+   "license": null,
+   "originalUrl": null,
+   "licenseConfirmedVia": null,
+   "rawUrl": null,
+   "format": null,
+   "sizeBytes": null,
+   "triangles": null,
+   "textures": null,
+   "notes": "None mirrored on GitHub with a usable licence. Sketchfab CC BY items found by search but not mirrored (cannot be downloaded from the sandbox): \"Creepy Mask\" by dasnymth (b1f117a21ded47e7ab3a5010e86124b3), \"doll\" face mask by seeyalate (a36074597f354cf886004abdb592f739), \"Venetian Mask 1/2\" scans by TetraVision, \"Venice Carnival Mask - FIDELIO\" by icarus96 (72276ddd1c864517b1ff64835a38d14d), \"Burlap Sack\" by Clockwork Creations (a sack, could be cut into a hood). The owner could download one on a normal network and drop it in the repo."
+  },
+  {
+   "need": "intruder: C separate hooded cloak / robe garment",
+   "title": "GAP: nothing suitable found",
+   "author": null,
+   "license": null,
+   "originalUrl": null,
+   "licenseConfirmedVia": null,
+   "rawUrl": null,
+   "format": null,
+   "sizeBytes": null,
+   "triangles": null,
+   "textures": null,
+   "notes": "Sketchfab CC BY cloaks found (Robe (Free) by wolfgar74 fcc16fda59e84ee29ea7e920d556d166, 68k tris; Cloak by Aid 3bff3420ebe4432485f9fbaf46d17aae; peasant cloak with hood by groknh) are not mirrored on GitHub. Mirrored hooded options are the hoodies listed above and the static 781k-tri Hooded Shadow Assassin. Recommended instead: Rocketbox Male_Adult_18 (hood already skinned)."
+  },
+  {
+   "need": "17 ceiling / loft access hatch",
+   "title": "GAP: nothing suitable found",
+   "author": null,
+   "license": null,
+   "originalUrl": null,
+   "licenseConfirmedVia": null,
+   "rawUrl": null,
+   "format": null,
+   "sizeBytes": null,
+   "triangles": null,
+   "textures": null,
+   "notes": "No CC0/CC BY loft hatch found. A hatch is a flat panel + frame: borderline \"small functional piece\"; ask the owner."
+  },
+  {
+   "need": "17 dust particle texture",
+   "title": "GAP: nothing suitable found",
+   "author": null,
+   "license": null,
+   "originalUrl": null,
+   "licenseConfirmedVia": null,
+   "rawUrl": null,
+   "format": null,
+   "sizeBytes": null,
+   "triangles": null,
+   "textures": null,
+   "notes": "Not searched in depth (the game already paints particles procedurally). Kenney Particle Pack (CC0) is widely mirrored on GitHub if a sprite is wanted."
+  }
+ ]
+}

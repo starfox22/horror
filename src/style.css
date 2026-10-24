@@ -138,8 +138,8 @@ h1 { margin: 0; font: 300 2.6rem/1.1 Georgia, "Times New Roman", serif; letter-s
   scrollbar-width: thin; }
 #menu[data-screen="ending"] .menu-panel, #menu[data-screen="records"] .menu-panel, #menu[data-screen="journal"] .menu-panel,
 #menu[data-screen="credits"] .menu-panel, #menu[data-screen="settings"] .menu-panel { align-self: center; max-height: 80vh; padding-top: 4vh; }
-#menu[data-screen="ending"] .menu-title, #menu[data-screen="records"] .menu-title, #menu[data-screen="journal"] .menu-title,
-#menu[data-screen="credits"] .menu-title, #menu[data-screen="settings"] .menu-title, #menu.paused .menu-title { display: none; }
+/* The big title belongs to the title screen (and the loading and error screens behind it); every other screen has its own heading. */
+#menu:not([data-screen="title"]):not([data-screen="loading"]):not([data-screen="error"]) .menu-title, #menu.paused .menu-title { display: none; }
 #menu .menu-item { display: grid; gap: .15rem; justify-items: start; width: min(30rem, 80vw); padding: .55rem 0 .55rem .9rem; background: none; border: 0;
   border-left: 1px solid transparent; color: #a9a397; font: 400 .95rem/1.2 'Helvetica Neue', Arial, sans-serif; letter-spacing: .22em;
   text-transform: uppercase; text-align: left; cursor: pointer; transition: color .25s, border-color .25s, padding .25s; }

@@ -3,11 +3,13 @@
 // ({ w, h, cols, frames, fps }), and the polaroid (public/assets/clips/polaroid.jpg: a flash photo of your bed taken from
 // inside the wardrobe, then made to look like instant film). Afterwards `node tools/props/build.mjs polaroids` prints
 // the polaroid into the photos' model.
-//   00:47  zoomed on the wardrobe: the right door opens a hand's width, a white face in the gap, it closes.
-//   02:58  the empty bed (you were sleepwalking), a man at its foot; he turns to the lens and looks up into it.
+//   00:47  zoomed on the wardrobe: the left door opens a hand's width, a white face low in the gap, it closes (the
+//          right door's own panel hides its gap from the lens).
+//   02:58  zoomed on the foot of the empty bed (you were sleepwalking): a man; he turns to the lens and looks up into it.
 //   0314   one frame for Sweet Dreams: you asleep, and him standing at the foot of the bed.
 // The sleeper is the unmasked Rocketbox man (assets-src/intruder/intruder-plain.glb, MIT; tools/intruder/build.mjs
-// plain) lying under the duvet: only the head on the pillow shows, grey in the grain.
+// plain), curled on his side on top of the duvet, head on the pillows (the bed is 1.77 m long; the crouch pose turned on
+// its side), grey in the grain.
 // Usage: npm run build && node tools/intruder/build.mjs plain && NODE_PATH=$(npm root -g) node tools/bake-clips.mjs [id ...]
 import http from 'node:http';
 import fs from 'node:fs';
@@ -58,24 +60,27 @@ const result = await page.evaluate(async (only) => {
     const asset = new pc.Asset('sleeper', 'container', { url: '/bake/sleeper.glb' });
     asset.once('load', () => {
       const e = asset.resource.instantiateRenderEntity({ castShadows: true, receiveShadows: true });
-      // Arms at the sides (a standing idle's first frame), frozen.
+      // Curled up: the crouch, frozen, laid on its side.
       e.addComponent('anim', { activate: true });
       for (const a of asset.resource.animations) e.anim.assignAnimation(a.resource.name, a.resource, undefined, true);
-      e.anim.baseLayer.transition('idle_neutral_01', 0); e.anim.speed = 0;
+      e.anim.baseLayer.transition('crouch_idle', 0); e.anim.speed = 0;
       resolve(e);
     });
     asset.once('error', reject);
     app.assets.add(asset); app.assets.load(asset);
   });
   app.root.addChild(sleeper);
-  sleeper.setRotation(new pc.Quat().setFromEulerAngles(-90, 0, 0).mul(new pc.Quat().setFromEulerAngles(0, 0, -90)));
-  sleeper.setPosition(12.35, 0.5, 0.42);
+  // Head towards the headboard (+x), facing the room's south side (+z), lying on his left side on the duvet (top 0.63).
+  sleeper.setRotation(new pc.Quat().setFromEulerAngles(0, 0, -90));
+  sleeper.setPosition(12.0, 0.86, 0.45);
   for (const r of sleeper.findComponents('render')) for (const mi of r.meshInstances) mi.isVisibleFunc = c => c.node?.name === 'security camera' && c.frustum.containsAabb(mi.aabb);
-  sleeper.enabled = false;
   await frames(4);
+  { const h = sleeper.findByName('Bip01 Head')?.getPosition(), f = sleeper.findByName('Bip01 L Foot')?.getPosition();
+    log.push(`sleeper head ${h && [h.x, h.y, h.z].map(v => v.toFixed(2))} foot ${f && [f.x, f.y, f.z].map(v => v.toFixed(2))}`); }
+  sleeper.enabled = false;
 
-  const rightDoor = s.closets.doors.find(d => d.id === 'right');
-  const setDoor = (k) => { rightDoor.angle = k; rightDoor.pivot.setEulerAngles(0, rightDoor.sign * 100 * k, 0); };
+  const door = (id) => s.closets.doors.find(d => d.id === id);
+  const setDoor = (k, id = 'right') => { const d = door(id); d.angle = k; d.pivot.setEulerAngles(0, d.sign * 100 * k, 0); };
   const ease = (t) => t < 0 ? 0 : t > 1 ? 1 : t * t * (3 - 2 * t);
   const pose = (clip, t) => { man.play(clip, { blend: 0 }); man.body.anim.speed = 0; man.body.anim.baseLayer.activeStateCurrentTime = t; };
   const camera = cam.entity, CAM = { pos: camera.getPosition().clone(), rot: camera.getRotation().clone(), fov: camera.camera.fov };
@@ -92,24 +97,24 @@ const result = await page.evaluate(async (only) => {
   const clips = {
     // 00:47 — six frames a second, 4 s, zoomed on the wardrobe's right door.
     '0047': { fps: 6, n: 24, setup: () => {
-      sleeper.enabled = true; aim([9.72, 1.15, -0.12], 46);
-      man.show(true); man.setTorch(false); man.place(9.47, -0.2, 90, 0.17); pose('idle_neutral_01', 0.4);
+      sleeper.enabled = true; aim([9.78, 1.05, -0.62], 24);
+      man.show(true); man.setTorch(false); man.place(9.5, -0.72, 90, 0.17); pose('crouch_idle', 0.4);
     }, step: (i, t) => {
-      setDoor(0.16 * (ease((t - 0.6) / 0.9) - ease((t - 2.7) / 0.8)));
-      man.headPitch = -4;
+      setDoor(0.17 * (ease((t - 0.6) / 0.9) - ease((t - 2.7) / 0.8)), 'left');
+      man.headPitch = -6;
     } },
     // 02:58 — 5 s: he stands at the foot of the empty bed; at 2 s he turns to the lens and lifts his face to it.
     '0258': { fps: 6, n: 30, setup: () => {
-      sleeper.enabled = false; setDoor(0); restore();
-      man.show(true); man.setTorch(false); man.place(10.85, 0.45, 90); pose('idle_breathe_01', 0);
+      sleeper.enabled = false; setDoor(0, 'left'); aim([11.3, 1.15, 0.5], 52);
+      man.show(true); man.setTorch(false); man.place(11.35, 0.5, 90); pose('idle_breathe_01', 0);
     }, step: (i, t) => {
       const k = ease((t - 2) / 1.4);
-      man.place(10.85, 0.45, 90 - 27 * k); pose('idle_breathe_01', 0.2 + t * 0.9); man.headPitch = -26 * ease((t - 2.8) / 1.2);
+      man.place(11.35, 0.5, 90 - 31.5 * k); pose('idle_breathe_01', 0.2 + t * 0.9); man.headPitch = -26 * ease((t - 2.8) / 1.2);
     } },
     // 03:14 — one frame: you asleep, him at the foot of the bed looking at you.
     '0314': { fps: 1, n: 1, setup: () => {
       sleeper.enabled = true; setDoor(0); restore();
-      man.show(true); man.setTorch(false); man.place(10.95, 0.5, 90); pose('idle_neutral_01', 1.0); man.headPitch = 8;
+      man.show(true); man.setTorch(false); man.place(11.4, 0.6, 90); pose('idle_neutral_01', 1.0); man.headPitch = 8;
     }, step: () => {} },
   };
   for (const [id, c] of Object.entries(clips)) {
@@ -120,18 +125,18 @@ const result = await page.evaluate(async (only) => {
   }
   // The polaroid: a flash photograph from the gap of the right wardrobe door, of your bed and you in it.
   if (!only.length || only.includes('polaroid')) {
-    sleeper.enabled = true; man.show(false); setDoor(0.2);
-    camera.setPosition(9.78, 1.32, 0.06); camera.lookAt(new pc.Vec3(12.6, 0.62, 0.48)); camera.camera.fov = 58;
+    sleeper.enabled = true; man.show(false); setDoor(0.8);
+    camera.setPosition(9.62, 1.28, -0.48); camera.lookAt(new pc.Vec3(12.55, 0.85, 0.5)); camera.camera.fov = 58;
     const flash = new pc.Entity('bake flash');
     flash.addComponent('light', { type: 'spot', color: new pc.Color(1, 0.97, 0.92), intensity: 9, range: 9, innerConeAngle: 30, outerConeAngle: 55, castShadows: true, shadowResolution: 1024 });
-    flash.setPosition(9.8, 1.36, 0.06); flash.lookAt(new pc.Vec3(12.6, 0.62, 0.48)); flash.rotateLocal(-90, 0, 0);
+    flash.setPosition(9.64, 1.32, -0.48); flash.lookAt(new pc.Vec3(12.55, 0.85, 0.5)); flash.rotateLocal(90, 0, 0);
     app.root.addChild(flash);
     await frames(4);
     await grab('polaroid', 0, cam.raw, cam.rt);
     flash.destroy();
     log.push('polaroid');
   }
-  restore(); setDoor(0); man.show(false); man.headPitch = 0; sleeper.destroy(); camera.camera.enabled = false;
+  restore(); setDoor(0); setDoor(0, 'left'); man.show(false); man.headPitch = 0; sleeper.destroy(); camera.camera.enabled = false;
   return log;
 }, only);
 console.log(result.join('\n'));
