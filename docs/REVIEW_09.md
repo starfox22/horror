@@ -2,6 +2,8 @@
 
 Ongoing branch: `codex-review`. Keep future reviews on this branch; merge or push to `main` only when the owner explicitly requests it. The playable address remains https://starfox 22.github.io/horror/codex/.
 
+Published game revision: `f39809820f6f3416f5330bb0fb4a7fae6efffc91`. [Deployment run 40098710673](https://github.com/starfox22/horror/actions/runs/40098710673) passed, and hosted build-info matches this commit. The hosted WebGPU check also passed graphics-menu controls, fresh FPS default, all nine light groups, exact switch/shelf placement, movement, flashlight pickup, and native coffee activation/pour/completion/replay. It reported no unexpected page, console or request errors. Documentation-only follow-up commits skip deployment and do not change the published game revision.
+
 ## Graphics and performance display
 
 Graphics is available on the start/pause screen and with **G** while playing. Opening it releases the mouse and pauses player movement. **G**, **Esc**, **Done**, or the close button dismiss the menu; use the normal entry/resume button to return to mouse look. Keyboard focus stays inside the dialog.
@@ -52,4 +54,4 @@ python 3 tools/check-browser.py http://127.0.0.1:5173/ webgpu
 
 The graphics browser check covers real controls, renderer changes, persistence through a reload without a hash override, pointer-lock release, focus handling, and a 320×480 viewport. The main browser check covers initial lighting states, wall/shelf placement, native E coffee activation, rendered pour/completion/replay, and the existing movement/light-restoration checks.
 
-[Comparison gallery](review-09/README.md). Object captures use matching 720×480 inspection cameras, Medium quality and fixed exposure 1. FPS is intentionally hidden only for these geometry comparisons; its fresh-session default is tested separately and the menu screenshot shows the control. Requested initial lighting changes are present in the revised scenes. Rendering is SwiftShader for correctness, not a desktop-GPU performance benchmark. No image colour retouching is applied.
+[Comparison gallery](review-09/README.md). Object captures use matching 720×480 inspection cameras, Medium quality and fixed exposure 1. The additional coffee close-up uses matching 640×480 inspection views at Low quality; steam is stepped to a visible age in both versions, and the new pour is held at its eight-second phase. FPS is intentionally hidden only for these geometry comparisons; its fresh-session default is tested separately and the menu screenshot shows the control. Requested initial lighting changes are present in the revised scenes. Rendering is SwiftShader for correctness, not a desktop-GPU performance benchmark. No image colour retouching is applied.

@@ -18,6 +18,8 @@ Original 0.8 on the left; review 0.9 on the right. These are real engine capture
 
 ![Coffee sequence](coffee-comparison.png)
 
+![Coffee close-up](coffee-detail-comparison.png)
+
 ## Bathroom lighting
 
 ![Bathroom defaults](bathroom-comparison.png)

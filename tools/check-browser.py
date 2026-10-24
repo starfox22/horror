@@ -79,6 +79,17 @@ with sync_playwright() as p:
     torch = fixtures['flashlight']
     assert torch['parts'] >= 2 and 1.84 < torch['minimumY'] < 1.843 and torch['maximumY'] < 1.92 and torch['width'] > 0.25, fixtures
     result['fixtureDefaultsAndPlacement'] = 'passed'
+    page.locator('#graphics-open').click()
+    page.wait_for_function('document.getElementById("graphics-dialog").open')
+    assert page.locator('[data-option="showFps"]').is_checked()
+    page.locator('[data-option="bloom"]').uncheck()
+    page.wait_for_function('window.__app.frame.bloom.intensity === 0')
+    page.locator('[data-option="bloom"]').check()
+    page.wait_for_function('window.__app.frame.bloom.intensity > 0')
+    page.locator('#graphics-preset').select_option('low')
+    page.locator('#graphics-done').click()
+    page.wait_for_function('!document.getElementById("graphics-dialog").open')
+    result['graphicsMenuAndLiveControls'] = 'passed'
     assert result['frame'] > 0 and result['floor'] > 0, result
     assert len(result['probeLevels']) == 8 and all(isinstance(v, (int, float)) and 0 <= v < float('inf') for v in result['probeLevels']), result
     assert any(v > 0 for v in result['probeLevels']), result
