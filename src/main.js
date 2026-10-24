@@ -31,6 +31,7 @@ import { Director } from './story-events.js';
 import { FallingGlass } from './falling-glass.js';
 import { Thought } from './thought.js';
 import { setPacked } from './packed.js';
+import { Intruder } from './intruder.js';
 
 const ASSETS = new URL('./assets/apartment/', location.href).href;
 const SPAWN = { x: WAKE_EXIT.x, z: WAKE_EXIT.z, yaw: WAKE_EXIT.yaw }; // clear bedside landing
@@ -97,7 +98,7 @@ device.maxPixelRatio = backingPixelRatio(sceneQualityOptions(graphicsPreferences
 
 const opts = new pc.AppOptions();
 opts.graphicsDevice = device;
-opts.componentSystems = [pc.RenderComponentSystem, pc.CameraComponentSystem, pc.LightComponentSystem, pc.ParticleSystemComponentSystem];
+opts.componentSystems = [pc.RenderComponentSystem, pc.CameraComponentSystem, pc.LightComponentSystem, pc.ParticleSystemComponentSystem, pc.AnimComponentSystem];
 opts.resourceHandlers = [pc.TextureHandler, pc.ContainerHandler];
 const app = new pc.AppBase(canvas);
 app.init(opts);
@@ -200,6 +201,9 @@ const drink = await DrinkSequence.create({ app, camera, player, fridge, interact
   onStart: () => { $('reticle').hidden = true; interactions.enabled = false; interactions.update(); },
   onComplete: () => { $('reticle').hidden = !player.active; interactions.enabled = player.active; },
 }).catch(failLoad);
+const playerCam = camera.camera.camera;
+const intruder = await Intruder.create({ app, sounds: null, isPlayerCamera: cam => cam === playerCam || cam.node?.name === 'security camera' }).catch(failLoad);
+app.on('update', () => intruder.update());
 // Scripted events (story-events.js), in story order; the developer menu can play any of them.
 const thought = new Thought();
 const fallingGlass = await FallingGlass.create({ sounds: ambience, thought, listener: () => camera.getPosition() });
@@ -305,7 +309,7 @@ document.addEventListener('pointerlockchange', () => {
 });
 if (shot) { intro.classList.add('gone'); intro.style.display = 'none'; player.active = false; }
 window.__state.ready = true;
-window.__app = { app, player, frame, camera, flashlight, interactions, switches, rain, doors, devices, closets, fridge, drink, probes, devMenu, eyes, graphics, frameLimiter, sceneQuality, wake, events, thought, fallingGlass };
+window.__app = { app, player, frame, camera, flashlight, interactions, switches, rain, doors, devices, closets, fridge, drink, probes, devMenu, eyes, graphics, frameLimiter, sceneQuality, wake, events, thought, fallingGlass, intruder };
 
 // The artifact build (tools/make-artifact.mjs) ships the apartment as one GLB split into base64 text parts listed in
 // apartment.json; download them with real progress and reassemble the GLB in memory. Otherwise load the glTF.

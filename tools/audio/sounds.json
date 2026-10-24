@@ -1,0 +1,846 @@
+{
+ "rain_window": {
+  "title": "Rain (loopable) #3",
+  "author": "Ylmir",
+  "license": "CC0",
+  "original": "https://opengameart.org/content/rain-loopable",
+  "mirror": "https://raw.githubusercontent.com/HaiderBassem/vertualspace/c6a0dd0004ac704c274f8027694344a19909c403/workadventure/maps/assets/library/audio/rain-loopable/3.ogg",
+  "licenseConfirmedVia": "web search summary of the Freesound page: OpenGameArt page: CC0, recorded with a mono mic at the author's window; repo SOURCE.md",
+  "loop": true,
+  "mono": true,
+  "peak": -3,
+  "trim": [
+   0,
+   30
+  ]
+ },
+ "rain_outside": {
+  "title": "SuburbRain_OutdoorLoop.wav",
+  "author": "PhilllChabbb",
+  "license": "CC0",
+  "original": "https://freesound.org/people/PhilllChabbb/sounds/238431/",
+  "mirror": "https://raw.githubusercontent.com/joeuk89/pixel-art/a7d4d21e978d8c8db4852ef730584d0c13b7d8c6/library/ambient/freesound-rain-outdoor-238431.ogg",
+  "licenseConfirmedVia": "pixel-art library/ambient/<id>.json (Freesound API metadata: sourceName, author, licence CC0-1.0, fetched 2026-10-24)",
+  "loop": true,
+  "peak": -3,
+  "trim": [
+   0,
+   30
+  ],
+  "mono": true
+ },
+ "room_tone": {
+  "title": "House Room Tone",
+  "author": "aleclubin",
+  "license": "CC0",
+  "original": "https://freesound.org/people/aleclubin/sounds/641306/",
+  "mirror": "https://raw.githubusercontent.com/joeuk89/pixel-art/a7d4d21e978d8c8db4852ef730584d0c13b7d8c6/library/ambient/freesound-room-tone-641306.ogg",
+  "licenseConfirmedVia": "pixel-art library/ambient/<id>.json (Freesound API metadata: sourceName, author, licence CC0-1.0, fetched 2026-10-24)",
+  "loop": true,
+  "peak": -3,
+  "trim": [
+   0,
+   30
+  ],
+  "mono": true
+ },
+ "fridge_hum": {
+  "title": "Foley_Object_Fridge_Motor_Humming_Loop_Mono_NTG4.wav",
+  "author": "Nox_Sound",
+  "license": "CC0",
+  "original": "https://freesound.org/people/Nox_Sound/sounds/556369/",
+  "mirror": "https://raw.githubusercontent.com/joeuk89/pixel-art/a7d4d21e978d8c8db4852ef730584d0c13b7d8c6/library/ambient/freesound-fridge-hum-556369.ogg",
+  "licenseConfirmedVia": "pixel-art library/ambient/<id>.json (Freesound API metadata: sourceName, author, licence CC0-1.0, fetched 2026-10-24)",
+  "loop": true,
+  "mono": true,
+  "peak": -3
+ },
+ "tap_drip": {
+  "title": "water drip leaky faucet in ceramic sink",
+  "author": "Funkelfang",
+  "license": "CC BY 4.0 (credit Funkelfang)",
+  "original": "https://freesound.org/people/Funkelfang/sounds/847083/",
+  "mirror": "https://media.githubusercontent.com/media/kubilaysabah/project_a/68a7ae89c0ea53bc418ae1f269d226e905a771d2/Art/Ses/kayitlar/847083__funkelfang__water-drip-leaky-faucet-in-ceramic-sink.wav",
+  "licenseConfirmedVia": "project_a Art/Ses/kayitlar/LISANSLAR.md (unaltered originals, per-file licence)",
+  "trim": [
+   0,
+   30
+  ],
+  "loop": true,
+  "mono": true,
+  "peak": -3
+ },
+ "house_creaks": {
+  "title": "Wood Creaking.wav",
+  "author": "laft2k",
+  "license": "CC0",
+  "original": "https://freesound.org/people/laft2k/sounds/397620/",
+  "mirror": "https://raw.githubusercontent.com/4ismael1/LUN-game/82089674bc112638d8032b4a6f42916f05f7a1a6/public/assets/audio/loop_creaking_wood.mp3",
+  "licenseConfirmedVia": "LUN-game asset-credits/audio.md (per-file Freesound link + CC0 1.0)",
+  "loop": true,
+  "mono": true,
+  "peak": -3,
+  "trim": [
+   0,
+   30
+  ]
+ },
+ "thunder_far_1": {
+  "title": "Distant Thunder 4",
+  "author": "Fission9",
+  "license": "CC0",
+  "original": "https://freesound.org/s/581125/",
+  "mirror": "https://raw.githubusercontent.com/swastik009/portfolio-website/0cad4d9e9fcf81bef9341e176958472aa092be74/daisy/assets/audio/ambience/thunder_far_2.mp3",
+  "licenseConfirmedVia": "DAISY daisy/CREDITS.md (per-file Freesound link + licence)",
+  "peak": -1,
+  "fade": [
+   0,
+   2
+  ]
+ },
+ "thunder_far_2": {
+  "title": "Distant Thunder.wav",
+  "author": "sarson",
+  "license": "CC0",
+  "original": "https://freesound.org/people/sarson/sounds/195522/",
+  "mirror": "https://raw.githubusercontent.com/joeuk89/pixel-art/a7d4d21e978d8c8db4852ef730584d0c13b7d8c6/library/ambient/freesound-thunder-distant-195522.ogg",
+  "licenseConfirmedVia": "pixel-art library/ambient/<id>.json (Freesound API metadata: sourceName, author, licence CC0-1.0, fetched 2026-10-24)",
+  "peak": -1,
+  "fade": [
+   0,
+   2
+  ]
+ },
+ "thunder_far_3": {
+  "title": "thunder.rumble.ogg",
+  "author": "xUMR",
+  "license": "CC0",
+  "original": "https://freesound.org/s/486557/",
+  "mirror": "https://raw.githubusercontent.com/swastik009/portfolio-website/0cad4d9e9fcf81bef9341e176958472aa092be74/daisy/assets/audio/ambience/thunder_far_1.mp3",
+  "licenseConfirmedVia": "DAISY daisy/CREDITS.md (per-file Freesound link + licence)",
+  "peak": -1,
+  "fade": [
+   0,
+   2
+  ]
+ },
+ "thunder_far_4": {
+  "title": "thunder-05 (lossless)",
+  "author": "Dave Welsh",
+  "license": "CC0",
+  "original": "https://freesound.org/people/Dave%20Welsh/sounds/194364/",
+  "mirror": "https://raw.githubusercontent.com/arianne/stendhal/fcd8330db06034098f9b164aa67fed82f261ae59/data/sounds/lossless_sources/weather/thunder-05.flac",
+  "licenseConfirmedVia": "Stendhal doc/sources/audio-weather.txt",
+  "peak": -1,
+  "fade": [
+   0,
+   1.5
+  ]
+ },
+ "thunder_near_1": {
+  "title": "big thunder clap",
+  "author": "seth-m",
+  "license": "CC0",
+  "original": "https://freesound.org/people/seth-m/sounds/458015/",
+  "mirror": "https://raw.githubusercontent.com/hey8v0/ST-iPhonie/093f84e3c08c20e89f66f36b45de51b163e9f250/sounds/458015.mp3",
+  "licenseConfirmedVia": "web search summary of the Freesound page: Freesound page: CC0, dry thunder clap, 11.4 s WAV; also ST-iPhonie sounds/README.md: all 304 files from Freesound, all CC0, with per-file Freesound links",
+  "peak": -1,
+  "fade": [
+   0,
+   2
+  ]
+ },
+ "thunder_near_2": {
+  "title": "Thunder Clap 1",
+  "author": "jzielke011",
+  "license": "CC0",
+  "original": "https://freesound.org/s/338091/",
+  "mirror": "https://raw.githubusercontent.com/hey8v0/ST-iPhonie/093f84e3c08c20e89f66f36b45de51b163e9f250/sounds/338091.mp3",
+  "licenseConfirmedVia": "ST-iPhonie sounds/README.md: all 304 files from Freesound, all CC0, with per-file Freesound links",
+  "peak": -1,
+  "fade": [
+   0,
+   2
+  ]
+ },
+ "thunder_crack": {
+  "title": "strike 3 sec",
+  "author": "Littlebrojay",
+  "license": "CC0",
+  "original": "https://freesound.org/people/Littlebrojay/sounds/195439/",
+  "mirror": "https://raw.githubusercontent.com/Wh1teDuke/WilhelmSFX/ec4875a35d265b5431e3ba81fef6cc0ca0281bfc/Samples/195439__littlebrojay__strike-3-sec.wav",
+  "licenseConfirmedVia": "WilhelmSFX README links this file to its Freesound page; repo ships only CC0 (SampleLicenses/CC0) and Sonniss licence texts, Sonniss items excluded",
+  "peak": -1,
+  "fade": [
+   0,
+   0.8
+  ]
+ },
+ "arc_discharge": {
+  "title": "taser/high voltage discharge (a)",
+  "author": "The_Chemical_Workshop",
+  "license": "CC0",
+  "original": "https://freesound.org/people/The_Chemical_Workshop/sounds/403252/",
+  "mirror": "https://raw.githubusercontent.com/Wh1teDuke/WilhelmSFX/ec4875a35d265b5431e3ba81fef6cc0ca0281bfc/Samples/403252__the_chemical_workshop__taserhigh-voltage-discharge_a.wav",
+  "licenseConfirmedVia": "WilhelmSFX README links this file to its Freesound page; repo ships only CC0 (SampleLicenses/CC0) and Sonniss licence texts, Sonniss items excluded",
+  "mono": true,
+  "peak": -1
+ },
+ "arc_crackle": {
+  "title": "electric noise 2.wav",
+  "author": "RutgerMuller",
+  "license": "CC0",
+  "original": "https://freesound.org/people/RutgerMuller/sounds/51269/",
+  "mirror": "https://raw.githubusercontent.com/4ismael1/LUN-game/82089674bc112638d8032b4a6f42916f05f7a1a6/public/assets/audio/electric_spark.mp3",
+  "licenseConfirmedVia": "LUN-game asset-credits/audio.md (per-file Freesound link + CC0 1.0)",
+  "mono": true,
+  "peak": -1
+ },
+ "arc_zap": {
+  "title": "electric zap",
+  "author": "michael_grinnell",
+  "license": "CC0",
+  "original": "https://freesound.org/people/michael_grinnell/sounds/512471/",
+  "mirror": "https://raw.githubusercontent.com/Wh1teDuke/WilhelmSFX/ec4875a35d265b5431e3ba81fef6cc0ca0281bfc/Samples/512471__michael_grinnell__electric-zap.wav",
+  "licenseConfirmedVia": "WilhelmSFX README links this file to its Freesound page; repo ships only CC0 (SampleLicenses/CC0) and Sonniss licence texts, Sonniss items excluded",
+  "mono": true,
+  "peak": -1
+ },
+ "power_down": {
+  "title": "Power Down",
+  "author": "peepholecircus",
+  "license": "CC0",
+  "original": "https://freesound.org/people/peepholecircus/sounds/169994/",
+  "mirror": "https://raw.githubusercontent.com/4ismael1/LUN-game/82089674bc112638d8032b4a6f42916f05f7a1a6/public/assets/audio/power_down.mp3",
+  "licenseConfirmedVia": "LUN-game asset-credits/audio.md (per-file Freesound link + CC0 1.0)",
+  "mono": true,
+  "peak": -2,
+  "fade": [
+   0,
+   0.8
+  ]
+ },
+ "breaker_big": {
+  "title": "switch big breaker metal click on off",
+  "author": "kyles",
+  "license": "CC0",
+  "original": "https://freesound.org/s/451933/",
+  "mirror": "https://media.githubusercontent.com/media/kubilaysabah/project_a/68a7ae89c0ea53bc418ae1f269d226e905a771d2/Art/Ses/kayitlar/451933__kyles__switch-big-breaker-metal-click-on-off.flac",
+  "licenseConfirmedVia": "project_a Art/Ses/kayitlar/LISANSLAR.md (unaltered originals, per-file licence)",
+  "mono": true,
+  "peak": -1,
+  "slice": 2
+ },
+ "breaker_1": {
+  "title": "Circuit Breaker 1 SP.wav",
+  "author": "sribubba",
+  "license": "CC0",
+  "original": "https://freesound.org/s/130152/",
+  "mirror": "https://raw.githubusercontent.com/Eyan11/Magical-Act/97ca72479d22cb1ab57c6cdc0a0c09ca79cabf35/Mini%20Jame%20Gam%20%2331/Assets/Audio/SFX/Puzzles/Switch%20Disabled.wav",
+  "licenseConfirmedVia": "Magical-Act Credits.txt (CC0)",
+  "mono": true,
+  "peak": -1
+ },
+ "breaker_2": {
+  "title": "Circuit Breaker 2 DP.wav",
+  "author": "sribubba",
+  "license": "CC0",
+  "original": "https://freesound.org/s/130153/",
+  "mirror": "https://raw.githubusercontent.com/Eyan11/Magical-Act/97ca72479d22cb1ab57c6cdc0a0c09ca79cabf35/Mini%20Jame%20Gam%20%2331/Assets/Audio/SFX/Puzzles/Switch%20Enabled.wav",
+  "licenseConfirmedVia": "Magical-Act Credits.txt (CC0)",
+  "mono": true,
+  "peak": -1
+ },
+ "breaker_3": {
+  "title": "Circuit Breaker 3 DP.wav",
+  "author": "sribubba",
+  "license": "CC0",
+  "original": "https://freesound.org/s/130154/",
+  "mirror": "https://raw.githubusercontent.com/swastik009/portfolio-website/0cad4d9e9fcf81bef9341e176958472aa092be74/daisy/assets/audio/sfx/breaker_2.mp3",
+  "licenseConfirmedVia": "DAISY daisy/CREDITS.md (per-file Freesound link + licence)",
+  "mono": true,
+  "peak": -1
+ },
+ "rcd_trip": {
+  "title": "Kill Switch (Large Breaker Switch) .WAV",
+  "author": "EchoCinematics",
+  "license": "CC0",
+  "original": "https://freesound.org/s/131599/",
+  "mirror": "https://raw.githubusercontent.com/swastik009/portfolio-website/0cad4d9e9fcf81bef9341e176958472aa092be74/daisy/assets/audio/sfx/breaker_1.mp3",
+  "licenseConfirmedVia": "DAISY daisy/CREDITS.md (per-file Freesound link + licence)",
+  "mono": true,
+  "peak": -1
+ },
+ "boom": {
+  "title": "Cinematic Boom",
+  "author": "Rizzard",
+  "license": "CC0",
+  "original": "https://freesound.org/people/Rizzard/sounds/559529/",
+  "mirror": "https://raw.githubusercontent.com/erladitia14/Silencio/51836ab8f9614b1c9614e49f92e6026fe199f0fd/audio/chase/detect/detect_boom__fs559529.mp3",
+  "licenseConfirmedVia": "Silencio audio/chase/MANIFEST.json (freesound_id, original title, CC0)",
+  "peak": -1,
+  "fade": [
+   0,
+   1.5
+  ]
+ },
+ "steps_socks": {
+  "title": "01-35 Footsteps, Wood, Socks, Running 2",
+  "author": "SpliceSound",
+  "license": "CC0",
+  "original": "https://freesound.org/s/369834/",
+  "mirror": "https://raw.githubusercontent.com/hey8v0/ST-iPhonie/093f84e3c08c20e89f66f36b45de51b163e9f250/sounds/369834.mp3",
+  "licenseConfirmedVia": "ST-iPhonie sounds/README.md: all 304 files from Freesound, all CC0, with per-file Freesound links",
+  "mono": true,
+  "peak": -1,
+  "slice": 30
+ },
+ "step_floor": {
+  "title": "footstep on floor (6 takes)",
+  "author": "kretopi",
+  "license": "CC0 1.0",
+  "original": "https://freesound.org/s/406744/",
+  "mirror": "https://raw.githubusercontent.com/Fris0uman/CDDA-Soundpacks/02b65460a808624b500013d4b9aa71dccd968817/sound/CC-Sounds/plmove/walk_t_floor/walk_t_floor_1.ogg",
+  "licenseConfirmedVia": "CDDA-Soundpacks credits.md in the sound folder (per-file licence + Freesound link)",
+  "mono": true,
+  "peak": -1
+ },
+ "step_wet": {
+  "title": "Footsteps, barefoot on wet tile.wav (sliced)",
+  "author": "SpliceSound",
+  "license": "CC0",
+  "original": "https://freesound.org/people/SpliceSound/sounds/338106/",
+  "mirror": "https://raw.githubusercontent.com/Fris0uman/CDDA-Soundpacks/02b65460a808624b500013d4b9aa71dccd968817/sound/CC-Sounds/plmove/walk_barefoot_1.ogg",
+  "licenseConfirmedVia": "web search summary of the Freesound page: Freesound page: CC0, 18.7 s mono 48k/24-bit; also CDDA-Soundpacks credits.md in the sound folder (per-file licence + Freesound link)",
+  "mono": true,
+  "peak": -1
+ },
+ "steps_shoes": {
+  "title": "wood_15a_darkshoes_walk",
+  "author": "sturmankin",
+  "license": "CC0",
+  "original": "https://freesound.org/people/sturmankin/sounds/273372/",
+  "mirror": "https://media.githubusercontent.com/media/kubilaysabah/project_a/68a7ae89c0ea53bc418ae1f269d226e905a771d2/Art/Ses/kayitlar/273372__sturmankin__wood_15a_darkshoes_walk.wav",
+  "licenseConfirmedVia": "project_a Art/Ses/kayitlar/LISANSLAR.md (unaltered originals, per-file licence)",
+  "mono": true,
+  "peak": -1,
+  "slice": 40
+ },
+ "steps_boots": {
+  "title": "Footsteps_Boots_Wood_Mono.wav",
+  "author": "Nox_Sound",
+  "license": "CC0",
+  "original": "https://freesound.org/s/533044/",
+  "mirror": "https://raw.githubusercontent.com/hey8v0/ST-iPhonie/093f84e3c08c20e89f66f36b45de51b163e9f250/sounds/533044.mp3",
+  "licenseConfirmedVia": "ST-iPhonie sounds/README.md: all 304 files from Freesound, all CC0, with per-file Freesound links; Nox_Sound releases everything CC0",
+  "mono": true,
+  "peak": -1,
+  "slice": 24
+ },
+ "creak_long": {
+  "title": "Creaking Floorboards 13 (long slow)",
+  "author": "qubodup",
+  "license": "CC0",
+  "original": "https://freesound.org/people/qubodup/sounds/802595/",
+  "mirror": "https://media.githubusercontent.com/media/kubilaysabah/project_a/68a7ae89c0ea53bc418ae1f269d226e905a771d2/Art/Ses/kayitlar/802595__qubodup__creaking-floorboards-13-long-slow.wav",
+  "licenseConfirmedVia": "project_a Art/Ses/kayitlar/LISANSLAR.md (unaltered originals, per-file licence); web search summary of the Freesound page: sibling clip 802576 from the same 18-clip 2025 pack is CC0",
+  "mono": true,
+  "peak": -1
+ },
+ "creak_1": {
+  "title": "Creaking Floorboards",
+  "author": "qubodup",
+  "license": "CC0",
+  "original": "https://freesound.org/people/qubodup/sounds/802573/",
+  "mirror": "https://raw.githubusercontent.com/4ismael1/LUN-game/82089674bc112638d8032b4a6f42916f05f7a1a6/public/assets/audio/wood_creak_1.mp3",
+  "licenseConfirmedVia": "LUN-game asset-credits/audio.md (per-file Freesound link + CC0 1.0)",
+  "mono": true,
+  "peak": -1
+ },
+ "creak_2": {
+  "title": "Creaking Floorboards 06",
+  "author": "qubodup",
+  "license": "CC0",
+  "original": "https://freesound.org/people/qubodup/sounds/802578/",
+  "mirror": "https://raw.githubusercontent.com/4ismael1/LUN-game/82089674bc112638d8032b4a6f42916f05f7a1a6/public/assets/audio/wood_creak_2.mp3",
+  "licenseConfirmedVia": "LUN-game asset-credits/audio.md (per-file Freesound link + CC0 1.0)",
+  "mono": true,
+  "peak": -1
+ },
+ "creak_3": {
+  "title": "Wood Creak Single V2",
+  "author": "Rudmer_Rotteveel",
+  "license": "CC0",
+  "original": "https://freesound.org/people/Rudmer_Rotteveel/sounds/502504/",
+  "mirror": "https://raw.githubusercontent.com/Wh1teDuke/WilhelmSFX/ec4875a35d265b5431e3ba81fef6cc0ca0281bfc/Samples/502504__rudmer_rotteveel__wood-creak-single-v2.wav",
+  "licenseConfirmedVia": "WilhelmSFX README links this file to its Freesound page; repo ships only CC0 (SampleLicenses/CC0) and Sonniss licence texts, Sonniss items excluded",
+  "mono": true,
+  "peak": -1
+ },
+ "door_locked": {
+  "title": "Trying to open a locked door",
+  "author": "Kodack",
+  "license": "CC0",
+  "original": "https://freesound.org/people/Kodack/sounds/256606/",
+  "mirror": "https://raw.githubusercontent.com/4ismael1/LUN-game/82089674bc112638d8032b4a6f42916f05f7a1a6/public/assets/audio/door_locked.mp3",
+  "licenseConfirmedVia": "web search summary of the Freesound page: Freesound page: CC0 (Dec 2014); also LUN-game asset-credits/audio.md (per-file Freesound link + CC0 1.0)",
+  "mono": true,
+  "peak": -1
+ },
+ "door_rattle": {
+  "title": "Cottage Door Handles - rattling (cut)",
+  "author": "EpicWizard",
+  "license": "CC0 1.0",
+  "original": "https://freesound.org/people/EpicWizard/sounds/345312/",
+  "mirror": "https://raw.githubusercontent.com/JCamberos27/TartarusEngine/364c80f32ef514a3b4247b0a805b953109074c2d/project/assets/Audio/Foley/door/rattle_1.wav",
+  "licenseConfirmedVia": "TartarusEngine project/assets/Audio/Foley/door/CREDITS.md (all sources CC0 1.0, per-file cut list)",
+  "mono": true,
+  "peak": -1
+ },
+ "latch_1": {
+  "title": "Julian's Door - turn doorknob without latch (cut)",
+  "author": "SpliceSound",
+  "license": "CC0 1.0",
+  "original": "https://freesound.org/people/SpliceSound/sounds/218324/",
+  "mirror": "https://raw.githubusercontent.com/JCamberos27/TartarusEngine/364c80f32ef514a3b4247b0a805b953109074c2d/project/assets/Audio/Foley/door/latch_1.wav",
+  "licenseConfirmedVia": "TartarusEngine project/assets/Audio/Foley/door/CREDITS.md (all sources CC0 1.0, per-file cut list)",
+  "mono": true,
+  "peak": -1
+ },
+ "latch_2": {
+  "title": "latch 04",
+  "author": "Q.K.",
+  "license": "CC0",
+  "original": "https://freesound.org/people/Q.K./sounds/56246/",
+  "mirror": "https://raw.githubusercontent.com/Wh1teDuke/WilhelmSFX/ec4875a35d265b5431e3ba81fef6cc0ca0281bfc/Samples/56246__qk__latch_04.wav",
+  "licenseConfirmedVia": "WilhelmSFX README links this file to its Freesound page; repo ships only CC0 (SampleLicenses/CC0) and Sonniss licence texts, Sonniss items excluded",
+  "mono": true,
+  "peak": -1
+ },
+ "deadbolt": {
+  "title": "door_unlock_brickhario.wav",
+  "author": "Brickhario",
+  "license": "CC0",
+  "original": "https://freesound.org/people/Brickhario/sounds/491111/",
+  "mirror": "https://raw.githubusercontent.com/4ismael1/LUN-game/82089674bc112638d8032b4a6f42916f05f7a1a6/public/assets/audio/lock_unlock.mp3",
+  "licenseConfirmedVia": "LUN-game asset-credits/audio.md (per-file Freesound link + CC0 1.0)",
+  "mono": true,
+  "peak": -1
+ },
+ "keys_unlock": {
+  "title": "Door unlocking with keys",
+  "author": "Lightnessko",
+  "license": "CC0",
+  "original": "https://freesound.org/s/390328/",
+  "mirror": "https://raw.githubusercontent.com/hey8v0/ST-iPhonie/093f84e3c08c20e89f66f36b45de51b163e9f250/sounds/390328.mp3",
+  "licenseConfirmedVia": "ST-iPhonie sounds/README.md: all 304 files from Freesound, all CC0, with per-file Freesound links",
+  "mono": true,
+  "peak": -1
+ },
+ "wardrobe_creak": {
+  "title": "door wood cabinet creaks slow open close",
+  "author": "kyles",
+  "license": "CC0",
+  "original": "https://freesound.org/people/kyles/sounds/637483/",
+  "mirror": "https://media.githubusercontent.com/media/kubilaysabah/project_a/68a7ae89c0ea53bc418ae1f269d226e905a771d2/Art/Ses/kayitlar/637483__kyles__door-wood-cabinet-creaks-slow-open-close.flac",
+  "licenseConfirmedVia": "project_a Art/Ses/kayitlar/LISANSLAR.md (unaltered originals, per-file licence)",
+  "mono": true,
+  "peak": -1,
+  "slice": 6
+ },
+ "door_creak": {
+  "title": "Heavy Door Creaking_05.wav",
+  "author": "rambler52",
+  "license": "CC0",
+  "original": "https://freesound.org/people/rambler52/sounds/455324/",
+  "mirror": "https://raw.githubusercontent.com/4ismael1/LUN-game/82089674bc112638d8032b4a6f42916f05f7a1a6/public/assets/audio/door_creak.mp3",
+  "licenseConfirmedVia": "LUN-game asset-credits/audio.md (per-file Freesound link + CC0 1.0)",
+  "mono": true,
+  "peak": -1
+ },
+ "door_slam": {
+  "title": "door wood apartment interior open close fast slam",
+  "author": "kyles",
+  "license": "CC0",
+  "original": "https://freesound.org/people/kyles/sounds/637482/",
+  "mirror": "https://media.githubusercontent.com/media/kubilaysabah/project_a/68a7ae89c0ea53bc418ae1f269d226e905a771d2/Art/Ses/kayitlar/637482__kyles__door-wood-apartment-interior-open-close-fast-slam.flac",
+  "licenseConfirmedVia": "project_a Art/Ses/kayitlar/LISANSLAR.md (unaltered originals, per-file licence)",
+  "mono": true,
+  "peak": -1
+ },
+ "knock_soft": {
+  "title": "Knock on the door",
+  "author": "HunteR4708",
+  "license": "CC0",
+  "original": "https://freesound.org/s/256513/",
+  "mirror": "https://raw.githubusercontent.com/hey8v0/ST-iPhonie/093f84e3c08c20e89f66f36b45de51b163e9f250/sounds/256513.mp3",
+  "licenseConfirmedVia": "ST-iPhonie sounds/README.md: all 304 files from Freesound, all CC0, with per-file Freesound links",
+  "mono": true,
+  "peak": -1
+ },
+ "knock_police": {
+  "title": "Door knocking (Angry).wav",
+  "author": "Macif",
+  "license": "CC0",
+  "original": "https://freesound.org/people/Macif/sounds/194365/",
+  "mirror": "https://raw.githubusercontent.com/hey8v0/ST-iPhonie/093f84e3c08c20e89f66f36b45de51b163e9f250/sounds/194365.mp3",
+  "licenseConfirmedVia": "web search summary of the Freesound page: Freesound page: CC0, recorded on the author's own door; also ST-iPhonie sounds/README.md: all 304 files from Freesound, all CC0, with per-file Freesound links",
+  "mono": true,
+  "peak": -1
+ },
+ "door_smash": {
+  "title": "door smash 1",
+  "author": "qubodup",
+  "license": "CC0",
+  "original": "https://freesound.org/people/qubodup/sounds/218890/",
+  "mirror": "https://media.githubusercontent.com/media/kubilaysabah/project_a/68a7ae89c0ea53bc418ae1f269d226e905a771d2/Art/Ses/kayitlar/218890__qubodup__door-smash-1.flac",
+  "licenseConfirmedVia": "project_a Art/Ses/kayitlar/LISANSLAR.md (unaltered originals, per-file licence)",
+  "mono": true,
+  "peak": -1
+ },
+ "door_kick": {
+  "title": "door wood kick open rattle creak",
+  "author": "kyles",
+  "license": "CC0",
+  "original": "https://freesound.org/people/kyles/sounds/452600/",
+  "mirror": "https://media.githubusercontent.com/media/Mooses2k/SecretHistories/902ce1c2702b9a9b5f71524ec35b8a5ff468f9a7/resources/sounds/doors/damage/effective/452600__kyles__door-wood-kick-open-rattle-creak.wav",
+  "licenseConfirmedVia": "SecretHistories per-file *_license.txt next to the sound (link only; kyles uploads CC0)",
+  "mono": true,
+  "peak": -1
+ },
+ "tap_running": {
+  "title": "Faucet + sink + drain gurgling",
+  "author": "Breviceps",
+  "license": "CC0",
+  "original": "https://freesound.org/people/Breviceps/sounds/458401/",
+  "mirror": "https://media.githubusercontent.com/media/LautiGR116/EchoProtocol/25bcf5b1fcb26a9fe34973205f009c8808f39566/ArtSource/Audio/Overhaul/Source/458401_9159316-hq.mp3",
+  "licenseConfirmedVia": "EchoProtocol Docs/CREDITS.md + ArtSource/Audio/Overhaul/sources.json (CC0 1.0, reviewed 2026-10-01)",
+  "loop": true,
+  "mono": true,
+  "peak": -2
+ },
+ "step_puddle": {
+  "title": "puddle footsteps (a)",
+  "author": "patchytherat",
+  "license": "CC0",
+  "original": "https://freesound.org/people/patchytherat/sounds/531566/",
+  "mirror": "https://raw.githubusercontent.com/Wh1teDuke/WilhelmSFX/ec4875a35d265b5431e3ba81fef6cc0ca0281bfc/Samples/531566__patchytherat__puddle-footsteps_a.wav",
+  "licenseConfirmedVia": "WilhelmSFX README links this file to its Freesound page; repo ships only CC0 (SampleLicenses/CC0) and Sonniss licence texts, Sonniss items excluded",
+  "mono": true,
+  "peak": -1
+ },
+ "step_water": {
+  "title": "walk in water (sliced)",
+  "author": "dawidwmika",
+  "license": "CC0",
+  "original": "https://freesound.org/s/372518/",
+  "mirror": "https://raw.githubusercontent.com/Fris0uman/CDDA-Soundpacks/02b65460a808624b500013d4b9aa71dccd968817/sound/CC-Sounds/plmove/walk_water_1.ogg",
+  "licenseConfirmedVia": "CDDA-Soundpacks credits.md in the sound folder (per-file licence + Freesound link)",
+  "mono": true,
+  "peak": -1
+ },
+ "water_drop": {
+  "title": "single water drop",
+  "author": "paespedro",
+  "license": "CC0",
+  "original": "https://freesound.org/people/paespedro/sounds/174718/",
+  "mirror": "https://raw.githubusercontent.com/Wh1teDuke/WilhelmSFX/ec4875a35d265b5431e3ba81fef6cc0ca0281bfc/Samples/174718__paespedro__single-water-drop.wav",
+  "licenseConfirmedVia": "WilhelmSFX README links this file to its Freesound page; repo ships only CC0 (SampleLicenses/CC0) and Sonniss licence texts, Sonniss items excluded",
+  "mono": true,
+  "peak": -1
+ },
+ "fridge_open": {
+  "title": "fridge various open",
+  "author": "kyles",
+  "license": "CC0",
+  "original": "https://freesound.org/people/kyles/sounds/452232/",
+  "mirror": "https://raw.githubusercontent.com/MindVisceral/DuckGame/15ec94eb71e6a606bcdb0a8f88dab5c13e934227/Scenes_Scripts/Sounds/kyles_fridge-various-open.wav",
+  "licenseConfirmedVia": "DuckGame README.md audio credits (all listed sounds stated CC0 1.0)",
+  "mono": true,
+  "peak": -1
+ },
+ "fridge_close": {
+  "title": "fridge various close",
+  "author": "kyles",
+  "license": "CC0",
+  "original": "https://freesound.org/people/kyles/sounds/452232/",
+  "mirror": "https://raw.githubusercontent.com/MindVisceral/DuckGame/15ec94eb71e6a606bcdb0a8f88dab5c13e934227/Scenes_Scripts/Sounds/kyles_fridge-various-close.wav",
+  "licenseConfirmedVia": "DuckGame README.md audio credits (all listed sounds stated CC0 1.0)",
+  "mono": true,
+  "peak": -1
+ },
+ "breath_scared": {
+  "title": "Scared Male Heavy Breathing",
+  "author": "casiba842",
+  "license": "CC0",
+  "original": "https://freesound.org/people/casiba842/sounds/554307/",
+  "mirror": "https://raw.githubusercontent.com/zotoio/zoto-viz/8b391ccc030c0d0ced65636a44c11814fb2ef484/web/public/sfx/backrooms/scared.mp3",
+  "licenseConfirmedVia": "zoto-viz web/public/sfx/backrooms/ATTRIBUTION.md (per-file Freesound link + CC0)",
+  "loop": true,
+  "peak": -2,
+  "trim": [
+   0,
+   20
+  ],
+  "mono": true
+ },
+ "breath_held": {
+  "title": "Male_Breath_Scared_Frozen_Loop_Stereo",
+  "author": "Nox_Sound",
+  "license": "CC0",
+  "original": "https://freesound.org/people/Nox_Sound/sounds/554906/",
+  "mirror": "https://raw.githubusercontent.com/zotoio/zoto-viz/8b391ccc030c0d0ced65636a44c11814fb2ef484/web/public/sfx/backrooms/frozen.mp3",
+  "licenseConfirmedVia": "zoto-viz web/public/sfx/backrooms/ATTRIBUTION.md (per-file Freesound link + CC0); web search summary of the Freesound page: Steam credits list CC0 and Nox_Sound profile states all sounds CC0",
+  "loop": true,
+  "peak": -2,
+  "mono": true
+ },
+ "breath_fast": {
+  "title": "Male_Breath_Fast_Loop_Stereo.wav",
+  "author": "Nox_Sound",
+  "license": "CC0",
+  "original": "https://freesound.org/s/554907/",
+  "mirror": "https://raw.githubusercontent.com/hey8v0/ST-iPhonie/093f84e3c08c20e89f66f36b45de51b163e9f250/sounds/554907.mp3",
+  "licenseConfirmedVia": "ST-iPhonie sounds/README.md: all 304 files from Freesound, all CC0, with per-file Freesound links",
+  "loop": true,
+  "peak": -2,
+  "mono": true
+ },
+ "his_breath_1": {
+  "title": "Heavy Breathing",
+  "author": "Under7dude",
+  "license": "CC0",
+  "original": "https://freesound.org/s/163383/",
+  "mirror": "https://raw.githubusercontent.com/hey8v0/ST-iPhonie/093f84e3c08c20e89f66f36b45de51b163e9f250/sounds/163383.mp3",
+  "licenseConfirmedVia": "ST-iPhonie sounds/README.md: all 304 files from Freesound, all CC0, with per-file Freesound links",
+  "mono": true,
+  "peak": -1
+ },
+ "his_breath_2": {
+  "title": "Heavy Breathing.wav",
+  "author": "Deathscyp",
+  "license": "CC0",
+  "original": "https://freesound.org/s/553944/",
+  "mirror": "https://raw.githubusercontent.com/hey8v0/ST-iPhonie/093f84e3c08c20e89f66f36b45de51b163e9f250/sounds/553944.mp3",
+  "licenseConfirmedVia": "ST-iPhonie sounds/README.md: all 304 files from Freesound, all CC0, with per-file Freesound links",
+  "mono": true,
+  "peak": -1
+ },
+ "gasp": {
+  "title": "gasp inhale",
+  "author": "u3190",
+  "license": "CC0",
+  "original": "https://freesound.org/people/u3190/sounds/169931/",
+  "mirror": "https://raw.githubusercontent.com/Wh1teDuke/WilhelmSFX/ec4875a35d265b5431e3ba81fef6cc0ca0281bfc/Samples/169931__u3190__gasp-inhale.wav",
+  "licenseConfirmedVia": "WilhelmSFX README links this file to its Freesound page; repo ships only CC0 (SampleLicenses/CC0) and Sonniss licence texts, Sonniss items excluded",
+  "peak": -1
+ },
+ "heartbeat": {
+  "title": "Single Heartbeat Clean HQ_BeatSmith.wav",
+  "author": "Lunardrive",
+  "license": "CC0",
+  "original": "https://freesound.org/people/Lunardrive/sounds/22440/",
+  "mirror": "https://raw.githubusercontent.com/hey8v0/ST-iPhonie/093f84e3c08c20e89f66f36b45de51b163e9f250/sounds/22440.mp3",
+  "licenseConfirmedVia": "ST-iPhonie sounds/README.md: all 304 files from Freesound, all CC0, with per-file Freesound links; also anomalyco/arcade games/timber/CREDITS.md (CC0)",
+  "peak": -1
+ },
+ "tinnitus": {
+  "title": "Tinnitus sound",
+  "author": "Breviceps",
+  "license": "CC0",
+  "original": "https://freesound.org/people/Breviceps/sounds/450620/",
+  "mirror": "https://raw.githubusercontent.com/Crowdedlight/Crows-Electronic-Warfare/f022b36b94d53db828f22081be9c72124249aa4b/addons/emp/data/tinnitus.ogg",
+  "licenseConfirmedVia": "Crows-Electronic-Warfare README (CC0 list)",
+  "peak": -6,
+  "fade": [
+   0.05,
+   2
+  ]
+ },
+ "hangers": {
+  "title": "moving coat hangers in a metal support (a)",
+  "author": "Millavsb",
+  "license": "CC0",
+  "original": "https://freesound.org/people/Millavsb/sounds/197892/",
+  "mirror": "https://raw.githubusercontent.com/Wh1teDuke/WilhelmSFX/ec4875a35d265b5431e3ba81fef6cc0ca0281bfc/Samples/197892__millavsb__moving-coat-hangers-in-an-metal-suport_a.wav",
+  "licenseConfirmedVia": "WilhelmSFX README links this file to its Freesound page; repo ships only CC0 (SampleLicenses/CC0) and Sonniss licence texts, Sonniss items excluded",
+  "mono": true,
+  "peak": -1
+ },
+ "blanket": {
+  "title": "Blanket Movement 6",
+  "author": "OwlStorm",
+  "license": "CC0",
+  "original": "https://freesound.org/s/320144/",
+  "mirror": "https://raw.githubusercontent.com/hey8v0/ST-iPhonie/093f84e3c08c20e89f66f36b45de51b163e9f250/sounds/320144.mp3",
+  "licenseConfirmedVia": "ST-iPhonie sounds/README.md: all 304 files from Freesound, all CC0, with per-file Freesound links",
+  "mono": true,
+  "peak": -1
+ },
+ "bed_move": {
+  "title": "moving in bed S1",
+  "author": "BrendanSound12",
+  "license": "CC0",
+  "original": "https://freesound.org/people/BrendanSound12/sounds/445158/",
+  "mirror": "https://raw.githubusercontent.com/MindVisceral/DuckGame/15ec94eb71e6a606bcdb0a8f88dab5c13e934227/Scenes_Scripts/Sounds/brendansound12_moving-in-bed-S1.wav",
+  "licenseConfirmedVia": "DuckGame README.md audio credits (all listed sounds stated CC0 1.0)",
+  "mono": true,
+  "peak": -1
+ },
+ "phone_buzz": {
+  "title": "Phone vibration",
+  "author": "Breviceps",
+  "license": "CC0",
+  "original": "https://freesound.org/s/515295/",
+  "mirror": "https://raw.githubusercontent.com/hey8v0/ST-iPhonie/093f84e3c08c20e89f66f36b45de51b163e9f250/sounds/515295.mp3",
+  "licenseConfirmedVia": "ST-iPhonie sounds/README.md: all 304 files from Freesound, all CC0, with per-file Freesound links",
+  "mono": true,
+  "peak": -1
+ },
+ "phone_notify": {
+  "title": "Message Receive",
+  "author": "Froey_",
+  "license": "CC0",
+  "original": "https://freesound.org/s/760369/",
+  "mirror": "https://raw.githubusercontent.com/swastik009/portfolio-website/0cad4d9e9fcf81bef9341e176958472aa092be74/daisy/assets/audio/sfx/dsn_msg.mp3",
+  "licenseConfirmedVia": "DAISY daisy/CREDITS.md (per-file Freesound link + licence)",
+  "mono": true,
+  "peak": -2
+ },
+ "phone_ring": {
+  "title": "Cellphone ringing",
+  "author": "jourblue",
+  "license": "CC0",
+  "original": "https://freesound.org/s/344365/",
+  "mirror": "https://raw.githubusercontent.com/hey8v0/ST-iPhonie/093f84e3c08c20e89f66f36b45de51b163e9f250/sounds/344365.mp3",
+  "licenseConfirmedVia": "ST-iPhonie sounds/README.md: all 304 files from Freesound, all CC0, with per-file Freesound links",
+  "mono": true,
+  "peak": -1
+ },
+ "phone_static": {
+  "title": "cell phone interference noise 1",
+  "author": "RutgerMuller",
+  "license": "CC0",
+  "original": "https://freesound.org/people/RutgerMuller/sounds/50699/",
+  "mirror": "https://raw.githubusercontent.com/Wh1teDuke/WilhelmSFX/ec4875a35d265b5431e3ba81fef6cc0ca0281bfc/Samples/50699__rutgermuller__cell-phone-interference-noise-1.wav",
+  "licenseConfirmedVia": "WilhelmSFX README links this file to its Freesound page; repo ships only CC0 (SampleLicenses/CC0) and Sonniss licence texts, Sonniss items excluded",
+  "mono": true,
+  "peak": -2
+ },
+ "phone_dial": {
+  "title": "phone dial",
+  "author": "Breviceps",
+  "license": "CC0",
+  "original": "https://freesound.org/people/Breviceps/sounds/466832/",
+  "mirror": "https://raw.githubusercontent.com/Wh1teDuke/WilhelmSFX/ec4875a35d265b5431e3ba81fef6cc0ca0281bfc/Samples/466832__breviceps__phone-dial.wav",
+  "licenseConfirmedVia": "WilhelmSFX README links this file to its Freesound page; repo ships only CC0 (SampleLicenses/CC0) and Sonniss licence texts, Sonniss items excluded",
+  "mono": true,
+  "peak": -2
+ },
+ "drone_deep": {
+  "title": "Steel Cathedral Cinematic Drone",
+  "author": "bassimat",
+  "license": "CC0",
+  "original": "https://freesound.org/people/bassimat/sounds/856213/",
+  "mirror": "https://raw.githubusercontent.com/erladitia14/Silencio/51836ab8f9614b1c9614e49f92e6026fe199f0fd/audio/chase/drone/drone_1__fs856213.mp3",
+  "licenseConfirmedVia": "Silencio audio/chase/MANIFEST.json (freesound_id, original title, CC0)",
+  "trim": [
+   20,
+   60
+  ],
+  "loop": true,
+  "peak": -3
+ },
+ "drone_tension": {
+  "title": "Dark Tension Drone",
+  "author": "HarmonicMess",
+  "license": "CC0",
+  "original": "https://freesound.org/people/HarmonicMess/sounds/826597/",
+  "mirror": "https://raw.githubusercontent.com/erladitia14/Silencio/51836ab8f9614b1c9614e49f92e6026fe199f0fd/audio/chase/drone/drone_3__fs826597.mp3",
+  "licenseConfirmedVia": "Silencio audio/chase/MANIFEST.json (freesound_id, original title, CC0)",
+  "loop": true,
+  "peak": -3
+ },
+ "sting_braam": {
+  "title": "Braam",
+  "author": "unfa",
+  "license": "CC0",
+  "original": "https://freesound.org/people/unfa/sounds/647712/",
+  "mirror": "https://raw.githubusercontent.com/erladitia14/Silencio/51836ab8f9614b1c9614e49f92e6026fe199f0fd/audio/chase/detect/detect_braam__fs647712.mp3",
+  "licenseConfirmedVia": "Silencio audio/chase/MANIFEST.json (freesound_id, original title, CC0)",
+  "peak": -1
+ },
+ "sting_scare": {
+  "title": "Sting/jumpscare",
+  "author": "hotpin7",
+  "license": "CC0",
+  "original": "https://freesound.org/people/hotpin7/sounds/846789/",
+  "mirror": "https://raw.githubusercontent.com/erladitia14/Silencio/51836ab8f9614b1c9614e49f92e6026fe199f0fd/audio/chase/detect/detect_jumpscare__fs846789.mp3",
+  "licenseConfirmedVia": "Silencio audio/chase/MANIFEST.json (freesound_id, original title, CC0)",
+  "peak": -1
+ },
+ "sting_riser": {
+  "title": "Riser Hit sfx 034.wav",
+  "author": "AudioPapkin",
+  "license": "CC0",
+  "original": "https://freesound.org/people/AudioPapkin/sounds/647430/",
+  "mirror": "https://raw.githubusercontent.com/erladitia14/Silencio/51836ab8f9614b1c9614e49f92e6026fe199f0fd/audio/chase/detect/detect_riser_hit__fs647430.mp3",
+  "licenseConfirmedVia": "Silencio audio/chase/MANIFEST.json (freesound_id, original title, CC0)",
+  "peak": -1
+ },
+ "elevator": {
+  "title": "Elevator 6 floors",
+  "author": "Joseph Sardin (BigSoundBank)",
+  "license": "CC0",
+  "original": "https://bigsoundbank.com/elevator-6-floors-s1712.html",
+  "mirror": "https://media.githubusercontent.com/media/kubilaysabah/project_a/68a7ae89c0ea53bc418ae1f269d226e905a771d2/Art/Ses/kayitlar/bigsoundbank_1712_elevator_6_floors.wav",
+  "licenseConfirmedVia": "project_a Art/Ses/kayitlar/LISANSLAR.md (unaltered originals, per-file licence); web search summary of the Freesound page: BigSoundBank pages state CC0",
+  "mono": true,
+  "peak": -2,
+  "fade": [
+   1,
+   3
+  ],
+  "trim": [
+   0,
+   25
+  ]
+ },
+ "toilet": {
+  "title": "toilet flushing",
+  "author": "lorenzgillner",
+  "license": "CC0",
+  "original": "https://freesound.org/people/lorenzgillner/sounds/274448/",
+  "mirror": "https://raw.githubusercontent.com/Wh1teDuke/WilhelmSFX/ec4875a35d265b5431e3ba81fef6cc0ca0281bfc/Samples/274448__lorenzgillner__toilet-flushing.wav",
+  "licenseConfirmedVia": "WilhelmSFX README links this file to its Freesound page; repo ships only CC0 (SampleLicenses/CC0) and Sonniss licence texts, Sonniss items excluded",
+  "mono": true,
+  "peak": -2,
+  "fade": [
+   0.05,
+   1
+  ]
+ },
+ "sirens_far": {
+  "title": "201110 Distant sirens, urban, night, quiet, roof 11pm",
+  "author": "TRP",
+  "license": "CC0",
+  "original": "https://freesound.org/s/568975/",
+  "mirror": "https://raw.githubusercontent.com/swastik009/portfolio-website/0cad4d9e9fcf81bef9341e176958472aa092be74/daisy/assets/audio/ambience/siren_far.mp3",
+  "licenseConfirmedVia": "DAISY daisy/CREDITS.md (per-file Freesound link + licence)",
+  "peak": -2,
+  "fade": [
+   1,
+   2
+  ]
+ },
+ "radio_chatter": {
+  "title": "inaudible chatter",
+  "author": "kwahmah_02",
+  "license": "CC BY 3.0",
+  "original": "https://freesound.org/people/kwahmah_02/sounds/255851/",
+  "mirror": "https://raw.githubusercontent.com/Fris0uman/CDDA-Soundpacks/02b65460a808624b500013d4b9aa71dccd968817/sound/CC-Sounds/radio/inaudible_chatter.ogg",
+  "licenseConfirmedVia": "CDDA-Soundpacks credits.md in the sound folder (per-file licence + Freesound link)",
+  "mono": true,
+  "peak": -2
+ }
+}

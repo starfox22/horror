@@ -389,12 +389,31 @@ class AtlasBlend {
         void main(void) { gl_Position = vec4(vertex_position, 0.5, 1.0); vUv0 = getImageEffectUV(vertex_position * 0.5 + 0.5); }`,
       fragmentGLSL: `varying vec2 vUv0; uniform sampler2D blendA; uniform sampler2D blendB; uniform float blendT;
         void main(void) { gl_FragColor = mix(textureLod(blendA, vUv0, 0.0), textureLod(blendB, vUv0, 0.0), blendT); }`,
-      vertexWGSL: `attribute vertex_position: vec2f; varying vUv0: vec2f;
-        @vertex fn vertexMain(input: VertexInput) -> VertexOutput { var output: VertexOutput;
-          output.position = vec4f(input.vertex_position, 0.5, 1.0); output.vUv0 = getImageEffectUV(input.vertex_position * 0.5 + vec2f(0.5)); return output; }`,
-      fragmentWGSL: `varying vUv0: vec2f; var blendA: texture_2d<f32>; var blendASampler: sampler; var blendB: texture_2d<f32>; var blendBSampler: sampler; uniform blendT: f32;
-        @fragment fn fragmentMain(input: FragmentInput) -> FragmentOutput { var output: FragmentOutput;
-          output.color = mix(textureSampleLevel(blendA, blendASampler, input.vUv0, 0.0), textureSampleLevel(blendB, blendBSampler, input.vUv0, 0.0), uniform.blendT); return output; }`,
+      // WGSL: one declaration per line. The engine's WGSL preprocessor finds attributes, varyings, uniforms and textures
+      // line by line; with them all on one line (as this shader first had) WebGPU bound no textures and the pass wrote
+      // zeros, so the bounce light never changed after start-up (the lit living room and bedroom stayed lit after their
+      // lamps were switched off).
+      vertexWGSL: `
+attribute vertex_position: vec2f;
+varying vUv0: vec2f;
+@vertex fn vertexMain(input: VertexInput) -> VertexOutput {
+  var output: VertexOutput;
+  output.position = vec4f(input.vertex_position, 0.5, 1.0);
+  output.vUv0 = getImageEffectUV(input.vertex_position * 0.5 + vec2f(0.5));
+  return output;
+}`,
+      fragmentWGSL: `
+varying vUv0: vec2f;
+var blendA: texture_2d<f32>;
+var blendASampler: sampler;
+var blendB: texture_2d<f32>;
+var blendBSampler: sampler;
+uniform blendT: f32;
+@fragment fn fragmentMain(input: FragmentInput) -> FragmentOutput {
+  var output: FragmentOutput;
+  output.color = mix(textureSampleLevel(blendA, blendASampler, input.vUv0, 0.0), textureSampleLevel(blendB, blendBSampler, input.vUv0, 0.0), uniform.blendT);
+  return output;
+}`,
     });
     this.a = device.scope.resolve('blendA'); this.b = device.scope.resolve('blendB'); this.t = device.scope.resolve('blendT');
   }
