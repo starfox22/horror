@@ -24,11 +24,16 @@ works with AI agents; whoever picks this up continues from the state below and k
   flashlight circle a little smaller; a hidden developer menu (type "developer") for testing.
 - Build 0.6 (done, owner feedback on 0.5): lights slightly dimmer but spreading further; no pitch-black areas: light must
   fade softly into darkness; the bathroom door's knob still looked wrong when open (replace the door if easier).
+- Build 0.7 (done, owner feedback on 0.6): the desk lamp and the arc lamp by the sofa switch on their own; more AAA
+  lighting; flashlight default 27 deg; with every light off the flat is pitch dark (only lightning shows through the
+  windows, which are otherwise almost black); switches must behave consistently (lights got darker after flicking
+  switches); typing "developer" toggles developer mode with a splash, and while on the menu shows whenever paused or
+  on the start screen. Owner approved pushing this build to `main`.
 - Show screenshots and links before big decisions; publish each prototype to a web link.
 - Keep everything documented so another AI can continue.
 
 ## Published builds
-- Builds 0.1-0.6 (2026-10-22/24): claude.ai artifact https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9 (always the
+- Builds 0.1-0.7 (2026-10-22/24): claude.ai artifact https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9 (always the
   latest build; private to the owner unless shared from its Share menu).
 - GitHub Pages: `.github/workflows/pages.yml` deploys `main` to https://starfox22.github.io/horror/ once the owner turns
   Pages on (Settings → Pages → Source: GitHub Actions). The repository is private, which needs a paid plan for Pages;
@@ -64,6 +69,32 @@ The host serves no .bin/.ktx2 files, so make-artifact packs the model into one G
 - **Sound** (`src/ambience.js`): all synthesised with Web Audio (rain per window, droplets, room tone, city rumble,
   fridge cycling, dripping tap, footsteps by floor finish), HRTF-positioned with a generated reverb. Replace with
   downloaded CC0 recordings when a source is reachable.
+
+## Build 0.7 changes (where they live)
+- **Switches gave different light each time** (owner report), three causes, all fixed and checked (probe levels after
+  "All off" -> "Back to switches", and after a room off -> on, equal the start-up values to 0.001):
+  1. Eye adaptation set `scene.exposure`, which the probe cameras use too: a capture after the eye had adapted to the
+     dark came out up to 35 % too bright, which moved the adaptation, and so on. Adaptation is now the player camera's
+     grading brightness (`EyeAdaptation`, post.js); probes always capture at exposure 1.
+  2. Captures fed on earlier captures (bounce light and reflections in what the probes saw), so a single capture after a
+     change depended on history. Probe cameras now see direct light only: a global uniform `bounceLive` (set per camera
+     on the scene's `prerender` event: 0 for cameras named `probe-*`) scales the bounce chunk and the engine's
+     `reflectionEnvPS`/`reflectionEnvHQPS` (patched at start-up from `ShaderChunks`). One capture per change, gain in
+     `AMBIENT` (0.9). Every capture also re-renders all lamp shadows (`rerenderShadows`).
+  3. Developer-menu overrides: forcing a light kept it forced when its wall switch or lamp was pressed. Now a press
+     hands it back (`Switches/Devices.override` -> `DevMenu.handBack`) and flips from the state you saw. "All off"
+     also switches off the fixtures' glow meshes (mirror LEDs, hood, pendant globes stayed lit before).
+- **Pitch dark with everything off**: night sky ~20x darker (almost black), window drops glow only by how many lights
+  are on (`rain.roomLight` = lights on / 12, set before a capture; 0 when all are off), no volumetric-fog ambient, no
+  `scene.ambientLight`. All off: every probe level < 0.0001. Lightning still lights the windows and throws its light.
+- **Own lamps** (`devices.js` `ownLamp`): arc lamp (E at the dome shade, a small bulb sphere) and desk lamp (E at the
+  bulb, its `Light.office` glow) left the living/office switches, which now control only the ceiling downlights.
+  `devices.lamps` entries carry `name`/`group` for the developer menu.
+- **Developer mode** (`devmenu.js`): "developer" toggles `mode` with a splash (`#devsplash`, "Developer mode
+  enabled!" / "disabled"); the panel is shown whenever mode is on and the pointer is not locked (pause, start screen).
+- **Downlight beam profile**: a cookie (`profileCookie`, `downProfile`: full to ~33 deg, 28 % field beyond) like a
+  photometric profile, so walls near downlights get scallops; downlights 1.0. Bloom 0.024. Cookie atlas 2048.
+- Flashlight `BEAM_SIZE` 27.
 
 ## Build 0.6 changes (where they live)
 - **No more pitch black** (the main cause): `CameraFrame` grading applies contrast to linear light before tone mapping,
@@ -218,6 +249,10 @@ The host serves no .bin/.ktx2 files, so make-artifact packs the model into one G
   darks to pure black (1.12 clipped everything below 0.054). Keep it 1; grade contrast elsewhere if ever needed.
 - Spot shadows use a frustum of twice the outer cone: above ~72 deg the map is so stretched at its edges that light
   leaks through walls.
+- Never drive game exposure through `scene.exposure` while probes are captured: their cameras use it too.
+- A probe that sees the result of earlier probes (bounce, reflections, glowing windows set from probe levels) makes
+  lighting depend on history; keep captures direct-only (`bounceLive`).
+- Headless captures take ~30 s with SwiftShader: wait long enough before reading `probes.levels` in a test.
 - `Texture.read` on WebGPU sometimes resolves with all zeros (non-immediate reads especially): check alpha and retry.
 - WGSL needs texture reads in uniform control flow: when the texture or slot depends on position, pick the slot with
   arithmetic and use `textureSampleLevel`, never sample inside a branch.

@@ -63,3 +63,12 @@ h1 { margin: 0; font: 300 2.6rem/1.1 Georgia, "Times New Roman", serif; letter-s
 #dev .light input { accent-color: #c9b48a; }
 #dev .light output { margin-left: auto; opacity: 0.7; }
 #dev .hint { margin: 16px 0 0; color: #6d6a62; font-size: .72rem; }
+
+/* Developer mode on/off splash (devmenu.js): fades in, holds, fades out. */
+#devsplash { position: fixed; left: 50%; top: 38%; transform: translate(-50%, -50%); z-index: 60; pointer-events: none;
+  padding: 18px 34px; background: rgba(12, 12, 14, .82); border: 1px solid #c9b48a; color: #e8e4da;
+  font-size: 1.35rem; letter-spacing: .08em; white-space: nowrap; opacity: 0; }
+#devsplash[hidden] { display: none; }
+#devsplash.show { animation: devsplash 2.2s ease forwards; }
+@keyframes devsplash { 0% { opacity: 0; transform: translate(-50%, -40%); } 12% { opacity: 1; transform: translate(-50%, -50%); }
+  75% { opacity: 1; } 100% { opacity: 0; } }

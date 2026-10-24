@@ -10,9 +10,9 @@
 // flat level per room that drops to black at the next probe.
 // The open-plan room and the corridor have no wall between them: the two chains blend across the corridor's mouth and
 // the office opening (envBlendWeight below) so no seam shows.
-import { BoundingBox, CUBEPROJ_BOX, EnvLighting, Texture, Vec3, Vec4, reprojectTexture, PIXELFORMAT_RGBA16F, PIXELFORMAT_RGBA8, TEXTUREPROJECTION_EQUIRECT,
+import { ShaderChunks, BoundingBox, CUBEPROJ_BOX, EnvLighting, Texture, Vec3, Vec4, reprojectTexture, PIXELFORMAT_RGBA16F, PIXELFORMAT_RGBA8, TEXTUREPROJECTION_EQUIRECT,
   ADDRESS_CLAMP_TO_EDGE, FILTER_LINEAR } from 'playcanvas';
-import { captureCube } from './lighting.js';
+import { captureCube, rerenderShadows } from './lighting.js';
 
 // box: the room's inner walls (min, max); at: where its probe is captured (away from lamps and bright table tops).
 export const ZONES = {
@@ -63,7 +63,8 @@ fn envBlendWeight(p: vec3f) -> f32 {
 
 // Ambient: chain A (bounceSlotsA at x bounceKnotsA), mixed towards chain B by envBlendWeight where bounceMix.y = 1, or
 // by which way the surface faces where bounceMix.z = 1 (the bathroom door's leaf: A is the bathroom, B the bedroom; the
-// closed door's bedroom side faces +x, open both sides face along z, into the bathroom); scaled by bounceMix.x.
+// closed door's bedroom side faces +x, open both sides face along z, into the bathroom); scaled by bounceMix.x, and by
+// bounceLive, a per-camera value (1 for the player's view, 0 while a probe captures: see the constructor).
 // Slots are picked arithmetically and sampled at level 0, so every texture read stays in uniform control flow.
 const AMBIENT_GLSL = `
 #if LIT_AMBIENT_SOURCE == ENVALATLAS
@@ -74,6 +75,10 @@ const AMBIENT_GLSL = `
   uniform vec4 bounceSlotsB;
   uniform vec4 bounceKnotsB;
   uniform vec4 bounceMix;
+  #ifndef BOUNCE_LIVE
+  #define BOUNCE_LIVE
+  uniform float bounceLive;
+  #endif
   ${BLEND_GLSL}
   vec3 bounceSlot(vec2 uv, float slot) {
     vec2 st = vec2((slot * ${SLOT_W}.0 + 1.0 + uv.x * ${SLOT_W - 2}.0) / ${ATLAS_W}.0, (1.0 + uv.y * ${SLOT_H - 2}.0) / ${SLOT_H}.0);
@@ -93,7 +98,7 @@ void addAmbient(vec3 worldNormal) {
     vec3 a = bounceChain(uv, bounceSlotsA, bounceKnotsA, vPositionW.x);
     vec3 b = bounceChain(uv, bounceSlotsB, bounceKnotsB, vPositionW.x);
     float w = bounceMix.y * envBlendWeight(vPositionW) + bounceMix.z * smoothstep(0.0, 0.5, worldNormal.x);
-    dDiffuseLight += mix(a, b, w) * bounceMix.x;
+    dDiffuseLight += mix(a, b, w) * bounceMix.x * bounceLive;
   #else
     dDiffuseLight += light_globalAmbient;
   #endif
@@ -109,6 +114,10 @@ const AMBIENT_WGSL = `
   uniform bounceSlotsB: vec4f;
   uniform bounceKnotsB: vec4f;
   uniform bounceMix: vec4f;
+  #ifndef BOUNCE_LIVE
+  #define BOUNCE_LIVE
+  uniform bounceLive: f32;
+  #endif
   ${BLEND_WGSL}
   fn bounceSlot(uv: vec2f, slot: f32) -> vec3f {
     let st: vec2f = vec2f((slot * ${SLOT_W}.0 + 1.0 + uv.x * ${SLOT_W - 2}.0) / ${ATLAS_W}.0, (1.0 + uv.y * ${SLOT_H - 2}.0) / ${SLOT_H}.0);
@@ -129,7 +138,7 @@ fn addAmbient(worldNormal: vec3f) {
     let a: vec3f = bounceChain(uv, uniform.bounceSlotsA, uniform.bounceKnotsA, vPositionW.x);
     let b: vec3f = bounceChain(uv, uniform.bounceSlotsB, uniform.bounceKnotsB, vPositionW.x);
     let w: f32 = uniform.bounceMix.y * envBlendWeight(vPositionW) + uniform.bounceMix.z * smoothstep(0.0, 0.5, worldNormal.x);
-    dDiffuseLight += mix(a, b, vec3f(w)) * uniform.bounceMix.x;
+    dDiffuseLight += mix(a, b, vec3f(w)) * uniform.bounceMix.x * uniform.bounceLive;
   #else
     dDiffuseLight += uniform.light_globalAmbient;
   #endif
@@ -181,7 +190,7 @@ export const baseName = (name) => name.replace(/@(main|hall|bath|bed)$/, '');
 
 export class Probes {
   // ambient: strength of the bounce light (1 = what the probes saw)
-  constructor(app, camera, apartment, { ambient = 0.6 } = {}) {
+  constructor(app, camera, apartment, { ambient = 0.9 } = {}) {
     this.app = app;
     this.camera = camera;
     this.ambient = ambient;
@@ -197,6 +206,23 @@ export class Probes {
         new Vec3((hi[0] - lo[0]) / 2, (hi[1] - lo[1]) / 2, (hi[2] - lo[2]) / 2));
     }
     this.bounce = equirect('bounce-light', ATLAS_W, SLOT_H);
+    // Probes capture direct light only (their cameras are named 'probe-<face>', lighting.js captureCube): no bounce light
+    // and no reflections, which both come from earlier captures (a room switched off would keep a trace of its light).
+    // The engine's reflection chunks are patched to scale by bounceLive.
+    this.reflection = {};
+    for (const lang of ['glsl', 'wgsl']) {
+      const chunks = ShaderChunks.get(device, lang), out = this.reflection[lang] = {};
+      const decl = lang === 'glsl' ? 'uniform float bounceLive;' : 'uniform bounceLive: f32;';
+      for (const name of ['reflectionEnvPS', 'reflectionEnvHQPS']) {
+        const code = chunks.get(name);
+        const patched = code?.replace(/calcReflection\(reflDir, gloss\)/, lang === 'glsl' ? 'calcReflection(reflDir, gloss) * bounceLive' : 'calcReflection(reflDir, gloss) * uniform.bounceLive');
+        if (patched && patched !== code) out[name] = `#ifndef BOUNCE_LIVE\n#define BOUNCE_LIVE\n${decl}\n#endif\n${patched}`;
+        else console.warn(`probes: ${lang} ${name} not patched`);
+      }
+    }
+    const live = device.scope.resolve('bounceLive');
+    live.setValue(1);
+    app.scene.on('prerender', (cam) => live.setValue(cam.entity.name.startsWith('probe-') ? 0 : 1));
     // Every apartment material: its room from the '@room' suffix, else from where its meshes are.
     this.materials = [];
     const seen = new Set();
@@ -219,6 +245,10 @@ export class Probes {
     m.getShaderChunks('wgsl').set('ambientPS', AMBIENT_WGSL);
     m.getShaderChunks('glsl').set('cubeMapProjectPS', PROJECT_GLSL);
     m.getShaderChunks('wgsl').set('cubeMapProjectPS', PROJECT_WGSL);
+    for (const [lang, name] of [['glsl', 'reflectionEnvPS'], ['glsl', 'reflectionEnvHQPS'], ['wgsl', 'reflectionEnvPS'], ['wgsl', 'reflectionEnvHQPS']]) {
+      const code = this.reflection[lang]?.[name];
+      if (code) m.getShaderChunks(lang).set(name, code);
+    }
     m.shaderChunksVersion = '2.23';
     const open = zone === 'main' || zone === 'hall', door = m.name.endsWith('.bathdoor');
     const [a, b] = open ? [CHAIN.main, CHAIN.hall] : door ? [CHAIN.bath, CHAIN.bed] : [CHAIN[zone], CHAIN[zone]];
@@ -276,13 +306,16 @@ export class Probes {
     for (const m of this.materials) { const p = m.getParameter('bounceMix').data; m.setParameter('bounceMix', [k, p[1], p[2], 0]); }
   }
 
-  // Capture every probe, all in one frame (the flashlight is held out of them for just that frame). Twice at start-up,
-  // so each probe already holds the bounce light of the others. Room probes become reflection atlases; every bounce
-  // probe is filtered to diffuse light into its slot.
-  async captureAll(passes = 1) {
+  // Capture every probe, all in one frame (the flashlight is held out of them for just that frame). The probes see the
+  // lamps' direct light only (bounceLive is 0 for the probe cameras), so a capture depends only on which lights are on,
+  // never on earlier captures: switching a room off and on again gives back exactly the same light. The light that
+  // would bounce on further is folded into AMBIENT. Room probes become reflection atlases; every bounce probe is filtered
+  // to diffuse light into its slot.
+  async captureAll() {
     const shots = BOUNCE.map((b, slot) => (b.zone ? { slot, zone: ZONES[b.zone], at: ZONES[b.zone].at, size: 256 } : { slot, at: b.at, size: 64 }));
     const rect = new Vec4();
-    for (let p = 0; p < passes; p++) {
+    {
+      rerenderShadows(this.app);      // fresh shadows for this frame's atlas layout (lighting.js)
       const cubes = await Promise.all(shots.map(s => captureCube(this.app, this.camera, s.at, s.size)));
       shots.forEach((s, i) => {
         const source = EnvLighting.generateLightingSource(cubes[i], { size: s.zone ? 128 : 64 });

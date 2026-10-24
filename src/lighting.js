@@ -5,7 +5,7 @@
 import {
   Color, Entity, Quat, Vec3, Texture, RenderTarget, StandardMaterial,
   LIGHTFALLOFF_INVERSESQUARED, SHADOW_PCF5_32F, SHADOWUPDATE_THISFRAME, PIXELFORMAT_RGBA16F, PIXELFORMAT_RGBA8,
-  FILTER_LINEAR, FILTER_LINEAR_MIPMAP_LINEAR, RENDERTARGET_ORIGIN_TOP, TONEMAP_LINEAR, GAMMA_NONE,
+  FILTER_LINEAR, FILTER_LINEAR_MIPMAP_LINEAR, RENDERTARGET_ORIGIN_TOP, TONEMAP_LINEAR, GAMMA_NONE, ADDRESS_CLAMP_TO_EDGE,
 } from 'playcanvas';
 
 const WARM = new Color(1.0, 0.80, 0.60);      // ~2900 K warm-white LED / incandescent
@@ -46,11 +46,17 @@ export const DOWNLIGHTS = [
   ['bedroom', 10.8, -0.5], ['bedroom', 12.8, -0.5], ['bedroom', 10.8, 1.6], ['bedroom', 12.8, 1.6],
 ];
 const DOWN = new Color(1.0, 0.85, 0.70);
-export const DOWNLIGHT = { intensity: 0.8, glow: 2.2, range: 6.0 };
+export const DOWNLIGHT = { intensity: 1.0, glow: 2.2, range: 6.0 };
+// Beam of a recessed LED downlight (like a photometric profile): full in a ~60 deg beam, falling off to a dim wide field.
+// Walls near a downlight get the familiar bright arch ("scallop") instead of an even wash. As a function of the angle
+// from straight down; drawn into a cookie, whose radius is tan(angle) / tan(outer cone angle).
+const DOWN_OUTER = 72;
+const downProfile = (deg) => 0.28 + 0.72 * Math.exp(-((deg / 33) ** 4));
 
 // Each downlight: a shadowed spot pointing down plus a small glowing disc in a bezel, flush with the ceiling.
 // Returns { [room]: [{ light, glow }] } for the switches.
 export function addDownlights(app, grid) {
+  const cookie = profileCookie(app.graphicsDevice, downProfile, DOWN_OUTER);
   const bezel = new StandardMaterial();
   bezel.diffuse = new Color(0.85, 0.85, 0.85); bezel.useMetalness = true; bezel.metalness = 0.6; bezel.gloss = 0.7; bezel.update();
   const rooms = {};
@@ -58,7 +64,8 @@ export function addDownlights(app, grid) {
     const y = (grid.ceilingAt(x, z) ?? 2.76) - 0.004;
     const e = new Entity(`downlight ${room}`);
     e.addComponent('light', {
-      type: 'spot', color: DOWN, intensity: DOWNLIGHT.intensity, range: DOWNLIGHT.range, innerConeAngle: 12, outerConeAngle: 72, castShadows: true,
+      type: 'spot', color: DOWN, intensity: DOWNLIGHT.intensity, range: DOWNLIGHT.range, innerConeAngle: 12, outerConeAngle: DOWN_OUTER, castShadows: true,
+      cookie, cookieIntensity: 1,
       falloffMode: LIGHTFALLOFF_INVERSESQUARED, shadowResolution: 512, shadowBias: 0.25, normalOffsetBias: 0.04, volumetricScattering: 0.25,
     });
     e.setPosition(x, y - 0.01, z);
@@ -78,6 +85,21 @@ export function addDownlights(app, grid) {
   return rooms;
 }
 
+function profileCookie(device, profile, outer) {
+  const N = 128, c = document.createElement('canvas'); c.width = c.height = N;
+  const g = c.getContext('2d'), img = g.createImageData(N, N), t = Math.tan(outer * Math.PI / 180);
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    const r = Math.hypot((i + 0.5) / N * 2 - 1, (j + 0.5) / N * 2 - 1);
+    const v = r >= 1 ? 0 : profile(Math.atan(r * t) * 180 / Math.PI), k = (j * N + i) * 4;
+    img.data[k] = img.data[k + 1] = img.data[k + 2] = Math.round(255 * Math.min(1, v)); img.data[k + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  const tex = new Texture(device, { width: N, height: N, format: PIXELFORMAT_RGBA8, mipmaps: true, name: 'downlight-profile',
+    addressU: ADDRESS_CLAMP_TO_EDGE, addressV: ADDRESS_CLAMP_TO_EDGE });
+  tex.setSource(c);
+  return tex;
+}
+
 // Moonlight enters through the north (z = -1.5) and west (x = -6.5) windows, heading south-east and down.
 const MOON_DIR = new Vec3(0.45, -0.62, 0.64).normalize();
 
@@ -91,8 +113,8 @@ export function setupLighting(app) {
   L.maxLightsPerCell = 32;
   L.cells = new Vec3(28, 3, 10);
   L.cookiesEnabled = true;          // flashlight beam pattern, rain on the windows (street lamps)
-  L.cookieAtlasResolution = 1024;
-  s.ambientLight = new Color(0.006, 0.007, 0.010);
+  L.cookieAtlasResolution = 2048;     // ~25 cookies: the downlights' beam profile and the flashlight's pattern
+  s.ambientLight = new Color(0, 0, 0);     // no light from nowhere: with every lamp off the flat is black
 
   const lights = [];
   for (const [name, type, p, color, intensity, range, shadows, extra = {}] of LAMPS) {
@@ -130,7 +152,8 @@ function rotationBetween(a, b) {
   return axis.length() < 1e-6 ? new Quat() : new Quat().setFromAxisAngle(axis.normalize(), angle * 180 / Math.PI);
 }
 
-// Dark blue night sky with a faint sodium glow of the city at the horizon, as an 8-bit cubemap.
+// The night outside the windows: almost black (a trace of blue and of the city's glow at the horizon); only a lightning
+// flash shows anything out there (rain.js). An 8-bit cubemap.
 function nightSky(device) {
   const N = 64;
   const faces = [];
@@ -141,7 +164,7 @@ function nightSky(device) {
       // y component of the direction for each cube face (GL convention): sides look down as t grows.
       const y = f === 2 ? 1 : f === 3 ? -1 : -t / Math.hypot(1, t, (i + 0.5) / N * 2 - 1);
       const up = Math.max(0, y), glow = Math.exp(-Math.abs(y) * 9);
-      const r = 0.012 + 0.07 * glow + 0.004 * up, g = 0.016 + 0.045 * glow + 0.008 * up, b = 0.035 + 0.025 * glow + 0.03 * up;
+      const r = 0.0006 + 0.004 * glow, g = 0.0008 + 0.003 * glow + 0.0004 * up, b = 0.0016 + 0.002 * glow + 0.0014 * up;
       const k = (j * N + i) * 4;
       px[k] = 255 * Math.pow(r, 1 / 2.2); px[k + 1] = 255 * Math.pow(g, 1 / 2.2); px[k + 2] = 255 * Math.pow(b, 1 / 2.2); px[k + 3] = 255;
     }
@@ -185,6 +208,14 @@ export function captureCube(app, camera, pos, size = 256) {
       resolve(cube);
     });
   });
+}
+
+// Every probe capture (eight more cameras looking everywhere, so the shared shadow atlas may be laid out differently
+// that frame) has all lamp shadows rendered again, so captures never use a stale shadow.
+export function rerenderShadows(app) {
+  for (const l of app.root.findComponents('light')) {
+    if (l.castShadows && l.type !== 'directional' && l.entity.name !== 'flashlight beam') l.shadowUpdateMode = SHADOWUPDATE_THISFRAME;
+  }
 }
 
 // Lamps render their shadows once (static rooms). Something that moves (a door, the laptop lid) asks the shadowed lamps

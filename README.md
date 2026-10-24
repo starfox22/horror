@@ -1,8 +1,8 @@
 # horror
 True horror game
 
-A first-person browser horror game in the spirit of P.T., built on PlayCanvas. Current state: **build 0.6, a walkable
-night-time apartment** (no scares yet): light switches in every area, bedside reading lamps, a bathroom door and wardrobe that
+A first-person browser horror game in the spirit of P.T., built on PlayCanvas. Current state: **build 0.7, a walkable
+night-time apartment** (no scares yet): light switches in every area, lamps with their own switches (bedside, desk, arc lamp), a bathroom door and wardrobe that
 open, a laptop, computer and coffee machine to use, a flashlight to find (only its beam is seen), rain gathering and running
 down the windows, lightning and thunder, warm night lighting that fades softly into darkness (bounce light from probes
 around the flat, eye adaptation), post-processing and ambient sound.

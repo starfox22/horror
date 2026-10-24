@@ -8,7 +8,7 @@
 import { Color, Entity, Quat, Texture, Vec3, PIXELFORMAT_RGBA8, ADDRESS_CLAMP_TO_EDGE, LIGHTFALLOFF_INVERSESQUARED } from 'playcanvas';
 
 const HAND = new Vec3(0.15, -0.20, -0.12);    // the lamp's head relative to the eye (right hand, chest height)
-export const BEAM_SIZE = 38;                  // cone angle (degrees), developer menu can change it
+export const BEAM_SIZE = 27;                  // cone angle (degrees), developer menu can change it
 const BEAM = 8;                              // intensity
 const COLOR = new Color(1, 0.94, 0.84);        // a warm-white LED torch
 

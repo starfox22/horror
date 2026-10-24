@@ -19,7 +19,7 @@ export function setupPost(app, camera) {
   frame.ssao.blurEnabled = true;
   frame.ssao.scale = 0.75;
 
-  frame.bloom.intensity = 0.018;
+  frame.bloom.intensity = 0.024;     // a soft halo round bulbs, screens and the lit lamp shades
   frame.bloom.blurLevel = 14;
 
   frame.grading.enabled = true;
@@ -47,7 +47,7 @@ export function setupPost(app, camera) {
   fog.anisotropy = 0.55;
   fog.intensity = 2.4;
   fog.ambientColor.set(0.35, 0.42, 0.6);
-  fog.ambientIntensity = 0.004;
+  fog.ambientIntensity = 0;          // the haze shows only light that is really there
   fog.maxDistance = 12;          // short: haze in the rooms, but the city outside stays clear
   fog.steps = 20;
   fog.scale = 0.5;
@@ -72,13 +72,15 @@ export function setQuality(frame, q) {
 }
 
 // Eye adaptation: the view brightens a little in dim places and dims where everything is lit, as eyes (and a game
-// camera's auto exposure) do. It follows how bright the bounce light around the eye is (Probes.levelAt), only part of
+// camera's auto exposure) do. Applied as the player camera's grading brightness (before tone mapping, like exposure),
+// never as scene.exposure: that would also scale the probe captures, which would then feed back into the adaptation. It follows how bright the bounce light around the eye is (Probes.levelAt), only part of
 // the way (level ^ -0.35), within limits; it adapts faster to light than to darkness, and at once after a teleport.
 // ref: the level of a room lit by its own lamps (exposure 1 there).
-const ADAPT = { ref: 0.26, power: 0.35, min: 0.65, max: 1.35, toLight: 0.7, toDark: 2.4 };
+const ADAPT = { ref: 0.17, power: 0.35, min: 0.65, max: 1.35, toLight: 0.7, toDark: 2.4 };
 export class EyeAdaptation {
-  constructor(app, camera, probes, flashlight) {
-    Object.assign(this, { app, camera, probes, flashlight, enabled: true, value: 1 });
+  // fixed: a set exposure (#ev, for tuning) instead of adapting.
+  constructor(app, camera, frame, probes, flashlight, fixed = null) {
+    Object.assign(this, { app, camera, frame, probes, flashlight, fixed, enabled: fixed === null, value: fixed ?? 1 });
     this.last = camera.getPosition().clone();
     app.on('update', (dt) => this.update(dt));
   }
@@ -86,11 +88,13 @@ export class EyeAdaptation {
   update(dt) {
     const p = this.camera.getPosition();
     let level = this.enabled ? this.probes.levelAt(p.x, p.z) : null;
-    if (level !== null && this.flashlight?.held && this.flashlight.on) level += 0.05;   // its beam lights what you look at
-    const target = level === null ? 1 : Math.min(ADAPT.max, Math.max(ADAPT.min, (ADAPT.ref / Math.max(level, 1e-4)) ** ADAPT.power));
+    if (level !== null && this.flashlight?.held && this.flashlight.on) level += 0.035;   // its beam lights what you look at
+    const target = this.fixed ?? (level === null ? 1 : Math.min(ADAPT.max, Math.max(ADAPT.min, (ADAPT.ref / Math.max(level, 1e-4)) ** ADAPT.power)));
     if (p.distance(this.last) > 1.5) this.value = target;
     else this.value += (target - this.value) * (1 - Math.exp(-Math.min(dt, 0.1) / (target < this.value ? ADAPT.toLight : ADAPT.toDark)));
     this.last.copy(p);
-    this.app.scene.exposure = this.value;
+    this.frame.grading.brightness = this.value;
+    const compose = this.frame.renderPassCamera?.composePass;
+    if (compose) compose.gradingBrightness = this.value;
   }
 }

@@ -6,12 +6,12 @@
 import { Color, Entity, StandardMaterial, Vec3 } from 'playcanvas';
 
 export const ROOMS = [
-  { id: 'living', label: 'Living room lights', lights: ['arc lamp'], bulbs: [[-4.88, 1.47, 2.70]],
-    from: [0.95, 3.9], dir: [0, 1], on: true },
+  // The arc lamp by the sofa and the office desk lamp have their own switches (devices.js); these are the ceilings.
+  { id: 'living', label: 'Living room lights', lights: [], from: [0.95, 3.9], dir: [0, 1], on: true },
   { id: 'dining', label: 'Dining pendants', lights: ['dining pendant L', 'dining pendant R'], glow: 'White1.pendant',
     from: [1.13, 3.9], dir: [0, 1], on: false },
   { id: 'kitchen', label: 'Kitchen lights', lights: ['cooker hood'], glow: 'Light.kitchen', from: [1.31, 3.9], dir: [0, 1], on: false },
-  { id: 'office', label: 'Office lights', lights: ['desk lamp'], glow: 'Light.office', from: [3.0, 2.3], dir: [0, 1], on: true },
+  { id: 'office', label: 'Office lights', lights: [], from: [3.0, 2.3], dir: [0, 1], on: true },
   { id: 'hall', label: 'Hall lights', lights: [], from: [11.8, 3.6], dir: [0, 1], on: false },
   { id: 'bathroom', label: 'Bathroom lights', lights: ['bathroom mirror'], glow: 'Light.bathroom', at: [6.80, 1.22, 1.76], on: true },
   // The two bedside reading lamps have their own switches (devices.js); this is the ceiling and the shoe-closet LED.
@@ -73,8 +73,11 @@ export class Switches {
     return new Vec3(wx, PLATE_HEIGHT, wz);
   }
 
+  // A press flips what the room shows now: if the developer menu has forced its lights (`override`, devmenu.js) the press
+  // hands them back to this switch, from the forced state.
   toggle(room) {
-    room.on = !room.on;
+    const forced = this.override?.(room.lights);
+    room.on = forced === true || forced === false ? !forced : !room.on;
     this.sounds?.switchClick(room.on);
     this.fades.push(room);
     this.tilt(room);

@@ -21,7 +21,7 @@ import { DevMenu } from './devmenu.js';
 
 const ASSETS = new URL('./assets/apartment/', location.href).href;
 const SPAWN = { x: 13.0, z: 3.55, yaw: 90 };          // entrance hall, looking down the corridor
-const AMBIENT = 0.6;                                  // strength of the room probes' bounce light (probes.js)
+const AMBIENT = 0.9;                                  // strength of the room probes' bounce light (probes.js)
 const hash = new URLSearchParams(location.hash.slice(1));
 const shot = hash.get('shot')?.split(',').map(Number);
 
@@ -120,17 +120,20 @@ frontDoor(apartment);
 for (const r of flashlight.root.findComponents('render')) for (const mi of r.meshInstances) probes.assign(mi.material, 'bed');
 
 let capturing = null, rain = null;
-const recapture = async (passes = 1) => {
+const recapture = async () => {
   if (capturing) { capturing.again = true; return; }
   capturing = {};
   do {
     capturing.again = false;
+    // The window drops glow faintly with the room's light (they refract the lit room): by how many lights are on
+    // (switches, lamps, screens alike); with every light off they are black. Set before the capture, which sees them.
+    // (After a frame, so overrides from the developer menu have reached the lights.)
+    await new Promise(r => app.once('frameend', r));
+    const on = app.root.findComponents('light').filter(l => l.enabled && l.intensity > 0.01 && !/flashlight|moon/.test(l.entity.name)).length;
+    if (rain) rain.roomLight = Math.min(1, on / 12);
     flashlight.suspend(true);
-    await probes.captureAll(passes);
+    await probes.captureAll();
     flashlight.suspend(false);
-    // The window drops glow faintly with the room's light (they refract the lit room); dark flat, dark drops.
-    const lit = switches.rooms.filter(r => r.on).length / switches.rooms.length;
-    if (rain) rain.roomLight = 0.25 + 0.75 * lit;
   } while (capturing.again);
   capturing = null;
 };
@@ -144,11 +147,10 @@ if (hash.has('allon')) switches.rooms.forEach(r => { if (!r.on) switches.toggle(
 if (hash.has('flash')) flashlight.pickUp();
 rain = new Rain(app, apartment, ambience, lit);
 
-// One frame of the lit rooms first, then capture the probes from them (three times: light bouncing round the rooms).
+// One frame of the lit rooms first, then capture the probes from them.
 await new Promise(r => app.once('frameend', r));
-await recapture(3);
-const eyes = new EyeAdaptation(app, camera, probes, flashlight);
-if (hash.has('ev')) { eyes.enabled = false; app.on('update', () => { app.scene.exposure = Number(hash.get('ev')); }); }
+await recapture();
+const eyes = new EyeAdaptation(app, camera, frame, probes, flashlight, hash.has('ev') ? Number(hash.get('ev')) : null);
 
 player.onStep = (surface, speed) => ambience.step(surface, speed);
 const fwd = new pc.Vec3(), up = new pc.Vec3();

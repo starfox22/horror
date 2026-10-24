@@ -20,7 +20,7 @@ export class Rain {
     this.moon = moon;
     this.moonBase = moon.light.intensity;
     this.drops = [];
-    this.roomLight = 1;        // 0..1, share of the flat's lights that are on (set by main.js)
+    this.roomLight = 1;        // 0..1, how much light is on in the flat (set by main.js from the probes)
     this.timer = 0;
     this.flash = { next: 8 + Math.random() * 10, seq: [] };
 

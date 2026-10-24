@@ -1,6 +1,8 @@
-// Developer options (for testing): typing "developer" anywhere, in game or on the start screen, opens or closes a
-// panel with the flashlight's beam size, every light in the flat (on / off one by one, grouped by area), and a few
-// test actions. A light set here overrides its switch until "Back to switches".
+// Developer options (for testing). Typing "developer" anywhere, in game or on the start screen, turns developer mode on
+// or off (a splash says which). While it is on, the panel is shown whenever the game is paused or on the start screen
+// (no pointer lock): the flashlight's beam size, every light in the flat (on / off one by one, grouped by area), and a
+// few test actions. A light set here overrides its switch until "Back to switches", or until its own switch or lamp is
+// pressed in the flat (that press hands it back, from the state it was forced to: Switches/Devices `override`).
 const CODE = 'developer';
 
 export class DevMenu {
@@ -11,12 +13,17 @@ export class DevMenu {
     this.entries = this.collect();
     this.el = this.build();
     document.body.appendChild(this.el);
+    this.mode = false;
+    this.splash = Object.assign(document.createElement('div'), { id: 'devsplash', hidden: true });
+    document.body.appendChild(this.splash);
     window.addEventListener('keydown', (e) => {
       if (e.key.length !== 1 || !/[a-z]/i.test(e.key)) return;
       this.typed = (this.typed + e.key.toLowerCase()).slice(-CODE.length);
       this.lastKey = performance.now();
-      if (this.typed === CODE) { this.typed = ''; this.toggle(); }
+      if (this.typed === CODE) { this.typed = ''; this.setMode(!this.mode); }
     });
+    document.addEventListener('pointerlockchange', () => this.show());
+    sys.switches.override = sys.devices.override = (lights) => this.handBack(lights);
     // Registered after every other system, so a forced light wins over its switch's fade in the same frame.
     sys.app.on('update', (dt) => this.update(dt));
   }
@@ -46,10 +53,10 @@ export class DevMenu {
         if (e.name.startsWith('downlight')) {
           const g = room.glows[n++];
           add(group, `Ceiling light ${n}`, [{ e, base: room.base[i] }], g ? [g] : []);
-        } else add(group, title(e.name), [{ e, base: room.base[i] }]);
+        } else add(group, title(e.name), [{ e, base: room.base[i] }], room.glowMat ? [{ mat: room.glowMat, base: room.glowBase }] : []);   // its fixture's glow (mirror LEDs, hood, pendant globes)
       });
     }
-    for (const lamp of devices.lamps) add('Bedroom', `Reading lamp (${lamp.side})`, lamp.lights.map((e, i) => ({ e, base: lamp.base[i] })), [{ mat: lamp.mat, base: lamp.glow }]);
+    for (const lamp of devices.lamps) add(lamp.group, lamp.name, lamp.lights.map((e, i) => ({ e, base: lamp.base[i] })), lamp.mat ? [{ mat: lamp.mat, base: lamp.glow }] : []);
     if (closets) for (const [id, s] of Object.entries(closets.sections)) add('Bedroom', `Wardrobe LED (${id})`, [{ e: s.led, base: 0.55 }]);
     if (devices.laptop?.glow) add('Living room', 'Laptop screen glow', [{ e: devices.laptop.glow, base: devices.laptop.glowBase }]);
     if (devices.computer?.glow) add('Office', 'Computer screen glow', [{ e: devices.computer.glow, base: devices.computer.glowBase }]);
@@ -59,7 +66,9 @@ export class DevMenu {
       if (seen.has(l.entity) || skip.has(l.entity.name)) continue;
       add('Other', title(l.entity.name), [{ e: l.entity, base: l.intensity || 0.5 }]);
     }
-    return list;
+    // One heading per area: entries grouped in the order their areas first appear (stable within an area).
+    const order = [...new Set(list.map(en => en.group))];
+    return list.map((en, i) => [en, i]).sort((a, b) => order.indexOf(a[0].group) - order.indexOf(b[0].group) || a[1] - b[1]).map(([en]) => en);
   }
 
   build() {
@@ -84,7 +93,7 @@ export class DevMenu {
         <div class="btns"><button id="dev-lightning">Lightning strike</button><button id="dev-stats">Show FPS</button></div>
         <label class="light"><input type="checkbox" id="dev-eyes"> Eye adaptation <output id="dev-ev"></output></label>
       </section>
-      <p class="hint">Type “developer” again to close.</p>`;
+      <p class="hint">Shown while the game is paused. Type “developer” again to turn developer mode off.</p>`;
     const $ = (id) => el.querySelector(`#${id}`);
     const fl = this.sys.flashlight;
     const size = $('dev-size'), out = $('dev-size-v');
@@ -121,12 +130,38 @@ export class DevMenu {
     return el;
   }
 
+  // Developer mode on/off, with a splash.
+  setMode(on) {
+    this.mode = on;
+    this.splash.textContent = on ? 'Developer mode enabled!' : 'Developer mode disabled';
+    this.splash.hidden = false;
+    this.splash.classList.remove('show');
+    void getComputedStyle(this.splash).opacity;      // restart the fade
+    this.splash.classList.add('show');
+    clearTimeout(this.splashTimer);
+    this.splashTimer = setTimeout(() => { this.splash.hidden = true; }, 2200);
+    this.show();
+  }
+
+  // The panel is up while developer mode is on and the game is not being played (paused or on the start screen).
+  show() { this.toggle(this.mode && !document.pointerLockElement); }
+
   toggle(open = this.el.hidden) {
     this.el.hidden = !open;
-    if (open) {
-      if (document.pointerLockElement) document.exitPointerLock();
-      this.refresh();
+    if (open) this.refresh();
+  }
+
+  // A switch or lamp was pressed in the flat: entries forced here for any of `lights` go back to it. Returns the state
+  // they were forced to (so the press flips what the player sees), or null if none was forced.
+  handBack(lights) {
+    let forced = null;
+    for (const en of this.entries) {
+      if (en.force === null || !en.lights.some(l => lights.includes(l.e))) continue;
+      forced = en.force;
+      en.force = null;
     }
+    if (forced !== null) this.refresh();
+    return forced;
   }
 
   isOn(en) { return en.force ?? en.lights.some(l => l.e.light.enabled && l.e.light.intensity > 0.001); }

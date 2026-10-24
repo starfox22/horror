@@ -1,9 +1,10 @@
-// Things in the flat that do something when used (E): the two bedside reading lamps (each on its own), the MacBook
+// Things in the flat that do something when used (E): lamps with their own switch (the two bedside reading lamps, the
+// arc lamp by the sofa, the office desk lamp; lighting.js places the last two at their bulbs), the MacBook
 // (the lid opens and shuts on its hinge; the screen wakes and sleeps), the office computer (power on with the start-up
 // chime, off), and the coffee machine (grinds, brews with steam rising from the cup, then beeps). Parts come from the
 // asset pipeline with their own materials ('<name>.<tag>', tools/build-assets.mjs FIXTURES and SPLITS).
 import {
-  Color, Entity, Quat, Vec3, Texture, Curve, CurveSet, LIGHTFALLOFF_INVERSESQUARED, SHADOWUPDATE_THISFRAME, BLEND_NORMAL,
+  Color, Entity, Quat, Vec3, Texture, StandardMaterial, Curve, CurveSet, LIGHTFALLOFF_INVERSESQUARED, SHADOWUPDATE_THISFRAME, BLEND_NORMAL,
   PIXELFORMAT_RGBA8,
 } from 'playcanvas';
 import { refreshShadows } from './lighting.js';
@@ -27,7 +28,12 @@ export class Devices {
     this.renders = apartment.findComponents('render');
     for (const r of this.renders) for (const mi of r.meshInstances) this.materials.set(mi.material.name, mi.material);
     this.tasks = [];
-    this.lamps = ['left', 'right'].map(side => this.bedsideLamp(side, interactions)).filter(Boolean);
+    this.lamps = [
+      ...['left', 'right'].map(side => this.bedsideLamp(side, interactions)),
+      // Arc lamp: its bulb hides in the dome shade over the sofa (no glow mesh in the model, so a small bulb is added).
+      this.ownLamp(interactions, { name: 'arc lamp', group: 'Living room', label: 'the arc lamp', bulb: [-4.88, 1.47, 2.70], at: [-4.88, 1.46, 2.70], size: 0.3 }),
+      this.ownLamp(interactions, { name: 'desk lamp', group: 'Office', label: 'the desk lamp', glow: 'Light.office', at: [4.105, 1.36, -0.93], size: 0.16 }),
+    ].filter(Boolean);
     this.laptop = this.makeLaptop(interactions);
     this.computer = this.makeComputer(interactions);
     this.coffee = this.makeCoffee(interactions);
@@ -75,14 +81,35 @@ export class Devices {
     spill.addComponent('light', { type: 'omni', color: WARM, intensity: 0.15, range: 2.4, castShadows: false, falloffMode: LIGHTFALLOFF_INVERSESQUARED });
     spill.setPosition(bulb.x - 0.08, bulb.y + 0.03, bulb.z);
     this.app.root.addChild(spot); this.app.root.addChild(spill);
-    const lamp = { side, on: true, level: 1, mat, glow: mat.emissiveIntensity, lights: [spot, spill], base: [1.25, 0.15] };
+    const lamp = { side, name: `Reading lamp (${side})`, group: 'Bedroom', on: true, level: 1, mat, glow: mat.emissiveIntensity, lights: [spot, spill], base: [1.25, 0.15] };
     interactions.add({ pos: bulb, size: 0.14, label: () => `Turn the ${side} reading lamp ${lamp.on ? 'off' : 'on'}`,
       use: () => this.toggleLamp(lamp) });
     return lamp;
   }
 
+  // A lamp already placed by lighting.js (`name`), switched here: its glowing bulb is the model's own mesh (`glow`
+  // material) or a small sphere at `bulb`; E at `at`.
+  ownLamp(interactions, { name, group, label, glow, bulb, at, size }) {
+    const light = this.app.root.findByName(name);
+    if (!light) return null;
+    let mat = glow ? this.materials.get(glow) : null;
+    if (bulb) {
+      mat = new StandardMaterial();
+      mat.diffuse = Color.BLACK; mat.emissive = new Color(1, 0.82, 0.62); mat.emissiveIntensity = 6; mat.update();
+      const b = new Entity(`${name} bulb`);
+      b.addComponent('render', { type: 'sphere', material: mat, castShadows: false });
+      b.setLocalScale(0.05, 0.05, 0.05); b.setPosition(...bulb);
+      this.app.root.addChild(b);
+    }
+    const lamp = { name: name.charAt(0).toUpperCase() + name.slice(1), group, on: true, level: 1, mat, glow: mat?.emissiveIntensity ?? 0,
+      lights: [light], base: [light.light.intensity] };
+    interactions.add({ pos: new Vec3(...at), size, label: () => `Turn ${label} ${lamp.on ? 'off' : 'on'}`, use: () => this.toggleLamp(lamp) });
+    return lamp;
+  }
+
   toggleLamp(lamp) {
-    lamp.on = !lamp.on;
+    const forced = this.override?.(lamp.lights);       // forced by the developer menu: hand it back (switches.js toggle)
+    lamp.on = forced === true || forced === false ? !forced : !lamp.on;
     this.sounds?.lampClick?.(lamp.lights[0].getPosition(), lamp.on);
     const from = lamp.level, to = lamp.on ? 1 : 0;
     // A warm filament-style ramp: quick to light, a short glow-down when switched off.
@@ -93,7 +120,7 @@ export class Devices {
     lamp.level = level;
     const k = level * level;
     lamp.lights.forEach((l, i) => { l.light.intensity = lamp.base[i] * k; l.light.enabled = k > 0.001; });
-    lamp.mat.emissiveIntensity = lamp.glow * k; lamp.mat.update();
+    if (lamp.mat) { lamp.mat.emissiveIntensity = lamp.glow * k; lamp.mat.update(); }
   }
 
   // --- MacBook ----------------------------------------------------------------------------------------------------
@@ -132,6 +159,7 @@ export class Devices {
   }
 
   toggleLaptop(l) {
+    if (l.glow) this.override?.([l.glow]);          // hand its glow back from the developer menu
     l.busy = true;
     l.open = !l.open;
     const from = l.angle, to = l.open ? 0 : LID_SHUT;
@@ -167,6 +195,7 @@ export class Devices {
   }
 
   toggleComputer(pc) {
+    if (pc.glow) this.override?.([pc.glow]);
     pc.busy = true;
     pc.on = !pc.on;
     const at = new Vec3(5.24, 1.10, -1.10);
