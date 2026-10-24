@@ -1,8 +1,8 @@
-name: Pages · Codex apartment preview
+name: Pages · Codex review
 
 on:
   push:
-    branches: [codex/apartment-lighting-pass]
+    branches: [codex-review]
   workflow_dispatch:
 
 permissions:
@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   build:
-    if: github.ref == 'refs/heads/codex/apartment-lighting-pass'
+    if: github.ref == 'refs/heads/codex-review'
     runs-on: ubuntu-latest
     permissions:
       contents: read

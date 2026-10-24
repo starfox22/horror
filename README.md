@@ -9,7 +9,7 @@ around the flat, eye adaptation), post-processing and ambient sound.
 
 Read `docs/HANDOFF.md` first if you are picking this up (state, owner's preferences, how things fit together).
 
-This development branch adds a lighting/material pass and interaction fixes. See [the change list and validation guide](docs/CODEX_ENVIRONMENT_PASS.md), [side-by-side screenshots](docs/review/README.md), and [preview deployment instructions](docs/PREVIEW_DEPLOYMENT.md).
+All Codex reviews continue on `codex-review`, while Claude works on its own branch. Codex merges into or pushes to `main` only when the owner explicitly asks. The first review adds a lighting/material pass and interaction fixes. See [the change list and validation guide](docs/CODEX_ENVIRONMENT_PASS.md), [side-by-side screenshots](docs/review/README.md), and [preview deployment instructions](docs/PREVIEW_DEPLOYMENT.md).
 
 ## Play
 

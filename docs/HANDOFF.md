@@ -4,6 +4,7 @@ A browser horror game in the spirit of Konami's P.T. (first person, one quiet ho
 works with AI agents; whoever picks this up continues from the state below and keeps this file current.
 
 ## Owner's requirements and preferences
+- Current branch policy: reuse `codex-review` for all Codex reviews; Claude works on a separate branch. Merge into or push to `main` only when the owner explicitly asks. Historical approvals below apply only to those completed builds.
 - AAA-looking graphics, playable in a desktop browser.
 - Download existing free assets (Sketchfab, Poly Haven, GitHub…) instead of making them, to save tokens. Assets must
   have a licence that allows use in a game (CC0 / CC BY / MIT…); credit them in docs/CREDITS.md.
@@ -32,9 +33,9 @@ works with AI agents; whoever picks this up continues from the state below and k
 - Show screenshots and links before big decisions; publish each prototype to a web link.
 - Keep everything documented so another AI can continue.
 
-## Codex development branch (build 0.8)
+## Ongoing Codex review branch
 
-The environment/lighting and interaction pass lives on `codex/apartment-lighting-pass`; `main` remains the original build.
+All Codex review passes use `codex-review`. Build 0.8 is its first environment, lighting and interaction pass; Claude continues on a separate branch.
 Read [CODEX_ENVIRONMENT_PASS.md](CODEX_ENVIRONMENT_PASS.md) for the full change list, validation commands, comparison methodology and follow-up constraints.
 [PREVIEW_DEPLOYMENT.md](PREVIEW_DEPLOYMENT.md) documents the separate `/codex/` Pages build and deployment prerequisites.
 This remains a quiet apartment prototype with no added scares. The default Vite configuration now handles optional missing assets correctly, so the earlier external onboarding override is unnecessary on this branch.
@@ -43,8 +44,7 @@ This remains a quiet apartment prototype with no added scares. The default Vite 
 - Builds 0.1-0.7 (2026-10-22/24): claude.ai artifact https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9 (always the
   latest build; private to the owner unless shared from its Share menu).
 - GitHub Pages: `.github/workflows/pages.yml` deploys `main` to https://starfox22.github.io/horror/ once the owner turns
-  Pages on (Settings → Pages → Source: GitHub Actions). The repository is private, which needs a paid plan for Pages;
-  the alternative is making it public. Until then the artifact is the link.
+  Pages on (Settings → Pages → Source: GitHub Actions). The repository is now public and Pages is enabled. The Codex preview still requires `codex-review` in the Pages environment’s allowed deployment branches; see the deployment guide for current status.
 
 To republish the artifact: `npm run build && node tools/make-artifact.mjs`, then the Artifact tool with
 `file_path: dist-artifact/index.html`, `root: dist-artifact`, `url` above, and `files` from the JSON list the script prints.

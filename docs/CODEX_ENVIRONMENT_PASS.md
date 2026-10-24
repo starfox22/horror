@@ -1,6 +1,6 @@
 # Codex environment pass — build 0.8
 
-Development branch: `codex/apartment-lighting-pass`.
+Development branch: `codex-review`.
 Baseline: `7b93acb3f34085e078ad32f0c2baae415341e486` (Claude build 0.7).
 
 The scope is the walkable apartment, lighting, material presentation, and object interactions. No enemies, narrative events, puzzles, or scares have been added. Existing weather remains. No external assets or new licences were needed.
@@ -71,4 +71,4 @@ Software rendering is useful for correctness and comparison, but is not a deskto
 
 The branch was pushed and the GitHub workflow built both games successfully, but publication stopped because Pages is disabled. The agent integration cannot enable Pages. See [PREVIEW_DEPLOYMENT.md](PREVIEW_DEPLOYMENT.md) for the workflow that preserves the original game at the site root and adds this branch at `/codex/`. Do not claim a live preview until the Actions run succeeds and `/codex/build-info.json` matches the intended commit.
 
-Use the existing isolated checkout for cloud tasks. Do not create an additional worktree unless explicitly requested. Keep further development on this branch until the owner chooses to merge it. Read `HANDOFF.md` for model conventions, light-switch ownership, collision geometry and licence information.
+Use the existing isolated checkout for cloud tasks. Do not create an additional worktree unless explicitly requested. Keep all Codex review passes on `codex-review`. Merge into or push to `main` only when the owner explicitly requests that operation. Read `HANDOFF.md` for model conventions, light-switch ownership, collision geometry and licence information.
