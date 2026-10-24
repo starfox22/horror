@@ -9,6 +9,7 @@ import {
 import { refreshShadows } from './lighting.js';
 import { CoffeeCycle, COFFEE_POSITION } from './coffee-cycle.js';
 import { CoffeeEffects } from './coffee-effects.js';
+import { ARC_LAMP } from './lamp-profiles.js';
 
 const WARM = new Color(1.0, 0.78, 0.56);
 const SCREEN = new Color(0.55, 0.68, 1.0);
@@ -31,7 +32,8 @@ export class Devices {
     this.lamps = [
       ...['left', 'right'].map(side => this.bedsideLamp(side, interactions)),
       // Arc lamp: its bulb hides in the dome shade over the sofa (no glow mesh in the model, so a small bulb is added).
-      this.ownLamp(interactions, { name: 'arc lamp', group: 'Living room', label: 'the arc lamp', bulb: [-4.88, 1.47, 2.70], at: [-4.88, 1.46, 2.70], size: 0.3 }),
+      this.ownLamp(interactions, { name: 'arc lamp', group: 'Living room', label: 'the arc lamp',
+        bulb: ARC_LAMP.position, bulbDiameter: ARC_LAMP.bulbDiameter, at: [-4.88, 1.39, 2.70], size: 0.3 }),
       this.ownLamp(interactions, { name: 'desk lamp', group: 'Office', label: 'the desk lamp', glow: 'Light.office', at: [4.105, 1.36, -0.93], size: 0.16 }),
     ].filter(Boolean);
     this.laptop = this.makeLaptop(interactions);
@@ -95,7 +97,7 @@ export class Devices {
 
   // A lamp already placed by lighting.js (`name`), switched here: its glowing bulb is the model's own mesh (`glow`
   // material) or a small sphere at `bulb`; E at `at`.
-  ownLamp(interactions, { name, group, label, glow, bulb, at, size }) {
+  ownLamp(interactions, { name, group, label, glow, bulb, bulbDiameter = 0.05, at, size }) {
     const light = this.app.root.findByName(name);
     if (!light) return null;
     let mat = glow ? this.materials.get(glow) : null;
@@ -104,7 +106,7 @@ export class Devices {
       mat.diffuse = Color.BLACK; mat.emissive = new Color(1, 0.82, 0.62); mat.emissiveIntensity = 6; mat.update();
       const b = new Entity(`${name} bulb`);
       b.addComponent('render', { type: 'sphere', material: mat, castShadows: false });
-      b.setLocalScale(0.05, 0.05, 0.05); b.setPosition(...bulb);
+      b.setLocalScale(bulbDiameter, bulbDiameter, bulbDiameter); b.setPosition(...bulb);
       this.app.root.addChild(b);
     }
     const lamp = { name: name.charAt(0).toUpperCase() + name.slice(1), group, on: true, level: 1, mat, glow: mat?.emissiveIntensity ?? 0,

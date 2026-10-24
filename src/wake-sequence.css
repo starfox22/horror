@@ -1,0 +1,22 @@
+@font-face {
+  font-family: 'Cormorant Garamond';
+  src: url('/assets/fonts/cormorant-garamond-medium-latin.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+
+#wake-sequence { position: fixed; inset: 0; z-index: 6; pointer-events: none; }
+.wake-veil { position: absolute; inset: 0; background: #020203; will-change: opacity; }
+.wake-dialogue { position: absolute; left: 50%; bottom: 13%; width: min(38rem, calc(100vw - 3rem)); margin: 0;
+  transform: translateX(-50%); color: #eee9dd; text-align: center;
+  font: 500 clamp(1.45rem, 2.6vw, 2.05rem)/1.28 'Cormorant Garamond', Georgia, serif; letter-spacing: .018em;
+  text-wrap: balance; text-shadow: 0 2px 7px #000, 0 0 26px rgba(0,0,0,.9); }
+.wake-dialogue::before { content: ''; position: absolute; inset: -1.6rem -2rem; z-index: -1;
+  background: radial-gradient(ellipse, rgba(0,0,0,.30), transparent 72%); pointer-events: none; }
+.wake-skip { position: absolute; bottom: 24px; right: 28px; padding: .4rem .65rem; border: 1px solid rgba(232,228,218,.17);
+  background: rgba(5,6,7,.35); color: rgba(232,228,218,.62); font: 11px/1.4 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  letter-spacing: .08em; cursor: pointer; pointer-events: auto; }
+.wake-skip:focus-visible, .wake-skip:hover { outline: 1px solid #ded5bf; color: #f4eee2; }
+@media (max-height: 420px) { .wake-dialogue { bottom: 17%; font-size: 1.35rem; } .wake-skip { bottom: 10px; right: 12px; } }
+@media (prefers-reduced-motion: reduce) { .wake-veil { will-change: auto; } }

@@ -23,7 +23,7 @@ test('bedroom/bath ceilings start off; mirror and extractor have independent dim
   assert.deepEqual(room.hood.lights, ['cooker hood']);
   const lamps = Object.fromEntries(LAMPS.map(light => [light[0], light]));
   assert.ok(lamps['bathroom mirror'][4] >= 0.1 && lamps['bathroom mirror'][4] <= 0.14);
-  assert.ok(lamps['cooker hood'][4] >= 0.2 && lamps['cooker hood'][4] <= 0.25);
+  assert.ok(lamps['cooker hood'][4] >= 0.4 && lamps['cooker hood'][4] <= 0.5);
   assert.ok(room.mirror.glowScale < 1 && room.hood.glowScale < 1);
 });
 

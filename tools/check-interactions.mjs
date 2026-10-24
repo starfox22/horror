@@ -259,3 +259,26 @@ test('returning to switches restores independent fixtures without a room owner',
     { enabled: true, intensity: 0.25 }, { enabled: false, intensity: 0.13 },
   ], 'unowned lights must return to their original enabled state and brightness');
 });
+
+test('developer overrides return refrigerator light and diffuser to the current door state', () => {
+  const scene = app();
+  const light = { name: 'refrigerator interior', light: { enabled: false, intensity: 0 } };
+  const glow = { emissiveIntensity: 0, update() {} };
+  const fridge = { light, glow, baseIntensity: 0.3, open: false,
+    applyLighting() { light.light.enabled = this.open; light.light.intensity = this.open ? this.baseIntensity : 0; glow.emissiveIntensity = this.open ? 2 : 0; } };
+  scene.root.findComponents = () => [{ ...light.light, entity: light }];
+  const menu = Object.create(DevMenu.prototype);
+  menu.sys = { app: scene, switches: { rooms: [] }, devices: { lamps: [] }, fridge };
+  menu.entries = menu.collect(); menu.el = { hidden: true }; menu.refresh = () => {};
+  assert.equal(menu.entries.length, 1, 'the fridge must have one owner rather than a startup snapshot');
+  const entry = menu.entries[0];
+  fridge.open = true; fridge.applyLighting();
+  entry.force = false; menu.update(0);
+  assert.equal(light.light.enabled, false); assert.equal(glow.emissiveIntensity, 0);
+  menu.reset(); clearTimeout(menu.timer);
+  assert.equal(light.light.enabled, true); assert.equal(light.light.intensity, 0.3); assert.equal(glow.emissiveIntensity, 2);
+  entry.force = true; menu.update(0);
+  assert.equal(menu.handBack([light]), true);
+  fridge.open = false; menu.reset(); clearTimeout(menu.timer);
+  assert.equal(light.light.enabled, false); assert.equal(glow.emissiveIntensity, 0);
+});

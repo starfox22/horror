@@ -68,6 +68,7 @@ with sync_playwright() as p:
             bloom: frame.bloom.intensity > 0, taa: frame.taa.enabled,
             grain: !document.getElementById('grain').hidden,
             fps: !document.getElementById('stats').hidden,
+            fpsLimit: window.__app.frameLimiter.limit,
             fpsElements: document.querySelectorAll('#stats').length};
         }''')
 
@@ -102,6 +103,7 @@ with sync_playwright() as p:
         page.wait_for_function('/^\\d+ FPS/.test(document.getElementById("stats").textContent)')
         assert page.locator('#stats').is_visible(), 'FPS must be on for a fresh browser'
         assert page.locator('#stats').count() == 1
+        assert snapshot()['fpsLimit'] == 60, 'A fresh browser must use the 60 FPS default'
         assert page.evaluate('localStorage.getItem("horror.graphics.v1")') is None, 'A fresh context must not inherit preferences'
         results['freshFps'] = 'visible, one element'
         print('Fresh FPS counter PASS', flush=True)
@@ -120,6 +122,9 @@ with sync_playwright() as p:
 
         page.bring_to_front()
         page.locator('#enter').click()
+        page.wait_for_function('document.pointerLockElement === document.getElementById("app") && (window.__app.player.active || window.__app.wake?.running)')
+        if page.evaluate('!!window.__app.wake?.running'):
+            page.keyboard.press('Space')
         page.wait_for_function('document.pointerLockElement === document.getElementById("app") && window.__app.player.active')
         page.wait_for_function('Number(getComputedStyle(document.getElementById("intro")).opacity) < 0.01')
         page.keyboard.press('g')
@@ -141,6 +146,13 @@ with sync_playwright() as p:
         results['presets'] = 'Low, Medium, High, Auto update the render pipeline'
 
         choose('low')
+        for limit in (0, 30, 60, 90, 120):
+            page.locator('#graphics-fps-limit').select_option(str(limit))
+            state = snapshot()
+            assert state['fpsLimit'] == state['settings']['fpsLimit'] == limit, state
+            assert state['settings']['preset'] == 'low', 'FPS cap must not change quality'
+            assert state['fps'], 'FPS cap must not switch off the counter'
+        results['fpsLimitControl'] = 'Uncapped, 30, 60, 90 and 120 apply without changing quality or FPS visibility'
         state = toggle('showFps', False)
         assert state['settings']['preset'] == 'low', 'FPS display must not change graphics quality'
         assert not page.locator('#stats').is_visible()
@@ -183,6 +195,7 @@ with sync_playwright() as p:
         toggle('taa', False)
         toggle('filmGrain', False)
         toggle('showFps', False)
+        page.locator('#graphics-fps-limit').select_option('30')
         before = snapshot()
         assert before['settings']['preset'] == 'custom'
         # Remove the temporary q=1 URL override, then perform a genuine application reload.
@@ -193,10 +206,11 @@ with sync_playwright() as p:
         ready()
         after = snapshot()
         assert after['settings'] == before['settings'], (before, after)
-        for field in ('scale', 'actualScale', 'ao', 'fog', 'bloom', 'taa', 'grain', 'fps'):
+        for field in ('scale', 'actualScale', 'ao', 'fog', 'bloom', 'taa', 'grain', 'fps', 'fpsLimit'):
             assert after[field] == before[field], (field, before, after)
         assert after['fpsElements'] == 1 and not page.locator('#stats').is_visible()
-        results['reloadPersistence'] = 'Custom settings and explicit FPS preference restored without q override'
+        assert page.locator('#graphics-fps-limit').input_value() == '30'
+        results['reloadPersistence'] = 'Custom settings, 30 FPS cap and explicit counter preference restored without q override'
         print('Preference reload PASS', flush=True)
 
         open_menu()
@@ -208,7 +222,7 @@ with sync_playwright() as p:
         dimensions = page.locator('#graphics-dialog').evaluate('(dialog) => ({width:dialog.clientWidth, scroll:dialog.scrollWidth, left:dialog.getBoundingClientRect().left, right:dialog.getBoundingClientRect().right})')
         assert dimensions['scroll'] <= dimensions['width'] + 1, dimensions
         assert 0 <= dimensions['left'] and dimensions['right'] <= 320, dimensions
-        for selector in ('#graphics-preset', '#graphics-resolution', '[data-option="showFps"]'):
+        for selector in ('#graphics-preset', '#graphics-resolution', '#graphics-fps-limit', '[data-option="showFps"]'):
             control = page.locator(selector)
             control.scroll_into_view_if_needed()
             assert control.is_visible()
@@ -225,6 +239,72 @@ with sync_playwright() as p:
             destination.parent.mkdir(parents=True, exist_ok=True)
             page.screenshot(path=str(destination))
             results['screenshot'] = str(destination)
+            close_menu()
+
+        # SwiftShader cannot benchmark apartment throughput at 60+ FPS. Keep the
+        # real PlayCanvas tick and installed limiter, but stub update/render work
+        # briefly to prove they are actually scheduled at the selected cadence.
+        # Deterministic Node checks separately cover 60/120/144 Hz display clocks.
+        page.bring_to_front()
+        results['fastTickCadence'] = page.evaluate('''async () => {
+          const {app, frameLimiter} = window.__app;
+          const update = app.update, render = app.render, savedLimit = frameLimiter.limit;
+          let updates = 0, renders = 0, frames = 0, rawFrames = 0, rawRequest;
+          const countFrame = () => frames++;
+          const countRaw = () => { rawFrames++; rawRequest = requestAnimationFrame(countRaw); };
+          app.update = () => updates++;
+          app.render = () => renders++;
+          app.on('frameend', countFrame);
+          const measurements = [], warmup = [];
+          const diagnostics = window.__frameLimiterMeasurements = {warmup, measurements};
+          try {
+            // SwiftShader's compositor can continue processing viewport work
+            // for seconds after render is stubbed. Wait for measured steady RAF
+            // supply instead of treating that transient as limiter throughput.
+            frameLimiter.setLimit(0);
+            rawRequest = requestAnimationFrame(countRaw);
+            let stable = 0;
+            for (let attempt = 0; attempt < 40 && stable < 3; attempt++) {
+              frames = rawFrames = 0;
+              const start = performance.now();
+              await new Promise(resolve => setTimeout(resolve, 500));
+              const elapsed = performance.now() - start;
+              const sample = {elapsed, fps:frames * 1000 / elapsed, rawFps:rawFrames * 1000 / elapsed};
+              warmup.push(sample);
+              stable = elapsed < 800 && sample.fps >= 45 && sample.rawFps >= 50 ? stable + 1 : 0;
+            }
+            if (stable < 3) throw new Error(`Fast tick harness never reached stable RAF supply: ${JSON.stringify(diagnostics)}`);
+            for (const limit of [0, 30, 60, 90, 120]) {
+              frameLimiter.setLimit(limit);
+              await new Promise(resolve => setTimeout(resolve, 100));
+              updates = renders = frames = rawFrames = 0;
+              const start = performance.now();
+              await new Promise(resolve => setTimeout(resolve, 1500));
+              const elapsed = performance.now() - start;
+              if (updates !== renders || frames !== renders) throw new Error('Tick, draw and FPS frame counts diverged');
+              measurements.push({limit, frames, rawFrames, updates, renders, elapsed, fps:frames * 1000 / elapsed, rawFps:rawFrames * 1000 / elapsed});
+            }
+          } finally {
+            cancelAnimationFrame(rawRequest);
+            app.update = update;
+            app.render = render;
+            app.off('frameend', countFrame);
+            frameLimiter.setLimit(savedLimit);
+          }
+          const refresh = measurements[0].fps;
+          if (refresh < 45) throw new Error(`Fast tick harness is starved (${refresh.toFixed(1)} FPS): ${JSON.stringify(diagnostics)}`);
+          for (const result of measurements.slice(1)) {
+            // Other software-rendered contexts can change the browser's RAF
+            // supply between samples. Compare against callbacks offered during
+            // this sample, while keeping the uncapped throughput guard above.
+            const expected = Math.min(result.rawFps, result.limit);
+            if (Math.abs(result.fps - expected) > Math.max(4, expected * 0.12)) {
+              throw new Error(`Real tick cap ${result.limit}: ${result.fps.toFixed(1)} FPS, expected ${expected.toFixed(1)}: ${JSON.stringify(diagnostics)}`);
+            }
+          }
+          return {method:'real engine tick; update/render work stubbed, not an apartment GPU benchmark', warmup, measurements};
+        }''')
+        print('Real engine tick FPS limiter PASS', flush=True)
 
         assert not errors, errors
         assert not console_errors, console_errors
@@ -236,7 +316,7 @@ with sync_playwright() as p:
                           'unexpectedHttpErrors': unexpected_http, 'unexpectedFailedRequests': unexpected_requests}, indent=2))
     except Exception:
         try:
-            print(json.dumps(page.evaluate('({state:window.__state, graphics:window.__app?.graphics?.settings, dialogOpen:document.getElementById("graphics-dialog")?.open, fpsCount:document.querySelectorAll("#stats").length})')), flush=True)
+            print(json.dumps({'completed': results, 'diagnostics': page.evaluate('({state:window.__state, graphics:window.__app?.graphics?.settings, frameLimiter:window.__frameLimiterMeasurements, dialogOpen:document.getElementById("graphics-dialog")?.open, fpsCount:document.querySelectorAll("#stats").length})')}), flush=True)
         except Exception:
             pass
         raise

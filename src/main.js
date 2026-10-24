@@ -10,6 +10,10 @@ import { setupLighting, addDownlights } from './lighting.js';
 import { Probes, ZONES, baseName } from './probes.js';
 import { setupPost, EyeAdaptation } from './post.js';
 import { GraphicsPreferences, GraphicsSettings } from './graphics-settings.js';
+import { installFrameLimiter } from './frame-limiter.js';
+import { WakeSequence, WAKE_EXIT } from './wake-sequence.js';
+import { Fridge } from './fridge.js';
+import './wake-sequence.css';
 import { Ambience } from './ambience.js';
 import { Interactions } from './interact.js';
 import { Switches } from './switches.js';
@@ -21,7 +25,7 @@ import { Devices } from './devices.js';
 import { DevMenu } from './devmenu.js';
 
 const ASSETS = new URL('./assets/apartment/', location.href).href;
-const SPAWN = { x: 13.0, z: 3.55, yaw: 90 };          // entrance hall, looking down the corridor
+const SPAWN = { x: WAKE_EXIT.x, z: WAKE_EXIT.z, yaw: WAKE_EXIT.yaw }; // clear bedside landing
 const AMBIENT = 0.9;                                  // strength of the room probes' bounce light (probes.js)
 const hash = new URLSearchParams(location.hash.slice(1));
 const shot = hash.get('shot')?.split(',').map(Number);
@@ -54,6 +58,8 @@ const showError = (error) => {
   $('enter').hidden = true;
   $('graphics-open').hidden = true;
   document.getElementById('graphics-dialog')?.close();
+  const waking = document.getElementById('wake-sequence');
+  if (waking) waking.hidden = true;
   $('retry').hidden = false;
   $('intro').classList.remove('gone');
   $('intro').style.display = '';
@@ -86,6 +92,7 @@ opts.componentSystems = [pc.RenderComponentSystem, pc.CameraComponentSystem, pc.
 opts.resourceHandlers = [pc.TextureHandler, pc.ContainerHandler];
 const app = new pc.AppBase(canvas);
 app.init(opts);
+const frameLimiter = installFrameLimiter(app, { limit: graphicsPreferences.state.fpsLimit });
 app.setCanvasFillMode(pc.FILLMODE_FILL_WINDOW);
 app.setCanvasResolution(pc.RESOLUTION_AUTO);
 window.addEventListener('resize', () => app.resizeCanvas());
@@ -176,6 +183,8 @@ const switches = new Switches(app, grid, apartment, interactions, ambience, reca
 for (const { material, zone } of switches.surfaceMaterials) probes.assign(material, zone);
 const devices = new Devices(app, apartment, interactions, ambience, recapture);
 devices.configureCoffeeMaterial = material => probes.assign(material, 'main');
+const fridge = await Fridge.create({ app, apartment, interactions, grid, player, sounds: ambience,
+  recapture, configureMaterial: material => probes.assign(material, 'main') }).catch(failLoad);
 if (hash.has('dark')) {
   switches.rooms.forEach(r => { if (r.on) switches.toggle(r); });
   devices.lamps.forEach(l => { if (l.on) devices.toggleLamp(l); });
@@ -188,11 +197,16 @@ rain = new Rain(app, apartment, ambience, lit);
 await new Promise(r => app.once('frameend', r));
 await recapture().catch(failLoad);
 const eyes = new EyeAdaptation(app, camera, frame, probes, flashlight, hash.has('ev') ? Number(hash.get('ev')) : null);
+const wake = shot ? null : new WakeSequence({ camera, player, onComplete: () => {
+  $('reticle').hidden = !player.active;
+  if (player.active) showHint();
+} });
 
 player.onStep = (surface, speed) => ambience.step(surface, speed);
 const fwd = new pc.Vec3(), up = new pc.Vec3();
 app.on('update', (dt) => {
-  player.update(dt);
+  if (wake && !wake.completed) wake.update();
+  else player.update(dt);
   interactions.enabled = player.active;
   interactions.update();
   fwd.copy(camera.forward); up.copy(camera.up);
@@ -201,10 +215,10 @@ app.on('update', (dt) => {
 
 // Settings, hotkeys and Auto quality share one persisted preference model.
 const fps = stats(app);
-const graphics = new GraphicsSettings({ app, frame, player, canvas, grain: $('grain'), fps,
+const graphics = new GraphicsSettings({ app, frame, player, canvas, grain: $('grain'), fps, frameLimiter,
   preferences: graphicsPreferences, button: $('graphics-open'),
   canOpen: () => window.__state.ready && !window.__state.error });
-const devMenu = new DevMenu({ app, flashlight, switches, devices, closets, rain, recapture, eyes,
+const devMenu = new DevMenu({ app, flashlight, switches, devices, closets, fridge, rain, recapture, eyes,
   stats: () => graphics.setShowFps(true) });
 interactions.blockKey = (key) => devMenu.typing(key);
 
@@ -212,21 +226,23 @@ status('Ready.', 1);
 $('loading').hidden = true;
 const enter = $('enter');
 enter.hidden = false;
+enter.textContent = wake ? 'Wake up' : 'Click to enter';
 const intro = $('intro');
 const lock = () => canvas.requestPointerLock?.()?.catch?.(() => {});
 enter.addEventListener('click', () => { ambience.start(); lock(); });
 canvas.addEventListener('click', () => { if (player.active && document.pointerLockElement !== canvas) lock(); });
 document.addEventListener('pointerlockchange', () => {
   const locked = document.pointerLockElement === canvas;
-  player.active = locked;
+  wake?.setLocked(locked);
+  player.active = locked && (!wake || wake.completed);
   intro.classList.toggle('gone', locked);
-  $('reticle').hidden = !locked;
+  $('reticle').hidden = !player.active;
   enter.textContent = locked ? 'Click to enter' : 'Click to continue';
-  if (locked) showHint();
+  if (player.active) showHint();
 });
 if (shot) { intro.classList.add('gone'); intro.style.display = 'none'; player.active = false; }
 window.__state.ready = true;
-window.__app = { app, player, frame, camera, flashlight, interactions, switches, rain, doors, devices, closets, probes, devMenu, eyes, graphics };
+window.__app = { app, player, frame, camera, flashlight, interactions, switches, rain, doors, devices, closets, fridge, probes, devMenu, eyes, graphics, frameLimiter, wake };
 
 // The artifact build (tools/make-artifact.mjs) ships the apartment as one GLB split into base64 text parts listed in
 // apartment.json; download them with real progress and reassemble the GLB in memory. Otherwise load the glTF.

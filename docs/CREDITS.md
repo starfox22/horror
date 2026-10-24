@@ -11,6 +11,8 @@
   before apartment simplification: its authored rocker and bevels are retained, the gang-frame end is cropped/mirrored
   into a single plate, and it is scaled/reused for wall controls. `tools/extract-switch.mjs` reproduces that extraction.
   The credit is also shown on the game's intro screen; keep it there.
+  Review 0.10 also separates its actual upper refrigerator leaf and reuses its hollow kitchen glass jar for the water
+  interaction, with fitted functional cabinet/liquid geometry. See `FRIDGE_ASSETS.md` for extraction and adaptation.
 - **"Flash-Lite Flashlight"** by AndrewHunt95 (https://sketchfab.com/AndrewHunt95), licensed CC BY 4.0
   (http://creativecommons.org/licenses/by/4.0/). Source: https://sketchfab.com/3d-models/flash-lite-flashlight-e20e52c7a0eb466086af727588839d48 .
   Downloaded from https://github.com/JulianQuenet/three.js-game (`public/flash-lite_flashlight.glb`; the licence and
@@ -22,6 +24,9 @@
   Used as the apartment's front door and, since build 0.6, the bathroom door (each scaled to its opening; the bathroom
   copy's leaf swings). Its normal map is left out (it is not a tangent-space map and tilted the lighting).
 - **PlayCanvas Engine** (MIT), https://github.com/playcanvas/engine
+- **Cormorant Garamond** by the Cormorant Project Authors, SIL Open Font License 1.1,
+  https://github.com/google/fonts/tree/main/ofl/cormorantgaramond. The opening dialogue uses a locally bundled
+  weight-500 Latin subset; licence and derivation notes are in `public/assets/fonts/`.
 - **Basis Universal transcoder** (Apache-2.0) and **Draco decoder** (Apache-2.0), as built by PlayCanvas
   (`public/lib/basis`, `public/lib/draco`, from playcanvas/engine `examples/assets/wasm`).
 

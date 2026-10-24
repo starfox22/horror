@@ -1,8 +1,8 @@
 # horror
 True horror game
 
-A first-person browser horror game in the spirit of P.T., built on PlayCanvas. Current state: **build 0.9 (graphics and interaction review), a walkable
-night-time apartment** (no scares yet): light switches in every area, lamps with their own switches (bedside, desk, arc lamp), a bathroom door and wardrobe that
+A first-person browser horror game in the spirit of P.T., built on PlayCanvas. Current state: **build 0.10 (first waking sequence, refrigerator and lighting review), a walkable
+night-time apartment** (no scares yet): a first-person waking opening, an opening refrigerator with a lit interior and water jar, light switches in every area, lamps with their own switches (bedside, desk, arc lamp), a bathroom door and wardrobe that
 open, a laptop, computer and coffee machine to use, a flashlight to find (only its beam is seen), rain gathering and running
 down the windows, lightning and thunder, warm night lighting that fades softly into darkness (bounce light from probes
 around the flat, eye adaptation), post-processing and ambient sound.
@@ -11,7 +11,7 @@ Read `docs/HANDOFF.md` first if you are picking this up (state, owner's preferen
 
 All Codex reviews continue on `codex-review`, while Claude works on its own branch. Codex merges into or pushes to `main` only when the owner explicitly asks. The first review adds a lighting/material pass and interaction fixes. See [the change list and validation guide](docs/CODEX_ENVIRONMENT_PASS.md), [side-by-side screenshots](docs/review/README.md), and [preview deployment instructions](docs/PREVIEW_DEPLOYMENT.md).
 
-The latest pass adds [graphics/FPS controls, switch detail, coffee animation and lighting defaults](docs/REVIEW_09.md), with [matched comparison screenshots](docs/review-09/README.md).
+The latest pass adds [the waking opening, refrigerator, a saved FPS limit, stronger optional grain and corrected fixture/flashlight shadows](docs/REVIEW_10.md), with [matched comparison screenshots](docs/review-10/README.md). The [previous pass](docs/REVIEW_09.md) documents switch detail, coffee animation, shelf placement and lighting defaults.
 
 ## Play
 
@@ -19,9 +19,11 @@ The latest pass adds [graphics/FPS controls, switch detail, coffee animation and
 - claude.ai link (latest build): https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9
 - Locally: `npm install && npm run dev`, open the printed URL. Click to enter.
 
-Controls: WASD or arrows move · mouse look · Shift walk faster · E use (switches, doors, lamps, laptop, computer, coffee machine) · F flashlight (once found)
+Controls: WASD or arrows move · mouse look · Shift walk faster · E use (switches, doors, refrigerator, lamps, laptop, computer, coffee machine) · F flashlight (once found)
 · B head bob on/off · G graphics · 1 / 2 / 3 quality (low / medium / high; it also drops automatically on slow GPUs) · Esc pause.
 URL hash options: `#webgl` (force WebGL 2 instead of WebGPU), `#stats` (fps, draw calls); for tests `#dark`, `#flash`.
+
+Choose **Wake up** to begin in bed. The opening supports Space/Enter to skip and Esc/G to pause; resume continues the same sequence. Normal walking begins beside the bed. Graphics includes saved 30/60/90/120/Uncapped FPS limits, with 60 FPS and the counter enabled by default.
 
 ## Build
 
@@ -50,6 +52,10 @@ node tools/shoot.mjs dist out name=x,z,yaw ...   # headless screenshots (softwar
 |---|---|
 | `src/main.js` | Boot: graphics device, decoders, loading, intro screen, quality, update loop |
 | `src/player.js`, `src/walkgrid.js` | First-person controller and its collision/floor grid |
+| `src/wake-sequence.js`, `src/wake-sequence.css` | First-person waking timeline, pause/skip/reduced-motion and dialogue |
+| `src/fridge.js`, `src/fridge-geometry.js`, `src/fridge-water.js` | Refrigerator leaf, collision, authored jar, fitted water and door-controlled light |
+| `src/frame-limiter.js`, `src/graphics-settings.js` | Saved graphics preferences, FPS limit and native settings dialog |
+| `src/flashlight-surfaces.js` | Cached triangle tracing for occluded flashlight return light |
 | `src/lighting.js` | Lamps at their fixtures, ceiling downlights, lightning-only sky light, night sky, probe capture |
 | `src/post.js` | Camera effects (TAA, SSAO, bloom, volumetric haze, grading, vignette), eye adaptation, quality levels |
 | `src/ambience.js` | Synthesised sound: rain, room tone, fridge, tap, footsteps, switches, thunder |

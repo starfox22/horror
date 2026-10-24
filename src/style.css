@@ -39,11 +39,13 @@ h1 { margin: 0; font: 300 2.6rem/1.1 Georgia, "Times New Roman", serif; letter-s
 #toast { position: fixed; left: 0; right: 0; bottom: 48px; text-align: center; font-size: .8rem; color: rgba(232,228,218,.8);
   text-shadow: 0 1px 3px #000; pointer-events: none; transition: opacity 1.5s; }
 #toast.fade { opacity: 0; }
-/* Film grain: a noise tile (painted by main.js) jittered every frame of a 12 fps step animation, blended softly. */
-#grain { position: fixed; inset: -64px; pointer-events: none; opacity: .025; mix-blend-mode: overlay;
-  background-size: 192px 192px; animation: grain .5s steps(6) infinite; }
-@keyframes grain { 0% { transform: translate(0, 0); } 17% { transform: translate(-31px, 17px); } 33% { transform: translate(23px, -41px); }
-  50% { transform: translate(-47px, -9px); } 67% { transform: translate(13px, 37px); } 83% { transform: translate(41px, -23px); } }
+/* Fine monochrome film grain, refreshed at 24 Hz after temporal anti-aliasing. */
+#grain { position: fixed; inset: -64px; pointer-events: none; opacity: .05; mix-blend-mode: overlay;
+  background-size: 192px 192px; animation: grain .333333s steps(1, end) infinite; }
+@keyframes grain { 0% { transform: translate(0, 0); } 12.5% { transform: translate(-31px, 17px); }
+  25% { transform: translate(23px, -41px); } 37.5% { transform: translate(-47px, -9px); }
+  50% { transform: translate(13px, 37px); } 62.5% { transform: translate(41px, -23px); }
+  75% { transform: translate(-17px, 43px); } 87.5% { transform: translate(37px, 11px); } }
 @media (prefers-reduced-motion: reduce) { #grain { animation: none; } }
 /* Developer options (devmenu.js): a panel over everything, the intro included. */
 #dev { position: fixed; top: 16px; right: 16px; bottom: 16px; width: min(340px, calc(100vw - 32px)); z-index: 50; overflow-y: auto;

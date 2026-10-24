@@ -3,9 +3,10 @@
 // right hand below the eye, so its shadows shift as you look around. F toggles it.
 // The beam: a shadow-casting spot with a reflector cookie (hot spot, corona ring, wide dim spill, faint lens flaws) that
 // scatters in the room haze; the hand trails the view, sways with each step and has a slight tremor; switching on
-// stutters for a moment; and a weak warm bounce light sits where the beam lands, lifting the shadows around the pool as
-// light off a real wall would.
-import { BoundingBox, Color, Entity, Quat, Texture, Vec3, PIXELFORMAT_RGBA8, ADDRESS_CLAMP_TO_EDGE, LIGHTFALLOFF_INVERSESQUARED } from 'playcanvas';
+// stutters for a moment; a weak, shadowed return from the first actual surface lifts the nearby room.
+import { BoundingBox, Color, Entity, Quat, Texture, Vec3, PIXELFORMAT_RGBA8, ADDRESS_CLAMP_TO_EDGE,
+  LIGHTFALLOFF_INVERSESQUARED, SHADOWUPDATE_REALTIME } from 'playcanvas';
+import { FlashlightSurfaces } from './flashlight-surfaces.js';
 
 const HAND = new Vec3(0.15, -0.20, -0.12);    // the lamp's head relative to the eye (right hand, chest height)
 export const BEAM_SIZE = 27;                  // cone angle (degrees), developer menu can change it
@@ -72,6 +73,8 @@ export class Flashlight {
     this.hud = hud;
     this.grid = grid;
     this.player = player;
+    this.surfaces = new FlashlightSurfaces(app.root);
+    this.surfaceTimer = 0;
     this.held = false;
     this.on = false;
     this.power = 0;           // 0..1, eased (flicker on start)
@@ -100,12 +103,17 @@ export class Flashlight {
     this.beam.addComponent('light', {
       type: 'spot', color: COLOR, intensity: 0, range: 18, innerConeAngle: BEAM_SIZE * 0.28, outerConeAngle: BEAM_SIZE,
       falloffMode: LIGHTFALLOFF_INVERSESQUARED,
-      castShadows: true, shadowResolution: 1024, shadowBias: 0.12, normalOffsetBias: 0.02, volumetricScattering: 0.35,
+      castShadows: true, shadowResolution: 1024, shadowBias: 0.08, normalOffsetBias: 0.006,
+      shadowUpdateMode: SHADOWUPDATE_REALTIME, volumetricScattering: 0.35,
       cookie: this.cookie(), cookieIntensity: 1, enabled: false,
     });
     this.bounce = new Entity('flashlight bounce');
-    this.bounce.addComponent('light', { type: 'omni', color: new Color(1, 0.9, 0.78), intensity: 0, range: 3.2, castShadows: false,
-      falloffMode: LIGHTFALLOFF_INVERSESQUARED, enabled: false });
+    // Returned light travels out of the hit surface, with occlusion. An unshadowed
+    // omni here would illuminate through the pot/door that the beam just struck.
+    this.bounce.addComponent('light', { type: 'spot', color: new Color(1, 0.9, 0.78), intensity: 0, range: 2.4,
+      innerConeAngle: 30, outerConeAngle: 70, castShadows: true, shadowResolution: 256,
+      shadowBias: 0.08, normalOffsetBias: 0.006, shadowUpdateMode: SHADOWUPDATE_REALTIME,
+      falloffMode: LIGHTFALLOFF_INVERSESQUARED, volumetricScattering: 0, enabled: false });
     this.app.root.addChild(this.beam);
     this.app.root.addChild(this.bounce);
     return root;
@@ -152,6 +160,7 @@ export class Flashlight {
     this.on = !this.on;
     this.sounds?.flashlightClick(this.on);
     this.flicker = this.on ? 0.22 : 0;
+    this.surfaceTimer = 0;      // a fresh target on the first lit frame
     this.beam.light.enabled = this.bounce.light.enabled = this.on || this.power > 0;
   }
 
@@ -195,28 +204,33 @@ export class Flashlight {
     this.beam.rotateLocal(2.2 + 0.25 * Math.sin(t * 1.7) + 0.12 * Math.sin(t * 4.3) + bob * 0.6, 2.8 + 0.2 * Math.sin(t * 1.3 + 1) - bob * 0.8, 0);
     this.beam.rotateLocal(90, 0, 0);       // spot lights shine along -Y
 
-    // Bounce: march the beam's axis through the walk grid until it meets a wall, the floor or the ceiling.
+    // Trace the actual rendered surfaces at 10 Hz. Collision cells collapse the
+    // scene vertically and cannot say whether the beam hits a leaf, pot or door.
     const dir = this.beam.up.clone().mulScalar(-1);
-    const hit = this.march(this.beam.getPosition(), dir);
-    const d = Math.max(0.3, hit.dist);
+    this.surfaceTimer -= dt;
+    if (this.surfaceTimer <= 0) {
+      this.surfaceHit = this.surfaces.trace(this.beam.getPosition(), dir, 18);
+      this.surfaceTimer = 0.1;
+    }
+    const hit = this.surfaceHit;
+    const d = Math.max(0.3, hit?.dist ?? 12);
     // Eyes adapt: a surface right in front of the lens would blow out, so the beam eases off up close (as a game camera's
     // exposure would), and is at full strength from ~2 m.
     const near = Math.min(1, 0.4 + 0.6 * (d / 2) ** 1.3);
     this.near = this.near === undefined ? near : this.near + (near - this.near) * (1 - Math.exp(-6 * dt));
     this.beam.light.intensity = BEAM * this.power * this.near;
-    const back = Math.min(0.5, d * 0.35);
-    this.bounce.setPosition(hit.pos.x - dir.x * back, hit.pos.y - dir.y * back, hit.pos.z - dir.z * back);
-    // Light returned from the spot falls off with its distance (the spot's area grows) and lights the near room.
-    this.bounce.light.intensity = this.power * Math.min(0.5, 0.9 / (d * d)) ;
-  }
-
-  march(from, dir) {
-    const g = this.grid, pos = new Vec3();
-    for (let s = 0.15; s < 12; s += 0.05) {
-      pos.set(from.x + dir.x * s, from.y + dir.y * s, from.z + dir.z * s);
-      const floor = g ? g.floorAt(pos.x, pos.z) : 0, ceil = g ? g.ceilingAt(pos.x, pos.z) : 2.8;
-      if (!g || g.blockedAt(pos.x, pos.z) || pos.y < (floor ?? 0) || pos.y > (ceil ?? 2.8) || !g.clearOfBlockers(pos.x, pos.z, 0.02)) return { pos, dist: s };
+    this.bounce.light.enabled = !!hit;
+    if (hit) {
+      // Recess the virtual reflector a few cm into the room side of the hit,
+      // and aim its one shadow map into that surface's outward hemisphere.
+      this.bounce.setPosition(hit.pos.clone().add(hit.normal.clone().mulScalar(0.035)));
+      this.bounce.setRotation(new Quat().setFromDirections(Vec3.DOWN, hit.normal));
+      const incidence = Math.max(0, -dir.dot(hit.normal));
+      const albedo = hit.meshInstance.material.diffuse;
+      const reflectance = albedo ? Math.min(1, (albedo.r + albedo.g + albedo.b) / 3) : 0.6;
+      this.bounce.light.intensity = this.power * Math.min(0.12, 0.25 / (d * d)) * incidence * reflectance;
+    } else {
+      this.bounce.light.intensity = 0;
     }
-    return { pos, dist: 12 };
   }
 }

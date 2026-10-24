@@ -17,11 +17,12 @@ function sample(prefs, start, fps) {
   for (let frame = 1; frame <= fps * 4; frame++) prefs.sampleFrame(start + frame * 1000 / fps, true);
 }
 
-test('fresh and corrupt preferences default to Auto and visible FPS', () => {
-  for (const value of [null, '{broken', 'false', '[]', '{"showFps":"false","preset":"ultra","resolutionScale":9}']) {
+test('fresh and corrupt preferences default to Auto, visible FPS and a 60 FPS limit', () => {
+  for (const value of [null, '{broken', 'false', '[]', '{"showFps":"false","preset":"ultra","resolutionScale":9,"fpsLimit":999}']) {
     const prefs = new GraphicsPreferences({ storage: storage(value) });
     assert.equal(prefs.state.preset, 'auto');
     assert.equal(prefs.state.showFps, true);
+    assert.equal(prefs.state.fpsLimit, 60);
     assert.equal(prefs.effective.resolutionScale, 1);
   }
   assert.deepEqual(normalizeGraphicsSettings(null), normalizeGraphicsSettings({}));
@@ -31,15 +32,45 @@ test('user settings survive reload; FPS changes do not silently choose another p
   const store = storage(), prefs = new GraphicsPreferences({ storage: store });
   prefs.setPreset('medium');
   prefs.setOption('showFps', false);
+  prefs.setOption('fpsLimit', 90);
   assert.equal(prefs.state.preset, 'medium');
   prefs.setOption('resolutionScale', 0.85);
   prefs.setOption('taa', false);
   const reloaded = new GraphicsPreferences({ storage: store });
   assert.equal(reloaded.state.preset, 'custom');
   assert.equal(reloaded.state.showFps, false);
+  assert.equal(reloaded.state.fpsLimit, 90);
   assert.equal(reloaded.effective.resolutionScale, 0.85);
   assert.equal(reloaded.effective.taa, false);
   assert.equal(reloaded.effective.volumetricFog, false, 'custom options retain the selected Medium effects');
+});
+
+test('all FPS limits save without changing the preset or toggling the counter', () => {
+  const store = storage(JSON.stringify({ preset: 'medium', showFps: false }));
+  const prefs = new GraphicsPreferences({ storage: store });
+  assert.equal(prefs.state.fpsLimit, 60, 'older saved settings receive the new default');
+  const original = prefs.effective;
+  for (const limit of [0, 30, 60, 90, 120]) {
+    prefs.setOption('fpsLimit', limit);
+    assert.equal(prefs.state.preset, 'medium');
+    assert.equal(prefs.state.showFps, false);
+    assert.deepEqual(prefs.effective, original, 'limiting FPS must not rebuild render effects');
+    assert.equal(new GraphicsPreferences({ storage: store }).state.fpsLimit, limit);
+  }
+  for (const value of [-1, 24, 144, '30', null, NaN]) prefs.setOption('fpsLimit', value);
+  assert.equal(prefs.state.fpsLimit, 120, 'invalid limits must be ignored');
+});
+
+test('Auto accepts a healthy 30 FPS cap and still detects genuine slow rendering', () => {
+  const prefs = new GraphicsPreferences();
+  prefs.setOption('fpsLimit', 30);
+  sample(prefs, 0, 30);
+  assert.equal(prefs.autoQuality, 3, 'a chosen cap must not be mistaken for overload');
+  sample(prefs, 4000, 20);
+  assert.equal(prefs.autoQuality, 2, 'rendering far below the cap can still lower quality');
+  prefs.setOption('fpsLimit', 60);
+  assert.equal(prefs.autoQuality, 2, 'changing the cap must retain the current Auto level');
+  assert.deepEqual(prefs.sample, { start: null, frames: 0 }, 'a new target gets a fresh measurement');
 });
 
 test('customizing an adapted Auto preset retains the settings actually in use', () => {

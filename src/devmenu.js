@@ -6,7 +6,7 @@
 const CODE = 'developer';
 
 export class DevMenu {
-  // sys: { app, flashlight, switches, devices, closets, rain, recapture, eyes, stats }
+  // sys: { app, flashlight, switches, devices, closets, fridge, rain, recapture, eyes, stats }
   constructor(sys) {
     this.sys = sys;
     this.typed = '';
@@ -24,6 +24,7 @@ export class DevMenu {
     });
     document.addEventListener('pointerlockchange', () => this.show());
     sys.switches.override = sys.devices.override = (lights) => this.handBack(lights);
+    if (sys.fridge) sys.fridge.override = lights => this.handBack(lights);
     // Registered after every other system, so a forced light wins over its switch's fade in the same frame.
     sys.app.on('update', (dt) => this.update(dt));
   }
@@ -39,7 +40,7 @@ export class DevMenu {
 
   // Every light, grouped by area, with the intensity it has when on and any glowing part that goes with it.
   collect() {
-    const { app, switches, devices, closets } = this.sys, list = [], seen = new Set();
+    const { app, switches, devices, closets, fridge } = this.sys, list = [], seen = new Set();
     const add = (group, name, lights, glows = []) => {
       lights = lights.filter(l => l.e && !seen.has(l.e));
       if (!lights.length) return;
@@ -61,6 +62,7 @@ export class DevMenu {
     if (devices.laptop?.glow) add('Living room', 'Laptop screen glow', [{ e: devices.laptop.glow, base: devices.laptop.glowBase }], devices.laptop.glows);
     if (devices.computer?.glow) add('Office', 'Computer screen glow', [{ e: devices.computer.glow, base: devices.computer.glowBase }], devices.computer.glows);
     if (devices.coffee?.led) add('Kitchen', 'Coffee machine panel', [{ e: devices.coffee.led, base: 0.05 }], devices.coffee.glows);
+    if (fridge) add('Kitchen', 'Refrigerator interior', [{ e: fridge.light, base: fridge.baseIntensity }], [{ mat: fridge.glow, base: 2 }]);
     const skip = new Set(['flashlight beam', 'flashlight bounce', 'moon']);
     for (const l of app.root.findComponents('light')) {
       if (seen.has(l.entity) || skip.has(l.entity.name)) continue;
@@ -188,7 +190,7 @@ export class DevMenu {
 
   // Hand every light back to its switch, lamp or device.
   reset() {
-    const { switches, devices, closets } = this.sys;
+    const { switches, devices, closets, fridge } = this.sys;
     this.entries.forEach(en => {
       en.force = null;
       if (en.unownedState) for (const { e } of en.lights) {
@@ -201,6 +203,7 @@ export class DevMenu {
     devices.laptop?.setPower(devices.laptop.power);
     devices.computer?.set(devices.computer.level);
     devices.coffee?.glow(devices.coffee.level);
+    fridge?.applyLighting();
     if (closets) for (const [id, s] of Object.entries(closets.sections)) {
       const open = Math.max(...closets.doors.filter(d => d.section === id).map(d => d.angle));
       s.led.light.enabled = open > 0.02; s.led.light.intensity = 0.55 * Math.min(1, open * 4);

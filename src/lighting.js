@@ -4,9 +4,10 @@
 // throws the window frames' shadows across the floor for an instant. Bounce light and reflections: probes.js.
 import {
   Color, Entity, Quat, Vec3, Texture, RenderTarget, StandardMaterial,
-  LIGHTFALLOFF_INVERSESQUARED, SHADOW_PCF5_32F, SHADOWUPDATE_THISFRAME, PIXELFORMAT_RGBA16F, PIXELFORMAT_RGBA8,
+  LIGHTFALLOFF_INVERSESQUARED, SHADOW_PCF5_32F, SHADOWUPDATE_THISFRAME, SHADOWUPDATE_REALTIME, PIXELFORMAT_RGBA16F, PIXELFORMAT_RGBA8,
   FILTER_LINEAR, FILTER_LINEAR_MIPMAP_LINEAR, RENDERTARGET_ORIGIN_TOP, TONEMAP_LINEAR, GAMMA_NONE, ADDRESS_CLAMP_TO_EDGE,
 } from 'playcanvas';
+import { ARC_LAMP, arcLampProfile } from './lamp-profiles.js';
 
 const WARM = new Color(1.0, 0.80, 0.60);      // ~2900 K warm-white LED / incandescent
 const NEUTRAL = new Color(1.0, 0.92, 0.82);
@@ -17,12 +18,13 @@ const SCREEN = new Color(0.55, 0.70, 1.0);
 // meshes: shade and glass bounds), so shadows fall away from the fixture you see; see-through parts (glass) cast none.
 // No stand-in lights: bounce light comes from the room probes (probes.js).
 export const LAMPS = [
-  // inside the arc lamp's dome shade (CouchSet_Black, centre -4.88, 1.50, 2.70; rim at 1.28 m)
-  ['arc lamp', 'spot', [-4.88, 1.52, 2.70], WARM, 2.3, 8.0, true, { inner: 20, outer: 70 }],
+  // Recessed inside the actual open shade, below its opaque top. See lamp-profiles.js.
+  ['arc lamp', 'spot', ARC_LAMP.position, WARM, 1.6, 8.0, true,
+    { inner: ARC_LAMP.inner, outer: ARC_LAMP.outer, profile: arcLampProfile, shadowBias: 0.15, normalOffsetBias: 0.025 }],
   // at the bulbs inside the pendants' opal globes (y 1.76-2.11): light all round, the globes glow and cast no shadow
   ['dining pendant L', 'omni', [-0.44, 1.94, 1.523], WARM, 0.4, 6.5, true],
   ['dining pendant R', 'omni', [0.777, 1.94, 1.523], WARM, 0.4, 6.5, true],
-  ['cooker hood', 'spot', [-0.94, 1.53, -1.13], NEUTRAL, 0.22, 2.8, true, { inner: 30, outer: 72 }],
+  ['cooker hood', 'spot', [-0.94, 1.53, -1.13], NEUTRAL, 0.44, 2.8, true, { inner: 30, outer: 72 }],
   // in front of the vertical LED strips beside the bathroom mirror (x 6.46-6.54, y 1.04-2.32)
   ['bathroom mirror', 'omni', [6.62, 1.65, 1.25], NEUTRAL, 0.12, 3.2, true],
   // The bedside reading lamps are in devices.js (each has its own switch).
@@ -96,7 +98,7 @@ function profileCookie(device, profile, outer) {
     img.data[k] = img.data[k + 1] = img.data[k + 2] = Math.round(255 * Math.min(1, v)); img.data[k + 3] = 255;
   }
   g.putImageData(img, 0, 0);
-  const tex = new Texture(device, { width: N, height: N, format: PIXELFORMAT_RGBA8, mipmaps: true, name: 'downlight-profile',
+  const tex = new Texture(device, { width: N, height: N, format: PIXELFORMAT_RGBA8, mipmaps: true, name: 'lamp-profile',
     addressU: ADDRESS_CLAMP_TO_EDGE, addressV: ADDRESS_CLAMP_TO_EDGE });
   tex.setSource(c);
   return tex;
@@ -124,7 +126,9 @@ export function setupLighting(app) {
     e.addComponent('light', {
       type, color, intensity, range, castShadows: shadows, falloffMode: LIGHTFALLOFF_INVERSESQUARED,
       innerConeAngle: extra.inner ?? 30, outerConeAngle: extra.outer ?? 60,
-      shadowResolution: 512, shadowBias: 0.25, normalOffsetBias: 0.04, volumetricScattering: type === 'spot' ? 1 : 0.4,
+      ...(extra.profile ? { cookie: profileCookie(app.graphicsDevice, extra.profile, extra.outer), cookieIntensity: 1 } : {}),
+      shadowResolution: 512, shadowBias: extra.shadowBias ?? 0.25, normalOffsetBias: extra.normalOffsetBias ?? 0.04,
+      volumetricScattering: type === 'spot' ? 1 : 0.4,
     });
     e.setPosition(p[0], p[1], p[2]);
     // The rooms do not move: render each lamp's shadow once (the engine re-renders it when the light changes).
@@ -216,7 +220,9 @@ export function captureCube(app, camera, pos, size = 256) {
 // that frame) has all lamp shadows rendered again, so captures never use a stale shadow.
 export function rerenderShadows(app) {
   for (const l of app.root.findComponents('light')) {
-    if (l.castShadows && l.type !== 'directional' && l.entity.name !== 'flashlight beam') l.shadowUpdateMode = SHADOWUPDATE_THISFRAME;
+    // Dynamic lights already render every frame. Turning their mode into a
+    // one-shot here would freeze the flashlight's return after a probe capture.
+    if (l.castShadows && l.type !== 'directional' && l.shadowUpdateMode !== SHADOWUPDATE_REALTIME) l.shadowUpdateMode = SHADOWUPDATE_THISFRAME;
   }
 }
 
@@ -225,7 +231,7 @@ export function rerenderShadows(app) {
 export function refreshShadows(app, pos, radius) {
   // Discover lights per application: a process-global cache misses lamps created
   // later and can retain destroyed lights when a second scene is initialized.
-  const list = app.root.findComponents('light').filter(l => l.castShadows && l.shadowUpdateMode !== undefined && l.entity.name !== 'flashlight beam');
+  const list = app.root.findComponents('light').filter(l => l.castShadows && l.shadowUpdateMode !== undefined && l.shadowUpdateMode !== SHADOWUPDATE_REALTIME);
   for (const l of list) {
     if (!l.enabled || l.type === 'directional') continue;
     if (l.entity.getPosition().distance(pos) < radius + l.range * 0.5) l.shadowUpdateMode = SHADOWUPDATE_THISFRAME;

@@ -15,7 +15,7 @@ export const ROOMS = [
   { id: 'bedroom', label: 'Bedroom ceiling lights', lights: [], from: [11.67, 2.1], height: 1.17, dir: [0, 1], on: false, zone: 'bed' },
   { id: 'mirror', label: 'Bathroom mirror light', lights: ['bathroom mirror'], glow: 'Light.bathroom', glowScale: 0.35,
     from: [6.91, 1.45], height: 1.22, dir: [0, 1], on: true, zone: 'bath' },
-  { id: 'hood', label: 'Extractor hood light', lights: ['cooker hood'], glow: 'Light.kitchen', glowScale: 0.28,
+  { id: 'hood', label: 'Extractor hood light', lights: ['cooker hood'], glow: 'Light.kitchen', glowScale: 0.52,
     kind: 'fixture', at: [-0.94, 1.50, -0.93], on: true, zone: 'main' },
 ];
 const PLATE_HEIGHT = 1.15;
