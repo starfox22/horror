@@ -59,7 +59,26 @@ with sync_playwright() as p:
         probeLevels: s.probes.levels};
     }''')
     assert result['renderComponents'] > 50, result
-    assert result['rooms'] == 7 and result['lamps'] >= 4, result
+    assert result['rooms'] == 9 and result['lamps'] >= 4, result
+    assert page.locator('#stats').is_visible(), 'FPS counter must be on by default'
+    assert page.locator('#stats').count() == 1, 'Duplicate FPS counters'
+    fixtures = page.evaluate('''() => {
+      const s = window.__app, rooms = Object.fromEntries(s.switches.rooms.map(room => [room.id, room]));
+      const b = s.flashlight.restBounds;
+      return {defaults: Object.fromEntries(['bedroom','bathroom','mirror','hood'].map(id => [id, rooms[id].on])),
+        mirrorIntensity: rooms.mirror.base[0], hoodIntensity: rooms.hood.base[0],
+        mounts: s.switches.rooms.filter(room => room.plate).map(room => ({id: room.id, embed: room.mount.backEmbed,
+          scale: room.plate.getLocalScale().toArray()})), removedTriangles: s.switches.removedSwitchTriangles,
+        flashlight: {parts: s.flashlight.modelRenders.length, minimumY: b.getMin().y,
+          maximumY: b.getMax().y, width: b.halfExtents.x * 2}};
+    }''')
+    assert fixtures['defaults'] == {'bedroom': False, 'bathroom': False, 'mirror': True, 'hood': True}, fixtures
+    assert 0 < fixtures['mirrorIntensity'] < 0.2 and 0 < fixtures['hoodIntensity'] < 0.3, fixtures
+    assert len(fixtures['mounts']) == 8 and all(mount['scale'] == [1, 1, 1] and 0 < mount['embed'] < 0.001 for mount in fixtures['mounts']), fixtures
+    assert 150 <= fixtures['removedTriangles'] <= 180, fixtures
+    torch = fixtures['flashlight']
+    assert torch['parts'] >= 2 and 1.84 < torch['minimumY'] < 1.843 and torch['maximumY'] < 1.92 and torch['width'] > 0.25, fixtures
+    result['fixtureDefaultsAndPlacement'] = 'passed'
     assert result['frame'] > 0 and result['floor'] > 0, result
     assert len(result['probeLevels']) == 8 and all(isinstance(v, (int, float)) and 0 <= v < float('inf') for v in result['probeLevels']), result
     assert any(v > 0 for v in result['probeLevels']), result
@@ -137,6 +156,46 @@ with sync_playwright() as p:
     result['movement'] = movement
     type_developer(False)
     page.wait_for_function('window.__app.devMenu.mode === false')
+    page.locator('#enter').click()
+    page.wait_for_function('document.pointerLockElement === document.getElementById("app")')
+    page.wait_for_function('window.__app.player.active && Number(getComputedStyle(document.getElementById("intro")).opacity) < 0.01')
+    page.evaluate('''() => {
+      const s = window.__app, p = s.player;
+      p.pos.set(-5.455, 0, 0.1); p.floor = p.grid.floorUnder(p.pos.x,p.pos.z,0.22);
+      p.eyeY = p.floor + 1.62; p.yaw = 0;
+      p.pitch = -Math.atan2(p.eyeY - 1.08, 0.96) * 180 / Math.PI;
+      p.apply(0); s.interactions.enabled = true; s.interactions.update();
+      // Freeze only the accepted brew's clock before its first render. A software
+      // shader compile can outlast the entire audio sequence on the first use.
+      window.addEventListener('keydown', event => {
+        if (event.code !== 'KeyE') return;
+        const c = s.devices.coffee;
+        window.__coffeeNativeStart = c.busy;
+        if (c.busy) { c.playback?.stop(); c.cycle.clock = () => 0; }
+      }, { once: true });
+    }''')
+    page.wait_for_function('window.__app.interactions.focus?.label().includes("coffee")')
+    page.keyboard.press('e')
+    page.wait_for_function('window.__coffeeNativeStart === true && window.__app.devices.coffee.busy')
+    coffee = page.evaluate('''() => {
+      const d = window.__app.devices, c = d.coffee;
+      c.playback?.stop(); c.cycle.time = 8; c.cycle.clock = () => 8; d.updateCoffee(0);
+      return {phase: c.phase, streams: c.effects.streams.filter(e => e.enabled).length,
+        cups: c.effects.surfaces.filter(e => e.enabled).length, fill: c.cycle.state.fill};
+    }''')
+    assert coffee['phase'] == 'Pouring coffee' and coffee['streams'] == 2 and coffee['cups'] == 2 and 0 < coffee['fill'] < 1, coffee
+    page.wait_for_timeout(1000)
+    completion = page.evaluate('''() => {
+      const d = window.__app.devices, c = d.coffee;
+      c.cycle.time = 16; c.cycle.clock = () => 16; d.updateCoffee(0);
+      return {busy: c.busy, phase: c.phase, fill: c.cycle.state.fill,
+        streams: c.effects.streams.filter(e => e.enabled).length};
+    }''')
+    assert completion == {'busy': False, 'phase': 'Ready', 'fill': 1, 'streams': 0}, completion
+    page.keyboard.press('e')
+    page.wait_for_function('window.__app.devices.coffee.busy && window.__app.devices.coffee.cycle.state.fill === 0')
+    page.evaluate('window.__app.devices.coffee.playback?.stop()')
+    result['coffeeNativeInteractionPourAndReplay'] = 'passed'
     # Show the rendered apartment without the intro for a visual capture.
     page.evaluate("document.querySelector('#intro').style.display = 'none'")
     page.screenshot(path=str(output / f'{mode}-{urlsplit(response.url).port or "hosted"}.png'), timeout=120000)

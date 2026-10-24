@@ -65,6 +65,7 @@ export class DevMenu {
     for (const l of app.root.findComponents('light')) {
       if (seen.has(l.entity) || skip.has(l.entity.name)) continue;
       add('Other', title(l.entity.name), [{ e: l.entity, base: l.intensity || 0.5 }]);
+      list[list.length - 1].unownedState = { enabled: l.enabled, intensity: l.intensity };
     }
     // One heading per area: entries grouped in the order their areas first appear (stable within an area).
     const order = [...new Set(list.map(en => en.group))];
@@ -188,7 +189,13 @@ export class DevMenu {
   // Hand every light back to its switch, lamp or device.
   reset() {
     const { switches, devices, closets } = this.sys;
-    this.entries.forEach(en => { en.force = null; });
+    this.entries.forEach(en => {
+      en.force = null;
+      if (en.unownedState) for (const { e } of en.lights) {
+        e.light.enabled = en.unownedState.enabled;
+        e.light.intensity = en.unownedState.intensity;
+      }
+    });
     switches.rooms.forEach(r => switches.apply(r));
     devices.lamps.forEach(l => devices.applyLamp(l, l.level));
     devices.laptop?.setPower(devices.laptop.power);

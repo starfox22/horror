@@ -1,7 +1,7 @@
 # horror
 True horror game
 
-A first-person browser horror game in the spirit of P.T., built on PlayCanvas. Current state: **build 0.8 (Codex environment study), a walkable
+A first-person browser horror game in the spirit of P.T., built on PlayCanvas. Current state: **build 0.9 (graphics and interaction review), a walkable
 night-time apartment** (no scares yet): light switches in every area, lamps with their own switches (bedside, desk, arc lamp), a bathroom door and wardrobe that
 open, a laptop, computer and coffee machine to use, a flashlight to find (only its beam is seen), rain gathering and running
 down the windows, lightning and thunder, warm night lighting that fades softly into darkness (bounce light from probes
@@ -11,6 +11,8 @@ Read `docs/HANDOFF.md` first if you are picking this up (state, owner's preferen
 
 All Codex reviews continue on `codex-review`, while Claude works on its own branch. Codex merges into or pushes to `main` only when the owner explicitly asks. The first review adds a lighting/material pass and interaction fixes. See [the change list and validation guide](docs/CODEX_ENVIRONMENT_PASS.md), [side-by-side screenshots](docs/review/README.md), and [preview deployment instructions](docs/PREVIEW_DEPLOYMENT.md).
 
+The latest pass adds [graphics/FPS controls, switch detail, coffee animation and lighting defaults](docs/REVIEW_09.md), with [matched comparison screenshots](docs/review-09/README.md).
+
 ## Play
 
 - Codex review web build: https://starfox22.github.io/horror/codex/
@@ -18,7 +20,7 @@ All Codex reviews continue on `codex-review`, while Claude works on its own bran
 - Locally: `npm install && npm run dev`, open the printed URL. Click to enter.
 
 Controls: WASD or arrows move · mouse look · Shift walk faster · E use (switches, doors, lamps, laptop, computer, coffee machine) · F flashlight (once found)
-· B head bob on/off · 1 / 2 / 3 quality (low / medium / high; it also drops automatically on slow GPUs) · Esc pause.
+· B head bob on/off · G graphics · 1 / 2 / 3 quality (low / medium / high; it also drops automatically on slow GPUs) · Esc pause.
 URL hash options: `#webgl` (force WebGL 2 instead of WebGPU), `#stats` (fps, draw calls); for tests `#dark`, `#flash`.
 
 ## Build

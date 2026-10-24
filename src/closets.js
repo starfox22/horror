@@ -19,7 +19,13 @@ const SECTIONS = {
   tall: { z: [-1.322, 0.276], y: [0.15, 2.27], shelf: 1.84, rail: 1.72, divider: -0.523, led: [9.5, 2.2, -0.52] },
   upper: { z: [1.342, 2.356], y: [1.21, 2.27], shelf: 1.74, divider: 1.848, led: [9.5, 2.2, 1.85] },
 };
-export const FLASHLIGHT_SPOT = { pos: new Vec3(9.50, 1.858, -0.93), yaw: 90 };   // on the tall section's shelf, lens to the door
+// Shared shelf surface and pose: the complete torch is fitted against this height,
+// not positioned with an assumed body radius. Its lens faces the wardrobe opening.
+export const FLASHLIGHT_SPOT = {
+  pos: new Vec3(9.50, SECTIONS.tall.shelf, -0.93), shelf: SECTIONS.tall.shelf,
+  yaw: 60, pitch: -1.9, clearance: 0.0008,
+  surface: { x: [9.298, FRONT - 0.02], z: [SECTIONS.tall.z[0] + 0.018, SECTIONS.tall.divider - 0.009] },
+};
 
 export class Closets {
   constructor(app, apartment, interactions, sounds, grid) {

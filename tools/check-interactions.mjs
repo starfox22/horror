@@ -240,3 +240,22 @@ test('developer code accepts deliberate typing without a frame-rate-dependent de
     globalThis.performance = originalPerformance;
   }
 });
+
+test('returning to switches restores independent fixtures without a room owner', () => {
+  const scene = app();
+  const fixtures = [
+    { name: 'closet light', light: { enabled: true, intensity: 0.25 } },
+    { name: 'spare fixture', light: { enabled: false, intensity: 0.13 } },
+  ];
+  scene.root.findComponents = () => fixtures.map(entity => ({ ...entity.light, entity }));
+  const menu = Object.create(DevMenu.prototype);
+  menu.sys = { app: scene, switches: { rooms: [] }, devices: { lamps: [] } };
+  menu.entries = menu.collect(); menu.el = { hidden: true }; menu.refresh = () => {};
+  for (const entry of menu.entries) entry.force = false;
+  menu.update(0);
+  assert.ok(fixtures.every(fixture => !fixture.light.enabled));
+  menu.reset(); clearTimeout(menu.timer);
+  assert.deepEqual(fixtures.map(fixture => fixture.light), [
+    { enabled: true, intensity: 0.25 }, { enabled: false, intensity: 0.13 },
+  ], 'unowned lights must return to their original enabled state and brightness');
+});

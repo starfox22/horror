@@ -3,7 +3,7 @@
 // Quality keys 1-3 trade these for speed.
 import { CameraFrame, TONEMAP_NEUTRAL, SSAOTYPE_LIGHTING } from 'playcanvas';
 
-export function setupPost(app, camera) {
+export function setupPost(app, camera, options = qualityOptions(3)) {
   const frame = new CameraFrame(app, camera.camera);
   const r = frame.rendering;
   r.toneMapping = TONEMAP_NEUTRAL;
@@ -58,18 +58,30 @@ export function setupPost(app, camera) {
   fog.localSteps = 10;
   fog.extinction = 0.6;
 
-  frame.update();
-  setQuality(frame, 3);
+  applyGraphicsOptions(frame, options);
   return frame;
 }
 
 // 3 = full, 2 = no fog, half-res AO, 1 = no AO/fog, lower resolution.
 export function setQuality(frame, q) {
-  frame.rendering.renderTargetScale = q === 1 ? 0.75 : 1;
-  frame.volumetricFog.enabled = q === 3;
-  frame.ssao.type = q === 1 ? 'none' : SSAOTYPE_LIGHTING;
-  frame.ssao.scale = q === 3 ? 1 : 0.5;
-  frame.ssao.samples = q === 3 ? 24 : 12;
+  applyGraphicsOptions(frame, qualityOptions(q));
+}
+
+export function qualityOptions(q) {
+  const quality = [1, 2, 3].includes(Number(q)) ? Number(q) : 3;
+  return { quality, resolutionScale: quality === 1 ? 0.75 : 1,
+    ambientOcclusion: quality > 1, volumetricFog: quality === 3,
+    bloom: true, taa: true, filmGrain: true };
+}
+
+export function applyGraphicsOptions(frame, options) {
+  frame.rendering.renderTargetScale = options.resolutionScale;
+  frame.volumetricFog.enabled = options.volumetricFog;
+  frame.ssao.type = options.ambientOcclusion ? SSAOTYPE_LIGHTING : 'none';
+  frame.ssao.scale = options.quality === 3 ? 1 : 0.5;
+  frame.ssao.samples = options.quality === 3 ? 24 : 12;
+  frame.bloom.intensity = options.bloom ? 0.028 : 0;
+  frame.taa.enabled = options.taa;
   frame.update();
 }
 

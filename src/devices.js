@@ -4,10 +4,11 @@
 // chime, off), and the coffee machine (grinds, brews with steam rising from the cup, then beeps). Parts come from the
 // asset pipeline with their own materials ('<name>.<tag>', tools/build-assets.mjs FIXTURES and SPLITS).
 import {
-  Color, Entity, Quat, Vec3, Texture, StandardMaterial, Curve, CurveSet, LIGHTFALLOFF_INVERSESQUARED, SHADOWUPDATE_THISFRAME, BLEND_NORMAL,
-  PIXELFORMAT_RGBA8,
+  Color, Entity, Quat, Vec3, StandardMaterial, LIGHTFALLOFF_INVERSESQUARED, SHADOWUPDATE_THISFRAME,
 } from 'playcanvas';
 import { refreshShadows } from './lighting.js';
+import { CoffeeCycle, COFFEE_POSITION } from './coffee-cycle.js';
+import { CoffeeEffects } from './coffee-effects.js';
 
 const WARM = new Color(1.0, 0.78, 0.56);
 const SCREEN = new Color(0.55, 0.68, 1.0);
@@ -15,7 +16,6 @@ const SCREEN = new Color(0.55, 0.68, 1.0);
 const LID_HINGE = new Vec3(-4.2284, 0.521, 2.3756);
 const LID_AXIS = new Vec3(0.779, 0, 0.628).normalize();
 const LID_SHUT = 89.4;                        // degrees about LID_AXIS from the modelled (open) pose to resting on the base
-const COFFEE_SPOUT = new Vec3(-5.455, 0.97, -0.93);
 
 const ease = (t) => t * t * (3 - 2 * t);
 
@@ -38,6 +38,7 @@ export class Devices {
     this.computer = this.makeComputer(interactions);
     this.coffee = this.makeCoffee(interactions);
     app.on('update', (dt) => this.update(dt));
+    app.on('destroy', () => { this.coffee?.playback?.stop?.(); this.coffee?.cycle.stop(); this.coffee?.effects?.destroy(); });
   }
 
   // A small animation: fn(t in 0..1) over `seconds`, then done().
@@ -52,7 +53,7 @@ export class Devices {
     for (const k of this.tasks) { k.t = Math.min(1, k.t + dt / k.seconds); k.fn(k.t); }
     const finished = this.tasks.filter(k => k.t >= 1);
     if (finished.length) { this.tasks = this.tasks.filter(k => k.t < 1); finished.forEach(k => k.done?.()); }
-    if (this.steam) this.updateSteam(dt);
+    this.updateCoffee(dt);
   }
 
   // Screens: the picture is self-lit only (emissive); switched off, the panel is black glass that reflects the room.
@@ -231,71 +232,51 @@ export class Devices {
     led.addComponent('light', { type: 'omni', color: new Color(0.75, 0.85, 1), intensity: 0, range: 0.8, castShadows: false, falloffMode: LIGHTFALLOFF_INVERSESQUARED, enabled: false });
     led.setPosition(-5.455, 1.2, -0.80);
     this.app.root.addChild(led);
-    const coffee = { busy: false, panel, led, level: 0, glows: panel ? [{ mat: panel, base: 1.4 }] : [] };
+    const coffee = { busy: false, panel, led, level: 0, phase: 'Idle', cycle: new CoffeeCycle(),
+      glows: panel ? [{ mat: panel, base: 1.4 }] : [] };
     coffee.glow = (k) => {
       coffee.level = k;
-      for (const { mat, base } of coffee.glows) { mat.emissiveIntensity = base * k; mat.update(); }
+      for (const { mat, base } of coffee.glows) {
+        if (mat.emissiveIntensity !== base * k) { mat.emissiveIntensity = base * k; mat.update(); }
+      }
       led.light.intensity = 0.05 * k; led.light.enabled = k > 0.01;
     };
-    interactions.add({ pos: new Vec3(-5.455, 1.08, -0.86), size: 0.2, label: () => (coffee.busy ? 'Brewing…' : 'Make a coffee'),
+    interactions.add({ pos: new Vec3(COFFEE_POSITION.x, COFFEE_POSITION.y, COFFEE_POSITION.z), size: 0.2,
+      label: () => coffee.busy ? `${coffee.phase}…` : coffee.cycle.state ? 'Coffee ready · brew fresh cups' : 'Make a coffee',
       use: () => this.brew(coffee) });
     return coffee;
   }
 
+  createCoffeeEffects() {
+    const effects = new CoffeeEffects(this.app);
+    this.configureCoffeeMaterial?.(effects.coffeeMat);
+    this.configureCoffeeMaterial?.(effects.surfaceMat);
+    return effects;
+  }
+
   brew(c) {
-    if (c.busy) return;
+    if (c.busy) return false;
     this.override?.([c.led]);
-    c.busy = true;
-    this.run(0.3, (t) => c.glow(t));
-    const timing = this.sounds?.coffee?.(COFFEE_SPOUT) ?? { grind: 3.2, brew: 9 };
-    // Steam starts with the hot water and lingers over the cup a while after the machine stops.
-    setTimeout(() => this.startSteam(timing.brew + 14), (timing.grind + 0.8) * 1000);
-    setTimeout(() => { c.busy = false; this.run(1.5, (t) => c.glow(1 - t)); }, (timing.grind + timing.brew + 1.5) * 1000);
+    c.playback?.stop?.();
+    c.effects ||= this.createCoffeeEffects();
+    c.effects.reset();
+    c.playback = this.sounds?.coffee?.(COFFEE_POSITION) || null;
+    c.cycle.start(c.playback?.elapsed);
+    c.busy = true; c.phase = 'Heating'; c.lightCaptured = false;
+    c.glow(0);
+    c.effects.update(c.cycle.state);
+    return true;
   }
 
-  // Steam: soft sprites rising from the cup, curling and fading (a particle system with a painted puff texture).
-  startSteam(seconds) {
-    if (!this.steam) {
-      const e = new Entity('coffee steam');
-      e.addComponent('particlesystem', {
-        numParticles: 40, lifetime: 2.8, rate: 0.07, rate2: 0.11, emitterShape: 0, emitterExtents: new Vec3(0.02, 0, 0.02),
-        startAngle: 0, startAngle2: 360, colorMap: this.puff(), blendType: BLEND_NORMAL, depthSoftening: 0.08, lighting: false,
-        halfLambert: false, alignToMotion: false, stretch: 0, loop: true, preWarm: false, autoPlay: false, sort: 1,
-        localVelocityGraph: new CurveSet([[0, 0, 1, 0], [0, 0.07, 1, 0.12], [0, 0, 1, 0]]),
-        localVelocityGraph2: new CurveSet([[0, 0.012, 1, -0.02], [0, 0.1, 1, 0.16], [0, -0.012, 1, 0.02]]),
-        scaleGraph: new Curve([0, 0.02, 1, 0.09]),
-        alphaGraph: new Curve([0, 0, 0.15, 0.10, 0.6, 0.06, 1, 0]),
-        colorGraph: new CurveSet([[0, 0.8], [0, 0.78], [0, 0.75]]),
-        rotationSpeedGraph: new Curve([0, 20, 1, 5]),
-      });
-      e.setPosition(COFFEE_SPOUT.x, COFFEE_SPOUT.y - 0.04, COFFEE_SPOUT.z + 0.03);
-      this.app.root.addChild(e);
-      this.steam = { e, left: 0 };
+  updateCoffee(dt) {
+    const c = this.coffee;
+    if (!c?.cycle.active) return;
+    const wasBusy = c.busy, state = c.cycle.update(dt);
+    c.busy = state.busy; c.phase = state.phase;
+    c.glow(state.glow); c.effects?.update(state);
+    if (!c.lightCaptured && state.elapsed >= 0.35) {
+      c.lightCaptured = true; this.onLightChange?.();
     }
-    this.steam.left = seconds;
-    this.steam.e.particlesystem.reset();
-    this.steam.e.particlesystem.play();
-  }
-
-  updateSteam(dt) {
-    const s = this.steam;
-    if (s.left <= 0) return;
-    s.left -= dt;
-    if (s.left <= 0) s.e.particlesystem.stop();
-  }
-
-  puff() {
-    const N = 64, c = document.createElement('canvas'); c.width = c.height = N;
-    const g = c.getContext('2d'), img = g.createImageData(N, N);
-    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
-      const x = (i + 0.5) / N * 2 - 1, y = (j + 0.5) / N * 2 - 1, r = Math.hypot(x, y);
-      const wisp = 0.75 + 0.25 * Math.sin(x * 7 + Math.sin(y * 5) * 2) * Math.cos(y * 6);
-      const a = Math.max(0, 1 - r) ** 2 * wisp;
-      const k = (j * N + i) * 4; img.data[k] = img.data[k + 1] = img.data[k + 2] = 255; img.data[k + 3] = a * 255;
-    }
-    g.putImageData(img, 0, 0);
-    const tex = new Texture(this.app.graphicsDevice, { width: N, height: N, format: PIXELFORMAT_RGBA8, name: 'steam-puff' });
-    tex.setSource(c);
-    return tex;
+    if (wasBusy && !c.busy) this.onLightChange?.();
   }
 }

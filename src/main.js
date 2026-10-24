@@ -8,7 +8,8 @@ import { WalkGrid } from './walkgrid.js';
 import { Player } from './player.js';
 import { setupLighting, addDownlights } from './lighting.js';
 import { Probes, ZONES, baseName } from './probes.js';
-import { setupPost, setQuality, EyeAdaptation } from './post.js';
+import { setupPost, EyeAdaptation } from './post.js';
+import { GraphicsPreferences, GraphicsSettings } from './graphics-settings.js';
 import { Ambience } from './ambience.js';
 import { Interactions } from './interact.js';
 import { Switches } from './switches.js';
@@ -24,6 +25,9 @@ const SPAWN = { x: 13.0, z: 3.55, yaw: 90 };          // entrance hall, looking 
 const AMBIENT = 0.9;                                  // strength of the room probes' bounce light (probes.js)
 const hash = new URLSearchParams(location.hash.slice(1));
 const shot = hash.get('shot')?.split(',').map(Number);
+let graphicsStorage = null;
+try { graphicsStorage = window.localStorage; } catch { /* browser privacy mode */ }
+const graphicsPreferences = new GraphicsPreferences({ storage: graphicsStorage, qualityOverride: hash.get('q'), forceFps: hash.has('stats') });
 
 const $ = (id) => document.getElementById(id);
 // Film grain tile for the #grain overlay (style.css animates it).
@@ -48,6 +52,8 @@ const showError = (error) => {
   $('loading').hidden = false;
   $('status').textContent = `Unable to load the apartment: ${message}`;
   $('enter').hidden = true;
+  $('graphics-open').hidden = true;
+  document.getElementById('graphics-dialog')?.close();
   $('retry').hidden = false;
   $('intro').classList.remove('gone');
   $('intro').style.display = '';
@@ -122,8 +128,8 @@ app.scene.envAtlas = ZONES.main.atlas;       // for the few materials made at ru
 app.scene.skyboxIntensity = ambientLevel;
 const lit = setupLighting(app);
 const downlights = addDownlights(app, grid);
-const frame = setupPost(app, camera);
-if (hash.has('q')) setQuality(frame, Number(hash.get('q')));
+const frame = setupPost(app, camera, graphicsPreferences.effective);
+$('grain').hidden = !graphicsPreferences.effective.filmGrain;
 
 const start = shot ? { x: shot[0], z: shot[1], yaw: shot[2] } : SPAWN;
 const player = new Player(app, camera, grid, start);
@@ -137,7 +143,7 @@ closets.player = player;
 const doors = new Doors(app, apartment, interactions, grid, player, ambience);
 if (hash.has('open')) closets.doors.forEach(d => closets.toggle(d));
 const flashlight = new Flashlight(app, camera, apartment, interactions, ambience, toast,
-  { x: FLASHLIGHT_SPOT.pos.x, z: FLASHLIGHT_SPOT.pos.z, shelf: 1.84, yaw: 0 }, grid, player);
+  FLASHLIGHT_SPOT, grid, player);
 frontDoor(apartment);
 // The flashlight is stored far below the flat in the file (so its probe guess is the open-plan room); it lies in the bedroom.
 for (const r of flashlight.root.findComponents('render')) for (const mi of r.meshInstances) probes.assign(mi.material, 'bed');
@@ -167,7 +173,9 @@ const recapture = () => {
   return capture.promise;
 };
 const switches = new Switches(app, grid, apartment, interactions, ambience, recapture, downlights);
+for (const { material, zone } of switches.surfaceMaterials) probes.assign(material, zone);
 const devices = new Devices(app, apartment, interactions, ambience, recapture);
+devices.configureCoffeeMaterial = material => probes.assign(material, 'main');
 if (hash.has('dark')) {
   switches.rooms.forEach(r => { if (r.on) switches.toggle(r); });
   devices.lamps.forEach(l => { if (l.on) devices.toggleLamp(l); });
@@ -191,23 +199,13 @@ app.on('update', (dt) => {
   ambience.listen(camera.getPosition(), fwd, up);
 });
 
-// Quality: keys 1-3, or automatic during the first seconds of walking (drops a level while below ~40 / ~24 fps).
-let quality = hash.has('q') ? Number(hash.get('q')) : 3, manual = hash.has('q'), probe = { t: 0, frames: 0 };
-window.addEventListener('keydown', (e) => {
-  if (e.code === 'Digit1' || e.code === 'Digit2' || e.code === 'Digit3') { quality = Number(e.code.slice(5)); manual = true; setQuality(frame, quality); }
-});
-app.on('update', (dt) => {
-  if (manual || !player.active || quality === 1) return;
-  probe.t += dt; probe.frames++;
-  if (probe.t < 4) return;
-  const fps = probe.frames / probe.t;
-  probe.t = 0; probe.frames = 0;
-  if (fps < (quality === 3 ? 40 : 24)) { quality--; setQuality(frame, quality); console.info(`quality ${quality} (${fps.toFixed(0)} fps)`); }
-  else manual = true;   // fast enough: stop checking
-});
-if (hash.has('stats')) stats(app, device);
+// Settings, hotkeys and Auto quality share one persisted preference model.
+const fps = stats(app);
+const graphics = new GraphicsSettings({ app, frame, player, canvas, grain: $('grain'), fps,
+  preferences: graphicsPreferences, button: $('graphics-open'),
+  canOpen: () => window.__state.ready && !window.__state.error });
 const devMenu = new DevMenu({ app, flashlight, switches, devices, closets, rain, recapture, eyes,
-  stats: () => { if (!document.getElementById('stats')) stats(app, device); } });
+  stats: () => graphics.setShowFps(true) });
 interactions.blockKey = (key) => devMenu.typing(key);
 
 status('Ready.', 1);
@@ -228,7 +226,7 @@ document.addEventListener('pointerlockchange', () => {
 });
 if (shot) { intro.classList.add('gone'); intro.style.display = 'none'; player.active = false; }
 window.__state.ready = true;
-window.__app = { app, player, frame, camera, flashlight, interactions, switches, rain, doors, devices, closets, probes, devMenu, eyes };
+window.__app = { app, player, frame, camera, flashlight, interactions, switches, rain, doors, devices, closets, probes, devMenu, eyes, graphics };
 
 // The artifact build (tools/make-artifact.mjs) ships the apartment as one GLB split into base64 text parts listed in
 // apartment.json; download them with real progress and reassemble the GLB in memory. Otherwise load the glTF.
@@ -313,15 +311,22 @@ function tuneMaterials(root) {
   }
 }
 
-function stats(app, device) {
-  const el = document.createElement('div'); el.id = 'stats'; document.body.appendChild(el);
+function stats(app) {
+  let el = document.getElementById('stats');
+  const control = { get el() { return el; }, setVisible: visible => { el.hidden = !visible; } };
+  if (el) return control;
+  el = document.createElement('div'); el.id = 'stats';
+  el.setAttribute('aria-label', 'Frame rate');
+  el.textContent = 'FPS …';
+  document.body.appendChild(el);
   let frames = 0, last = performance.now();
   app.on('frameend', () => {
     frames++;
-    const now = performance.now();
-    if (now - last < 500) return;
-    const s = app.stats.drawCalls, f = app.stats.frame;
-    el.textContent = `${(frames * 1000 / (now - last)).toFixed(0)} fps  ${device.isWebGPU ? 'WebGPU' : 'WebGL2'}\ndraw calls ${s.total}  tris ${(f.triangles / 1e3).toFixed(0)}k`;
+    const now = performance.now(), elapsed = now - last;
+    if (elapsed < 500) return;
+    const fps = frames * 1000 / elapsed;
+    el.textContent = `${fps.toFixed(0)} FPS · ${(elapsed / frames).toFixed(1)} ms`;
     frames = 0; last = now;
   });
+  return control;
 }

@@ -22,9 +22,9 @@ export const LAMPS = [
   // at the bulbs inside the pendants' opal globes (y 1.76-2.11): light all round, the globes glow and cast no shadow
   ['dining pendant L', 'omni', [-0.44, 1.94, 1.523], WARM, 0.4, 6.5, true],
   ['dining pendant R', 'omni', [0.777, 1.94, 1.523], WARM, 0.4, 6.5, true],
-  ['cooker hood', 'spot', [-0.94, 1.53, -1.13], NEUTRAL, 0.8, 4.5, true, { inner: 30, outer: 72 }],
+  ['cooker hood', 'spot', [-0.94, 1.53, -1.13], NEUTRAL, 0.22, 2.8, true, { inner: 30, outer: 72 }],
   // in front of the vertical LED strips beside the bathroom mirror (x 6.46-6.54, y 1.04-2.32)
-  ['bathroom mirror', 'omni', [6.62, 1.65, 1.25], NEUTRAL, 0.34, 4.5, true],
+  ['bathroom mirror', 'omni', [6.62, 1.65, 1.25], NEUTRAL, 0.12, 3.2, true],
   // The bedside reading lamps are in devices.js (each has its own switch).
   // LED inside the bedroom's open shoe closet (where the flashlight lies), on the bedroom switch.
   ['closet light', 'omni', [9.62, 1.08, 1.75], WARM, 0.25, 1.8, false],

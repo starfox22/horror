@@ -50,7 +50,7 @@ jobs:
         run: |
           npm ci
           node tools/check-reach.mjs
-          node --test tools/check-interactions.mjs
+          node --test tools/check-interactions.mjs tools/check-graphics-settings.mjs tools/check-coffee.mjs tools/check-flashlight-placement.mjs tools/check-switches.mjs
           npm run build
 
       - name: Assemble both games in one site

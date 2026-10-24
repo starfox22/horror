@@ -15,9 +15,10 @@ h1 { margin: 0; font: 300 2.6rem/1.1 Georgia, "Times New Roman", serif; letter-s
 .bar { height: 2px; background: #1d1d20; overflow: hidden; }
 #bar { display: block; height: 100%; width: 0; background: #c9b48a; transition: width .3s; }
 #status { margin: 0; font-size: .75rem; color: #7d796f; font-variant-numeric: tabular-nums; }
-#enter, #retry { justify-self: center; padding: .7rem 1.6rem; background: none; border: 1px solid #6f6a60; color: #d8d4ca;
+#enter, #retry, #graphics-open { justify-self: center; padding: .7rem 1.6rem; background: none; border: 1px solid #6f6a60; color: #d8d4ca;
   font: inherit; letter-spacing: .15em; text-transform: uppercase; font-size: .78rem; cursor: pointer; }
-#enter:hover, #enter:focus-visible, #retry:hover, #retry:focus-visible { border-color: #c9b48a; color: #fff; outline: none; }
+#enter:hover, #enter:focus-visible, #retry:hover, #retry:focus-visible, #graphics-open:hover, #graphics-open:focus-visible { border-color: #c9b48a; color: #fff; outline: none; }
+#graphics-open { padding: .45rem 1rem; font-size: .7rem; letter-spacing: .1em; border-color: #45443e; }
 /* Reticle: a faint dot; over something usable it opens into a thin ring (AAA-style focus feedback). */
 #reticle { position: fixed; left: 50%; top: 50%; width: 3px; height: 3px; margin: -1.5px; border-radius: 50%; background: rgba(255,255,255,.35);
   box-shadow: 0 0 0 0 rgba(255,255,255,0); pointer-events: none; transition: width .18s ease, height .18s ease, margin .18s ease, background .18s, box-shadow .18s; }
@@ -25,7 +26,8 @@ h1 { margin: 0; font: 300 2.6rem/1.1 Georgia, "Times New Roman", serif; letter-s
 #reticle.pressed { width: 10px; height: 10px; margin: -5px; box-shadow: inset 0 0 0 2px rgba(255,255,255,.9); transition-duration: .06s; }
 #hint { position: fixed; bottom: 18px; left: 0; right: 0; text-align: center; font-size: .75rem; color: rgba(216,212,202,.55); pointer-events: none; transition: opacity 2s; }
 #hint.fade { opacity: 0; }
-#stats { position: fixed; top: 8px; left: 8px; font: 11px/1.4 ui-monospace, Menlo, monospace; color: #8f8; white-space: pre; pointer-events: none; }
+#stats { position: fixed; z-index: 10; top: 12px; left: 12px; padding: 5px 9px; border: 1px solid rgba(216,212,202,.16); border-radius: 3px;
+  background: rgba(5,6,7,.7); font: 12px/1.4 ui-monospace, Menlo, monospace; color: #deded4; white-space: pre; pointer-events: none; }
 /* Prompt: a key cap and the action, fading and rising in under the reticle. */
 #prompt { position: fixed; left: 0; right: 0; top: calc(50% + 24px); display: flex; justify-content: center; align-items: center; gap: .55rem;
   font-size: .76rem; letter-spacing: .08em; text-transform: uppercase; color: rgba(232,228,218,.88); text-shadow: 0 1px 3px #000;
@@ -74,3 +76,33 @@ h1 { margin: 0; font: 300 2.6rem/1.1 Georgia, "Times New Roman", serif; letter-s
 #devsplash.show { animation: devsplash 2.2s ease forwards; }
 @keyframes devsplash { 0% { opacity: 0; transform: translate(-50%, -40%); } 12% { opacity: 1; transform: translate(-50%, -50%); }
   75% { opacity: 1; } 100% { opacity: 0; } }
+
+/* Graphics are available from the start/pause screen and with G while walking. */
+.graphics-dialog { box-sizing: border-box; width: min(520px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto;
+  padding: 24px 28px; border: 1px solid #514c41; border-radius: 5px; color: #d8d4ca; background: #111212;
+  box-shadow: 0 20px 90px rgba(0,0,0,.65); font: inherit; }
+.graphics-dialog::backdrop { background: rgba(2,3,4,.78); backdrop-filter: blur(4px); }
+.graphics-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.graphics-header .eyebrow { color: #9b927f; font-size: .62rem; letter-spacing: .2em; }
+.graphics-header h2 { margin: 3px 0 0; font: 300 1.9rem/1.2 Georgia, "Times New Roman", serif; }
+.graphics-dialog button, .graphics-dialog select { color: #dedacf; background: #1d1e1c; border: 1px solid #585348; border-radius: 3px; font: inherit; cursor: pointer; }
+.graphics-dialog button { padding: 7px 14px; }
+.graphics-dialog button:hover, .graphics-dialog select:hover { border-color: #b4a386; }
+.graphics-dialog :focus-visible { outline: 2px solid #c9b48a; outline-offset: 3px; }
+#graphics-close { padding: 5px 8px; background: none; border-color: transparent; color: #aaa394; }
+.graphics-summary { margin: 16px 0 20px; color: #aaa79e; font-size: .82rem; }
+.graphics-select-row { display: flex; gap: 12px; justify-content: space-between; align-items: center; font-size: .82rem; }
+.graphics-select-row select { min-width: 155px; padding: 7px 10px; }
+.graphics-auto-note { margin: 7px 0 20px; color: #87877e; font-size: .71rem; }
+#graphics-current { display: block; color: #b5a78c; margin-top: 4px; }
+.graphics-effects { padding: 0; margin: 22px 0 0; border: 0; border-top: 1px solid #30322f; }
+.graphics-effects legend { padding: 0 10px 0 0; color: #9b927f; font-size: .65rem; letter-spacing: .16em; text-transform: uppercase; }
+.graphics-toggle { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 12px 0; border-bottom: 1px solid #262925; cursor: pointer; }
+.graphics-option-title { display: block; font-size: .82rem; }
+.graphics-toggle small { display: block; margin-top: 2px; color: #8e9086; font-size: .69rem; line-height: 1.4; }
+.graphics-toggle input { flex: 0 0 auto; width: 17px; height: 17px; margin: 0; accent-color: #c9b48a; cursor: pointer; }
+.graphics-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 20px; }
+.graphics-footer p { margin: 0; max-width: 250px; font-size: .69rem; line-height: 1.5; color: #8e9086; }
+#graphics-done { min-width: 80px; }
+@media (max-height: 600px) { #intro { overflow-y: auto; place-items: start center; } .card { padding: 28px 20px 68px; } .credit { font-size: .6rem; } }
+@media (max-width: 420px) { .graphics-dialog { padding: 18px; } .graphics-select-row select { min-width: 130px; } .graphics-footer { align-items: flex-end; } }

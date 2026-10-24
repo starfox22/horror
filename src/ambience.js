@@ -1,3 +1,5 @@
+import { COFFEE_TIMING } from './coffee-cycle.js';
+
 // Night ambience, synthesised with the Web Audio API (no audio files yet; see docs/HANDOFF.md for replacing these
 // with downloaded CC0 recordings): rain on the windows, room tone, the fridge's hum, a dripping kitchen tap, distant
 // city rumble, and footsteps on wood or stone. Positional sources use HRTF panning and a generated room reverb.
@@ -310,35 +312,71 @@ export class Ambience {
     setTimeout(done, 4500);
   }
 
-  // Bean-to-cup coffee machine: button beep, ~3 s of grinding, the pump's buzz and the pour, a finishing beep.
-  // Returns the timing so the game can start the steam with the hot water.
+  // The visual sequence reads this AudioContext clock, so a slow GPU or suspended
+  // tab cannot move the pour out of sync with its grinder/pump sounds. No wall timers.
   coffee(p) {
-    const grind = 3.2, brew = 9;
-    const [dest, done] = this.out(p, 0.25);
-    this.tone(dest, { freq: 2100, level: 0.08, attack: 0.005, decay: 0.12, type: 'square' });
-    const t0 = this.ctx.currentTime;
-    const n = this.ctx.createBufferSource(); n.buffer = this.noise; n.loop = true;
-    // Grinder: rough mid-band noise chopped by a fast LFO (beans cracking), with a motor whine.
-    const gg = this.gain(0), chop = this.ctx.createOscillator(), depth = this.gain(0.5);
-    chop.frequency.value = 37; chop.connect(depth).connect(gg.gain);
-    gg.gain.setValueAtTime(0, t0 + 0.4); gg.gain.linearRampToValueAtTime(0.5, t0 + 0.6); gg.gain.setValueAtTime(0.5, t0 + grind); gg.gain.linearRampToValueAtTime(0, t0 + grind + 0.3);
-    n.connect(this.filter('bandpass', 1300, 0.9)).connect(gg).connect(dest);
-    const whine = this.ctx.createOscillator(); whine.type = 'sawtooth'; whine.frequency.value = 180;
-    const wg = this.gain(0); wg.gain.setValueAtTime(0, t0 + 0.4); wg.gain.linearRampToValueAtTime(0.02, t0 + 0.7); wg.gain.setValueAtTime(0.02, t0 + grind); wg.gain.linearRampToValueAtTime(0, t0 + grind + 0.3);
-    whine.connect(this.filter('lowpass', 900)).connect(wg).connect(dest);
-    // Pump: a 50 Hz vibratory buzz with harmonics, then hissing hot water and the pour.
-    const b0 = t0 + grind + 0.8, b1 = b0 + brew;
-    const pump = this.ctx.createOscillator(); pump.type = 'sawtooth'; pump.frequency.value = 50;
-    const pg = this.gain(0); pg.gain.setValueAtTime(0, b0); pg.gain.linearRampToValueAtTime(0.06, b0 + 0.3); pg.gain.setValueAtTime(0.06, b1 - 1); pg.gain.linearRampToValueAtTime(0, b1);
-    pump.connect(this.filter('lowpass', 400)).connect(pg).connect(dest);
-    const pour = this.gain(0); pour.gain.setValueAtTime(0, b0 + 1); pour.gain.linearRampToValueAtTime(0.12, b0 + 2); pour.gain.setValueAtTime(0.12, b1 - 1.2); pour.gain.linearRampToValueAtTime(0, b1);
-    n.connect(this.filter('bandpass', 3800, 0.7)).connect(pour).connect(dest);
-    for (let k = 0; k < 40; k++) this.tone(dest, { t: grind + 2 + Math.random() * (brew - 2.5), freq: 500 + Math.random() * 700, to: 300, level: 0.02 + Math.random() * 0.03, attack: 0.002, decay: 0.05 });
-    for (const o of [n, chop, whine, pump]) { o.start(t0); o.stop(b1 + 2); }
-    this.tone(dest, { t: grind + brew + 1.2, freq: 2100, level: 0.08, attack: 0.005, decay: 0.12, type: 'square' });
-    this.tone(dest, { t: grind + brew + 1.45, freq: 2600, level: 0.08, attack: 0.005, decay: 0.2, type: 'square' });
-    setTimeout(done, (grind + brew + 3) * 1000);
-    return { grind, brew };
+    const k = COFFEE_TIMING, t0 = this.ctx.currentTime;
+    const [dest, done] = this.out(p, 0.25), sources = [];
+    let released = false;
+    const cleanup = () => {
+      if (released) return;
+      released = true;
+      for (const source of sources) { try { source.stop(); } catch {} source.disconnect(); }
+      done();
+    };
+    const oscillator = (type, frequency) => {
+      const source = this.ctx.createOscillator(); source.type = type; source.frequency.value = frequency;
+      sources.push(source); return source;
+    };
+    const note = (at, freq, level, decay, type = 'sine') => {
+      const source = oscillator(type, freq), gain = this.gain(0), time = t0 + at;
+      gain.gain.setValueAtTime(0.0001, time); gain.gain.exponentialRampToValueAtTime(level, time + 0.006);
+      gain.gain.exponentialRampToValueAtTime(0.0001, time + decay);
+      source.connect(gain).connect(dest); source.start(time); source.stop(time + decay + 0.05);
+      source.onended = () => gain.disconnect();
+    };
+    note(0, 2100, 0.055, 0.09, 'square');
+    note(0.18, 170, 0.07, 0.045);       // button/relay engagement
+    const noise = this.ctx.createBufferSource(); noise.buffer = this.noise; noise.loop = true; sources.push(noise);
+    const grinder = this.gain(0), texture = this.gain(0.7), chop = oscillator('sine', 37), depth = this.gain(0.22);
+    chop.connect(depth).connect(texture.gain);
+    const g = grinder.gain;
+    g.setValueAtTime(0, t0 + k.grindStart);
+    g.linearRampToValueAtTime(0.35, t0 + k.grindStart + 0.16);
+    g.setValueAtTime(0.35, t0 + k.infusionStart - 0.25);
+    g.linearRampToValueAtTime(0, t0 + k.infusionStart);
+    noise.connect(this.filter('bandpass', 1250, 0.85)).connect(texture).connect(grinder).connect(dest);
+    const motor = oscillator('sawtooth', 180), motorGain = this.gain(0);
+    motorGain.gain.setValueAtTime(0, t0 + k.grindStart);
+    motorGain.gain.linearRampToValueAtTime(0.018, t0 + k.grindStart + 0.2);
+    motorGain.gain.setValueAtTime(0.018, t0 + k.infusionStart - 0.25);
+    motorGain.gain.linearRampToValueAtTime(0, t0 + k.infusionStart);
+    motor.frequency.setValueAtTime(150, t0 + k.grindStart);
+    motor.frequency.linearRampToValueAtTime(190, t0 + k.grindStart + 0.3);
+    motor.frequency.setValueAtTime(190, t0 + k.infusionStart - 0.2);
+    motor.frequency.linearRampToValueAtTime(105, t0 + k.infusionStart);
+    motor.connect(this.filter('lowpass', 850)).connect(motorGain).connect(dest);
+    const pump = oscillator('sawtooth', 50), pressure = this.gain(0), pg = pressure.gain;
+    for (const [start, end, level] of [[k.infusionStart + 0.2, k.infusionStart + 0.8, 0.04],
+      [k.infusionStart + 1.05, k.infusionStart + 1.75, 0.045], [k.pourStart, k.pourEnd, 0.055]]) {
+      pg.setValueAtTime(0, t0 + start); pg.linearRampToValueAtTime(level, t0 + start + 0.12);
+      pg.setValueAtTime(level, t0 + end - 0.12); pg.linearRampToValueAtTime(0, t0 + end);
+    }
+    pump.connect(this.filter('lowpass', 380)).connect(pressure).connect(dest);
+    const pour = this.gain(0), water = pour.gain;
+    water.setValueAtTime(0, t0 + k.pourStart);
+    water.linearRampToValueAtTime(0.075, t0 + k.pourStart + 0.65);
+    water.setValueAtTime(0.075, t0 + k.pourEnd - 0.7);
+    water.linearRampToValueAtTime(0, t0 + k.pourEnd);
+    noise.connect(this.filter('bandpass', 3100, 0.65)).connect(pour).connect(dest);
+    for (const at of [k.infusionStart + 0.52, k.infusionStart + 1.48, k.pourEnd + 0.18, k.pourEnd + 0.55, k.pourEnd + 1.05]) {
+      note(at, 580 + Math.random() * 140, 0.025, 0.06);
+    }
+    note(k.readyAt, 2100, 0.055, 0.11, 'square');
+    note(k.readyAt + 0.2, 2600, 0.055, 0.17, 'square');
+    for (const source of [noise, chop, motor, pump]) { source.start(t0); source.stop(t0 + k.restartAt + 0.4); }
+    noise.onended = cleanup;
+    return { elapsed: () => Math.max(0, this.ctx.currentTime - t0), stop: cleanup };
   }
   flashlightClick(on) { this.click(on ? 3600 : 3000, 0.35, 0.08); }
 

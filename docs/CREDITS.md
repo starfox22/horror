@@ -7,6 +7,9 @@
   Changes: simplified, re-compressed (Draco geometry, KTX2 textures); its bathroom door and entrance door removed
   (replaced by the downloaded door below); the wardrobe doors, laptop lid,
   bedside lamp glows, iMac screen and coffee machine panel cut into separate parts so the game can move or switch them.
+  The detailed switch mesh in `src/switch-model.json` is extracted from the original `ElectricPlugs_White1_0` source
+  before apartment simplification: its authored rocker and bevels are retained, the gang-frame end is cropped/mirrored
+  into a single plate, and it is scaled/reused for wall controls. `tools/extract-switch.mjs` reproduces that extraction.
   The credit is also shown on the game's intro screen; keep it there.
 - **"Flash-Lite Flashlight"** by AndrewHunt95 (https://sketchfab.com/AndrewHunt95), licensed CC BY 4.0
   (http://creativecommons.org/licenses/by/4.0/). Source: https://sketchfab.com/3d-models/flash-lite-flashlight-e20e52c7a0eb466086af727588839d48 .
@@ -31,6 +34,6 @@ sharp (Apache-2.0), Vite (MIT), Playwright (Apache-2.0).
 
 - Sound: all synthesised in `src/ambience.js` (no third-party audio).
 - Rain drops, film grain and the flashlight's beam cookie are painted procedurally at runtime.
-- Small built pieces with no asset worth downloading: recessed ceiling downlight discs, light-switch plates, and the
+- Small built pieces with no asset worth downloading: recessed ceiling downlight discs and the
   wardrobe's inner carcass (shelf, rail, inner walls) in the model's own wood material.
 - The coffee machine's steam puff texture and the flashlight's reflector cookie are painted at runtime.

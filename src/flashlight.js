@@ -5,15 +5,66 @@
 // scatters in the room haze; the hand trails the view, sways with each step and has a slight tremor; switching on
 // stutters for a moment; and a weak warm bounce light sits where the beam lands, lifting the shadows around the pool as
 // light off a real wall would.
-import { Color, Entity, Quat, Texture, Vec3, PIXELFORMAT_RGBA8, ADDRESS_CLAMP_TO_EDGE, LIGHTFALLOFF_INVERSESQUARED } from 'playcanvas';
+import { BoundingBox, Color, Entity, Quat, Texture, Vec3, PIXELFORMAT_RGBA8, ADDRESS_CLAMP_TO_EDGE, LIGHTFALLOFF_INVERSESQUARED } from 'playcanvas';
 
 const HAND = new Vec3(0.15, -0.20, -0.12);    // the lamp's head relative to the eye (right hand, chest height)
 export const BEAM_SIZE = 27;                  // cone angle (degrees), developer menu can change it
 const BEAM = 8;                              // intensity
 const COLOR = new Color(1, 0.94, 0.84);        // a warm-white LED torch
 
+// Use actual transformed vertices when available. A tilted cylinder's transformed
+// bounding box includes empty corners and would make the torch float above the shelf.
+export function flashlightBounds(renders) {
+  const min = new Vec3(Infinity, Infinity, Infinity), max = new Vec3(-Infinity, -Infinity, -Infinity);
+  const point = new Vec3(), positions = [];
+  for (const render of renders) for (const mi of render.meshInstances) {
+    positions.length = 0;
+    const count = mi.mesh?.getPositions?.(positions) || 0;
+    if (count) {
+      const transform = (mi.node || render.entity).getWorldTransform();
+      for (let i = 0; i < count * 3; i += 3) {
+        transform.transformPoint(point.set(positions[i], positions[i + 1], positions[i + 2]), point);
+        min.min(point); max.max(point);
+      }
+    } else {
+      min.min(mi.aabb.getMin()); max.max(mi.aabb.getMax());
+    }
+  }
+  const bounds = new BoundingBox();
+  bounds.setMinMax(min, max);
+  return bounds;
+}
+
+// Reuse the downloaded model's complete assembly and authored orientation. The
+// apartment stores both body and lens under the floor; neither is a placement origin.
+export function placeFlashlightOnShelf(apartment, spot) {
+  const root = new Entity('flashlight');
+  const renders = apartment.findComponents('render').filter(render =>
+    render.meshInstances.some(mi => mi.material.name.startsWith('Prop_flashlight.')));
+  if (!renders.length) throw new Error('The apartment is missing its flashlight model');
+  const poses = [...new Set(renders.map(render => render.entity))].map(entity => ({
+    entity, position: entity.getPosition().clone(), rotation: entity.getRotation().clone(),
+    scale: entity.getWorldTransform().getScale(),
+  }));
+  for (const { entity, position, rotation, scale } of poses) {
+    entity.reparent(root);
+    entity.setPosition(position); entity.setRotation(rotation); entity.setLocalScale(scale);
+  }
+  const centre = flashlightBounds(renders).center.clone();
+  for (const { entity } of poses) entity.setLocalPosition(entity.getLocalPosition().clone().sub(centre));
+  const orientation = new Quat().setFromEulerAngles(0, spot.yaw ?? 90, 0);
+  // A tiny nose-up tilt lets the wider head and narrower tail both rest naturally.
+  orientation.mul(new Quat().setFromEulerAngles(spot.pitch ?? 0, 0, 0));
+  root.setRotation(orientation);
+  const bounds = flashlightBounds(renders);
+  const x = spot.x ?? spot.pos.x, z = spot.z ?? spot.pos.z;
+  const shelf = spot.shelf ?? spot.pos.y, clearance = spot.clearance ?? 0.0008;
+  root.setPosition(x - bounds.center.x, shelf + clearance - bounds.getMin().y, z - bounds.center.z);
+  return { root, renders, bounds: flashlightBounds(renders) };
+}
+
 export class Flashlight {
-  // spot: { x, z, shelf (height of the shelf top), yaw }
+  // spot: { pos (shelf anchor) or x/z, shelf (surface height), yaw, pitch, clearance }
   constructor(app, camera, apartment, interactions, sounds, hud, spot, grid, player) {
     this.app = app;
     this.camera = camera;
@@ -26,12 +77,9 @@ export class Flashlight {
     this.power = 0;           // 0..1, eased (flicker on start)
     this.rot = new Quat();
     this.time = 0;
-    this.halfHeight = 0.03;
-    this.model = this.build(apartment);
-    const rest = new Vec3(spot.x, spot.shelf + this.halfHeight, spot.z);
-    this.model.setPosition(rest);
-    this.model.setEulerAngles(0, spot.yaw, 0);
+    this.model = this.build(apartment, spot);
     app.root.addChild(this.model);
+    const rest = this.restBounds.center.clone();
     this.item = interactions.add({ pos: rest, size: 0.16, label: () => 'Take the flashlight', use: () => this.pickUp() });
     this.interactions = interactions;
     window.addEventListener('keydown', (e) => { if (e.code === 'KeyF' && !e.repeat && this.held) this.toggle(); });
@@ -39,19 +87,11 @@ export class Flashlight {
   }
 
   // The model is merged into the apartment file by the asset pipeline (materials 'Prop_flashlight.*').
-  build(apartment) {
-    const root = new Entity('flashlight');
-    const r = apartment.findComponents('render').find(c => c.meshInstances.some(mi => mi.material.name.startsWith('Prop_flashlight.')));
-    if (r) {
-      const e = r.entity;
-      e.reparent(root);
-      e.setLocalPosition(0, 0, 0); e.setLocalEulerAngles(0, 0, 0);
-      // Centre the body on the root, so the root is the point it rests on.
-      const box = r.meshInstances[0].aabb.clone();
-      for (const mi of r.meshInstances.slice(1)) box.add(mi.aabb);
-      e.setLocalPosition(-box.center.x, -box.center.y, -box.center.z);
-      this.halfHeight = Math.min(box.halfExtents.x, box.halfExtents.y);
-    }
+  build(apartment, spot) {
+    const { root, renders, bounds } = placeFlashlightOnShelf(apartment, spot);
+    this.restBounds = bounds;
+    this.modelRenders = renders;
+    this.halfHeight = bounds.halfExtents.y;
     this.root = root;
     this.size = BEAM_SIZE;
 
