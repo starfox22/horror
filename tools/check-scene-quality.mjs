@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { SHADOWUPDATE_REALTIME, SHADOWUPDATE_NONE, SHADOWUPDATE_THISFRAME, SHADOW_PCF1_32F, SHADOW_PCF5_32F } from 'playcanvas';
+import { SHADOWUPDATE_REALTIME, SHADOWUPDATE_NONE, SHADOWUPDATE_THISFRAME, SHADOW_PCF3_32F } from 'playcanvas';
 import { SceneQuality, sceneQualityOptions, backingPixelRatio } from '../src/scene-quality.js';
 import { Rain } from '../src/rain.js';
 
@@ -16,7 +16,7 @@ test('backing buffers respect each preset pixel budget on large and high-DPI scr
   assert.equal(backingPixelRatio(sceneQualityOptions(1), 1280, 720, 1), 1);
 });
 
-test('quality changes preserve every light occluder, cookie and realtime shadow ownership', () => {
+test('quality changes preserve every light occluder and cookie, and never touch lit shaders or the shadow atlas', () => {
   const lights = [
     { entity: { name: 'flashlight beam' }, type: 'spot', shadowResolution: 1024, castShadows: true, cookie: {}, shadowUpdateMode: SHADOWUPDATE_REALTIME },
     { entity: { name: 'flashlight bounce' }, type: 'spot', shadowResolution: 256, castShadows: true, shadowUpdateMode: SHADOWUPDATE_REALTIME },
@@ -27,25 +27,26 @@ test('quality changes preserve every light occluder, cookie and realtime shadow 
   const app = { scene: { lighting: { shadowsEnabled: true, cookiesEnabled: true, maxLightsPerCell: 32 } }, graphicsDevice: { canvas: { clientWidth: 1920, clientHeight: 1080 }, maxPixelRatio: 1.5, maxAnisotropy: 8 }, once() {}, resizeCanvas() {},
     root: { findComponents: type => type === 'light' ? lights : [{ meshInstances: [{ material: { normalMap: texture } }] }] } };
   const controller = new SceneQuality(app, { window: null });
-  controller.apply({ quality: 1 });
-  assert.equal(app.scene.lighting.shadowAtlasResolution, 2048);
-  assert.equal(app.scene.lighting.shadowType, SHADOW_PCF1_32F);
+  controller.apply({ quality: 3 });
+  assert.equal(app.scene.lighting.shadowAtlasResolution, 4096);
+  assert.equal(app.scene.lighting.shadowType, SHADOW_PCF3_32F);
+  assert.equal(lights[2].shadowUpdateMode, SHADOWUPDATE_THISFRAME, 'the first atlas allocation renders the static lamps once');
+  lights[2].shadowUpdateMode = SHADOWUPDATE_NONE;
+  for (const q of [1, 2, 3, 1]) {
+    controller.apply({ quality: q });
+    assert.equal(app.scene.lighting.shadowAtlasResolution, 4096);
+    assert.equal(app.scene.lighting.shadowType, SHADOW_PCF3_32F);
+    assert.equal(lights[2].shadowUpdateMode, SHADOWUPDATE_NONE, 'a preset change re-renders no static shadow');
+  }
   assert.equal(app.scene.lighting.maxLightsPerCell, 32, 'never reduce cluster capacity and silently drop lights');
   assert.equal(app.scene.lighting.shadowsEnabled, true);
   assert.equal(app.scene.lighting.cookiesEnabled, true);
   assert.ok(lights.every(light => light.castShadows));
   assert.equal(lights[0].shadowUpdateMode, SHADOWUPDATE_REALTIME);
   assert.equal(lights[1].shadowUpdateMode, SHADOWUPDATE_REALTIME);
-  assert.equal(lights[2].shadowUpdateMode, SHADOWUPDATE_THISFRAME);
   assert.equal(lights[2].enabled, false, 'quality must not switch a closed fridge lamp on');
   assert.equal(texture.anisotropy, 2);
-  assert.equal(lights[0].shadowResolution, 512);
-  assert.equal(lights[1].shadowResolution, 256);
   controller.apply({ quality: 3 });
-  assert.equal(app.scene.lighting.shadowType, SHADOW_PCF5_32F);
-  assert.equal(app.scene.lighting.shadowAtlasResolution, 4096);
-  assert.equal(lights[0].shadowResolution, 1024, 'returning to High restores original detail');
-  assert.equal(lights[3].shadowResolution, 2048);
   assert.equal(texture.anisotropy, 8);
 });
 

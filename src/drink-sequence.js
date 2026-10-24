@@ -1,9 +1,9 @@
 import { AnimClip, AnimEvaluator, Asset, DefaultAnimBinder, Entity, Mat4, Quat, Vec3 } from 'playcanvas';
-import { DRINK_DURATION, DRINK_TIMING, sampleDrink } from './drink-timeline.js';
+import { DRINK_DURATION, DRINK_TIMING, GLASS_EMPTY, sampleDrink } from './drink-timeline.js';
 
 const HAND_URL = './assets/props/drinking-hand.glb';
+// Only the refreshed exhale after the last sip (the owner asked for no gulping sounds).
 const AUDIO = [
-  { file: 'drink-water.wav', starts: [3.65, 4.40, 5.12], gain: 0.8 },
   { file: 'drink-relief.wav', starts: [DRINK_TIMING.relief], gain: 0.65 },
 ];
 // The downloaded hand's root is normalized to wrist=0, fingers=+Y, thumb=-X.
@@ -214,7 +214,7 @@ export class DrinkSequence {
   finish() {
     if (!this.running) return false;
     this.returnGlass(); this.carried = false; this.handCarrier.enabled = false;
-    this.fridge.setGlassWater(0.037, 0); this.fridge.hasDrunk = true; this.fridge.drinkRunning = false;
+    this.fridge.setGlassWater(GLASS_EMPTY, 0); this.fridge.hasDrunk = true; this.fridge.drinkRunning = false;
     this.running = false; this.completed = true; this.time = DRINK_DURATION; this.audio.pause();
     this.player.yaw = this.savedYaw; this.player.pitch = this.savedPitch; this.holdPlayer();
     this.player.active = this.locked && !this.ownerDocument?.hidden;

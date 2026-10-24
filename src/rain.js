@@ -236,6 +236,8 @@ export class Rain {
     return e;
   }
 
+  get flashing() { return this.flash.seq.length > 0; }
+
   // Lightning every 25-70 s: two or three flickers of cold light from the sky, thunder a few seconds later.
   lightning(dt) {
     const f = this.flash;
@@ -256,11 +258,15 @@ export class Rain {
       for (const s of f.seq) if (f.time >= s.at && f.time < s.at + s.len) power = Math.max(power, s.power * (1 - (f.time - s.at) / s.len));
       if (f.time > 2) f.seq = [];
     }
-    // Lightning is the only light from outside: the sky light exists only during a flash (its shadow re-rendered once).
+    // Lightning is the only light from outside: the sky light is dark except during a flash (its shadow re-rendered at
+    // the start of each flash, for doors moved since). It stays enabled at zero: switching a directional light on or off
+    // changes every lit shader in the flat, and compiling them all at the first flash froze the game for a second.
     const on = power > 0;
-    if (on !== this.moon.light.enabled) { this.moon.light.enabled = on; if (on) this.moon.light.shadowUpdateMode = SHADOWUPDATE_THISFRAME; }
+    if (on && !this.lit) this.moon.light.shadowUpdateMode = SHADOWUPDATE_THISFRAME;
+    this.lit = on;
     this.moon.light.intensity = this.moonBase + power;
-    for (const s of this.streaks) { s.particlesystem.enabled = on; s.particlesystem.intensity = power * 0.9; }   // the rain outside shows only in a flash
+    for (const s of this.streaks) if (s.particlesystem.enabled !== on) s.particlesystem.enabled = on;   // the rain outside shows only in a flash
+    for (const s of this.streaks) s.particlesystem.intensity = power * 0.9;
     // Drops refract the lit room behind the viewer (a faint glow that follows how many lights are on), and flare in a flash.
     const glow = this.roomLight * 0.55 + power * 0.3;
     for (const g of this.glasses || []) if (Math.abs(g.emissiveIntensity - glow) > 1e-4) { g.emissiveIntensity = glow; g.update(); }

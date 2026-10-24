@@ -88,7 +88,7 @@ export class Doors {
       if (Math.abs(d.target - d.angle) < 0.05 && Math.abs(d.vel) < 0.5) { d.angle = d.target; d.vel = 0; d.moving = false; }
       d.pivot.setEulerAngles(0, d.angle, 0);
       this.placeHandle(d);
-      refreshShadows(this.app, d.handle, 4.5);
+      refreshShadows(this.app, d.handle, d.width * 0.6 + 0.3);
     }
   }
 }

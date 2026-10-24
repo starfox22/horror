@@ -1,14 +1,15 @@
-// The same light still casts the same occlusion at every preset. Lower presets
-// reduce shadow filtering/map cost and the backing buffer, never remove walls'
-// shadows or disable cookies (which would change the authored light falloff).
-import { SHADOW_PCF1_32F, SHADOW_PCF3_32F, SHADOW_PCF5_32F, SHADOWUPDATE_REALTIME, SHADOWUPDATE_THISFRAME } from 'playcanvas';
+// The same light still casts the same occlusion at every preset. Presets differ only in what can change without a
+// hitch: the backing buffer, texture anisotropy, rain cadence and (post.js) the full-screen effects. Everything that is
+// part of a lit shader or of the shadow atlas stays the same at every level: a different shadow filter would recompile
+// every material in the flat, and a different atlas size would re-render every lamp's shadow, each a freeze of up to a
+// second just when Auto steps down to keep the frame rate. (Clustered shadows draw into one shared atlas, so the
+// per-light resolutions below only matter for lights outside it.)
+import { SHADOW_PCF3_32F, SHADOWUPDATE_REALTIME, SHADOWUPDATE_THISFRAME } from 'playcanvas';
 
+export const SHADOW_ATLAS = 4096;
 export function sceneQualityOptions(quality) {
   const q = [1, 2, 3].includes(quality) ? quality : 3;
-  return { shadowAtlas: q === 3 ? 4096 : 2048, cookieAtlas: q === 1 ? 1024 : 2048,
-    shadowType: [SHADOW_PCF1_32F, SHADOW_PCF3_32F, SHADOW_PCF5_32F][q - 1],
-    lampResolution: q === 1 ? 256 : 512, torchResolution: q === 1 ? 512 : 1024,
-    moonResolution: q === 3 ? 2048 : 1024,
+  return { shadowAtlas: SHADOW_ATLAS, cookieAtlas: 2048, shadowType: SHADOW_PCF3_32F,
     maxPixelRatio: q === 3 ? 1.5 : 1,
     maxPixels: [1280 * 720, 1920 * 1080, 2560 * 1440][q - 1],
     anisotropy: [2, 4, 8][q - 1], rainHz: [10, 15, 20][q - 1] };
@@ -24,7 +25,6 @@ export function backingPixelRatio(options, width, height, deviceRatio = 1) {
 export class SceneQuality {
   constructor(app, { rain = null, window: ownerWindow = globalThis.window } = {}) {
     Object.assign(this, { app, rain, ownerWindow });
-    this.originalLights = new WeakMap();
     this.resize = () => this.applyResolution();
     ownerWindow?.addEventListener('resize', this.resize);
     app.once('destroy', () => ownerWindow?.removeEventListener('resize', this.resize));
@@ -35,19 +35,17 @@ export class SceneQuality {
     if (q === this.quality) return;
     this.quality = q;
     const detail = this.detail = sceneQualityOptions(q), lighting = this.app.scene.lighting;
-    lighting.shadowAtlasResolution = detail.shadowAtlas;
-    lighting.cookieAtlasResolution = detail.cookieAtlas;
-    lighting.shadowType = detail.shadowType;
-    for (const light of this.app.root.findComponents('light')) {
-      if (!light.castShadows) continue;
-      if (!this.originalLights.has(light)) this.originalLights.set(light, light.shadowResolution);
-      const maxResolution = light.type === 'directional' ? detail.moonResolution : /flashlight beam/.test(light.entity.name) ? detail.torchResolution : detail.lampResolution;
-      light.shadowResolution = Math.min(this.originalLights.get(light), maxResolution);
-      light.shadowType = detail.shadowType;
-      // Reallocating a shadow atlas invalidates cached tiles. Keep the two
-      // moving flashlight lights realtime; request one refresh for static lamps.
-      if (light.shadowUpdateMode !== SHADOWUPDATE_REALTIME) light.shadowUpdateMode = SHADOWUPDATE_THISFRAME;
+    if (lighting.shadowAtlasResolution !== detail.shadowAtlas || lighting.shadowType !== detail.shadowType) {
+      lighting.shadowAtlasResolution = detail.shadowAtlas;
+      lighting.shadowType = detail.shadowType;
+      for (const light of this.app.root.findComponents('light')) {
+        if (!light.castShadows) continue;
+        light.shadowType = detail.shadowType;
+        // A new atlas holds no shadows yet: one refresh for the static lamps (the flashlight is realtime anyway).
+        if (light.shadowUpdateMode !== SHADOWUPDATE_REALTIME) light.shadowUpdateMode = SHADOWUPDATE_THISFRAME;
+      }
     }
+    lighting.cookieAtlasResolution = detail.cookieAtlas;
     const textures = new Set();
     for (const render of this.app.root.findComponents('render')) for (const instance of render.meshInstances) {
       for (const name of ['diffuseMap', 'normalMap', 'metalnessMap', 'glossMap', 'aoMap', 'emissiveMap', 'opacityMap']) {

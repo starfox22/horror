@@ -1,12 +1,12 @@
 // Developer options (for testing). Typing "developer" anywhere, in game or on the start screen, turns developer mode on
 // or off (a splash says which). While it is on, the panel is shown whenever the game is paused or on the start screen
-// (no pointer lock): the flashlight's beam size, every light in the flat (on / off one by one, grouped by area), and a
-// few test actions. A light set here overrides its switch until "Back to switches", or until its own switch or lamp is
+// (no pointer lock): the flashlight's beam size, every light in the flat (on / off one by one, grouped by area), the
+// scripted events (play any of them now, story-events.js), and a few test actions. A light set here overrides its switch until "Back to switches", or until its own switch or lamp is
 // pressed in the flat (that press hands it back, from the state it was forced to: Switches/Devices `override`).
 const CODE = 'developer';
 
 export class DevMenu {
-  // sys: { app, flashlight, switches, devices, closets, fridge, rain, recapture, eyes, stats }
+  // sys: { app, flashlight, switches, devices, closets, fridge, rain, recapture, eyes, events, stats }
   constructor(sys) {
     this.sys = sys;
     this.typed = '';
@@ -92,6 +92,13 @@ export class DevMenu {
         </div>
       </section>
       <section>
+        <h2><button class="sub" id="dev-events-open">Events <span>▸</span></button></h2>
+        <div id="dev-events" hidden>
+          <p class="note">Scripted events in story order (story-events.js). Click one to play it now.</p>
+          <ol id="dev-event-list"></ol>
+        </div>
+      </section>
+      <section>
         <h2>Testing</h2>
         <div class="btns"><button id="dev-lightning">Lightning strike</button><button id="dev-stats">Show FPS</button></div>
         <label class="light"><input type="checkbox" id="dev-eyes"> Eye adaptation <output id="dev-ev"></output></label>
@@ -118,6 +125,18 @@ export class DevMenu {
     $('dev-stats').onclick = () => { this.sys.stats?.(); $('dev-stats').disabled = true; };
     $('dev-eyes').addEventListener('change', (e) => { if (this.sys.eyes) this.sys.eyes.enabled = e.target.checked; });
     el.querySelector('.x').onclick = () => this.toggle(false);
+    $('dev-events-open').onclick = () => {
+      const box = $('dev-events'); box.hidden = !box.hidden;
+      $('dev-events-open').querySelector('span').textContent = box.hidden ? '▸' : '▾';
+    };
+    for (const event of this.sys.events?.events || []) {
+      const item = document.createElement('li');
+      const button = Object.assign(document.createElement('button'), { type: 'button', textContent: event.label, title: event.when });
+      button.dataset.event = event.id;
+      button.onclick = () => this.sys.events.run(event.id);
+      item.append(button, Object.assign(document.createElement('small'), { textContent: event.when }));
+      $('dev-event-list').appendChild(item);
+    }
     // The list: one checkbox per light, under its area's heading.
     const list = $('dev-list');
     let group = null;

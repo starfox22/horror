@@ -1,15 +1,15 @@
 // The apartment's authored upper refrigerator door is separated at runtime. The
 // freezer, cabinet sides/back, all unrelated kitchen triangles and their PBR maps
-// remain untouched. A fitted cold cabinet and the original hollow glass jar live
+// remain untouched. A fitted cold cabinet, a downloaded glass water jug and a tumbler of water live
 // behind it; its real interior emitter turns off when the door seals.
 import {
   BLEND_NORMAL, CULLFACE_NONE, Color, Entity, Mesh, MeshInstance, StandardMaterial, Vec3,
-  LIGHTFALLOFF_INVERSESQUARED, SHADOW_PCF5_32F, SHADOWUPDATE_THISFRAME,
+  LIGHTFALLOFF_INVERSESQUARED, SHADOWUPDATE_THISFRAME,
 } from 'playcanvas';
 import { refreshShadows } from './lighting.js';
 import { segmentDistance } from './walkgrid.js';
-import { makeWaterGeometry, WATER_LEVEL } from './fridge-water.js';
-import { makeDrinkingWater } from './drink-timeline.js';
+import { makeWaterGeometry } from './fridge-water.js';
+import { makeDrinkingWater, GLASS_FULL } from './drink-timeline.js';
 import { FRIDGE, classifyFridgeTriangle, fridgeDoorSegment, fridgeWorld } from './fridge-geometry.js';
 
 function subset(device, source, indices) {
@@ -27,15 +27,15 @@ function subset(device, source, indices) {
 
 export class Fridge {
   static async create(options) {
-    const [jarGeometry, glassGeometry] = await Promise.all(['water-jar', 'drinking-glass'].map(async name => {
+    const [jugGeometry, glassGeometry] = await Promise.all(['water-jug', 'drinking-glass'].map(async name => {
       const response = await fetch(new URL(`./assets/props/${name}.json`, location.href));
       if (!response.ok) throw new Error(`Refrigerator ${name}: HTTP ${response.status}`);
       return response.json();
     }));
-    return new Fridge({ ...options, jarGeometry, glassGeometry });
+    return new Fridge({ ...options, jugGeometry, glassGeometry });
   }
 
-  constructor({ app, apartment, interactions, grid, player, sounds, recapture, configureMaterial, jarGeometry, glassGeometry }) {
+  constructor({ app, apartment, interactions, grid, player, sounds, recapture, configureMaterial, jugGeometry, glassGeometry }) {
     Object.assign(this, { app, grid, player, sounds, recapture, configureMaterial });
     this.angle = 0; this.velocity = 0; this.target = 0; this.openRequested = false; this.moving = false;
     this.frame = new Entity('refrigerator cabinet');
@@ -45,7 +45,7 @@ export class Fridge {
     this.sourceMaterials = new Map(apartment.findComponents('render').flatMap(r => r.meshInstances).map(mi => [mi.material.name, mi.material]));
     this.extractDoor(apartment);
     if (!this.movingTriangles || !this.removedCapTriangles) throw new Error('The original refrigerator door/cabinet split could not be found');
-    this.buildInterior(jarGeometry);
+    this.buildInterior(jugGeometry);
     this.buildDrinkingGlass(glassGeometry);
     this.blocker = grid?.addBlocker(() => this.angle > 0.5 ? fridgeDoorSegment(this.angle) : null);
     this.updateHandle();
@@ -106,12 +106,12 @@ export class Fridge {
     entity.setLocalScale(x1 - x0, y1 - y0, z1 - z0); return entity;
   }
 
-  buildInterior(jarGeometry) {
+  buildInterior(jugGeometry) {
     const liner = this.material('refrigerator porcelain ABS liner', [0.77, 0.81, 0.82], 0.48, { template: 'White1@main' });
     const trim = this.material('refrigerator shelf satin trim', [0.62, 0.67, 0.68], 0.72, { metalness: 0.38 });
     const rubber = this.material('refrigerator magnetic gasket', [0.075, 0.085, 0.086], 0.23);
     const glass = this.material('refrigerator clear shelf glass', [0.82, 0.94, 0.96], 0.97, { opacity: 0.13, template: 'Glass@main' });
-    const jarMat = this.material('authored water jar clear glass', [0.86, 0.95, 0.97], 0.99, { opacity: 0.14, template: 'Glass@main' });
+    const jugMat = this.material('water jug clear glass', [0.86, 0.95, 0.97], 0.99, { opacity: 0.16, template: 'Glass@main' });
     const waterMat = this.material('refrigerator still drinking water', [0.58, 0.79, 0.84], 0.98, { opacity: 0.22 });
     const b = (name, bounds, mat = liner, door = false, shadows = true) => this.panel(name, bounds, mat, door, shadows);
     // A sealed cavity: lining walls hide the source cabinet's inner/back faces,
@@ -142,28 +142,29 @@ export class Fridge {
       b('fridge door bin left cheek', [-0.278, -0.264, y, y + 0.078, 0.178, 0.258], liner, true);
       b('fridge door bin right cheek', [0.256, 0.27, y, y + 0.078, 0.178, 0.258], liner, true);
     }
-    const mesh = new Mesh(this.app.graphicsDevice); mesh.setPositions(jarGeometry.positions); mesh.setNormals(jarGeometry.normals); mesh.setIndices(jarGeometry.indices); mesh.update();
-    this.jar = new Entity('water jar — original apartment glass');
-    this.jar.addComponent('render', { meshInstances: [new MeshInstance(mesh, jarMat, this.jar)], castShadows: false, receiveShadows: true });
-    this.jar.render.meshInstances.forEach(mi => { mi.castShadow = false; });
-    this.frame.addChild(this.jar); this.jar.setLocalPosition(...FRIDGE.jar);
-    // Water level remains beneath the jar's shoulder; its nonemissive surface and
-    // volume receive the cabinet's actual cool light and environment reflection.
-    const waterGeometry = makeWaterGeometry(), waterMesh = new Mesh(this.app.graphicsDevice);
+    // The downloaded glass water jug (docs/DRINK_ASSETS.md) and the still water fitted inside its measured walls.
+    const mesh = new Mesh(this.app.graphicsDevice); mesh.setPositions(jugGeometry.positions); mesh.setNormals(jugGeometry.normals); mesh.setIndices(jugGeometry.indices); mesh.update();
+    this.jug = new Entity('water jug');
+    this.jug.addComponent('render', { meshInstances: [new MeshInstance(mesh, jugMat, this.jug)], castShadows: false, receiveShadows: true });
+    this.jug.render.meshInstances.forEach(mi => { mi.castShadow = false; });
+    this.frame.addChild(this.jug); this.jug.setLocalPosition(...FRIDGE.jug); this.jug.setLocalEulerAngles(0, FRIDGE.jugYaw, 0);
+    const waterGeometry = makeWaterGeometry(jugGeometry.interior), waterMesh = new Mesh(this.app.graphicsDevice);
     waterMesh.setPositions(waterGeometry.positions); waterMesh.setNormals(waterGeometry.normals); waterMesh.setIndices(waterGeometry.indices); waterMesh.update();
-    this.water = new Entity('water inside jar');
+    this.water = new Entity('water inside jug');
     this.water.addComponent('render', { meshInstances: [new MeshInstance(waterMesh, waterMat, this.water)], castShadows: false, receiveShadows: true });
     this.water.render.meshInstances.forEach(mi => { mi.castShadow = false; });
-    this.frame.addChild(this.water); this.water.setLocalPosition(...FRIDGE.jar);
-    this.waterLevel = FRIDGE.jar[1] + WATER_LEVEL;
-    this.jarHeight = Math.max(...jarGeometry.positions.filter((_, index) => index % 3 === 1));
+    this.jug.addChild(this.water);
+    this.waterLevel = FRIDGE.jug[1] + waterGeometry.level;
+    this.jugHeight = Math.max(...jugGeometry.positions.filter((_, index) => index % 3 === 1));
     this.glow = this.material('refrigerator LED diffuser', [0.68, 0.74, 0.77], 0.65);
     this.glow.emissive = new Color(0.82, 0.91, 1); this.glow.emissiveIntensity = 0; this.glow.update();
     b('fridge upper LED lens', [-0.10, 0.10, 1.966, 1.976, 0.14, 0.22], this.glow, false, false);
     this.baseIntensity = 0.24;
     this.light = new Entity('refrigerator interior light');
-    this.light.addComponent('light', { type: 'omni', color: new Color(0.82, 0.91, 1), intensity: 0, range: 1.65, enabled: false,
-      castShadows: true, shadowType: SHADOW_PCF5_32F, shadowResolution: 512, shadowBias: 0.08, normalOffsetBias: 0.015,
+    // A downward LED spot under the diffuser, as in a real refrigerator: one shadow view instead of an omni's six, which
+    // matters while the door swings (its shadow is re-rendered every frame of the swing).
+    this.light.addComponent('light', { type: 'spot', innerConeAngle: 38, outerConeAngle: 72, color: new Color(0.82, 0.91, 1), intensity: 0, range: 1.65, enabled: false,
+      castShadows: true, shadowResolution: 512, shadowBias: 0.08, normalOffsetBias: 0.015,
       falloffMode: LIGHTFALLOFF_INVERSESQUARED });
     this.frame.addChild(this.light); this.light.setLocalPosition(...FRIDGE.light);
     this.light.light.shadowUpdateMode = SHADOWUPDATE_THISFRAME;
@@ -171,18 +172,18 @@ export class Fridge {
 
   buildDrinkingGlass(geometry) {
     const mesh = new Mesh(this.app.graphicsDevice); mesh.setPositions(geometry.positions); mesh.setNormals(geometry.normals); mesh.setIndices(geometry.indices); mesh.update();
-    const glassMat = this.material('authored drinking tumbler glass', [0.87, 0.95, 0.97], 0.99, { opacity: 0.22, template: 'Glass@main' });
-    this.glass = new Entity('drinking glass — original apartment table glass');
+    const glassMat = this.material('drinking tumbler glass', [0.87, 0.95, 0.97], 0.99, { opacity: 0.2, template: 'Glass@main' });
+    this.glass = new Entity('drinking glass');
     this.glass.addComponent('render', { meshInstances: [new MeshInstance(mesh, glassMat, this.glass)], castShadows: false, receiveShadows: true });
     this.glass.render.meshInstances.forEach(mi => { mi.castShadow = false; });
-    this.frame.addChild(this.glass); this.glass.setLocalPosition(0.13, 1.3336, 0.068);
+    this.frame.addChild(this.glass); this.glass.setLocalPosition(...FRIDGE.glass);
     this.glassShelfPosition = this.glass.getPosition().clone(); this.glassShelfRotation = this.glass.getRotation().clone();
     const waterMat = this.material('water inside drinking tumbler', [0.61, 0.81, 0.85], 0.98, { opacity: 0.25 });
     this.glassWaterMesh = new Mesh(this.app.graphicsDevice);
     this.glassWater = new Entity('drinkable water free surface');
     this.glassWater.addComponent('render', { meshInstances: [new MeshInstance(this.glassWaterMesh, waterMat, this.glassWater)], castShadows: false, receiveShadows: true });
     this.glassWater.render.meshInstances.forEach(mi => { mi.castShadow = false; });
-    this.glass.addChild(this.glassWater); this.setGlassWater(0.104, 0);
+    this.glass.addChild(this.glassWater); this.setGlassWater(GLASS_FULL, 0);
     this.drinkRunning = false; this.hasDrunk = false;
   }
 
@@ -197,6 +198,12 @@ export class Fridge {
   canDrink() {
     return !!this.drinkAction && !this.drinkRunning && !this.hasDrunk && this.angle > 75 && !this.moving &&
       (!this.player?.camera || this.player.camera.getPosition().distance(this.glassTarget) < 1.6);
+  }
+
+  // Middle of the moving upper leaf, in the world.
+  doorCentre() {
+    const a = this.angle * Math.PI / 180, h = FRIDGE.hinge, w = FRIDGE.width / 2;
+    return (this._centre ||= new Vec3()).set(...fridgeWorld([h[0] - Math.cos(a) * w, 1.47, h[2] + Math.sin(a) * w]));
   }
 
   updateHandle() {
@@ -236,9 +243,12 @@ export class Fridge {
       this.angle = this.target; this.velocity = 0; this.moving = false;
     }
     this.door.setLocalEulerAngles(0, this.angle, 0); this.updateHandle(); this.applyLighting();
-    refreshShadows(this.app, this.light.getPosition(), 4);
+    refreshShadows(this.app, this.doorCentre(), 0.75);      // the swinging leaf (its interior light included)
     if (!this.moving) {
-      if (this.angle === 0) this.sounds?.bump?.(this.handle);
+      if (this.angle === 0) {
+        this.sounds?.bump?.(this.handle);
+        if (this.hasDrunk) this.onShutAfterDrink?.();     // story-events.js: the falling glass follows
+      }
       // One settled probe capture, rather than a recapture on each animated frame.
       Promise.resolve(this.recapture?.()).catch(error => console.error('Refrigerator lighting capture failed', error));
     }

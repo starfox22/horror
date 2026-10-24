@@ -1,7 +1,10 @@
 import { applyGraphicsOptions, qualityOptions } from './post.js';
 import { DEFAULT_FRAME_LIMIT, FRAME_LIMITS } from './frame-limiter.js';
 
-export const GRAPHICS_STORAGE_KEY = 'horror.graphics.v1';
+// v2 (build 0.12): Auto and VSync became the defaults. Settings saved under v1 keep only the FPS-counter choice and
+// start again from Auto with VSync, once.
+export const GRAPHICS_STORAGE_KEY = 'horror.graphics.v2';
+const PREVIOUS_STORAGE_KEY = 'horror.graphics.v1';
 const PRESETS = { low: 1, medium: 2, high: 3 };
 const EFFECTS = ['ambientOcclusion', 'volumetricFog', 'bloom', 'taa', 'filmGrain'];
 const SCALES = [0.5, 0.65, 0.75, 0.85, 1];
@@ -35,8 +38,13 @@ export class GraphicsPreferences {
     this.storage = storage;
     this.canSave = !!storage;
     let saved, raw;
-    try { raw = storage?.getItem(GRAPHICS_STORAGE_KEY); } catch { this.canSave = false; }
+    let migrate = false;
+    try {
+      raw = storage?.getItem(GRAPHICS_STORAGE_KEY);
+      if (raw == null) { raw = storage?.getItem(PREVIOUS_STORAGE_KEY); migrate = raw != null; }
+    } catch { this.canSave = false; }
     try { saved = JSON.parse(raw || 'null'); } catch { /* corrupt data falls back to defaults */ }
+    if (migrate && saved && typeof saved === 'object') saved = { showFps: saved.showFps };
     this.state = normalizeGraphicsSettings(saved);
     const quality = Number(qualityOverride);
     if ([1, 2, 3].includes(quality)) this.state.preset = ['low', 'medium', 'high'][quality - 1];
@@ -54,7 +62,8 @@ export class GraphicsPreferences {
   }
 
   get autoQuality() { return AUTO_STEPS[this.autoStep].quality; }
-  get autoTarget() { return Math.min(60, this.state.fpsLimit || 60); }
+  // Auto aims for 60 FPS (or a lower manual cap); VSync on a 60 Hz screen is 60, on faster screens a whole fraction >= 60.
+  get autoTarget() { return this.state.fpsLimit > 0 ? Math.min(60, this.state.fpsLimit) : 60; }
 
   notify(save = true) {
     if (save) {
@@ -191,9 +200,9 @@ export class GraphicsSettings {
       <header class="graphics-header"><div><p class="eyebrow">The Apartment</p><h2 id="graphics-title">Graphics</h2></div><button type="button" id="graphics-close" aria-label="Close graphics settings">✕</button></header>
       <p class="graphics-summary">Choose your balance of detail and performance. Presets also adjust shadow detail and display resolution.</p>
       <div class="graphics-select-row"><label for="graphics-preset">Quality preset</label><select id="graphics-preset"><option value="auto">Auto</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="custom">Custom</option></select></div>
-      <p class="graphics-auto-note">Auto targets 60 FPS and lowers detail or resolution when needed. <span id="graphics-current" role="status" aria-live="polite"></span></p>
+      <p class="graphics-auto-note">Auto targets a steady 60 FPS and lowers detail or resolution when needed. VSync paces frames evenly on any display. <span id="graphics-current" role="status" aria-live="polite"></span></p>
       <div class="graphics-select-row"><label for="graphics-resolution">Resolution scale</label><select id="graphics-resolution"><option value="0.5">50% · fastest</option><option value="0.65">65%</option><option value="0.75">75%</option><option value="0.85">85%</option><option value="1">100%</option></select></div>
-      <div class="graphics-select-row"><label for="graphics-fps-limit">FPS limit</label><select id="graphics-fps-limit"><option value="30">30 FPS</option><option value="60">60 FPS</option><option value="90">90 FPS</option><option value="120">120 FPS</option><option value="0">Unlimited</option></select></div>
+      <div class="graphics-select-row"><label for="graphics-fps-limit">FPS limit</label><select id="graphics-fps-limit"><option value="-1">VSync · smooth 60+</option><option value="30">30 FPS</option><option value="60">60 FPS</option><option value="90">90 FPS</option><option value="120">120 FPS</option><option value="0">Every refresh</option></select></div>
       <fieldset class="graphics-effects"><legend>Effects &amp; display</legend>${effects.map(([key, label, description]) => `<label class="graphics-toggle" for="graphics-${key}"><span><span class="graphics-option-title">${label}</span><small>${description}</small></span><input type="checkbox" id="graphics-${key}" data-option="${key}"></label>`).join('')}</fieldset>
       <footer class="graphics-footer"><p id="graphics-save-note"></p><button type="button" id="graphics-done">Done</button></footer>`;
     dialog.querySelector('#graphics-close').addEventListener('click', () => this.close());

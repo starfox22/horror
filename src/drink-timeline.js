@@ -41,7 +41,7 @@ export function sampleDrink(time, { shelf = [0, -0.45, -0.9], reducedMotion = fa
   if (!reducedMotion && t < 1.15) hand = mix(offscreen, contact, drinkEase(t / 1.15));
   else if (!reducedMotion && t > 7.55) hand = mix(contact, offscreen, drinkEase((t - 7.55) / 0.7));
   const consumed = drinkEase((t - 3.85) / 1.55);
-  return { time: t, glass, hand, tilt, grip, consumed, fill: Math.max(0.037, 0.104 - consumed * 0.067),
+  return { time: t, glass, hand, tilt, grip, consumed, fill: GLASS_FULL - consumed * (GLASS_FULL - GLASS_EMPTY),
     carried,
     handVisible: reducedMotion ? carried : t < 8.25,
     lean: reducedMotion ? 0 : drinkEase(t / 1.05) * (1 - drinkEase((t - 1.35) / 1.2)),
@@ -49,19 +49,30 @@ export function sampleDrink(time, { shelf = [0, -0.45, -0.9], reducedMotion = fa
     complete: t >= DRINK_DURATION };
 }
 
-// The free surface stays level as the tumbler tips. Its inner radius and floor
-// are measured from the downloaded apartment glass, with a small wet-wall gap.
-export const GLASS_INTERIOR = Object.freeze({ radius: 0.0344, bottom: 0.0042, top: 0.1375 });
-export function makeDrinkingWater(fill = 0.104, tilt = 0, segments = 40) {
-  const { radius, bottom, top } = GLASS_INTERIOR;
+// The free surface stays level as the tumbler tips. The tumbler (public/assets/props/drinking-glass.json, a downloaded
+// highball glass) tapers: inner radius 22.6 mm at its floor to 31.9 mm at the rim; the water keeps 0.6 mm off the wall.
+export const GLASS_INTERIOR = Object.freeze({ bottom: 0.0076, top: 0.1185, radiusBottom: 0.0220, radiusTop: 0.0313 });   // 0.6 mm inside the wall
+export const GLASS_FULL = 0.098;               // water height when poured (about 200 ml)
+export const GLASS_EMPTY = 0.016;              // what is left after the last sip
+export const glassRadiusAt = y => {
+  const { bottom, top, radiusBottom, radiusTop } = GLASS_INTERIOR;
+  return radiusBottom + (radiusTop - radiusBottom) * Math.min(1, Math.max(0, (y - bottom) / (top - bottom)));
+};
+export function makeDrinkingWater(fill = GLASS_FULL, tilt = 0, segments = 40) {
+  const { bottom, top } = GLASS_INTERIOR;
   const a = typeof tilt === 'number' ? tilt * Math.PI / 180 : 0;
   const [nx, ny, nz] = Array.isArray(tilt) ? tilt : [0, Math.cos(a), -Math.sin(a)];
-  const level = Math.min(fill * ny, top * ny - Math.hypot(nx, nz) * radius);
+  const level = Math.min(fill * ny, top * ny - Math.hypot(nx, nz) * glassRadiusAt(top));
   const surface = (x, z) => Math.max(bottom, Math.min(top, (level - nx * x - nz * z) / Math.max(0.01, ny)));
   const positions = [0, surface(0, 0), 0, 0, bottom, 0], normals = [nx, ny, nz, 0, -1, 0], indices = [];
+  const rb = glassRadiusAt(bottom);
   for (let i = 0; i <= segments; i++) {
-    const theta = i / segments * Math.PI * 2, x = Math.cos(theta) * radius, z = Math.sin(theta) * radius;
-    positions.push(x, surface(x, z), z, x, bottom, z);
+    const theta = i / segments * Math.PI * 2, c = Math.cos(theta), sn = Math.sin(theta);
+    // Where the level plane meets the sloping wall at this angle (a few fixed-point steps).
+    let y = fill, r = glassRadiusAt(y);
+    for (let k = 0; k < 6; k++) { y = surface(r * c, r * sn); r = glassRadiusAt(y); }
+    y = surface(r * c, r * sn);     // exactly on the level plane (a fraction of a millimetre off the wall at most)
+    positions.push(r * c, y, r * sn, rb * c, bottom, rb * sn);
     normals.push(nx, ny, nz, 0, -1, 0);
     if (i < segments) {
       const k = 2 + i * 2, next = k + 2;

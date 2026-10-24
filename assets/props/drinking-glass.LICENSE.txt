@@ -1,0 +1,20 @@
+Model information:
+* title:   Glass Collection (object used: "highball glass")
+* source:  https://sketchfab.com/3d-models/glass-collection-0ff8fc5007dd4e9da675109fe7c443d6
+* author:  RagingCow (https://sketchfab.com/marcussamiran)
+
+Model license:
+* license type: CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements: Author must be credited. Commercial use is allowed.
+
+Credit:
+This work is based on "Glass Collection" (https://sketchfab.com/3d-models/glass-collection-0ff8fc5007dd4e9da675109fe7c443d6) by RagingCow (https://sketchfab.com/marcussamiran) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+
+Adaptation (glass.glb): extracted the single "highball glass" object (node "highball glass_7", mesh "Object_7")
+from the 10-glass collection with the author's own node transform, flipped triangle winding and normals so they
+face out of the glass (the source mesh was inside-out and relied on double-sided rendering), uniformly rescaled
+to 0.12 m height (metres, Y up), base at y=0, axis at x=z=0; replaced the material with a flat glass colour.
+Geometry and topology are otherwise unchanged.
+
+Downloaded from the GitHub mirror (Sketchfab export; licence and source are embedded in its glTF asset.extras):
+https://github.com/Nhucanada/Barline/tree/ded93c1625f8c997967318c4f2911c2ff84568d7/apps/frontend/public/models

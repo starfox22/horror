@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { AnimTrack, Entity, Quat, Vec3 } from 'playcanvas';
 import { DrinkSequence, DrinkingAudio } from '../src/drink-sequence.js';
-import { DRINK_DURATION, DRINK_TIMING, sampleDrink, makeDrinkingWater, GLASS_INTERIOR } from '../src/drink-timeline.js';
+import { DRINK_DURATION, DRINK_TIMING, sampleDrink, makeDrinkingWater, GLASS_INTERIOR, GLASS_FULL, GLASS_EMPTY, glassRadiusAt } from '../src/drink-timeline.js';
 import { intersectTriangle } from '../src/switch-surfaces.js';
 
 const glass = JSON.parse(readFileSync(new URL('../public/assets/props/drinking-glass.json', import.meta.url)));
@@ -11,23 +11,25 @@ const vertices = Array.from({ length: glass.positions.length / 3 }, (_, i) => gl
 const triangles = Array.from({ length: glass.indices.length / 3 }, (_, i) => glass.indices.slice(i * 3, i * 3 + 3).map(index => vertices[index]));
 function nearest(origin, direction) { let closest = null; for (const triangle of triangles) { const hit = intersectTriangle(origin, direction, ...triangle); if (hit && (!closest || hit.distance < closest.distance)) closest = hit; } return closest; }
 
-test('the authored hollow tumbler has a real base and the water clears its actual glass walls', () => {
-  assert.equal(glass.license, 'CC-BY-4.0'); assert.match(glass.source, /Visthétique/); assert.ok(vertices.length > 200);
-  const floor = nearest([0, .08, 0], [0, -1, 0]); assert.ok(floor && floor.point[1] > .002 && floor.point[1] < .004);
+test('the downloaded tumbler has a real base and the water clears its actual glass walls', () => {
+  assert.equal(glass.license, 'CC-BY-4.0'); assert.equal(glass.author, 'RagingCow'); assert.ok(vertices.length > 200);
+  const floor = nearest([0, .08, 0], [0, -1, 0]); assert.ok(floor && Math.abs(floor.point[1] - glass.interior.floor) < .0008);
   assert.equal(nearest([0, .08, 0], [0, 1, 0]), null, 'the glass must have an open mouth');
-  for (const [fill, tilt] of [[.104, 0], [.095, 25], [.055, 61], [.037, 0]]) {
+  const top = GLASS_INTERIOR.top, height = Math.max(...vertices.map(v => v[1]));
+  assert.ok(height > .11 && height < .13, 'a normal 12 cm tumbler');
+  for (const [fill, tilt] of [[GLASS_FULL, 0], [.09, 25], [.055, 61], [GLASS_EMPTY, 0], [GLASS_EMPTY, 40]]) {
     const water = makeDrinkingWater(fill, tilt), a = tilt * Math.PI / 180;
     assert.equal(water.positions.length, water.normals.length);
     for (let i = 0; i < water.positions.length; i += 3) {
       const [x, y, z] = water.positions.slice(i, i + 3), r = Math.hypot(x, z);
-      assert.ok(y >= GLASS_INTERIOR.bottom && y < .1394);
+      assert.ok(y >= GLASS_INTERIOR.bottom - 1e-9 && y <= top + 1e-9);
       assert.ok(y > floor.point[1]);
-      if (r > 1e-8 && y > .0043) {
+      if (r > 1e-8 && y > floor.point[1] + .002) {
         const wall = nearest([0, y, 0], [x / r, 0, z / r]);
-        assert.ok(wall?.distance > r + .0001, `liquid crosses authored wall at ${x},${y},${z}`);
+        assert.ok(wall?.distance > r + .0002, `liquid crosses the glass wall at ${x},${y},${z}`);
       }
-      if (i >= 6 && (i / 3) % 2 === 0 && y > GLASS_INTERIOR.bottom + .0001) {
-        const expected = Math.min(fill * Math.cos(a), GLASS_INTERIOR.top * Math.cos(a) - Math.sin(a) * GLASS_INTERIOR.radius);
+      if (i >= 6 && (i / 3) % 2 === 0 && y > GLASS_INTERIOR.bottom + .0001 && y < top - .0001) {
+        const expected = Math.min(fill * Math.cos(a), top * Math.cos(a) - Math.sin(a) * glassRadiusAt(top));
         assert.ok(Math.abs(y * Math.cos(a) - z * Math.sin(a) - expected) < 1e-8, 'free surface must remain horizontal as glass tips');
       }
     }
@@ -44,7 +46,7 @@ test('the complete drink track is continuous, grips before lifting, and keeps th
     assert.ok(Math.abs(pose.tilt - last.tilt) < 1.2, 'wrist turn jump');
     if (t < DRINK_TIMING.lift) { assert.deepEqual(pose.glass, shelf); assert.equal(pose.carried, false); }
     if (t > 3.2 && t < 5.55) {
-      const a = pose.tilt * Math.PI / 180, nearRim = pose.glass[2] + .1395 * Math.sin(a) + .0395 * Math.cos(a);
+      const a = pose.tilt * Math.PI / 180, nearRim = pose.glass[2] + .1195 * Math.sin(a) + .0355 * Math.cos(a);
       assert.ok(nearRim < -.055, `rim crosses camera near clip: ${nearRim}`);
     }
     const a = pose.tilt * Math.PI / 180;
@@ -52,7 +54,7 @@ test('the complete drink track is continuous, grips before lifting, and keeps th
       const expected = [pose.glass[0] + .044, pose.glass[1] + .066 * Math.cos(a), pose.glass[2] + .066 * Math.sin(a)];
       assert.ok(Math.hypot(...pose.hand.map((v,k) => v - expected[k])) < 1e-10, 'palm contact must rotate rigidly with the glass');
     }
-    assert.ok(pose.fill >= .037 && pose.fill <= .104); last = pose;
+    assert.ok(pose.fill >= GLASS_EMPTY - 1e-9 && pose.fill <= GLASS_FULL + 1e-9); last = pose;
   }
   assert.equal(sampleDrink(1.35).grip, 1);
   const done = sampleDrink(DRINK_DURATION, { shelf }); assert.deepEqual(done.glass, shelf); assert.equal(done.carried, false); assert.equal(done.complete, true);
@@ -85,7 +87,7 @@ test('second input starts once, blocks cached interactions immediately and retur
   h.advance(DRINK_DURATION); assert.equal(h.drink.completed, true); assert.equal(h.player.active, true);
   assert.equal(h.fridge.drinkRunning, false); assert.equal(h.fridge.hasDrunk, true); assert.equal(h.fridge.glass.parent, h.fridge.frame);
   assert.ok(h.fridge.glass.getPosition().distance(glassPosition) < 1e-10); assert.ok(h.camera.getPosition().distance(position) < 1e-10);
-  assert.equal(h.fridge.fill, .037); assert.equal(h.completions, 1); assert.equal(h.drink.start(), false);
+  assert.equal(h.fridge.fill, GLASS_EMPTY); assert.equal(h.completions, 1); assert.equal(h.drink.start(), false);
 });
 
 test('pause and hidden tab retain the held pose without paying back elapsed time', () => {
@@ -126,11 +128,11 @@ test('liquid gravity compensates camera pitch and roll as well as the wrist tilt
   const camera = new Quat().setFromEulerAngles(-23, 47, 9), wrist = new Quat().setFromEulerAngles(61, 0, 0);
   const worldRotation = new Quat().mul2(camera, wrist), inverse = worldRotation.clone().invert();
   const up = inverse.transformVector(Vec3.UP).toArray();
-  const water = makeDrinkingWater(.082, up), { top, radius, bottom } = GLASS_INTERIOR;
-  const level = Math.min(.082 * up[1], top * up[1] - Math.hypot(up[0], up[2]) * radius);
+  const water = makeDrinkingWater(.082, up), { top, bottom } = GLASS_INTERIOR;
+  const level = Math.min(.082 * up[1], top * up[1] - Math.hypot(up[0], up[2]) * glassRadiusAt(top));
   for (let i = 2; i < water.positions.length / 3; i += 2) {
     const p = water.positions.slice(i * 3, i * 3 + 3);
-    if (p[1] > bottom + 1e-6) {
+    if (p[1] > bottom + 1e-6 && p[1] < top - 1e-6) {
       const world = worldRotation.transformVector(new Vec3(...p));
       assert.ok(Math.abs(world.y - level) < 1e-10, 'all wet surface vertices must share the same world height');
     }

@@ -4,9 +4,10 @@
 // #q=1|2|3 picks the quality level, #ev=<number> and #amb=<number> override exposure and bounce light (for tuning),
 // #dark switches every light off, #allon every switch on, #flash starts with the flashlight in hand, #open opens the wardrobe.
 import * as pc from 'playcanvas';
+import { SHADOWUPDATE_THISFRAME } from 'playcanvas';
 import { WalkGrid } from './walkgrid.js';
 import { Player } from './player.js';
-import { setupLighting, addDownlights } from './lighting.js';
+import { setupLighting, addDownlights, fixShadowAtlas } from './lighting.js';
 import { Probes, ZONES, baseName } from './probes.js';
 import { setupPost, EyeAdaptation } from './post.js';
 import { GraphicsPreferences, GraphicsSettings } from './graphics-settings.js';
@@ -25,6 +26,10 @@ import { Rain } from './rain.js';
 import { Doors } from './doors.js';
 import { Devices } from './devices.js';
 import { DevMenu } from './devmenu.js';
+import { warmUp, revealInFront } from './warmup.js';
+import { Director } from './story-events.js';
+import { FallingGlass } from './falling-glass.js';
+import { Thought } from './thought.js';
 
 const ASSETS = new URL('./assets/apartment/', location.href).href;
 const SPAWN = { x: WAKE_EXIT.x, z: WAKE_EXIT.z, yaw: WAKE_EXIT.yaw }; // clear bedside landing
@@ -158,7 +163,9 @@ frontDoor(apartment);
 // The flashlight is stored far below the flat in the file (so its probe guess is the open-plan room); it lies in the bedroom.
 for (const r of flashlight.root.findComponents('render')) for (const mi of r.meshInstances) probes.assign(mi.material, 'bed');
 
-let capturing = null, rain = null;
+let capturing = null, rain = null, captured = false;
+// Re-measures the bounce light and reflections after the lights change (probes.js). The first capture (loading) is
+// done in one go; later ones are spread over frames and fade in, restarting if the lights change again meanwhile.
 const recapture = () => {
   if (capturing) { capturing.again = true; return capturing.promise; }
   const capture = { again: false };
@@ -167,16 +174,14 @@ const recapture = () => {
     try {
       do {
         capture.again = false;
-        // Wait for fades/overrides before capturing the lamps that are actually on.
-        await new Promise(r => app.once('frameend', r));
+        // Wait for fades/overrides (and a lightning flash: the probes must not keep it) before capturing.
+        do await new Promise(r => app.once('frameend', r)); while (rain?.flashing);
         const on = app.root.findComponents('light').filter(l => l.enabled && l.intensity > 0.01 && !/flashlight|moon/.test(l.entity.name)).length;
         if (rain) rain.roomLight = Math.min(1, on / 12);
-        flashlight.suspend(true);
-        await probes.captureAll();
-        flashlight.suspend(false);
+        await probes.captureAll({ instant: !captured, abort: () => capture.again });
+        captured = true;
       } while (capture.again);
     } finally {
-      flashlight.suspend(false);
       capturing = null;
     }
   })();
@@ -193,6 +198,13 @@ const drink = await DrinkSequence.create({ app, camera, player, fridge, interact
   onStart: () => { $('reticle').hidden = true; interactions.enabled = false; interactions.update(); },
   onComplete: () => { $('reticle').hidden = !player.active; interactions.enabled = player.active; },
 }).catch(failLoad);
+// Scripted events (story-events.js), in story order; the developer menu can play any of them.
+const thought = new Thought();
+const fallingGlass = await FallingGlass.create({ sounds: ambience, thought, listener: () => camera.getPosition() });
+const events = new Director({ app, ctx: { fallingGlass: () => fallingGlass.play() },
+  isPlaying: () => document.pointerLockElement === canvas && !document.hidden });
+fridge.onShutAfterDrink = () => events.signal('fridge-shut-after-drink');
+app.on('update', dt => thought.update(dt));
 if (hash.has('dark')) {
   switches.rooms.forEach(r => { if (r.on) switches.toggle(r); });
   devices.lamps.forEach(l => { if (l.on) devices.toggleLamp(l); });
@@ -200,12 +212,38 @@ if (hash.has('dark')) {
 if (hash.has('allon')) switches.rooms.forEach(r => { if (!r.on) switches.toggle(r); });
 if (hash.has('flash')) flashlight.pickUp();
 rain = new Rain(app, apartment, ambience, lit);
+fixShadowAtlas(app);
 const sceneQuality = new SceneQuality(app, { rain });
 sceneQuality.apply(graphicsPreferences.effective);
 
 // One frame of the lit rooms first, then capture the probes from them.
 await new Promise(r => app.once('frameend', r));
 await recapture().catch(failLoad);
+// Build every shader now rather than mid-game (warmup.js), with the things that only show up later on view.
+if (!shot || hash.has('warm')) {
+  status('Preparing the rooms…', 0.92);
+  const coffee = devices.coffee;
+  if (coffee) coffee.effects ||= devices.createCoffeeEffects();
+  await warmUp({ app, camera, progress: f => status('Preparing the rooms…', 0.92 + 0.08 * f), reveal: [
+    revealInFront(drink.handCarrier),
+    () => {
+      if (!coffee?.effects) return null;
+      const fx = coffee.effects;
+      [...fx.streams, ...fx.drops, ...fx.surfaces, ...fx.ripples].forEach(e => { e.enabled = true; });
+      fx.steam.forEach(s => s.entity.particlesystem.play());
+      return () => fx.reset();
+    },
+    () => { rain.streaks.forEach(s => { s.particlesystem.enabled = true; }); return () => rain.streaks.forEach(s => { s.particlesystem.enabled = false; }); },
+    // Every shadowed lamp that starts off, on at zero for the sweep: its shadow is drawn (and its shadow shaders built)
+    // now, so switching it on later costs nothing; it keeps its cell of the fixed shadow atlas (fixShadowAtlas).
+    () => {
+      const off = app.root.findComponents('light').filter(l => l.castShadows && !l.enabled && l.type !== 'directional' && !/^flashlight/.test(l.entity.name));
+      const saved = off.map(l => [l, l.intensity, l.shadowUpdateMode]);
+      for (const l of off) { l.intensity = 0; l.enabled = true; l.shadowUpdateMode = SHADOWUPDATE_THISFRAME; }
+      return () => { for (const [l, intensity] of saved) { l.enabled = false; l.intensity = intensity; } };
+    },
+  ] }).catch(failLoad);
+}
 const eyes = new EyeAdaptation(app, camera, frame, probes, flashlight, hash.has('ev') ? Number(hash.get('ev')) : null);
 const wake = shot ? null : new WakeSequence({ camera, player, onComplete: () => {
   $('reticle').hidden = !player.active;
@@ -230,7 +268,7 @@ const graphics = new GraphicsSettings({ app, frame, player, canvas, grain: $('gr
   sceneQuality, canSample: () => !capturing,
   preferences: graphicsPreferences, button: $('graphics-open'),
   canOpen: () => window.__state.ready && !window.__state.error });
-const devMenu = new DevMenu({ app, flashlight, switches, devices, closets, fridge, rain, recapture, eyes,
+const devMenu = new DevMenu({ app, flashlight, switches, devices, closets, fridge, rain, recapture, eyes, events,
   stats: () => graphics.setShowFps(true) });
 interactions.blockKey = (key) => devMenu.typing(key);
 
@@ -255,7 +293,7 @@ document.addEventListener('pointerlockchange', () => {
 });
 if (shot) { intro.classList.add('gone'); intro.style.display = 'none'; player.active = false; }
 window.__state.ready = true;
-window.__app = { app, player, frame, camera, flashlight, interactions, switches, rain, doors, devices, closets, fridge, drink, probes, devMenu, eyes, graphics, frameLimiter, sceneQuality, wake };
+window.__app = { app, player, frame, camera, flashlight, interactions, switches, rain, doors, devices, closets, fridge, drink, probes, devMenu, eyes, graphics, frameLimiter, sceneQuality, wake, events, thought, fallingGlass };
 
 // The artifact build (tools/make-artifact.mjs) ships the apartment as one GLB split into base64 text parts listed in
 // apartment.json; download them with real progress and reassemble the GLB in memory. Otherwise load the glTF.

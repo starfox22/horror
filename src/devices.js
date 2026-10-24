@@ -87,7 +87,10 @@ export class Devices {
     spot.rotateLocal(90, 0, 0);
     spot.light.shadowUpdateMode = SHADOWUPDATE_THISFRAME;
     const spill = new Entity(`bedside spill ${side}`);
-    spill.addComponent('light', { type: 'omni', color: WARM, intensity: 0.15, range: 2.4, castShadows: false, falloffMode: LIGHTFALLOFF_INVERSESQUARED });
+    // Shadowed: unshadowed, it lit the corridor and the wardrobe through their walls.
+    spill.addComponent('light', { type: 'omni', color: WARM, intensity: 0.15, range: 2.4, castShadows: true, falloffMode: LIGHTFALLOFF_INVERSESQUARED,
+      shadowBias: 0.2, normalOffsetBias: 0.03 });
+    spill.light.shadowUpdateMode = SHADOWUPDATE_THISFRAME;
     spill.setPosition(bulb.x - 0.08, bulb.y + 0.03, bulb.z);
     this.app.root.addChild(spot); this.app.root.addChild(spill);
     const lamp = { side, name: `Reading lamp (${side})`, group: 'Bedroom', on: true, level: 1, mat, glow: mat.emissiveIntensity, lights: [spot, spill], base: [1.25, 0.15] };
@@ -163,7 +166,7 @@ export class Devices {
       laptop.pos.add(LID_HINGE);
     };
     laptop.setAngle(0);
-    laptop.setPower(0); // the open lid starts asleep; opening it later wakes it normally
+    laptop.setPower(1); // the open lid starts awake (screen and keyboard lit) until the player shuts it
     interactions.add({ pos: laptop.pos, size: 0.16, label: () => `${laptop.open ? 'Close' : 'Open'} the laptop`,
       use: () => this.toggleLaptop(laptop), active: () => !laptop.busy });
     return laptop;
@@ -184,7 +187,7 @@ export class Devices {
     this.run(l.open ? 0.75 : 0.6, (t) => {
       const e = l.open ? 1 - (1 - t) ** 3 : t * t;
       l.setAngle(from + (to - from) * e);
-      refreshShadows(this.app, LID_HINGE, 1.5);
+      refreshShadows(this.app, LID_HINGE, 0.4);
     }, () => {
       l.busy = false;
       if (!l.open) this.sounds?.laptopShut?.(LID_HINGE);
@@ -197,14 +200,14 @@ export class Devices {
     const screens = [this.screen(this.materials.get('Screen.imac')), this.screen(this.materials.get('Screen'))].filter(Boolean);
     if (!screens.length) return null;
     const glow = this.app.root.findByName('iMac glow');
-    const pc = { on: false, busy: false, screens, glow, glowBase: glow?.light.intensity ?? 0, level: 0 };
+    const pc = { on: true, busy: false, screens, glow, glowBase: glow?.light.intensity ?? 0, level: 1 };
     pc.glows = screens.map(mat => ({ mat, base: 0.5 }));
     pc.set = (k) => {
       pc.level = k;
       for (const { mat, base } of pc.glows) { mat.emissiveIntensity = base * k; mat.update(); }
       if (glow) { glow.light.intensity = pc.glowBase * k; glow.light.enabled = k > 0.01; }
     };
-    pc.set(0);
+    pc.set(1);    // left on: the screens light the office until the player shuts the computer down
     interactions.add({ pos: new Vec3(5.24, 1.10, -1.10), size: 0.22, label: () => `${pc.on ? 'Shut down' : 'Turn on'} the computer`,
       use: () => this.toggleComputer(pc), active: () => !pc.busy });
     return pc;

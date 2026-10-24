@@ -2,7 +2,7 @@
 // swing open and shut with E. Inside: a simple carcass in the wardrobe's own wood (the model is a hollow shell behind
 // its doors), a shelf, a hanging rail, and an LED strip that comes on while a section's doors are open, as in a modern
 // built-in wardrobe. The flashlight lies on the shelf behind the left tall door.
-import { Color, Entity, LIGHTFALLOFF_INVERSESQUARED, StandardMaterial, Vec3 } from 'playcanvas';
+import { Color, Entity, LIGHTFALLOFF_INVERSESQUARED, SHADOWUPDATE_THISFRAME, StandardMaterial, Vec3 } from 'playcanvas';
 import { refreshShadows } from './lighting.js';
 import { segmentDistance } from './walkgrid.js';
 
@@ -37,8 +37,11 @@ export class Closets {
     this.sections = {};
     for (const [id, s] of Object.entries(SECTIONS)) {
       const led = new Entity(`wardrobe led ${id}`);
-      led.addComponent('light', { type: 'omni', color: new Color(1, 0.88, 0.74), intensity: 0, range: 1.6, castShadows: false,
-        falloffMode: LIGHTFALLOFF_INVERSESQUARED, enabled: false });
+      // Shadowed by the carcass and doors, so it lights the room only through the open doors (never the bathroom
+      // or the corridor behind the wardrobe's walls).
+      led.addComponent('light', { type: 'omni', color: new Color(1, 0.88, 0.74), intensity: 0, range: 1.6, castShadows: true,
+        shadowBias: 0.12, normalOffsetBias: 0.02, falloffMode: LIGHTFALLOFF_INVERSESQUARED, enabled: false });
+      led.light.shadowUpdateMode = SHADOWUPDATE_THISFRAME;
       led.setPosition(...s.led);
       app.root.addChild(led);
       this.sections[id] = { led, open: 0 };
@@ -121,7 +124,7 @@ export class Closets {
       if (p && segmentDistance(p.x, p.z, d.segment()) < 0.25) { d.angle = old; d.target = old; }
       d.pivot.setEulerAngles(0, d.sign * 100 * d.angle, 0);
       d.pivot.getWorldTransform().transformPoint(d.handleLocal, d.handlePoint);
-      refreshShadows(this.app, d.pivot.getPosition(), 3);
+      refreshShadows(this.app, d.handlePoint, d.width * 0.6 + 0.3);
     }
     this.moving = this.moving.filter(d => d.angle !== d.target);
     for (const [id, s] of Object.entries(this.sections)) {

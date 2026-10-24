@@ -103,6 +103,20 @@ export class Ambience {
     pn.connect(this.gain(send)).connect(this.reverb);
   }
 
+  // A recorded one-shot at `p`: `muffle` (Hz) low-passes it as heard through walls or a doorway; `send` is how much
+  // reaches the room reverb. Returns the source (already started).
+  sample(buffer, p, { gain = 1, muffle = null, send = 0.35, ref = 1.5, rolloff = 1, delay = 0 } = {}) {
+    const src = this.ctx.createBufferSource(); src.buffer = buffer;
+    let node = src;
+    if (muffle) { const lp = this.filter('lowpass', muffle, 0.6); node.connect(lp); node = lp; }
+    const g = this.gain(gain); node.connect(g);
+    const pn = this.panner(p, ref, rolloff), wet = this.gain(send);
+    g.connect(pn); pn.connect(this.master); g.connect(wet).connect(this.reverb);
+    src.onended = () => { g.disconnect(); pn.disconnect(); wet.disconnect(); };
+    src.start(this.ctx.currentTime + delay);
+    return src;
+  }
+
   // --- sounds ----------------------------------------------------------------------------------------------------
   roomTone() {
     this.loop(this.brown).connect(this.filter('lowpass', 160)).connect(this.gain(0.05)).connect(this.master);

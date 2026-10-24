@@ -5,7 +5,11 @@
 // scatters in the room haze; the hand trails the view, sways with each step and has a slight tremor; switching on
 // stutters for a moment; a weak, shadowed return from the first actual surface lifts the nearby room.
 import { BoundingBox, Color, Entity, Quat, Texture, Vec3, PIXELFORMAT_RGBA8, ADDRESS_CLAMP_TO_EDGE,
-  LIGHTFALLOFF_INVERSESQUARED, SHADOWUPDATE_REALTIME } from 'playcanvas';
+  LIGHTFALLOFF_INVERSESQUARED, SHADOWUPDATE_REALTIME, MASK_AFFECT_DYNAMIC, MASK_AFFECT_LIGHTMAPPED } from 'playcanvas';
+
+// The lightmapped bit marks the torch's lights for the probes' clustered-light patch (probes.js): they light the
+// player's view but never a probe capture. (Nothing in the flat is lightmapped, so the bit has no other effect.)
+const PLAYER_ONLY = MASK_AFFECT_DYNAMIC | MASK_AFFECT_LIGHTMAPPED;
 import { FlashlightSurfaces } from './flashlight-surfaces.js';
 
 const HAND = new Vec3(0.15, -0.20, -0.12);    // the lamp's head relative to the eye (right hand, chest height)
@@ -105,7 +109,7 @@ export class Flashlight {
       falloffMode: LIGHTFALLOFF_INVERSESQUARED,
       castShadows: true, shadowResolution: 1024, shadowBias: 0.08, normalOffsetBias: 0.006,
       shadowUpdateMode: SHADOWUPDATE_REALTIME, volumetricScattering: 0.35,
-      cookie: this.cookie(), cookieIntensity: 1, enabled: false,
+      cookie: this.cookie(), cookieIntensity: 1, enabled: false, mask: PLAYER_ONLY,
     });
     this.bounce = new Entity('flashlight bounce');
     // Returned light travels out of the hit surface, with occlusion. An unshadowed
@@ -113,7 +117,7 @@ export class Flashlight {
     this.bounce.addComponent('light', { type: 'spot', color: new Color(1, 0.9, 0.78), intensity: 0, range: 2.4,
       innerConeAngle: 30, outerConeAngle: 70, castShadows: true, shadowResolution: 256,
       shadowBias: 0.08, normalOffsetBias: 0.006, shadowUpdateMode: SHADOWUPDATE_REALTIME,
-      falloffMode: LIGHTFALLOFF_INVERSESQUARED, volumetricScattering: 0, enabled: false });
+      falloffMode: LIGHTFALLOFF_INVERSESQUARED, volumetricScattering: 0, enabled: false, mask: PLAYER_ONLY });
     this.app.root.addChild(this.beam);
     this.app.root.addChild(this.bounce);
     return root;

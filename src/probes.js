@@ -11,8 +11,8 @@
 // The open-plan room and the corridor have no wall between them: the two chains blend across the corridor's mouth and
 // the office opening (envBlendWeight below) so no seam shows.
 import { ShaderChunks, BoundingBox, CUBEPROJ_BOX, EnvLighting, Texture, Vec3, Vec4, reprojectTexture, PIXELFORMAT_RGBA16F, PIXELFORMAT_RGBA8, TEXTUREPROJECTION_EQUIRECT,
-  ADDRESS_CLAMP_TO_EDGE, FILTER_LINEAR } from 'playcanvas';
-import { captureCube, rerenderShadows } from './lighting.js';
+  ADDRESS_CLAMP_TO_EDGE, FILTER_LINEAR, RenderTarget, ShaderUtils, SEMANTIC_POSITION, BlendState, drawQuadWithShader } from 'playcanvas';
+import { ProbeRig } from './lighting.js';
 
 // box: the room's inner walls (min, max); at: where its probe is captured (away from lamps and bright table tops).
 export const ZONES = {
@@ -220,6 +220,21 @@ export class Probes {
         else console.warn(`probes: ${lang} ${name} not patched`);
       }
     }
+    // The flashlight (light mask with the lightmapped bit, flashlight.js) lights the player's view only: the clustered
+    // light loop skips it while a probe captures, so a capture can take several frames without switching the torch off.
+    for (const lang of ['glsl', 'wgsl']) {
+      const chunks = ShaderChunks.get(device, lang), code = chunks.get('clusteredLightPS');
+      const decl = lang === 'glsl' ? 'uniform float bounceLive;' : 'uniform bounceLive: f32;';
+      const live = lang === 'glsl' ? 'bounceLive' : 'uniform.bounceLive';
+      const patched = code?.replace(/(acceptLightMask(?:: bool)? = clusterLightData\.isDynamic);/, `$1 && (${live} > 0.5 || !clusterLightData.isLightmapped);`);
+      if (patched && patched !== code) chunks.set('clusteredLightPS', `#ifndef BOUNCE_LIVE\n#define BOUNCE_LIVE\n${decl}\n#endif\n${patched}`);
+      else console.warn(`probes: ${lang} clusteredLightPS not patched`);
+    }
+    this.rig = new ProbeRig(app, camera);
+    this.blend = new AtlasBlend(device);
+    for (const z of Object.values(ZONES)) { z.next = equirect(`probe-${z.id}-next`, 512, 512); z.from = equirect(`probe-${z.id}-from`, 512, 512); }
+    this.bounceNext = equirect('bounce-light-next', ATLAS_W, SLOT_H);
+    this.bounceFrom = equirect('bounce-light-from', ATLAS_W, SLOT_H);
     const live = device.scope.resolve('bounceLive');
     live.setValue(1);
     app.scene.on('prerender', (cam) => live.setValue(cam.entity.name.startsWith('probe-') ? 0 : 1));
@@ -306,28 +321,89 @@ export class Probes {
     for (const m of this.materials) { const p = m.getParameter('bounceMix').data; m.setParameter('bounceMix', [k, p[1], p[2], 0]); }
   }
 
-  // Capture every probe, all in one frame (the flashlight is held out of them for just that frame). The probes see the
-  // lamps' direct light only (bounceLive is 0 for the probe cameras), so a capture depends only on which lights are on,
-  // never on earlier captures: switching a room off and on again gives back exactly the same light. The light that
-  // would bounce on further is folded into AMBIENT. Room probes become reflection atlases; every bounce probe is filtered
-  // to diffuse light into its slot.
-  async captureAll() {
+  // Capture every probe. The probes see the lamps' direct light only (bounceLive is 0 for the probe cameras: no bounce,
+  // no reflections, no flashlight), so a capture depends only on which lights are on, never on earlier captures:
+  // switching a room off and on again gives back exactly the same light. The light that would bounce on further is
+  // folded into AMBIENT. Room probes become reflection atlases; every bounce probe is filtered to diffuse light in its slot.
+  // instant (start-up): every probe in one frame, straight into the live textures. Otherwise (a switch in play) the work
+  // is spread over ~20 frames, a few cube faces and one filtering step per frame, into the 'next' textures, which then
+  // cross-fade into the live ones (FADE seconds): no frame takes much longer than usual and the indirect light settles
+  // smoothly a moment after the lamp, like an eye catching up, instead of freezing the game for the whole capture.
+  // abort(): returns true if a newer request should restart this capture.
+  async captureAll({ instant = false, abort = () => false } = {}) {
     const shots = BOUNCE.map((b, slot) => (b.zone ? { slot, zone: ZONES[b.zone], at: ZONES[b.zone].at, size: 256 } : { slot, at: b.at, size: 64 }));
     const rect = new Vec4();
-    {
-      rerenderShadows(this.app);      // fresh shadows for this frame's atlas layout (lighting.js)
-      const cubes = await Promise.all(shots.map(s => captureCube(this.app, this.camera, s.at, s.size)));
-      shots.forEach((s, i) => {
-        // Keep the captured detail for glossy room reflections; diffuse-only
-        // probes retain the small source because their convolution removes detail.
-        const source = EnvLighting.generateLightingSource(cubes[i], { size: s.zone ? 256 : 64 });
-        if (s.zone) EnvLighting.generateAtlas(source, { target: s.zone.atlas });
-        reprojectTexture(source, this.bounce, { numSamples: 1024, distribution: 'lambert', rect: rect.set(s.slot * SLOT_W, 0, SLOT_W, SLOT_H), seamPixels: 1 });
-        source.destroy();
-        cubes[i].destroy();
-      });
-    }
+    const filter = (s, cube) => {
+      // Keep the captured detail for glossy room reflections; diffuse-only probes keep the small source (their
+      // convolution removes detail anyway).
+      const source = EnvLighting.generateLightingSource(cube, { size: s.zone ? 256 : 64 });
+      if (s.zone) EnvLighting.generateAtlas(source, { target: instant ? s.zone.atlas : s.zone.next });
+      reprojectTexture(source, instant ? this.bounce : this.bounceNext, { numSamples: 1024, distribution: 'lambert', rect: rect.set(s.slot * SLOT_W, 0, SLOT_W, SLOT_H), seamPixels: 1 });
+      source.destroy();
+    };
+    this.capturing = true;
+    try {
+      if (instant) {
+        for (const s of shots) { await this.rig.capture(s.at, s.size, [0, 1, 2, 3, 4, 5]); filter(s, this.rig.cube(s.size)); }
+      } else {
+        for (const s of shots) {
+          const faces = s.size > 64 ? [[0, 1], [2, 3], [4, 5]] : [[0, 1, 2, 3, 4, 5]];
+          for (const f of faces) { await this.rig.capture(s.at, s.size, f); if (abort()) return false; }
+          // Big probes filter in a frame of their own (the reflection atlas is the costliest step).
+          if (s.size > 64) await this.rig.frame();
+          filter(s, this.rig.cube(s.size));
+        }
+        await this.fade(abort);
+      }
+    } finally { this.capturing = false; }
     await this.readLevels().catch(() => {});
+    return true;
+  }
+
+  // Cross-fades the live reflection atlases and bounce atlas from what they showed to the new capture.
+  async fade(abort) {
+    const pairs = [...Object.values(ZONES).map(z => [z.atlas, z.from, z.next]), [this.bounce, this.bounceFrom, this.bounceNext]];
+    for (const [live, from] of pairs) this.blend.run(from, live, live, 0);
+    const start = performance.now();
+    for (;;) {
+      const t = Math.min(1, (performance.now() - start) / 1000 / FADE), k = t * t * (3 - 2 * t);
+      for (const [live, from, next] of pairs) this.blend.run(live, from, next, k);
+      if (t >= 1) return;
+      await this.rig.frame();
+      if (abort()) { for (const [live, , next] of pairs) this.blend.run(live, next, next, 1); return; }
+    }
+  }
+}
+
+const FADE = 0.45;
+
+// target = mix(a, b, t), texel for texel (equal-sized textures): the probe cross-fade.
+class AtlasBlend {
+  constructor(device) {
+    this.device = device;
+    this.targets = new Map();
+    this.shader = ShaderUtils.createShader(device, {
+      uniqueName: 'probeAtlasBlend', attributes: { vertex_position: SEMANTIC_POSITION },
+      vertexGLSL: `attribute vec2 vertex_position; varying vec2 vUv0;
+        void main(void) { gl_Position = vec4(vertex_position, 0.5, 1.0); vUv0 = getImageEffectUV(vertex_position * 0.5 + 0.5); }`,
+      fragmentGLSL: `varying vec2 vUv0; uniform sampler2D blendA; uniform sampler2D blendB; uniform float blendT;
+        void main(void) { gl_FragColor = mix(textureLod(blendA, vUv0, 0.0), textureLod(blendB, vUv0, 0.0), blendT); }`,
+      vertexWGSL: `attribute vertex_position: vec2f; varying vUv0: vec2f;
+        @vertex fn vertexMain(input: VertexInput) -> VertexOutput { var output: VertexOutput;
+          output.position = vec4f(input.vertex_position, 0.5, 1.0); output.vUv0 = getImageEffectUV(input.vertex_position * 0.5 + vec2f(0.5)); return output; }`,
+      fragmentWGSL: `varying vUv0: vec2f; var blendA: texture_2d<f32>; var blendASampler: sampler; var blendB: texture_2d<f32>; var blendBSampler: sampler; uniform blendT: f32;
+        @fragment fn fragmentMain(input: FragmentInput) -> FragmentOutput { var output: FragmentOutput;
+          output.color = mix(textureSampleLevel(blendA, blendASampler, input.vUv0, 0.0), textureSampleLevel(blendB, blendBSampler, input.vUv0, 0.0), uniform.blendT); return output; }`,
+    });
+    this.a = device.scope.resolve('blendA'); this.b = device.scope.resolve('blendB'); this.t = device.scope.resolve('blendT');
+  }
+
+  run(target, a, b, t) {
+    let rt = this.targets.get(target);
+    if (!rt) { rt = new RenderTarget({ name: `${target.name}-blend`, colorBuffer: target, depth: false }); this.targets.set(target, rt); }
+    this.device.setBlendState(BlendState.NOBLEND);
+    this.a.setValue(a); this.b.setValue(b); this.t.setValue(t);
+    drawQuadWithShader(this.device, rt, this.shader);
   }
 }
 

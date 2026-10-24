@@ -62,8 +62,9 @@ export function setupPost(app, camera, options = qualityOptions(3)) {
   return frame;
 }
 
-// High retains all effects; Medium scales back resolution and AO; Low keeps
-// temporal edge smoothing while removing every optional full-screen effect.
+// High retains all effects; Medium scales back resolution and AO; Low keeps temporal edge smoothing and a cheap AO
+// while removing the other full-screen effects. Ambient occlusion stays on at every preset: it is part of every lit
+// shader (SSAOTYPE_LIGHTING), so switching it off recompiles the whole flat, a freeze when Auto steps down.
 export function setQuality(frame, q) {
   applyGraphicsOptions(frame, qualityOptions(q));
 }
@@ -71,7 +72,7 @@ export function setQuality(frame, q) {
 export function qualityOptions(q) {
   const quality = [1, 2, 3].includes(Number(q)) ? Number(q) : 3;
   return { quality, resolutionScale: quality === 1 ? 0.75 : quality === 2 ? 0.85 : 1,
-    ambientOcclusion: quality > 1, volumetricFog: quality === 3,
+    ambientOcclusion: true, volumetricFog: quality === 3,
     bloom: quality > 1, taa: true, filmGrain: quality > 1 };
 }
 
@@ -80,7 +81,7 @@ export function applyGraphicsOptions(frame, options) {
   frame.volumetricFog.enabled = options.volumetricFog;
   frame.ssao.type = options.ambientOcclusion ? SSAOTYPE_LIGHTING : 'none';
   frame.ssao.scale = options.quality === 3 ? 0.75 : 0.5;
-  frame.ssao.samples = options.quality === 3 ? 20 : 8;
+  frame.ssao.samples = options.quality === 3 ? 20 : options.quality === 2 ? 10 : 6;
   frame.volumetricFog.steps = options.quality === 3 ? 16 : 8;
   frame.volumetricFog.localSteps = options.quality === 3 ? 8 : 4;
   frame.bloom.blurLevel = options.quality === 3 ? 7 : 5;

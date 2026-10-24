@@ -5,9 +5,9 @@ import assert from 'node:assert/strict';
 import { GraphicsPreferences, GRAPHICS_STORAGE_KEY, normalizeGraphicsSettings } from '../src/graphics-settings.js';
 import { applyGraphicsOptions, qualityOptions, setQuality } from '../src/post.js';
 
-function storage(initial = null) {
+function storage(initial = null, previous = null) {
   let data = initial, writes = 0;
-  return { getItem: key => key === GRAPHICS_STORAGE_KEY ? data : null,
+  return { getItem: key => key === GRAPHICS_STORAGE_KEY ? data : key === 'horror.graphics.v1' ? previous : null,
     setItem(key, value) { assert.equal(key, GRAPHICS_STORAGE_KEY); data = value; writes++; },
     get data() { return data; }, get writes() { return writes; } };
 }
@@ -17,15 +17,25 @@ function sample(prefs, start, fps) {
   for (let frame = 1; frame <= fps * 4; frame++) prefs.sampleFrame(start + frame * 1000 / fps, true);
 }
 
-test('fresh and corrupt preferences default to Auto, visible FPS and a 60 FPS limit', () => {
+test('fresh and corrupt preferences default to Auto, visible FPS and VSync', () => {
   for (const value of [null, '{broken', 'false', '[]', '{"showFps":"false","preset":"ultra","resolutionScale":9,"fpsLimit":999}']) {
     const prefs = new GraphicsPreferences({ storage: storage(value) });
     assert.equal(prefs.state.preset, 'auto');
     assert.equal(prefs.state.showFps, true);
-    assert.equal(prefs.state.fpsLimit, 60);
+    assert.equal(prefs.state.fpsLimit, -1);
+    assert.equal(prefs.autoTarget, 60);
     assert.equal(prefs.effective.resolutionScale, 1);
   }
   assert.deepEqual(normalizeGraphicsSettings(null), normalizeGraphicsSettings({}));
+});
+
+test('settings saved by build 0.11 start again from Auto and VSync, keeping only the FPS counter choice', () => {
+  const store = storage(null, JSON.stringify({ preset: 'low', showFps: false, fpsLimit: 120, taa: false }));
+  const prefs = new GraphicsPreferences({ storage: store });
+  assert.equal(prefs.state.preset, 'auto');
+  assert.equal(prefs.state.fpsLimit, -1);
+  assert.equal(prefs.state.showFps, false);
+  assert.equal(prefs.effective.taa, true);
 });
 
 test('user settings survive reload; FPS changes do not silently choose another preset', () => {
@@ -48,16 +58,16 @@ test('user settings survive reload; FPS changes do not silently choose another p
 test('all FPS limits save without changing the preset or toggling the counter', () => {
   const store = storage(JSON.stringify({ preset: 'medium', showFps: false }));
   const prefs = new GraphicsPreferences({ storage: store });
-  assert.equal(prefs.state.fpsLimit, 60, 'older saved settings receive the new default');
+  assert.equal(prefs.state.fpsLimit, -1, 'older saved settings receive the new default');
   const original = prefs.effective;
-  for (const limit of [0, 30, 60, 90, 120]) {
+  for (const limit of [-1, 0, 30, 60, 90, 120]) {
     prefs.setOption('fpsLimit', limit);
     assert.equal(prefs.state.preset, 'medium');
     assert.equal(prefs.state.showFps, false);
     assert.deepEqual(prefs.effective, original, 'limiting FPS must not rebuild render effects');
     assert.equal(new GraphicsPreferences({ storage: store }).state.fpsLimit, limit);
   }
-  for (const value of [-1, 24, 144, '30', null, NaN]) prefs.setOption('fpsLimit', value);
+  for (const value of [-2, 24, 144, '30', null, NaN]) prefs.setOption('fpsLimit', value);
   assert.equal(prefs.state.fpsLimit, 120, 'invalid limits must be ignored');
 });
 
@@ -135,7 +145,7 @@ test('render controls apply independently to CameraFrame and quality hotkeys sha
 
 
 test('Auto targets 60 on unlimited and higher-cap displays, with a complete low-resolution fallback', () => {
-  for (const cap of [0, 60, 90, 120]) {
+  for (const cap of [-1, 0, 60, 90, 120]) {
     const store = storage(), prefs = new GraphicsPreferences({ storage: store });
     prefs.setOption('fpsLimit', cap);
     const before = store.writes;
@@ -144,7 +154,7 @@ test('Auto targets 60 on unlimited and higher-cap displays, with a complete low-
     assert.equal(prefs.effective.quality, 1);
     assert.equal(prefs.effective.resolutionScale, 0.5, '50 FPS must not be mistaken for the requested 60 FPS');
     assert.equal(prefs.effective.volumetricFog, false);
-    assert.equal(prefs.effective.ambientOcclusion, false);
+    assert.equal(prefs.effective.ambientOcclusion, true, 'AO stays on: dropping it would recompile every lit shader mid-game');
     assert.equal(prefs.effective.bloom, false);
     assert.equal(store.writes, before, 'measured hardware state must not replace saved user choices');
     for (let window = 8; window < 20; window++) sample(prefs, window * 4000, 60);

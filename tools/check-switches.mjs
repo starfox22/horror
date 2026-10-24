@@ -27,7 +27,7 @@ test('only mirror and extractor wall controls start on; every ceiling and pendan
   assert.ok(room.mirror.glowScale < 1 && room.hood.glowScale < 1);
 });
 
-test('startup has only bedside and arc lamps; sleeping screens and other lamps restore dark after developer overrides', () => {
+test('startup has only bedside and arc lamps plus the awake laptop and computer; developer overrides restore that state', () => {
   // Exercise the actual device constructors and power setters without allocating
   // a GPU. Only PlayCanvas component creation is replaced with a data component.
   const root = new Entity('test apartment');
@@ -52,9 +52,10 @@ test('startup has only bedside and arc lamps; sleeping screens and other lamps r
   const closet = devices.lamps.find(lamp => lamp.name === 'Closet light');
   assert.equal(desk.level, 0); assert.equal(desk.mat.emissiveIntensity, 0);
   assert.equal(closet.level, 0);
-  assert.equal(devices.laptop.power, 0);
-  assert.equal(devices.computer.on, false); assert.equal(devices.computer.level, 0);
-  assert.ok([...devices.laptop.glows, ...devices.computer.glows, ...devices.coffee.glows].every(glow => glow.mat.emissiveIntensity === 0));
+  assert.equal(devices.laptop.power, 1);
+  assert.equal(devices.computer.on, true); assert.equal(devices.computer.level, 1);
+  assert.ok([...devices.laptop.glows, ...devices.computer.glows].every(glow => glow.mat.emissiveIntensity > 0), 'screens start awake');
+  assert.ok(devices.coffee.glows.every(glow => glow.mat.emissiveIntensity === 0));
 
   const menu = Object.create(DevMenu.prototype);
   menu.sys = { app, switches: { rooms: [] }, devices };

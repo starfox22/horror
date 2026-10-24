@@ -3,7 +3,9 @@ export const FRIDGE = Object.freeze({
   origin: Object.freeze([1.55, 0, -0.66]), yaw: -3.04,
   hinge: Object.freeze([0.326, 0, 0.282]), width: 0.663,
   opening: 106, handle: Object.freeze([-0.24, 1.49, 0.34]),
-  jar: Object.freeze([-0.095, 1.3336, 0.025]),
+  // The water jug on the middle shelf (base 0.6 mm above the glass shelf), turned so its handle faces front-right.
+  jug: Object.freeze([-0.115, 1.3336, -0.04]), jugYaw: -60,
+  glass: Object.freeze([0.13, 1.3336, 0.068]),
   light: Object.freeze([0, 1.935, 0.18]),
 });
 const angle = FRIDGE.yaw * Math.PI / 180, c = Math.cos(angle), s = Math.sin(angle);

@@ -1,0 +1,20 @@
+Model information:
+* title:   Glass Water Jug (High Poly)
+* source:  https://sketchfab.com/3d-models/glass-water-jug-high-poly-c0b82c381cd34115ba1462ba0310aca1
+* author:  ShotaB (https://sketchfab.com/ShotaB)
+
+Model license:
+* license type: CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements: Author must be credited. Commercial use is allowed.
+
+Credit:
+This work is based on "Glass Water Jug (High Poly)" (https://sketchfab.com/3d-models/glass-water-jug-high-poly-c0b82c381cd34115ba1462ba0310aca1) by ShotaB (https://sketchfab.com/ShotaB) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+
+Adaptation (jug.glb): flattened the Sketchfab node transforms into one mesh, uniformly rescaled to 0.22 m
+overall height (metres, Y up), base at y=0, body axis at x=z=0, handle toward +X / spout toward -X; dropped the
+unused UV set; replaced the material with a flat glass colour. Geometry, topology and the author's vertex
+normals are otherwise unchanged.
+
+Downloaded from the GitHub mirror (the Sketchfab export with its license.txt):
+https://github.com/Tejask001/EduQuest-AR/tree/5ed3fe74859522ed4dd750bb6c01aad36898e65c/models/jug
+(byte-identical copy: https://github.com/Vidhisingh-1/AlphaXplore/tree/HEAD/assets/jugg)

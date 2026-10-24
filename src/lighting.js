@@ -1,10 +1,10 @@
 // Night lighting for the apartment: the apartment's own lamps (at their fixtures, measured from the model) and
 // recessed ceiling downlights, all with soft static shadows; a night-sky cubemap outside the windows. There is no
-// moonlight (outside is pitch black, as in P.T.): the 'moon' light only exists for a lightning flash (rain.js), which
+// moonlight (outside is pitch black, as in P.T.): the 'moon' light is dark except in a lightning flash (rain.js), which
 // throws the window frames' shadows across the floor for an instant. Bounce light and reflections: probes.js.
 import {
   Color, Entity, Quat, Vec3, Texture, RenderTarget, StandardMaterial,
-  LIGHTFALLOFF_INVERSESQUARED, SHADOW_PCF5_32F, SHADOWUPDATE_THISFRAME, SHADOWUPDATE_REALTIME, PIXELFORMAT_RGBA16F, PIXELFORMAT_RGBA8,
+  LIGHTFALLOFF_INVERSESQUARED, SHADOW_PCF3_32F, SHADOWUPDATE_THISFRAME, SHADOWUPDATE_REALTIME, PIXELFORMAT_RGBA16F, PIXELFORMAT_RGBA8,
   FILTER_LINEAR, FILTER_LINEAR_MIPMAP_LINEAR, RENDERTARGET_ORIGIN_TOP, TONEMAP_LINEAR, GAMMA_NONE, ADDRESS_CLAMP_TO_EDGE,
 } from 'playcanvas';
 import { ARC_LAMP, arcLampProfile } from './lamp-profiles.js';
@@ -28,13 +28,14 @@ export const LAMPS = [
   // in front of the vertical LED strips beside the bathroom mirror (x 6.46-6.54, y 1.04-2.32)
   ['bathroom mirror', 'omni', [6.62, 1.65, 1.25], NEUTRAL, 0.12, 3.2, true],
   // The bedside reading lamps are in devices.js (each has its own switch).
-  // LED inside the bedroom's open shoe closet (where the flashlight lies), on the bedroom switch.
-  ['closet light', 'omni', [9.62, 1.08, 1.75], WARM, 0.25, 1.8, false],
+  // LED inside the bedroom's open shoe closet, with its own switch (devices.js). Shadowed like every light here: an
+  // unshadowed light shines straight through walls (this one lit the bathroom and the corridor).
+  ['closet light', 'omni', [9.62, 1.08, 1.75], WARM, 0.25, 1.8, true],
   // at the desk lamp's bulb, inside its shade (the shade shadows all but its opening)
   ['desk lamp', 'omni', [4.105, 1.375, -0.93], WARM, 0.3, 3.6, true],
-  // screens: a soft glow just in front of each panel
-  ['iMac glow', 'omni', [5.24, 1.10, -0.90], SCREEN, 0.3, 3.2, false],
-  ['laptop glow', 'omni', [-4.29, 0.66, 2.46], SCREEN, 0.15, 2.2, false],
+  // Screens: a soft glow from each panel, out of its face only (a spot aimed along the screen's normal), shadowed.
+  ['iMac glow', 'spot', [5.24, 1.12, -0.93], SCREEN, 0.3, 3.2, true, { aim: [5.24, 1.0, 0.5], inner: 20, outer: 72 }],
+  ['laptop glow', 'spot', [-4.285, 0.66, 2.455], SCREEN, 0.15, 2.2, true, { aim: [-5.15, 0.45, 3.53], inner: 20, outer: 72 }],
 ];
 
 // Recessed ceiling downlights (2700 K, dimmed), the main light of each area as in a real flat. [room, x, z]
@@ -112,7 +113,7 @@ export function setupLighting(app) {
   const L = s.lighting;
   L.shadowsEnabled = true;
   L.shadowAtlasResolution = 4096;
-  L.shadowType = SHADOW_PCF5_32F;      // 5x5 filtered: soft-edged shadows
+  L.shadowType = SHADOW_PCF3_32F;      // filtered soft edges; the same at every preset (scene-quality.js)
   // ~45 lights in 21 x 6 m: fine cells and a generous per-cell budget so no lamp is dropped where many overlap.
   L.maxLightsPerCell = 32;
   L.cells = new Vec3(28, 3, 10);
@@ -131,6 +132,7 @@ export function setupLighting(app) {
       volumetricScattering: type === 'spot' ? 1 : 0.4,
     });
     e.setPosition(p[0], p[1], p[2]);
+    if (extra.aim) { e.lookAt(new Vec3(...extra.aim)); e.rotateLocal(90, 0, 0); }     // spots shine along their local -Y
     // The rooms do not move: render each lamp's shadow once (the engine re-renders it when the light changes).
     e.light.shadowUpdateMode = SHADOWUPDATE_THISFRAME;
     app.root.addChild(e);
@@ -139,7 +141,7 @@ export function setupLighting(app) {
 
   const moon = new Entity('moon');
   moon.addComponent('light', {
-    type: 'directional', color: new Color(0.52, 0.62, 1.0), intensity: 0, enabled: false, castShadows: true,
+    type: 'directional', color: new Color(0.52, 0.62, 1.0), intensity: 0, enabled: true, castShadows: true,
     shadowResolution: 2048, shadowDistance: 24, numCascades: 1, shadowBias: 0.3, normalOffsetBias: 0.05,
   });
   moon.setRotation(rotationBetween(Vec3.DOWN, MOON_DIR));
@@ -182,42 +184,67 @@ function nightSky(device) {
   });
 }
 
-// Renders the flat into a cubemap from `pos` (one frame) and resolves with it (the caller destroys it). Used for the
-// room probes (probes.js): diffuse bounce light and reflections come from the apartment itself.
-export function captureCube(app, camera, pos, size = 256) {
-  return new Promise((resolve) => {
-    const device = app.graphicsDevice;
-    const cube = new Texture(device, {
-      name: 'room-probe', width: size, height: size, cubemap: true, mipmaps: true,
-      format: device.textureHalfFloatRenderable ? PIXELFORMAT_RGBA16F : PIXELFORMAT_RGBA8,
-      minFilter: FILTER_LINEAR_MIPMAP_LINEAR, magFilter: FILTER_LINEAR,
-    });
+// The probes' capture cameras (probes.js): six cameras, one per cube face, made once and enabled only on the frames
+// they capture (their names start 'probe-', which probes.js uses to give them direct light only), and one reusable
+// cubemap per capture size. capture() renders the given faces from `pos` this frame and resolves when it has drawn.
+export class ProbeRig {
+  constructor(app, camera) {
+    this.app = app;
+    this.cubes = new Map();
+    this.targets = new Map();
     const rotations = [[0, 90, 0], [0, -90, 0], [-90, 0, 180], [90, 0, 180], [0, 180, 0], [0, 0, 0]];
-    const rig = new Entity('probe');
-    rig.setPosition(pos[0], pos[1], pos[2]);
-    const cams = rotations.map((r, face) => {
+    this.root = new Entity('probe');
+    this.cams = rotations.map((r, face) => {
       const e = new Entity(`probe-${face}`);
       e.addComponent('camera', {
         aspectRatio: 1, fov: 90, nearClip: 0.05, farClip: 60, layers: camera.camera.layers, priority: -10,
         clearColor: new Color(0, 0, 0, 1), toneMapping: TONEMAP_LINEAR, gammaCorrection: GAMMA_NONE,
-        renderTarget: new RenderTarget({ name: `probe-face-${face}`, colorBuffer: cube, depth: true, face, origin: RENDERTARGET_ORIGIN_TOP }),
       });
       e.setLocalEulerAngles(r[0], r[1], r[2]);
-      rig.addChild(e);
+      e.camera.enabled = false;
+      this.root.addChild(e);
       return e.camera;
     });
-    app.root.addChild(rig);
-    const off = app.on('frameend', () => {
-      off.off();
-      cams.forEach(c => { c.renderTarget?.destroy(); c.enabled = false; });
-      rig.destroy();
-      resolve(cube);
-    });
-  });
+    app.root.addChild(this.root);
+  }
+
+  cube(size) {
+    let cube = this.cubes.get(size);
+    if (!cube) {
+      const device = this.app.graphicsDevice;
+      cube = new Texture(device, {
+        name: `room-probe-${size}`, width: size, height: size, cubemap: true, mipmaps: true,
+        format: device.textureHalfFloatRenderable ? PIXELFORMAT_RGBA16F : PIXELFORMAT_RGBA8,
+        minFilter: FILTER_LINEAR_MIPMAP_LINEAR, magFilter: FILTER_LINEAR,
+      });
+      this.cubes.set(size, cube);
+      this.targets.set(size, [0, 1, 2, 3, 4, 5].map(face => new RenderTarget({ name: `probe-face-${size}-${face}`, colorBuffer: cube, depth: true, face, origin: RENDERTARGET_ORIGIN_TOP })));
+    }
+    return cube;
+  }
+
+  frame() { return new Promise(resolve => this.app.once('frameend', resolve)); }
+
+  capture(pos, size, faces) {
+    this.cube(size);
+    const targets = this.targets.get(size);
+    this.root.setPosition(pos[0], pos[1], pos[2]);
+    for (const face of faces) { const c = this.cams[face]; c.renderTarget = targets[face]; c.enabled = true; }
+    return this.frame().then(() => { for (const c of this.cams) c.enabled = false; });
+  }
 }
 
-// Every probe capture (eight more cameras looking everywhere, so the shared shadow atlas may be laid out differently
-// that frame) has all lamp shadows rendered again, so captures never use a stale shadow.
+// The shared shadow (and cookie) atlas is cut into one grid cell per shadowed or cookie light in the flat, fixed for good.
+// Left to itself the engine sizes the grid by how many such lights are on and in view this frame, and every change of
+// grid (turning round, walking into another room, a probe capture, a switch) re-renders every visible lamp's shadow in
+// one frame: dozens of passes over the whole flat, the game's worst freeze. Call once every light exists.
+export function fixShadowAtlas(app) {
+  const n = app.root.findComponents('light').filter(l => l.type !== 'directional' && (l.castShadows || l.cookie)).length;
+  app.scene.lighting.atlasSplit = [Math.max(1, Math.ceil(Math.sqrt(n)))];
+  return n;
+}
+
+// All lamp shadows rendered again (after the shadow atlas is reallocated, e.g. a quality change).
 export function rerenderShadows(app) {
   for (const l of app.root.findComponents('light')) {
     // Dynamic lights already render every frame. Turning their mode into a
@@ -227,13 +254,25 @@ export function rerenderShadows(app) {
 }
 
 // Lamps render their shadows once (static rooms). Something that moves (a door, the laptop lid) asks the shadowed lamps
-// within `radius` of `pos` to render theirs again this frame.
+// that can see it to render theirs again this frame: `pos` and `radius` bound the moving part. A lamp counts if the part
+// is within the reach where its light still shows (60% of its range) and, for a spot, inside its cone; re-rendering
+// every shadow near a swinging door cost a dozen extra passes over the flat each frame.
+const _toPart = new Vec3();
 export function refreshShadows(app, pos, radius) {
   // Discover lights per application: a process-global cache misses lamps created
   // later and can retain destroyed lights when a second scene is initialized.
-  const list = app.root.findComponents('light').filter(l => l.castShadows && l.shadowUpdateMode !== undefined && l.shadowUpdateMode !== SHADOWUPDATE_REALTIME);
-  for (const l of list) {
+  for (const l of app.root.findComponents('light')) {
+    if (!l.castShadows || l.shadowUpdateMode === undefined || l.shadowUpdateMode === SHADOWUPDATE_REALTIME) continue;
     if (!l.enabled || l.type === 'directional') continue;
-    if (l.entity.getPosition().distance(pos) < radius + l.range * 0.5) l.shadowUpdateMode = SHADOWUPDATE_THISFRAME;
+    _toPart.sub2(pos, l.entity.getPosition());
+    const d = _toPart.length();
+    if (d > l.range * 0.6 + radius) continue;
+    const up = l.type === 'spot' ? l.entity.up : null;
+    if (up && d > radius) {
+      // Spots shine along their local -Y: skip when the part lies wholly outside the cone.
+      const angle = Math.acos(Math.max(-1, Math.min(1, -_toPart.dot(up) / d))) * 180 / Math.PI;
+      if (angle - Math.asin(Math.min(1, radius / d)) * 180 / Math.PI > l.outerConeAngle) continue;
+    }
+    l.shadowUpdateMode = SHADOWUPDATE_THISFRAME;
   }
 }

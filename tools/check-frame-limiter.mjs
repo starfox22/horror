@@ -27,6 +27,22 @@ for (const hz of [60, 120, 144]) for (const limit of [0, 30, 60, 90, 120]) {
   });
 }
 
+for (const hz of [60, 75, 90, 120, 144, 165, 240]) {
+  test(`VSync on a ${hz} Hz display gives evenly paced frames at 60 FPS or more`, () => {
+    const cadence = new FrameCadence(-1), period = 1000 / hz;
+    let seed = 7; const jitter = () => ((seed = (seed * 16807) % 2147483647) / 2147483647 - 0.5) * 0.6;
+    const accepted = [];
+    for (let frame = 0; frame <= hz * 20; frame++) { const now = 1000 + frame * period + jitter(); if (cadence.shouldRun(now)) accepted.push(now); }
+    const step = Math.max(1, Math.floor(hz / 60 + 0.1));
+    assert.equal(cadence.refreshesPerFrame, step);
+    assert.ok(hz / step >= 59.9, `${hz / step} FPS is below 60`);
+    // After the refresh estimate settles (first second), every frame lasts exactly `step` refreshes.
+    const late = accepted.filter(t => t > 2000);
+    for (let i = 1; i < late.length; i++) assert.ok(Math.abs((late[i] - late[i - 1]) / period - step) < 0.25, `uneven frame: ${(late[i] - late[i - 1]).toFixed(2)} ms`);
+    assert.ok(Math.abs(cadence.targetFps - hz / step) < 0.5);
+  });
+}
+
 test('deadline rounding remains stable with fractional RAF timestamp jitter', () => {
   const cadence = new FrameCadence(60);
   let count = 0;

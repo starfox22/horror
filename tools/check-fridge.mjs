@@ -7,7 +7,7 @@ import draco3d from 'draco3dgltf';
 import { Entity, Vec3 } from 'playcanvas';
 import { Fridge } from '../src/fridge.js';
 import { FRIDGE, fridgeLocal, fridgeWorld, classifyFridgeTriangle, fridgeDoorSegment } from '../src/fridge-geometry.js';
-import { makeWaterGeometry, WATER_LEVEL } from '../src/fridge-water.js';
+import { makeWaterGeometry, JUG_WATER_LEVEL } from '../src/fridge-water.js';
 import { intersectTriangle } from '../src/switch-surfaces.js';
 
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ 'draco3d.decoder': await draco3d.createDecoderModule() });
@@ -61,24 +61,39 @@ test('the door rotates into the room with a rigid hinge and constant width', () 
   local.forEach((v, i) => assert.ok(Math.abs(v - roundTrip[i]) < 1e-10));
 });
 
-const jar = JSON.parse(readFileSync(new URL('../public/assets/props/water-jar.json', import.meta.url)));
-const jarVertices = Array.from({ length: jar.positions.length / 3 }, (_, i) => jar.positions.slice(i * 3, i * 3 + 3));
-const jarTriangles = Array.from({ length: jar.indices.length / 3 }, (_, i) => jar.indices.slice(i * 3, i * 3 + 3).map(index => jarVertices[index]));
-test('the downloaded authored jar is hollow, and the water fits inside its actual walls and floor', () => {
-  assert.equal(jar.license, 'CC-BY-4.0'); assert.ok(jarVertices.length > 5000);
-  const height = Math.max(...jarVertices.map(p => p[1])); assert.ok(height > 0.28 && height < 0.29);
-  const innerFloor = nearest(jarTriangles, [0, .1, 0], [0, -1, 0]); assert.ok(innerFloor.point[1] > .009 && innerFloor.point[1] < .01);
-  const water = makeWaterGeometry(); assert.equal(water.positions.length, water.normals.length);
+const jug = JSON.parse(readFileSync(new URL('../public/assets/props/water-jug.json', import.meta.url)));
+const jugVertices = Array.from({ length: jug.positions.length / 3 }, (_, i) => jug.positions.slice(i * 3, i * 3 + 3));
+const jugTriangles = Array.from({ length: jug.indices.length / 3 }, (_, i) => jug.indices.slice(i * 3, i * 3 + 3).map(index => jugVertices[index]));
+const glassProp = JSON.parse(readFileSync(new URL('../public/assets/props/drinking-glass.json', import.meta.url)));
+test('the downloaded glass jug is hollow, and the water fits inside its actual walls and floor', () => {
+  assert.equal(jug.license, 'CC-BY-4.0'); assert.equal(jug.author, 'ShotaB'); assert.ok(jugVertices.length > 5000);
+  const height = Math.max(...jugVertices.map(p => p[1])); assert.ok(height > 0.21 && height < 0.23, 'a normal 1.5 litre kitchen jug');
+  const innerFloor = nearest(jugTriangles, [0, .1, 0], [0, -1, 0]); assert.ok(Math.abs(innerFloor.point[1] - jug.interior.floor) < .001);
+  const water = makeWaterGeometry(jug.interior); assert.equal(water.positions.length, water.normals.length);
+  assert.equal(water.level, JUG_WATER_LEVEL);
   for (let index = 0; index < water.positions.length; index += 3) {
     const [x,y,z] = water.positions.slice(index,index+3), radius = Math.hypot(x,z);
-    assert.ok(y > innerFloor.point[1]); assert.ok(y <= WATER_LEVEL && y < height - .07);
-    if (radius < 1e-8) continue;
-    const boundary = nearest(jarTriangles, [0,y,0], [x/radius,0,z/radius]);
-    assert.ok(boundary && boundary.distance > radius + .0001, `water penetrates jar at ${x},${y},${z} / ${boundary?.distance}`);
+    assert.ok(y > innerFloor.point[1]); assert.ok(y <= JUG_WATER_LEVEL && y < jug.interior.brim - .05);
+    if (radius < 1e-8 || y < .004) continue;          // the floor ring meets the rounded heel; the cap test covers it
+    const boundary = nearest(jugTriangles, [0,y,0], [x/radius,0,z/radius]);
+    assert.ok(boundary && boundary.distance > radius + .0005, `water penetrates jug at ${x},${y},${z} / ${boundary?.distance}`);
   }
-  assert.ok(FRIDGE.jar[1] - 1.333 > .0004 && FRIDGE.jar[1] - 1.333 < .001, 'jar rests within 1 mm of its actual shelf surface');
-  assert.ok(FRIDGE.jar[2] + .072 < .15, 'jar clears the closed door bins and main shelf edge');
-  assert.ok(FRIDGE.jar[1] + height < 1.738 - .02, 'jar clears the shelf above it');
+});
+
+test('jug and glass stand on the shelf inside the cabinet, clear of each other, the walls, door bins and upper shelf', () => {
+  const place = (v, at, yaw = 0) => { const a = yaw * Math.PI / 180; return [at[0] + v[0] * Math.cos(a) + v[2] * Math.sin(a), at[1] + v[1], at[2] - v[0] * Math.sin(a) + v[2] * Math.cos(a)]; };
+  const jugWorld = jugVertices.map(v => place(v, FRIDGE.jug, FRIDGE.jugYaw));
+  const glassVertices = Array.from({ length: glassProp.positions.length / 3 }, (_, i) => place(glassProp.positions.slice(i * 3, i * 3 + 3), FRIDGE.glass));
+  for (const [name, points] of [['jug', jugWorld], ['glass', glassVertices]]) {
+    const lo = [0, 1, 2].map(k => Math.min(...points.map(p => p[k]))), hi = [0, 1, 2].map(k => Math.max(...points.map(p => p[k])));
+    assert.ok(lo[1] - 1.333 > .0004 && lo[1] - 1.333 < .001, `${name} rests within 1 mm of the shelf`);
+    assert.ok(lo[0] > -.287 && hi[0] < .272, `${name} clears the side supports`);
+    assert.ok(lo[2] > -.278 && hi[2] < .146, `${name} clears the back and the closed door bins`);
+    assert.ok(hi[1] < 1.738 - .02, `${name} clears the shelf above`);
+  }
+  const gap = Math.hypot(FRIDGE.glass[0] - FRIDGE.jug[0], FRIDGE.glass[2] - FRIDGE.jug[2]);
+  const jugReach = Math.max(...jugVertices.map(v => Math.hypot(v[0], v[2]))), glassReach = Math.max(...glassVertices.map(v => Math.hypot(v[0] - FRIDGE.glass[0], v[2] - FRIDGE.glass[2])));
+  assert.ok(gap > jugReach + glassReach + .005, 'the glass can be lifted without touching the jug');
 });
 
 function fakeFridge() {
