@@ -34,7 +34,8 @@ export class Devices {
       // Arc lamp: its bulb hides in the dome shade over the sofa (no glow mesh in the model, so a small bulb is added).
       this.ownLamp(interactions, { name: 'arc lamp', group: 'Living room', label: 'the arc lamp',
         bulb: ARC_LAMP.position, bulbDiameter: ARC_LAMP.bulbDiameter, at: [-4.88, 1.39, 2.70], size: 0.3 }),
-      this.ownLamp(interactions, { name: 'desk lamp', group: 'Office', label: 'the desk lamp', glow: 'Light.office', at: [4.105, 1.36, -0.93], size: 0.16 }),
+      this.ownLamp(interactions, { name: 'desk lamp', group: 'Office', label: 'the desk lamp', glow: 'Light.office', at: [4.105, 1.36, -0.93], size: 0.16, on: false }),
+      this.ownLamp(interactions, { name: 'closet light', group: 'Bedroom', label: 'the closet light', at: [9.62, 1.08, 1.75], size: 0.14, on: false }),
     ].filter(Boolean);
     this.laptop = this.makeLaptop(interactions);
     this.computer = this.makeComputer(interactions);
@@ -97,7 +98,7 @@ export class Devices {
 
   // A lamp already placed by lighting.js (`name`), switched here: its glowing bulb is the model's own mesh (`glow`
   // material) or a small sphere at `bulb`; E at `at`.
-  ownLamp(interactions, { name, group, label, glow, bulb, bulbDiameter = 0.05, at, size }) {
+  ownLamp(interactions, { name, group, label, glow, bulb, bulbDiameter = 0.05, at, size, on = true }) {
     const light = this.app.root.findByName(name);
     if (!light) return null;
     let mat = glow ? this.materials.get(glow) : null;
@@ -109,8 +110,9 @@ export class Devices {
       b.setLocalScale(bulbDiameter, bulbDiameter, bulbDiameter); b.setPosition(...bulb);
       this.app.root.addChild(b);
     }
-    const lamp = { name: name.charAt(0).toUpperCase() + name.slice(1), group, on: true, level: 1, mat, glow: mat?.emissiveIntensity ?? 0,
+    const lamp = { name: name.charAt(0).toUpperCase() + name.slice(1), group, on, level: on ? 1 : 0, mat, glow: mat?.emissiveIntensity ?? 0,
       lights: [light], base: [light.light.intensity] };
+    this.applyLamp(lamp, lamp.level);
     interactions.add({ pos: new Vec3(...at), size, label: () => `Turn ${label} ${lamp.on ? 'off' : 'on'}`, use: () => this.toggleLamp(lamp) });
     return lamp;
   }
@@ -161,7 +163,7 @@ export class Devices {
       laptop.pos.add(LID_HINGE);
     };
     laptop.setAngle(0);
-    laptop.setPower(1);
+    laptop.setPower(0); // the open lid starts asleep; opening it later wakes it normally
     interactions.add({ pos: laptop.pos, size: 0.16, label: () => `${laptop.open ? 'Close' : 'Open'} the laptop`,
       use: () => this.toggleLaptop(laptop), active: () => !laptop.busy });
     return laptop;
@@ -195,14 +197,14 @@ export class Devices {
     const screens = [this.screen(this.materials.get('Screen.imac')), this.screen(this.materials.get('Screen'))].filter(Boolean);
     if (!screens.length) return null;
     const glow = this.app.root.findByName('iMac glow');
-    const pc = { on: true, busy: false, screens, glow, glowBase: glow?.light.intensity ?? 0, level: 1 };
+    const pc = { on: false, busy: false, screens, glow, glowBase: glow?.light.intensity ?? 0, level: 0 };
     pc.glows = screens.map(mat => ({ mat, base: 0.5 }));
     pc.set = (k) => {
       pc.level = k;
       for (const { mat, base } of pc.glows) { mat.emissiveIntensity = base * k; mat.update(); }
       if (glow) { glow.light.intensity = pc.glowBase * k; glow.light.enabled = k > 0.01; }
     };
-    pc.set(1);
+    pc.set(0);
     interactions.add({ pos: new Vec3(5.24, 1.10, -1.10), size: 0.22, label: () => `${pc.on ? 'Shut down' : 'Turn on'} the computer`,
       use: () => this.toggleComputer(pc), active: () => !pc.busy });
     return pc;

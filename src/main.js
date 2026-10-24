@@ -10,9 +10,11 @@ import { setupLighting, addDownlights } from './lighting.js';
 import { Probes, ZONES, baseName } from './probes.js';
 import { setupPost, EyeAdaptation } from './post.js';
 import { GraphicsPreferences, GraphicsSettings } from './graphics-settings.js';
+import { SceneQuality } from './scene-quality.js';
 import { installFrameLimiter } from './frame-limiter.js';
 import { WakeSequence, WAKE_EXIT } from './wake-sequence.js';
 import { Fridge } from './fridge.js';
+import { DrinkSequence } from './drink-sequence.js';
 import './wake-sequence.css';
 import { Ambience } from './ambience.js';
 import { Interactions } from './interact.js';
@@ -185,6 +187,11 @@ const devices = new Devices(app, apartment, interactions, ambience, recapture);
 devices.configureCoffeeMaterial = material => probes.assign(material, 'main');
 const fridge = await Fridge.create({ app, apartment, interactions, grid, player, sounds: ambience,
   recapture, configureMaterial: material => probes.assign(material, 'main') }).catch(failLoad);
+const drink = await DrinkSequence.create({ app, camera, player, fridge, interactions,
+  configureMaterial: material => probes.assign(material, 'main'),
+  onStart: () => { $('reticle').hidden = true; interactions.enabled = false; interactions.update(); },
+  onComplete: () => { $('reticle').hidden = !player.active; interactions.enabled = player.active; },
+}).catch(failLoad);
 if (hash.has('dark')) {
   switches.rooms.forEach(r => { if (r.on) switches.toggle(r); });
   devices.lamps.forEach(l => { if (l.on) devices.toggleLamp(l); });
@@ -192,6 +199,8 @@ if (hash.has('dark')) {
 if (hash.has('allon')) switches.rooms.forEach(r => { if (!r.on) switches.toggle(r); });
 if (hash.has('flash')) flashlight.pickUp();
 rain = new Rain(app, apartment, ambience, lit);
+const sceneQuality = new SceneQuality(app, { rain });
+sceneQuality.apply(graphicsPreferences.effective);
 
 // One frame of the lit rooms first, then capture the probes from them.
 await new Promise(r => app.once('frameend', r));
@@ -206,8 +215,9 @@ player.onStep = (surface, speed) => ambience.step(surface, speed);
 const fwd = new pc.Vec3(), up = new pc.Vec3();
 app.on('update', (dt) => {
   if (wake && !wake.completed) wake.update();
+  else if (drink.running) drink.update();
   else player.update(dt);
-  interactions.enabled = player.active;
+  interactions.enabled = player.active && !drink.running;
   interactions.update();
   fwd.copy(camera.forward); up.copy(camera.up);
   ambience.listen(camera.getPosition(), fwd, up);
@@ -216,6 +226,7 @@ app.on('update', (dt) => {
 // Settings, hotkeys and Auto quality share one persisted preference model.
 const fps = stats(app);
 const graphics = new GraphicsSettings({ app, frame, player, canvas, grain: $('grain'), fps, frameLimiter,
+  sceneQuality, canSample: () => !capturing,
   preferences: graphicsPreferences, button: $('graphics-open'),
   canOpen: () => window.__state.ready && !window.__state.error });
 const devMenu = new DevMenu({ app, flashlight, switches, devices, closets, fridge, rain, recapture, eyes,
@@ -234,7 +245,8 @@ canvas.addEventListener('click', () => { if (player.active && document.pointerLo
 document.addEventListener('pointerlockchange', () => {
   const locked = document.pointerLockElement === canvas;
   wake?.setLocked(locked);
-  player.active = locked && (!wake || wake.completed);
+  drink.setLocked(locked);
+  player.active = locked && (!wake || wake.completed) && !drink.running;
   intro.classList.toggle('gone', locked);
   $('reticle').hidden = !player.active;
   enter.textContent = locked ? 'Click to enter' : 'Click to continue';
@@ -242,7 +254,7 @@ document.addEventListener('pointerlockchange', () => {
 });
 if (shot) { intro.classList.add('gone'); intro.style.display = 'none'; player.active = false; }
 window.__state.ready = true;
-window.__app = { app, player, frame, camera, flashlight, interactions, switches, rain, doors, devices, closets, fridge, probes, devMenu, eyes, graphics, frameLimiter, wake };
+window.__app = { app, player, frame, camera, flashlight, interactions, switches, rain, doors, devices, closets, fridge, drink, probes, devMenu, eyes, graphics, frameLimiter, sceneQuality, wake };
 
 // The artifact build (tools/make-artifact.mjs) ships the apartment as one GLB split into base64 text parts listed in
 // apartment.json; download them with real progress and reassemble the GLB in memory. Otherwise load the glTF.

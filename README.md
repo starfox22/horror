@@ -23,7 +23,9 @@ Controls: WASD or arrows move · mouse look · Shift walk faster · E use (switc
 · B head bob on/off · G graphics · 1 / 2 / 3 quality (low / medium / high; it also drops automatically on slow GPUs) · Esc pause.
 URL hash options: `#webgl` (force WebGL 2 instead of WebGPU), `#stats` (fps, draw calls); for tests `#dark`, `#flash`.
 
-Choose **Wake up** to begin in bed. The opening supports Space/Enter to skip and Esc/G to pause; resume continues the same sequence. Normal walking begins beside the bed. Graphics includes saved 30/60/90/120/Uncapped FPS limits, with 60 FPS and the counter enabled by default.
+Choose **Wake up** to begin in bed. The opening supports Space/Enter to skip and Esc/G to pause; resume continues the same sequence. Normal walking begins beside the bed. Only the bedside lamps, sofa arc lamp, extractor and bathroom mirror start lit. Open the refrigerator with E, then press E again toward its glass to drink. The downloaded rigged hand, glass and recorded gulp/exhale follow one pausable timeline.
+
+Graphics defaults to a saved 60 FPS limit; Unlimited is an explicit menu choice. Auto targets 60 through progressively lighter effects, shadow filtering and resolution, down to Low at 50%. Presets also bound high-DPI/4K rendering and rain work. A frame cap cannot raise hardware throughput; see [review 0.11](docs/REVIEW_11.md) for validation and limits.
 
 ## Build
 
@@ -54,7 +56,9 @@ node tools/shoot.mjs dist out name=x,z,yaw ...   # headless screenshots (softwar
 | `src/player.js`, `src/walkgrid.js` | First-person controller and its collision/floor grid |
 | `src/wake-sequence.js`, `src/wake-sequence.css` | First-person waking timeline, pause/skip/reduced-motion and dialogue |
 | `src/fridge.js`, `src/fridge-geometry.js`, `src/fridge-water.js` | Refrigerator leaf, collision, authored jar, fitted water and door-controlled light |
+| `src/drink-sequence.js`, `src/drink-timeline.js` | Downloaded hand rig, glass reach/grip/sips/return, recorded audio and pause ownership |
 | `src/frame-limiter.js`, `src/graphics-settings.js` | Saved graphics preferences, FPS limit and native settings dialog |
+| `src/scene-quality.js` | Pixel budgets, shadow atlases/filtering, texture detail and rain quality |
 | `src/flashlight-surfaces.js` | Cached triangle tracing for occluded flashlight return light |
 | `src/lighting.js` | Lamps at their fixtures, ceiling downlights, lightning-only sky light, night sky, probe capture |
 | `src/post.js` | Camera effects (TAA, SSAO, bloom, volumetric haze, grading, vignette), eye adaptation, quality levels |

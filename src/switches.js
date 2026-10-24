@@ -5,11 +5,11 @@ import switchModel from './switch-model.json' with { type: 'json' };
 import { findMountSurface, isOriginalSwitchTriangle } from './switch-surfaces.js';
 
 export const ROOMS = [
-  { id: 'living', label: 'Living room lights', lights: [], from: [0.95, 3.9], dir: [0, 1], on: true, zone: 'main' },
+  { id: 'living', label: 'Living room lights', lights: [], from: [0.95, 3.9], dir: [0, 1], on: false, zone: 'main' },
   { id: 'dining', label: 'Dining pendants', lights: ['dining pendant L', 'dining pendant R'], glow: 'White1.pendant',
     from: [1.13, 3.9], dir: [0, 1], on: false, zone: 'main' },
   { id: 'kitchen', label: 'Kitchen ceiling lights', lights: [], from: [1.31, 3.9], dir: [0, 1], on: false, zone: 'main' },
-  { id: 'office', label: 'Office lights', lights: [], from: [3.0, 2.3], dir: [0, 1], on: true, zone: 'main' },
+  { id: 'office', label: 'Office lights', lights: [], from: [3.0, 2.3], dir: [0, 1], on: false, zone: 'main' },
   { id: 'hall', label: 'Hall lights', lights: [], from: [11.8, 3.6], dir: [0, 1], on: false, zone: 'hall' },
   { id: 'bathroom', label: 'Bathroom ceiling lights', lights: [], from: [6.73, 1.45], height: 1.22, dir: [0, 1], on: false, zone: 'bath' },
   { id: 'bedroom', label: 'Bedroom ceiling lights', lights: [], from: [11.67, 2.1], height: 1.17, dir: [0, 1], on: false, zone: 'bed' },

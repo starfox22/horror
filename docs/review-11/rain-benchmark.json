@@ -1,0 +1,115 @@
+{
+  "method": "Node CPU-only wet-glass simulation, deterministic seed, 10 simulated seconds at120Hz; canvas draw/upload stubbed; excludes engine/GPU throughput",
+  "baseline": [
+    {
+      "cpuMs": 230.20759199999998,
+      "uploads": 240,
+      "drops": 900
+    },
+    {
+      "cpuMs": 199.90370600000006,
+      "uploads": 240,
+      "drops": 900
+    },
+    {
+      "cpuMs": 209.6083329999999,
+      "uploads": 240,
+      "drops": 900
+    },
+    {
+      "cpuMs": 200.14607199999978,
+      "uploads": 240,
+      "drops": 900
+    },
+    {
+      "cpuMs": 208.39293799999996,
+      "uploads": 240,
+      "drops": 900
+    }
+  ],
+  "high": [
+    {
+      "cpuMs": 40.51114199999995,
+      "uploads": 200,
+      "drops": 900
+    },
+    {
+      "cpuMs": 40.99956899999984,
+      "uploads": 200,
+      "drops": 900
+    },
+    {
+      "cpuMs": 32.94476200000008,
+      "uploads": 200,
+      "drops": 900
+    },
+    {
+      "cpuMs": 35.065352000000075,
+      "uploads": 200,
+      "drops": 900
+    },
+    {
+      "cpuMs": 31.539761,
+      "uploads": 200,
+      "drops": 900
+    }
+  ],
+  "medium": [
+    {
+      "cpuMs": 23.33470800000009,
+      "uploads": 150,
+      "drops": 900
+    },
+    {
+      "cpuMs": 21.638588000000027,
+      "uploads": 150,
+      "drops": 900
+    },
+    {
+      "cpuMs": 21.400018000000046,
+      "uploads": 150,
+      "drops": 900
+    },
+    {
+      "cpuMs": 25.67473000000018,
+      "uploads": 150,
+      "drops": 900
+    },
+    {
+      "cpuMs": 21.562273000000005,
+      "uploads": 150,
+      "drops": 900
+    }
+  ],
+  "low": [
+    {
+      "cpuMs": 17.932154999999966,
+      "uploads": 100,
+      "drops": 900
+    },
+    {
+      "cpuMs": 16.562676999999894,
+      "uploads": 100,
+      "drops": 900
+    },
+    {
+      "cpuMs": 16.522046000000046,
+      "uploads": 100,
+      "drops": 900
+    },
+    {
+      "cpuMs": 16.75289399999997,
+      "uploads": 100,
+      "drops": 900
+    },
+    {
+      "cpuMs": 19.397726000000148,
+      "uploads": 100,
+      "drops": 900
+    }
+  ],
+  "baselineMedianMs": 208.39293799999996,
+  "highMedianMs": 35.065352000000075,
+  "mediumMedianMs": 21.638588000000027,
+  "lowMedianMs": 16.75289399999997
+}

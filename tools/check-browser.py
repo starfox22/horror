@@ -67,7 +67,13 @@ with sync_playwright() as p:
     fixtures = page.evaluate('''() => {
       const s = window.__app, rooms = Object.fromEntries(s.switches.rooms.map(room => [room.id, room]));
       const b = s.flashlight.restBounds;
-      return {defaults: Object.fromEntries(['bedroom','bathroom','mirror','hood'].map(id => [id, rooms[id].on])),
+      return {defaults: Object.fromEntries(s.switches.rooms.map(room => [room.id, room.on])),
+        lamps: Object.fromEntries(s.devices.lamps.map(lamp => [lamp.name, {on: lamp.on, level: lamp.level,
+          enabled: lamp.lights.map(entity => entity.light.enabled), emission: lamp.mat?.emissiveIntensity ?? 0}])),
+        activeSources: s.app.root.findComponents('light').filter(light => light.entity.enabled && light.enabled && light.intensity > 0.001 && light.entity.name !== 'moon').map(light => light.entity.name).sort(),
+        screens: {laptopPower: s.devices.laptop.power, computerOn: s.devices.computer.on,
+          computerLevel: s.devices.computer.level,
+          emissions: [...s.devices.laptop.glows, ...s.devices.computer.glows, ...s.devices.coffee.glows].map(glow => glow.mat.emissiveIntensity)},
         mirrorIntensity: rooms.mirror.base[0], hoodIntensity: rooms.hood.base[0],
         mounts: s.switches.rooms.filter(room => room.plate).map(room => ({id: room.id, embed: room.mount.backEmbed,
           scale: room.plate.getLocalScale().toArray()})), removedTriangles: s.switches.removedSwitchTriangles,
@@ -77,7 +83,20 @@ with sync_playwright() as p:
           triangles:s.fridge.movingTriangles, cap:s.fridge.removedCapTriangles,
           water:s.fridge.waterLevel, jarTop:s.fridge.jar.getPosition().y+s.fridge.jarHeight}};
     }''')
-    assert fixtures['defaults'] == {'bedroom': False, 'bathroom': False, 'mirror': True, 'hood': True}, fixtures
+    assert fixtures['defaults'] == {'living': False, 'dining': False, 'kitchen': False, 'office': False,
+        'hall': False, 'bathroom': False, 'bedroom': False, 'mirror': True, 'hood': True}, fixtures
+    expected_lamps = {'Reading lamp (left)': True, 'Reading lamp (right)': True, 'Arc lamp': True,
+        'Desk lamp': False, 'Closet light': False}
+    assert {name: lamp['on'] for name, lamp in fixtures['lamps'].items()} == expected_lamps, fixtures
+    for name, on in expected_lamps.items():
+        lamp = fixtures['lamps'][name]
+        assert lamp['level'] == int(on) and all(enabled == on for enabled in lamp['enabled']), fixtures
+        if not on:
+            assert lamp['emission'] == 0, fixtures
+    assert fixtures['activeSources'] == sorted(['arc lamp', 'cooker hood', 'bathroom mirror',
+        'bedside lamp left', 'bedside spill left', 'bedside lamp right', 'bedside spill right']), fixtures
+    assert fixtures['screens']['laptopPower'] == 0 and not fixtures['screens']['computerOn'] and fixtures['screens']['computerLevel'] == 0, fixtures
+    assert all(emission == 0 for emission in fixtures['screens']['emissions']), fixtures
     assert 0 < fixtures['mirrorIntensity'] < 0.2 and 0.4 <= fixtures['hoodIntensity'] <= 0.5, fixtures
     assert len(fixtures['mounts']) == 8 and all(mount['scale'] == [1, 1, 1] and 0 < mount['embed'] < 0.001 for mount in fixtures['mounts']), fixtures
     assert 150 <= fixtures['removedTriangles'] <= 180, fixtures

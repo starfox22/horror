@@ -135,7 +135,7 @@ with sync_playwright() as p:
 
         for preset, expected in (
             ('low', {'scale': 0.75, 'ao': False, 'fog': False}),
-            ('medium', {'scale': 1, 'ao': True, 'fog': False}),
+            ('medium', {'scale': 0.85, 'ao': True, 'fog': False}),
             ('high', {'scale': 1, 'ao': True, 'fog': True}),
             ('auto', {'scale': 1, 'ao': True, 'fog': True}),
         ):

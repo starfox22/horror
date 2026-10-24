@@ -9,27 +9,33 @@ import {
 import { refreshShadows } from './lighting.js';
 import { segmentDistance } from './walkgrid.js';
 import { makeWaterGeometry, WATER_LEVEL } from './fridge-water.js';
+import { makeDrinkingWater } from './drink-timeline.js';
 import { FRIDGE, classifyFridgeTriangle, fridgeDoorSegment, fridgeWorld } from './fridge-geometry.js';
 
 function subset(device, source, indices) {
-  // Preserve the author's normals, UVs, tangent frames and compressed-material
-  // assignment. The original shared mesh buffers are never edited in place.
-  const mesh = new Mesh(device);
+  // Compact every referenced vertex stream. The apartment's joined black
+  // material can contain unrelated kitchen geometry; moving a tiny gasket must
+  // not duplicate that entire vertex buffer on the CPU and GPU.
+  const mesh = new Mesh(device), used = [...new Set(indices)], remap = new Map(used.map((index, i) => [index, i]));
   for (const element of source.vertexBuffer.format.elements) {
-    const stream = []; source.getVertexStream(element.name, stream);
-    mesh.setVertexStream(element.name, stream, element.numComponents, undefined, element.dataType, element.normalize, element.asInt);
+    const stream = [], compact = []; source.getVertexStream(element.name, stream);
+    for (const index of used) for (let k = 0; k < element.numComponents; k++) compact.push(stream[index * element.numComponents + k]);
+    mesh.setVertexStream(element.name, compact, element.numComponents, undefined, element.dataType, element.normalize, element.asInt);
   }
-  mesh.setIndices(indices); mesh.update(); return mesh;
+  mesh.setIndices(indices.map(index => remap.get(index))); mesh.update(); return mesh;
 }
 
 export class Fridge {
   static async create(options) {
-    const response = await fetch(new URL('./assets/props/water-jar.json', location.href));
-    if (!response.ok) throw new Error(`Refrigerator jar: HTTP ${response.status}`);
-    return new Fridge({ ...options, jarGeometry: await response.json() });
+    const [jarGeometry, glassGeometry] = await Promise.all(['water-jar', 'drinking-glass'].map(async name => {
+      const response = await fetch(new URL(`./assets/props/${name}.json`, location.href));
+      if (!response.ok) throw new Error(`Refrigerator ${name}: HTTP ${response.status}`);
+      return response.json();
+    }));
+    return new Fridge({ ...options, jarGeometry, glassGeometry });
   }
 
-  constructor({ app, apartment, interactions, grid, player, sounds, recapture, configureMaterial, jarGeometry }) {
+  constructor({ app, apartment, interactions, grid, player, sounds, recapture, configureMaterial, jarGeometry, glassGeometry }) {
     Object.assign(this, { app, grid, player, sounds, recapture, configureMaterial });
     this.angle = 0; this.velocity = 0; this.target = 0; this.openRequested = false; this.moving = false;
     this.frame = new Entity('refrigerator cabinet');
@@ -40,10 +46,14 @@ export class Fridge {
     this.extractDoor(apartment);
     if (!this.movingTriangles || !this.removedCapTriangles) throw new Error('The original refrigerator door/cabinet split could not be found');
     this.buildInterior(jarGeometry);
+    this.buildDrinkingGlass(glassGeometry);
     this.blocker = grid?.addBlocker(() => this.angle > 0.5 ? fridgeDoorSegment(this.angle) : null);
     this.updateHandle();
     this.interaction = interactions.add({ pos: this.handle, size: 0.31,
-      label: () => `${this.openRequested ? 'Close' : 'Open'} the refrigerator`, use: () => this.toggle() });
+      label: () => `${this.openRequested ? 'Close' : 'Open'} the refrigerator`, active: () => !this.drinkRunning, use: () => this.toggle() });
+    this.glassTarget = this.glass.getPosition().clone().add(new Vec3(0, 0.08, 0));
+    this.glassInteraction = interactions.add({ pos: this.glassTarget, size: 0.43,
+      label: () => 'Take the glass and drink water', active: () => this.canDrink(), use: () => this.drinkAction?.() });
     this.applyLighting();
     this._update = dt => this.update(dt); app.on('update', this._update);
     app.once('destroy', () => { app.off('update', this._update); if (grid && this.blocker) grid.blockers = grid.blockers.filter(b => b !== this.blocker); });
@@ -159,6 +169,36 @@ export class Fridge {
     this.light.light.shadowUpdateMode = SHADOWUPDATE_THISFRAME;
   }
 
+  buildDrinkingGlass(geometry) {
+    const mesh = new Mesh(this.app.graphicsDevice); mesh.setPositions(geometry.positions); mesh.setNormals(geometry.normals); mesh.setIndices(geometry.indices); mesh.update();
+    const glassMat = this.material('authored drinking tumbler glass', [0.87, 0.95, 0.97], 0.99, { opacity: 0.22, template: 'Glass@main' });
+    this.glass = new Entity('drinking glass — original apartment table glass');
+    this.glass.addComponent('render', { meshInstances: [new MeshInstance(mesh, glassMat, this.glass)], castShadows: false, receiveShadows: true });
+    this.glass.render.meshInstances.forEach(mi => { mi.castShadow = false; });
+    this.frame.addChild(this.glass); this.glass.setLocalPosition(0.13, 1.3336, 0.068);
+    this.glassShelfPosition = this.glass.getPosition().clone(); this.glassShelfRotation = this.glass.getRotation().clone();
+    const waterMat = this.material('water inside drinking tumbler', [0.61, 0.81, 0.85], 0.98, { opacity: 0.25 });
+    this.glassWaterMesh = new Mesh(this.app.graphicsDevice);
+    this.glassWater = new Entity('drinkable water free surface');
+    this.glassWater.addComponent('render', { meshInstances: [new MeshInstance(this.glassWaterMesh, waterMat, this.glassWater)], castShadows: false, receiveShadows: true });
+    this.glassWater.render.meshInstances.forEach(mi => { mi.castShadow = false; });
+    this.glass.addChild(this.glassWater); this.setGlassWater(0.104, 0);
+    this.drinkRunning = false; this.hasDrunk = false;
+  }
+
+  setGlassWater(fill, tilt) {
+    const geometry = makeDrinkingWater(fill, tilt);
+    this.glassWaterMesh.setPositions(geometry.positions); this.glassWaterMesh.setNormals(geometry.normals);
+    if (!this.glassWaterInitialized) { this.glassWaterMesh.setIndices(geometry.indices); this.glassWaterInitialized = true; }
+    this.glassWaterMesh.update(); this.glassFill = fill;
+  }
+
+  setDrinkAction(action) { this.drinkAction = action; }
+  canDrink() {
+    return !!this.drinkAction && !this.drinkRunning && !this.hasDrunk && this.angle > 75 && !this.moving &&
+      (!this.player?.camera || this.player.camera.getPosition().distance(this.glassTarget) < 1.6);
+  }
+
   updateHandle() {
     const a = this.angle * Math.PI / 180, h = FRIDGE.hinge, p = FRIDGE.handle;
     const x = p[0] - h[0], z = p[2] - h[2];
@@ -174,6 +214,7 @@ export class Fridge {
   }
 
   toggle() {
+    if (this.drinkRunning) return;
     this.override?.([this.light]);
     this.openRequested = !this.openRequested; this.target = this.openRequested ? FRIDGE.opening : 0;
     this.moving = true; this.blocked = false;

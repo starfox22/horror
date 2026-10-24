@@ -5,18 +5,18 @@ import assert from 'node:assert/strict';
 import { NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
 import draco3d from 'draco3dgltf';
+import { Entity, Vec3 } from 'playcanvas';
 import { ROOMS, Switches, SWITCH_BACK_EMBED } from '../src/switches.js';
+import { Devices } from '../src/devices.js';
+import { DevMenu } from '../src/devmenu.js';
 import { LAMPS } from '../src/lighting.js';
 import { findMountSurface, isOriginalSwitchTriangle } from '../src/switch-surfaces.js';
 import model from '../src/switch-model.json' with { type: 'json' };
 
-test('bedroom/bath ceilings start off; mirror and extractor have independent dim controls', () => {
+test('only mirror and extractor wall controls start on; every ceiling and pendant starts off', () => {
   const room = Object.fromEntries(ROOMS.map(r => [r.id, r]));
   assert.equal(ROOMS.length, 9);
-  assert.equal(room.bedroom.on, false);
-  assert.equal(room.bathroom.on, false);
-  assert.equal(room.mirror.on, true);
-  assert.equal(room.hood.on, true);
+  assert.deepEqual(ROOMS.filter(r => r.on).map(r => r.id), ['mirror', 'hood']);
   assert.ok(!room.bathroom.lights.includes('bathroom mirror'));
   assert.ok(!room.kitchen.lights.includes('cooker hood'));
   assert.deepEqual(room.mirror.lights, ['bathroom mirror']);
@@ -25,6 +25,57 @@ test('bedroom/bath ceilings start off; mirror and extractor have independent dim
   assert.ok(lamps['bathroom mirror'][4] >= 0.1 && lamps['bathroom mirror'][4] <= 0.14);
   assert.ok(lamps['cooker hood'][4] >= 0.4 && lamps['cooker hood'][4] <= 0.5);
   assert.ok(room.mirror.glowScale < 1 && room.hood.glowScale < 1);
+});
+
+test('startup has only bedside and arc lamps; sleeping screens and other lamps restore dark after developer overrides', () => {
+  // Exercise the actual device constructors and power setters without allocating
+  // a GPU. Only PlayCanvas component creation is replaced with a data component.
+  const root = new Entity('test apartment');
+  const app = { root, on() {} };
+  const material = name => ({ name, emissiveIntensity: 1, update() {} });
+  const materials = ['Light.bedside-left', 'Light.bedside-right', 'Light.office', 'Screen_Shot.laptoplid',
+    'Keylight', 'Screen.imac', 'Screen', 'Coffee_Maker_Material5.coffee'].map(material);
+  const lid = new Entity('laptop lid'); root.addChild(lid);
+  const renders = materials.map(mat => ({ entity: mat.name.endsWith('.laptoplid') ? lid : new Entity(mat.name),
+    meshInstances: [{ material: mat, aabb: { center: new Vec3(12, 1.4, 0.5) } }] }));
+  for (const name of ['arc lamp', 'desk lamp', 'closet light', 'laptop glow', 'iMac glow']) {
+    const light = new Entity(name); light.light = { intensity: 0.3, enabled: true }; root.addChild(light);
+  }
+  const original = Entity.prototype.addComponent;
+  let devices;
+  Entity.prototype.addComponent = function (type, data) { this[type] = { enabled: true, ...data }; };
+  try { devices = new Devices(app, { findComponents: () => renders }, { add() {} }, null, () => {}); }
+  finally { Entity.prototype.addComponent = original; }
+
+  assert.deepEqual(devices.lamps.filter(lamp => lamp.on).map(lamp => lamp.name), ['Reading lamp (left)', 'Reading lamp (right)', 'Arc lamp']);
+  const desk = devices.lamps.find(lamp => lamp.name === 'Desk lamp');
+  const closet = devices.lamps.find(lamp => lamp.name === 'Closet light');
+  assert.equal(desk.level, 0); assert.equal(desk.mat.emissiveIntensity, 0);
+  assert.equal(closet.level, 0);
+  assert.equal(devices.laptop.power, 0);
+  assert.equal(devices.computer.on, false); assert.equal(devices.computer.level, 0);
+  assert.ok([...devices.laptop.glows, ...devices.computer.glows, ...devices.coffee.glows].every(glow => glow.mat.emissiveIntensity === 0));
+
+  const menu = Object.create(DevMenu.prototype);
+  menu.sys = { app, switches: { rooms: [] }, devices };
+  menu.entries = menu.collect(); menu.refresh = () => {};
+  const snapshot = () => menu.entries.map(entry => ({
+    lights: entry.lights.map(({ e }) => [e.light.enabled, e.light.intensity]),
+    glows: entry.glows.map(({ mat }) => mat.emissiveIntensity),
+  }));
+  const defaults = snapshot();
+  for (const force of [false, true]) {
+    menu.entries.forEach(entry => entry.force = force);
+    menu.changed(); clearTimeout(menu.timer);
+    menu.reset(); clearTimeout(menu.timer);
+    assert.deepEqual(snapshot(), defaults, 'Back to switches restores the exact sparse startup lighting');
+  }
+  devices.override = lights => menu.handBack(lights);
+  devices.toggleLamp(desk); devices.update(0.2);
+  assert.equal(desk.on, true); assert.equal(desk.level, 1);
+  assert.ok(desk.lights[0].light.enabled && desk.mat.emissiveIntensity > 0, 'an initially off lamp still works on its first native press');
+  devices.toggleLamp(desk); devices.update(0.2);
+  assert.equal(desk.on, false); assert.equal(desk.level, 0);
 });
 
 test('authored switch retains detailed geometry and outward normals without scaled rocker parents', () => {

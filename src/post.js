@@ -62,24 +62,29 @@ export function setupPost(app, camera, options = qualityOptions(3)) {
   return frame;
 }
 
-// 3 = full, 2 = no fog, half-res AO, 1 = no AO/fog, lower resolution.
+// High retains all effects; Medium scales back resolution and AO; Low keeps
+// temporal edge smoothing while removing every optional full-screen effect.
 export function setQuality(frame, q) {
   applyGraphicsOptions(frame, qualityOptions(q));
 }
 
 export function qualityOptions(q) {
   const quality = [1, 2, 3].includes(Number(q)) ? Number(q) : 3;
-  return { quality, resolutionScale: quality === 1 ? 0.75 : 1,
+  return { quality, resolutionScale: quality === 1 ? 0.75 : quality === 2 ? 0.85 : 1,
     ambientOcclusion: quality > 1, volumetricFog: quality === 3,
-    bloom: true, taa: true, filmGrain: true };
+    bloom: quality > 1, taa: true, filmGrain: quality > 1 };
 }
 
 export function applyGraphicsOptions(frame, options) {
   frame.rendering.renderTargetScale = options.resolutionScale;
   frame.volumetricFog.enabled = options.volumetricFog;
   frame.ssao.type = options.ambientOcclusion ? SSAOTYPE_LIGHTING : 'none';
-  frame.ssao.scale = options.quality === 3 ? 1 : 0.5;
-  frame.ssao.samples = options.quality === 3 ? 24 : 12;
+  frame.ssao.scale = options.quality === 3 ? 0.75 : 0.5;
+  frame.ssao.samples = options.quality === 3 ? 20 : 8;
+  frame.volumetricFog.steps = options.quality === 3 ? 16 : 8;
+  frame.volumetricFog.localSteps = options.quality === 3 ? 8 : 4;
+  frame.bloom.blurLevel = options.quality === 3 ? 7 : 5;
+  frame.rendering.sharpness = options.resolutionScale < 1 ? 0.35 : 0.25;
   frame.bloom.intensity = options.bloom ? 0.028 : 0;
   frame.taa.enabled = options.taa;
   frame.update();

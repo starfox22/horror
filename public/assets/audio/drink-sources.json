@@ -1,0 +1,36 @@
+[
+  {
+    "title": "Drink / Drinking liquid",
+    "author": "Breviceps",
+    "source": "https://freesound.org/people/Breviceps/sounds/445970/",
+    "license": "CC0-1.0",
+    "licenseURL": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "mirror": "https://raw.githubusercontent.com/Wh1teDuke/WilhelmSFX/master/Samples/445970__breviceps__drink-drinking-liquid.wav",
+    "mirrorBlobSHA": "954028cc197a204998b256a4a6adfcfd7a05b947",
+    "sha256": "4731c2fd0ef0d691c9ba56138d7c8529e255496d7b87d375ef4e3b6cf41109c1",
+    "durationSeconds": 0.5675736961451248,
+    "sampleRate": 44100,
+    "channels": 2,
+    "processing": "Downloaded WAV bytes unchanged.",
+    "licenseVerified": "Original Freesound page license viewed 2026-10-24.",
+    "originalFile": "drinking-breviceps.wav",
+    "file": "drink-water.wav"
+  },
+  {
+    "title": "Exhale_10115a.wav",
+    "author": "otherthings",
+    "source": "https://freesound.org/people/otherthings/sounds/65619/",
+    "license": "CC0-1.0",
+    "licenseURL": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "mirror": "https://raw.githubusercontent.com/Wh1teDuke/WilhelmSFX/master/Samples/65619__otherthings__exhale_10115a.wav",
+    "mirrorBlobSHA": "7868b6c7868dc97305b3537c6fce0dca8bbf12ba",
+    "sha256": "ee512a498825806b656b90ab3448e009d000a7849edff817981a0230ed3be603",
+    "durationSeconds": 1.243219954648526,
+    "sampleRate": 44100,
+    "channels": 2,
+    "processing": "Downloaded WAV bytes unchanged.",
+    "licenseVerified": "Original Freesound page license viewed 2026-10-24.",
+    "originalFile": "relief-otherthings.wav",
+    "file": "drink-relief.wav"
+  }
+]

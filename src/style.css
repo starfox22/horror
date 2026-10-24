@@ -11,6 +11,7 @@ h1 { margin: 0; font: 300 2.6rem/1.1 Georgia, "Times New Roman", serif; letter-s
 .sub { margin: 0; color: #a8a398; font-style: italic; }
 .keys, .tip { margin: 0; font-size: .78rem; color: #7d796f; }
 .credit { position: fixed; bottom: 12px; left: 0; right: 0; margin: 0; text-align: center; font-size: .7rem; color: #5d5a53; }
+.credit a { color: inherit; text-underline-offset: .15em; }
 #loading { display: grid; gap: .4rem; }
 .bar { height: 2px; background: #1d1d20; overflow: hidden; }
 #bar { display: block; height: 100%; width: 0; background: #c9b48a; transition: width .3s; }

@@ -1,0 +1,452 @@
+{
+  "node": {
+    "checks": [
+      {
+        "file": "tools/check-interactions.mjs",
+        "tests": 10,
+        "passed": true
+      },
+      {
+        "file": "tools/check-graphics-settings.mjs",
+        "tests": 10,
+        "passed": true
+      },
+      {
+        "file": "tools/check-frame-limiter.mjs",
+        "tests": 19,
+        "passed": true
+      },
+      {
+        "file": "tools/check-scene-quality.mjs",
+        "tests": 4,
+        "passed": true
+      },
+      {
+        "file": "tools/check-lamp-lighting.mjs",
+        "tests": 5,
+        "passed": true
+      },
+      {
+        "file": "tools/check-flashlight-shadows.mjs",
+        "tests": 6,
+        "passed": true
+      },
+      {
+        "file": "tools/check-wake-sequence.mjs",
+        "tests": 5,
+        "passed": true
+      },
+      {
+        "file": "tools/check-fridge.mjs",
+        "tests": 6,
+        "passed": true
+      },
+      {
+        "file": "tools/check-drink-sequence.mjs",
+        "tests": 7,
+        "passed": true
+      },
+      {
+        "file": "tools/check-coffee.mjs",
+        "tests": 5,
+        "passed": true
+      },
+      {
+        "file": "tools/check-flashlight-placement.mjs",
+        "tests": 4,
+        "passed": true
+      },
+      {
+        "file": "tools/check-switches.mjs",
+        "tests": 7,
+        "passed": true
+      }
+    ],
+    "totalTests": 88,
+    "reachableDestinations": 8
+  },
+  "graphicsUi": {
+    "graphicsUi": {
+      "freshFps": "visible, one element",
+      "modalKeyboard": "focus trap, G close on SELECT, Escape close",
+      "openWhileWalking": "paused and pointer lock released",
+      "presets": "Low, Medium, High, Auto update the render pipeline",
+      "fpsLimitControl": "Uncapped, 30, 60, 90 and 120 apply without changing quality or FPS visibility",
+      "effectControls": "AO, volumetrics, bloom, TAA, grain, resolution and FPS applied",
+      "qualityHotkeys": "menu remains synchronized with keys 1 and 2",
+      "reloadPersistence": "Custom settings, 30 FPS cap and explicit counter preference restored without q override",
+      "smallViewport": "320x480: controls reachable, labelled and no horizontal dialog overflow",
+      "fastTickCadence": {
+        "method": "real engine tick; update/render work stubbed, not an apartment GPU benchmark",
+        "warmup": [
+          {
+            "elapsed": 500.0999999999767,
+            "fps": 1.9996000799840963,
+            "rawFps": 1.9996000799840963
+          },
+          {
+            "elapsed": 500.0999999999767,
+            "fps": 5.998800239952289,
+            "rawFps": 5.998800239952289
+          },
+          {
+            "elapsed": 500.0999999999767,
+            "fps": 59.98800239952289,
+            "rawFps": 59.98800239952289
+          },
+          {
+            "elapsed": 500.30000000004657,
+            "fps": 59.96402158704219,
+            "rawFps": 59.96402158704219
+          },
+          {
+            "elapsed": 500.0999999999767,
+            "fps": 59.98800239952289,
+            "rawFps": 59.98800239952289
+          }
+        ],
+        "measurements": [
+          {
+            "limit": 0,
+            "frames": 90,
+            "rawFrames": 90,
+            "updates": 90,
+            "renders": 90,
+            "elapsed": 1500.2000000000698,
+            "fps": 59.992001066521674,
+            "rawFps": 59.992001066521674
+          },
+          {
+            "limit": 30,
+            "frames": 45,
+            "rawFrames": 86,
+            "updates": 45,
+            "renders": 45,
+            "elapsed": 1500.4000000000233,
+            "fps": 29.99200213276413,
+            "rawFps": 57.318048520393674
+          },
+          {
+            "limit": 60,
+            "frames": 84,
+            "rawFrames": 84,
+            "updates": 84,
+            "renders": 84,
+            "elapsed": 1500.0999999999767,
+            "fps": 55.996266915539834,
+            "rawFps": 55.996266915539834
+          },
+          {
+            "limit": 90,
+            "frames": 88,
+            "rawFrames": 88,
+            "updates": 88,
+            "renders": 88,
+            "elapsed": 1500.0999999999767,
+            "fps": 58.66275581627983,
+            "rawFps": 58.66275581627983
+          },
+          {
+            "limit": 120,
+            "frames": 89,
+            "rawFrames": 89,
+            "updates": 89,
+            "renders": 89,
+            "elapsed": 1500.0999999999767,
+            "fps": 59.32937804146482,
+            "rawFps": 59.32937804146482
+          }
+        ]
+      }
+    },
+    "pageErrors": [],
+    "consoleErrors": [],
+    "unexpectedHttpErrors": {},
+    "unexpectedFailedRequests": []
+  },
+  "gameWebGPU": {
+    "state": {
+      "ready": true,
+      "error": null
+    },
+    "device": "webgpu",
+    "renderComponents": 268,
+    "rooms": 9,
+    "lamps": 5,
+    "frame": 71,
+    "floor": 0.19,
+    "probeLevels": [
+      0.06474522613119055,
+      0.008865076787215412,
+      0.00016696624310426851,
+      0.0005836366647161479,
+      0.0005639274190446382,
+      0.0018619770118818472,
+      0.007382592853423084,
+      0.027155424018726546
+    ],
+    "fixtureDefaultsAndPlacement": "passed",
+    "graphicsMenuAndLiveControls": "passed",
+    "wakeOpening": {
+      "dialogue": "I just had a nightmare, I will go get some water at the kitchen",
+      "landing": {
+        "x": 12.85,
+        "z": 1.8,
+        "clear": true,
+        "overlayHidden": true
+      }
+    },
+    "lighting": {
+      "allOffMax": 6.542671272190673e-05,
+      "allOffWithoutSkyMax": 0,
+      "restoreMaxDifference": 1.8087882636699804e-05
+    },
+    "movement": {
+      "distance": 1.193363669480463,
+      "x": 11.701907384368761,
+      "z": 2.1416699920128175
+    },
+    "coffeeNativeInteractionPourAndReplay": "passed",
+    "refrigeratorNativeOpenAndJar": {
+      "angle": 106,
+      "on": true,
+      "power": 0.24,
+      "jarBottom": 1.3336000442504883,
+      "water": 1.5320999999999998,
+      "shadowModes": [
+        2,
+        2
+      ]
+    },
+    "pageErrors": [],
+    "unexpectedFailedRequests": [],
+    "consoleErrors": [],
+    "expectedMissingResources": {
+      "http://127.0.0.1:4175/assets/apartment/apartment.json": 404
+    },
+    "developerMenu": "passed",
+    "flashlightPickup": "passed",
+    "loadingIndicatorHidden": true,
+    "pointerLockEntryAndRelease": "passed"
+  },
+  "drinkWebGL": {
+    "mode": "webgl",
+    "quality": 2,
+    "nativeSecondE": true,
+    "pauseResume": true,
+    "hiddenFreeze": true,
+    "completed": {
+      "running": false,
+      "time": 9,
+      "active": true,
+      "locked": true,
+      "audio": false,
+      "nodes": 0,
+      "carried": false,
+      "fill": 0.037,
+      "parent": "refrigerator cabinet",
+      "hand": false
+    },
+    "assets": {
+      "device": "webgl2",
+      "clips": [
+        {
+          "start": 3.65,
+          "duration": 0.5675736961451248
+        },
+        {
+          "start": 4.4,
+          "duration": 0.5675736961451248
+        },
+        {
+          "start": 5.12,
+          "duration": 0.5675736961451248
+        },
+        {
+          "start": 7.55,
+          "duration": 1.243219954648526
+        }
+      ],
+      "limit": 60,
+      "handMeshes": 1
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "httpErrors": [],
+    "method": "Native input; deterministic animation stepping for software rendering, not throughput."
+  },
+  "drinkFinalWebGPU": {
+    "mode": "webgpu",
+    "quality": 2,
+    "nativeSecondE": true,
+    "pauseResume": true,
+    "hiddenFreeze": true,
+    "completed": {
+      "running": false,
+      "time": 9,
+      "active": true,
+      "locked": true,
+      "audio": false,
+      "nodes": 0,
+      "carried": false,
+      "fill": 0.037,
+      "parent": "refrigerator cabinet",
+      "hand": false
+    },
+    "assets": {
+      "device": "webgpu",
+      "clips": [
+        {
+          "start": 3.65,
+          "duration": 0.5675736961451248
+        },
+        {
+          "start": 4.4,
+          "duration": 0.5675736961451248
+        },
+        {
+          "start": 5.12,
+          "duration": 0.5675736961451248
+        },
+        {
+          "start": 7.55,
+          "duration": 1.243219954648526
+        }
+      ],
+      "limit": 60,
+      "handMeshes": 1
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "httpErrors": [],
+    "method": "Native input; deterministic animation stepping for software rendering, not throughput."
+  },
+  "rainBenchmark": {
+    "method": "Node CPU-only wet-glass simulation, deterministic seed, 10 simulated seconds at120Hz; canvas draw/upload stubbed; excludes engine/GPU throughput",
+    "baseline": [
+      {
+        "cpuMs": 230.20759199999998,
+        "uploads": 240,
+        "drops": 900
+      },
+      {
+        "cpuMs": 199.90370600000006,
+        "uploads": 240,
+        "drops": 900
+      },
+      {
+        "cpuMs": 209.6083329999999,
+        "uploads": 240,
+        "drops": 900
+      },
+      {
+        "cpuMs": 200.14607199999978,
+        "uploads": 240,
+        "drops": 900
+      },
+      {
+        "cpuMs": 208.39293799999996,
+        "uploads": 240,
+        "drops": 900
+      }
+    ],
+    "high": [
+      {
+        "cpuMs": 40.51114199999995,
+        "uploads": 200,
+        "drops": 900
+      },
+      {
+        "cpuMs": 40.99956899999984,
+        "uploads": 200,
+        "drops": 900
+      },
+      {
+        "cpuMs": 32.94476200000008,
+        "uploads": 200,
+        "drops": 900
+      },
+      {
+        "cpuMs": 35.065352000000075,
+        "uploads": 200,
+        "drops": 900
+      },
+      {
+        "cpuMs": 31.539761,
+        "uploads": 200,
+        "drops": 900
+      }
+    ],
+    "medium": [
+      {
+        "cpuMs": 23.33470800000009,
+        "uploads": 150,
+        "drops": 900
+      },
+      {
+        "cpuMs": 21.638588000000027,
+        "uploads": 150,
+        "drops": 900
+      },
+      {
+        "cpuMs": 21.400018000000046,
+        "uploads": 150,
+        "drops": 900
+      },
+      {
+        "cpuMs": 25.67473000000018,
+        "uploads": 150,
+        "drops": 900
+      },
+      {
+        "cpuMs": 21.562273000000005,
+        "uploads": 150,
+        "drops": 900
+      }
+    ],
+    "low": [
+      {
+        "cpuMs": 17.932154999999966,
+        "uploads": 100,
+        "drops": 900
+      },
+      {
+        "cpuMs": 16.562676999999894,
+        "uploads": 100,
+        "drops": 900
+      },
+      {
+        "cpuMs": 16.522046000000046,
+        "uploads": 100,
+        "drops": 900
+      },
+      {
+        "cpuMs": 16.75289399999997,
+        "uploads": 100,
+        "drops": 900
+      },
+      {
+        "cpuMs": 19.397726000000148,
+        "uploads": 100,
+        "drops": 900
+      }
+    ],
+    "baselineMedianMs": 208.39293799999996,
+    "highMedianMs": 35.065352000000075,
+    "mediumMedianMs": 21.638588000000027,
+    "lowMedianMs": 16.75289399999997
+  },
+  "captures": {
+    "before": "Hosted 0.10 / 7c8af57a2a0e2962483f51fd538184418a7b7410",
+    "after": "0.11 local production build",
+    "viewport": [
+      720,
+      480
+    ],
+    "quality": "Medium",
+    "exposure": 1,
+    "lightning": "disabled",
+    "noise": "seeded",
+    "poses": "Final hand and water; WebGPU; native input then deterministic pose stepping."
+  }
+}

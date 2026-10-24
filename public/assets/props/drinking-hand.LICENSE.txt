@@ -1,0 +1,13 @@
+Model Information:
+* title:	Rigged hand
+* source:	https://sketchfab.com/3d-models/rigged-hand-eae97cc2a742413cb5338ab942b12c1e
+* author:	Elena FF (https://sketchfab.com/elenaferfor)
+
+Model License:
+* license type:	CC-BY-SA-4.0 (http://creativecommons.org/licenses/by-sa/4.0/)
+* requirements:	Author must be credited. Modified versions must have the same license. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Rigged hand" (https://sketchfab.com/3d-models/rigged-hand-eae97cc2a742413cb5338ab942b12c1e) by Elena FF (https://sketchfab.com/elenaferfor) licensed under CC-BY-SA-4.0 (http://creativecommons.org/licenses/by-sa/4.0/)
+Adaptation in starfox22/horror: added a metre-scale wrist-origin parent transform; lengthened existing wrist loops by 0.74m, widened the far wrist section into an arm and rebuilt wrist normals. The hand surface, topology, UVs, skin weights, rig, animation and embedded skin textures are unchanged. This adapted hand asset remains licensed CC-BY-SA-4.0. This license applies to this hand asset; the surrounding game is a collection.
+Source mirror: https://github.com/bizzkoot/Hand-Math/blob/main/assets/models/hand_right.glb

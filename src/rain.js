@@ -22,6 +22,7 @@ export class Rain {
     this.drops = [];
     this.roomLight = 1;        // 0..1, how much light is on in the flat (set by main.js from the probes)
     this.timer = 0;
+    this.rainHz = 20;
     this.flash = { next: 8 + Math.random() * 10, seq: [] };
 
     this.sprite = this.dropSprite(48);
@@ -103,8 +104,29 @@ export class Rain {
       seed: anywhere ? Math.random() : 0 });
   }
 
+  setQuality(quality) {
+    this.rainHz = [10, 15, 20][quality - 1] || 20;
+    const count = [450, 900, 1800][quality - 1] || 1800;
+    for (const streak of this.streaks) if (streak.particlesystem.numParticles !== count) streak.particlesystem.numParticles = count;
+  }
+
   update(dt) {
-    dt = Math.min(dt, 0.05);
+    dt = Math.min(Math.max(dt, 0), 0.1);
+    // Lightning stays at display cadence. Only the slower-moving wet-glass
+    // simulation and its two canvas uploads use a bounded, preset-specific rate.
+    this.lightning(dt);
+    this.timer += dt;
+    this.dropElapsed = (this.dropElapsed || 0) + dt;
+    const period = 1 / this.rainHz;
+    if (this.timer + 1e-6 < period) return;
+    const step = this.dropElapsed;
+    this.dropElapsed = 0;
+    this.timer = Math.max(0, this.timer - Math.floor((this.timer + 1e-6) / period) * period);
+    this.updateDroplets(step);
+    this.draw();
+  }
+
+  updateDroplets(dt) {
     const SLIDE = 6.2, drops = this.drops;
     // Rain keeps landing on the glass (a few big splashes among the fine mist).
     this.rainAcc = (this.rainAcc || 0) + dt * 55;
@@ -137,9 +159,7 @@ export class Rain {
       let removed = 0;
       this.drops = all.filter((d) => removed >= excess || d.run || d.r >= 2.4 || !++removed);
     }
-    this.timer += dt;
-    if (this.timer > 1 / 30) { this.timer = 0; this.draw(); }
-    this.lightning(dt);
+
   }
 
   // Touching drops become one (the larger keeps its place; a running drop keeps running). Spatial hash, 16 px cells.
@@ -203,7 +223,7 @@ export class Rain {
     const e = new Entity('rain');
     const vel = new CurveSet([[0, 0.4], [0, -9], [0, 0]]);
     e.addComponent('particlesystem', {
-      numParticles: 1800, lifetime: 0.7, rate: 0.0004, rate2: 0.0006, emitterShape: EMITTERSHAPE_BOX,
+      numParticles: 1800, preWarm: true, lifetime: 0.7, rate: 0.0004, rate2: 0.0006, emitterShape: EMITTERSHAPE_BOX,
       emitterExtents: new Vec3(ext[0] * 2, 0.2, ext[2] * 2), velocityGraph: vel, colorMap: tex,
       alignToMotion: true, stretch: 0.35, startAngle: 0, scaleGraph: new Curve([0, 0.012]),
       alphaGraph: new Curve([0, 0.22]), colorGraph: new CurveSet([[0, 0.55], [0, 0.6], [0, 0.7]]),
@@ -211,6 +231,8 @@ export class Rain {
     });
     e.setPosition(centre[0], centre[1] + ext[1], centre[2]);
     this.app.root.addChild(e);
+    // Invisible rain need not simulate or submit a transparent draw all night.
+    e.particlesystem.enabled = false;
     return e;
   }
 
@@ -238,7 +260,7 @@ export class Rain {
     const on = power > 0;
     if (on !== this.moon.light.enabled) { this.moon.light.enabled = on; if (on) this.moon.light.shadowUpdateMode = SHADOWUPDATE_THISFRAME; }
     this.moon.light.intensity = this.moonBase + power;
-    for (const s of this.streaks) s.particlesystem.intensity = power * 0.9;   // the rain outside shows only in a flash
+    for (const s of this.streaks) { s.particlesystem.enabled = on; s.particlesystem.intensity = power * 0.9; }   // the rain outside shows only in a flash
     // Drops refract the lit room behind the viewer (a faint glow that follows how many lights are on), and flare in a flash.
     const glow = this.roomLight * 0.55 + power * 0.3;
     for (const g of this.glasses || []) if (Math.abs(g.emissiveIntensity - glow) > 1e-4) { g.emissiveIntensity = glow; g.update(); }

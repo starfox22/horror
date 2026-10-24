@@ -125,10 +125,46 @@ test('render controls apply independently to CameraFrame and quality hotkeys sha
   assert.equal(frame.bloom.intensity, 0);
   assert.equal(frame.taa.enabled, false);
   setQuality(frame, 2);
-  assert.equal(frame.rendering.renderTargetScale, 1);
+  assert.equal(frame.rendering.renderTargetScale, 0.85);
   assert.equal(frame.volumetricFog.enabled, false);
   assert.notEqual(frame.ssao.type, 'none');
   assert.equal(frame.taa.enabled, true);
   assert.ok(frame.bloom.intensity > 0);
   assert.equal(frame.updates, 2);
+});
+
+
+test('Auto targets 60 on unlimited and higher-cap displays, with a complete low-resolution fallback', () => {
+  for (const cap of [0, 60, 90, 120]) {
+    const store = storage(), prefs = new GraphicsPreferences({ storage: store });
+    prefs.setOption('fpsLimit', cap);
+    const before = store.writes;
+    for (let window = 0; window < 8; window++) sample(prefs, window * 4000, 50);
+    assert.equal(prefs.autoTarget, 60);
+    assert.equal(prefs.effective.quality, 1);
+    assert.equal(prefs.effective.resolutionScale, 0.5, '50 FPS must not be mistaken for the requested 60 FPS');
+    assert.equal(prefs.effective.volumetricFog, false);
+    assert.equal(prefs.effective.ambientOcclusion, false);
+    assert.equal(prefs.effective.bloom, false);
+    assert.equal(store.writes, before, 'measured hardware state must not replace saved user choices');
+    for (let window = 8; window < 20; window++) sample(prefs, window * 4000, 60);
+    assert.equal(prefs.effective.resolutionScale, 0.5, 'capped 60 alone is not evidence of GPU headroom to upgrade');
+    assert.equal(prefs.lastPerformance.target, 60);
+    assert.ok(prefs.lastPerformance.fps > 59);
+    prefs.setPreset('auto');
+    assert.equal(prefs.effective.quality, 3, 'explicitly retrying Auto starts a new measurement');
+  }
+});
+
+test('Auto tolerates isolated hitches and time outside gameplay without sacrificing detail', () => {
+  const prefs = new GraphicsPreferences();
+  prefs.sampleFrame(0, true);
+  // A single 200ms hitch in an otherwise sixty-frame-per-second window.
+  for (let frame = 1; frame <= 180; frame++) prefs.sampleFrame(200 + frame * 1000 / 60, true);
+  assert.equal(prefs.autoStep, 0);
+  prefs.sampleFrame(200000, false);
+  prefs.sampleFrame(210000, true);
+  assert.equal(prefs.autoStep, 0);
+  assert.equal(prefs.sample.frames, 0);
+  assert.equal(prefs.effective.resolutionScale, 1);
 });

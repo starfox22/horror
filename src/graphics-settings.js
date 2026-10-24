@@ -4,7 +4,17 @@ import { DEFAULT_FRAME_LIMIT, FRAME_LIMITS } from './frame-limiter.js';
 export const GRAPHICS_STORAGE_KEY = 'horror.graphics.v1';
 const PRESETS = { low: 1, medium: 2, high: 3 };
 const EFFECTS = ['ambientOcclusion', 'volumetricFog', 'bloom', 'taa', 'filmGrain'];
-const SCALES = [0.5, 0.75, 0.85, 1];
+const SCALES = [0.5, 0.65, 0.75, 0.85, 1];
+// Extra steps below Low give integrated GPUs room to reach the same 60 FPS
+// target. Runtime adaptation stays transient; selecting Auto again retries detail.
+const AUTO_STEPS = [
+  { quality: 3, resolutionScale: 1 },
+  { quality: 2, resolutionScale: 0.85 },
+  { quality: 2, resolutionScale: 0.75 },
+  { quality: 1, resolutionScale: 0.75 },
+  { quality: 1, resolutionScale: 0.65 },
+  { quality: 1, resolutionScale: 0.5 },
+];
 
 export function normalizeGraphicsSettings(value) {
   const source = value && typeof value === 'object' ? value : {};
@@ -31,14 +41,20 @@ export class GraphicsPreferences {
     const quality = Number(qualityOverride);
     if ([1, 2, 3].includes(quality)) this.state.preset = ['low', 'medium', 'high'][quality - 1];
     if (forceFps) this.state.showFps = true;
-    this.autoQuality = 3;
+    this.autoStep = 0;
+    this.lastPerformance = null;
     this.resetSample();
   }
 
   get effective() {
     if (this.state.preset === 'custom') return Object.fromEntries(['quality', 'resolutionScale', ...EFFECTS].map(key => [key, this.state[key]]));
-    return qualityOptions(this.state.preset === 'auto' ? this.autoQuality : PRESETS[this.state.preset]);
+    if (this.state.preset !== 'auto') return qualityOptions(PRESETS[this.state.preset]);
+    const step = AUTO_STEPS[this.autoStep];
+    return { ...qualityOptions(step.quality), resolutionScale: step.resolutionScale };
   }
+
+  get autoQuality() { return AUTO_STEPS[this.autoStep].quality; }
+  get autoTarget() { return Math.min(60, this.state.fpsLimit || 60); }
 
   notify(save = true) {
     if (save) {
@@ -51,7 +67,8 @@ export class GraphicsPreferences {
   setPreset(preset) {
     if (!['auto', 'low', 'medium', 'high', 'custom'].includes(preset)) return;
     this.state = { ...this.state, ...this.effective, preset };
-    this.autoQuality = 3;
+    this.autoStep = 0;
+    this.lastPerformance = null;
     this.resetSample();
     this.notify();
   }
@@ -75,33 +92,40 @@ export class GraphicsPreferences {
   resetSample() { this.sample = { start: null, frames: 0 }; }
 
   sampleFrame(now, active) {
-    if (!active || this.state.preset !== 'auto' || this.autoQuality === 1) { this.resetSample(); return; }
-    if (this.sample.start === null) { this.sample.start = now; return; }
+    if (!active || this.state.preset !== 'auto' || !Number.isFinite(now)) { this.resetSample(); return; }
+    if (this.sample.start === null || now < this.sample.start) { this.sample.start = now; return; }
     this.sample.frames++;
     const elapsed = now - this.sample.start;
-    if (elapsed < 4000) return;
-    const fps = this.sample.frames * 1000 / elapsed;
+    if (elapsed < 3000) return;
+    const fps = this.sample.frames * 1000 / elapsed, target = this.autoTarget;
+    this.lastPerformance = { fps, target, step: this.autoStep, elapsed };
     this.sample = { start: now, frames: 0 };
-    // A deliberately selected 30 FPS cap is healthy performance. Only lower
-    // quality when measured rendering falls meaningfully below its target.
-    const threshold = Math.min(this.autoQuality === 3 ? 40 : 24, this.state.fpsLimit ? this.state.fpsLimit * 0.8 : Infinity);
-    if (fps < threshold) {
-      this.autoQuality--;
-      this.notify(false);       // retain Auto as the saved preference, not a transient hardware result
+    // Ignore isolated long frames. A full three seconds below 92% of target
+    // lowers one step, including resolution after reaching Low. Never bounce
+    // back up merely because a capped frame rate hides the remaining GPU load.
+    if (fps < target * 0.92 && this.autoStep < AUTO_STEPS.length - 1) {
+      this.autoStep++;
+      this.notify(false);
     }
   }
 }
 
 export class GraphicsSettings {
-  constructor({ app, frame, player, canvas, grain, fps, frameLimiter, preferences, button, canOpen = () => true }) {
-    Object.assign(this, { app, frame, player, canvas, grain, fps, frameLimiter, preferences, button, canOpen });
+  constructor({ app, frame, player, canvas, grain, fps, frameLimiter, preferences, button, sceneQuality = null, canSample = () => true, canOpen = () => true }) {
+    Object.assign(this, { app, frame, player, canvas, grain, fps, frameLimiter, preferences, button, sceneQuality, canSample, canOpen });
     this.dialog = this.build();
     document.body.appendChild(this.dialog);
     this.button.hidden = false;
     this.button.addEventListener('click', () => this.open());
     this.preferences.onChange = () => this.apply();
     this.apply();
-    app.on('update', () => this.preferences.sampleFrame(performance.now(), player.active && !this.dialog.open));
+    // Pointer lock also covers the waking/drinking camera sequences, which
+    // temporarily own movement but still need Auto's frame budget.
+    app.on('frameend', () => this.preferences.sampleFrame(performance.now(),
+      (player.active || document.pointerLockElement === canvas) && !this.dialog.open && !document.hidden && this.canSample()));
+    const resetSample = () => this.preferences.resetSample();
+    document.addEventListener('visibilitychange', resetSample);
+    app.once('destroy', () => document.removeEventListener('visibilitychange', resetSample));
     window.addEventListener('keydown', event => {
       if (event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
       if (event.code === 'KeyG' && this.dialog.open) { event.preventDefault(); this.close(); return; }
@@ -119,6 +143,7 @@ export class GraphicsSettings {
   apply() {
     const options = this.effective, signature = JSON.stringify(options);
     if (signature !== this.lastOptions) {
+      this.sceneQuality?.apply(options);
       applyGraphicsOptions(this.frame, options);
       this.lastOptions = signature;
     }
@@ -135,7 +160,7 @@ export class GraphicsSettings {
     for (const key of EFFECTS) this.dialog.querySelector(`[data-option="${key}"]`).checked = this.effective[key];
     this.dialog.querySelector('[data-option="showFps"]').checked = this.settings.showFps;
     const quality = ['Low', 'Medium', 'High'][this.effective.quality - 1];
-    this.dialog.querySelector('#graphics-current').textContent = this.settings.preset === 'auto' ? `Auto · ${quality}` : this.settings.preset === 'custom' ? 'Custom settings' : quality;
+    this.dialog.querySelector('#graphics-current').textContent = this.settings.preset === 'auto' ? `Auto · ${quality} · ${Math.round(this.effective.resolutionScale * 100)}% · target ${this.preferences.autoTarget} FPS` : this.settings.preset === 'custom' ? 'Custom settings' : quality;
     this.dialog.querySelector('#graphics-save-note').textContent = this.preferences.canSave ? 'Changes apply immediately and save automatically.' : 'Changes apply immediately for this session.';
   }
 
@@ -164,11 +189,11 @@ export class GraphicsSettings {
     ];
     dialog.innerHTML = `
       <header class="graphics-header"><div><p class="eyebrow">The Apartment</p><h2 id="graphics-title">Graphics</h2></div><button type="button" id="graphics-close" aria-label="Close graphics settings">✕</button></header>
-      <p class="graphics-summary">Choose your balance of detail and performance.</p>
+      <p class="graphics-summary">Choose your balance of detail and performance. Presets also adjust shadow detail and display resolution.</p>
       <div class="graphics-select-row"><label for="graphics-preset">Quality preset</label><select id="graphics-preset"><option value="auto">Auto</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="custom">Custom</option></select></div>
-      <p class="graphics-auto-note">Auto lowers quality when needed while you play. <span id="graphics-current" role="status" aria-live="polite"></span></p>
-      <div class="graphics-select-row"><label for="graphics-resolution">Resolution scale</label><select id="graphics-resolution"><option value="0.5">50% · fastest</option><option value="0.75">75%</option><option value="0.85">85%</option><option value="1">100% · native</option></select></div>
-      <div class="graphics-select-row"><label for="graphics-fps-limit">FPS limit</label><select id="graphics-fps-limit"><option value="30">30 FPS</option><option value="60">60 FPS</option><option value="90">90 FPS</option><option value="120">120 FPS</option><option value="0">Uncapped</option></select></div>
+      <p class="graphics-auto-note">Auto targets 60 FPS and lowers detail or resolution when needed. <span id="graphics-current" role="status" aria-live="polite"></span></p>
+      <div class="graphics-select-row"><label for="graphics-resolution">Resolution scale</label><select id="graphics-resolution"><option value="0.5">50% · fastest</option><option value="0.65">65%</option><option value="0.75">75%</option><option value="0.85">85%</option><option value="1">100%</option></select></div>
+      <div class="graphics-select-row"><label for="graphics-fps-limit">FPS limit</label><select id="graphics-fps-limit"><option value="30">30 FPS</option><option value="60">60 FPS</option><option value="90">90 FPS</option><option value="120">120 FPS</option><option value="0">Unlimited</option></select></div>
       <fieldset class="graphics-effects"><legend>Effects &amp; display</legend>${effects.map(([key, label, description]) => `<label class="graphics-toggle" for="graphics-${key}"><span><span class="graphics-option-title">${label}</span><small>${description}</small></span><input type="checkbox" id="graphics-${key}" data-option="${key}"></label>`).join('')}</fieldset>
       <footer class="graphics-footer"><p id="graphics-save-note"></p><button type="button" id="graphics-done">Done</button></footer>`;
     dialog.querySelector('#graphics-close').addEventListener('click', () => this.close());
