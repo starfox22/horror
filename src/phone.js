@@ -9,7 +9,7 @@
 import { Color, Entity, StandardMaterial, Texture, Vec2, Vec3, Quat, PIXELFORMAT_RGBA8, FILTER_LINEAR, ADDRESS_CLAMP_TO_EDGE, BLEND_NONE } from 'playcanvas';
 
 const W = 540, H = 1170;                   // screen canvas (iPhone-ish 19.5:9)
-const CHARGER = new Vec3(0.3, 0.97, -1.15);   // kitchen worktop, left of the fridge (main.js lays a phone there)
+const CHARGER = new Vec3(0.3, 0.835, -1.15);   // kitchen worktop, left of the fridge (main.js lays a phone there)
 export const CLIPS = [
   { id: '0047', time: '00:47', title: 'Motion · Bedroom', evidence: 'clip-0047' },
   { id: '0258', time: '02:58', title: 'Motion · Bedroom', evidence: 'clip-0258' },

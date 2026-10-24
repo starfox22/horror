@@ -41,6 +41,16 @@ The owner explicitly requested promoting verified build 0.11 to `main` and handi
   refreshing exhale; a normal water jug and glass; the first scripted event (3 s after the fridge is shut after drinking,
   glass shatters in the bedroom, "What was that?") and a developer-menu Events list to play events in story order.
   Details: [BUILD_012.md](BUILD_012.md). Published to the claude.ai artifact; the owner then approved merging it into `main`.
+- Build 0.13 (Claude, on `claude/pensive-volta-et0etl`, owner request of 2026-10-24 after 0.12): an environment bug pass
+  (with every light off there was still light in the living room and bedroom); then a real game, AAA: the glass that
+  breaks 3 s after the fridge shuts must be heard wherever the player is; slowly built tension, smart dialogue, creative
+  jump scares, a silhouette far away in the dark, later an intruder who can kill you by surprise; the question "intruder,
+  or still dreaming?" in a plausible reality; 10-15 minutes for a smart player with high replay value; every asset
+  downloaded and AAA (never made by us); the story thought through and double-checked with agents; gameplay, graphics,
+  lighting, sounds and menus AAA and production ready. Mid-task: the intruder must look like "Scream", a masked man in
+  creepy clothes, very scary (assets already downloaded may be kept for later). When done: publish directly to `main`,
+  update the claude.ai artifact, write a hand-off, and summarise every change with screenshots. Details:
+  [BUILD_013.md](BUILD_013.md), the design in [STORY.md](STORY.md).
 - Show screenshots and links before big decisions; publish each prototype to a web link.
 - Keep everything documented so another AI can continue.
 
@@ -105,6 +115,28 @@ The host serves no .bin/.ktx2 files, so make-artifact packs the model into one G
   haze lit by the spot lamps and the torch, grading (no contrast: see Gotchas), vignette, slight fringing, eye
   adaptation (`EyeAdaptation`). High/Medium/Low (keys 1-3); Auto targets 60 FPS through effect, shadow and resolution budgets (`scene-quality.js`, `graphics-settings.js`). The limiter defaults to 60; Unlimited is manual.
 - **Sound**: Web Audio ambience/fixture feedback (`src/ambience.js`) includes rain, droplets, room tone, fridge, tap and footsteps with HRTF/reverb. Drinking (`src/drink-sequence.js`) uses downloaded CC0 gulp/exhale recordings, synchronized with the paused animation clock. See DRINK_ASSETS.md for attribution and provenance.
+
+## Build 0.13 changes (where they live)
+Full list and verification: [BUILD_013.md](BUILD_013.md); the design (truth, beats, triggers, fallbacks, endings,
+evidence, replay): [STORY.md](STORY.md). In short:
+- **Stray light** (WebGPU): the probe cross-fade's WGSL had its declarations on one line, so nothing was bound and the
+  probes never changed after loading (probes.js). One declaration per line (Gotchas).
+- **The story**: `story.js` (flags, play-time timers, beats, fallbacks, checkpoints `horror.save.v1`, run variations),
+  `story-events.js` (`STORY_EVENTS`, the developer menu's Events list), `world.js` (what the night leaves in the flat),
+  `nest.js`, `power.js` + `fusebox.js` (main, RCD, seven breakers; the downloaded consumer unit's own levers),
+  `phone.js` + `seccam.js` (the phone, Home Cam clips and LIVE through an infrared pass, the emergency call),
+  `intruder.js` + `stalker.js` + `navgrid.js` + `zones.js` + `hunt.js` (his body and mind: patrol, alert, investigate,
+  search, chase, kill, ambush, backstage), `death.js`, `endings.js` (four endings), `menu.js`, `hud.js`, `journal.js`,
+  `music.js`, `sound.js` (the recorded-sound bank), `credits.js`, `props.js` (the story's downloaded props).
+- **Assets**: the intruder (Rocketbox Male_Adult_18 dyed black + "White Mask" by shedmon) from `tools/intruder/`
+  (`fetch.mjs`, `build.mjs [masked|plain]`, `preview.mjs`); the story's props from `tools/props/` (`props.json`, pinned
+  downloads, `build.mjs` with per-prop handling: the fuse box's levers and cover, the clock's hands, the pill label, the
+  polaroids); 78 recordings from `tools/audio/` (`sounds.json`, `build.mjs`); the camera clips and the polaroid photo from
+  `tools/bake-clips.mjs` (`public/assets/clips/`). Credits: CREDITS.md and the credits screen (credits.js reads
+  `sfx.json` and `props.json`).
+- **Placement**: `tools/surfaces.mjs` lists the flat's shelves, tops and wall faces in a box (measured, not guessed).
+- **Tests**: `tools/check-power.mjs`, `tools/check-stalker.mjs` (Node); the night end to end in a headless browser with
+  `#play` (runs the night without pointer lock), see BUILD_013.md.
 
 ## Build 0.12 changes (where they live)
 Full list, measurements and before/after renders: [BUILD_012.md](BUILD_012.md). In short:
@@ -323,6 +355,17 @@ Full list, measurements and before/after renders: [BUILD_012.md](BUILD_012.md). 
 - A camera that sees something for the first time builds its shaders then: new things that appear only later (props,
   effects, the arm) belong in the warm-up's `reveal` list (main.js), and things probes must not see on the `Effects`
   layer or behind `isVisibleFunc`.
+- WGSL: one declaration per line (attributes, varyings, uniforms, textures, samplers). The engine's WGSL preprocessor
+  finds them line by line; several on one line compile but bind nothing (the 0.12 probes cross-fade wrote zeros on
+  WebGPU: the "stray light" of 0.13).
+- Placing a prop: measure the surface (`node tools/surfaces.mjs x0 x1 z0 z1 [y0 y1] [x|y|z]`). The corridor's south
+  wall face is at z 4.337, not 4.42 (a prop put on 4.42 sat half inside the wall), the bed wall's panel at x 14.11.
+- Headless staging shots: `place()` puts the player through the collision grid, so a spot on the bed or in furniture
+  is moved to the nearest free cell; shoot from the floor beside things.
+- A downloaded prop's mirror may have lost its opacity maps (Poly Haven's clock and camera glass came out black):
+  `props.json` `materials` overrides fix the material in the build.
+- The polaroid photo is baked from the game (`tools/bake-clips.mjs`), then printed into the polaroids' texture
+  (`node tools/props/build.mjs polaroids`): bake first, then rebuild that prop.
 - `app.stats` frame counters and `_shaderStats` are only filled in the engine's profiler build: to count shadow renders
   and new shaders, wrap `app.renderer.shadowRenderer.renderFace` and watch `graphicsDevice.shaders.length`
   (`tools/perf/hitch.mjs` does, see its README).

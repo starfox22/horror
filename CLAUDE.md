@@ -9,11 +9,14 @@ on its own branch, Codex on `codex-review`) and asks for one batch of changes at
 1. `AGENTS.md`: branch and merge rules shared with Codex.
 2. `docs/HANDOFF.md`: the owner's requirements build by build, how everything fits together, published builds,
    **Gotchas learned the hard way** (read them all before touching lighting, probes, shaders or the shadow atlas).
-3. `docs/BUILD_012.md`: the latest Claude build (freezes, VSync, light leaks, the drinking arm, jug and glass, the
-   scripted-event system) and how it was verified. `docs/CLAUDE_HANDOFF.md`: Codex's 0.11 handoff (still useful
-   for the waking sequence, fridge and drinking contracts).
+3. `docs/BUILD_013.md`: the latest Claude build (the night: story, the masked intruder and his AI, power and the fuse
+   box, the phone and camera, the hunt, endings, menus, downloaded props and recordings) and how it was verified;
+   `docs/STORY.md`: the design every beat follows (truth, triggers, fallbacks, endings, evidence). `docs/BUILD_012.md`
+   (freezes, VSync, light leaks, the drinking arm, the scripted-event system) and `docs/CLAUDE_HANDOFF.md` (Codex's 0.11
+   handoff: waking sequence, fridge and drinking contracts) remain useful.
 4. Topic docs when you touch that area: `docs/DRINK_ASSETS.md`, `docs/FRIDGE_ASSETS.md`, `docs/CREDITS.md`,
-   `tools/perf/README.md`, `tools/arm/README.md`.
+   `tools/perf/README.md`, `tools/arm/README.md`; the headers of `tools/intruder/build.mjs`, `tools/props/build.mjs`,
+   `tools/audio/build.mjs` and `tools/bake-clips.mjs` (each says how to reproduce its assets).
 
 `README.md` has the file map (`src/*.js`, one system per file, each opening with a comment on what it does).
 
@@ -27,8 +30,10 @@ on its own branch, Codex on `codex-review`) and asks for one batch of changes at
   (`index.html`). Only GitHub, npm and PyPI are reachable from the cloud sandbox (Sketchfab, Poly Haven, Freesound
   are blocked); GitHub repos often mirror them with their licence. Show the owner previews before swapping in a new
   look. Primitive geometry only for small functional pieces (water surfaces, fridge lining).
-- No scares, enemies, puzzles or story beyond what the owner asked for. Scripted events go in
-  `src/story-events.js` (`STORY_EVENTS`, in story order; the developer menu's Events list plays them).
+- No scares, enemies, puzzles or story beyond what the owner asked for (build 0.13's night is what was asked: follow
+  `docs/STORY.md`). Scripted events go in `src/story-events.js` (`STORY_EVENTS`, in story order; the developer menu's
+  Events list plays them); the beats themselves live in `src/story.js`.
+- Place props on measured surfaces (`node tools/surfaces.mjs x0 x1 z0 z1 [y0 y1] [x|y|z]`), never on guessed heights.
 - Every visual change: before/after captures (headless) in `docs/build-0NN/`, and a section in a `docs/BUILD_0NN.md`
   for the build plus a short entry in `docs/HANDOFF.md` (requirements list and "where they live"). Bump the build number
   on the start screen (`index.html`, "Build 0.NN").
@@ -48,9 +53,11 @@ Headless browser checks (Playwright + Chromium with SwiftShader are preinstalled
 there is no Python Playwright, so Codex's `tools/check-*.py` cannot run here). Software rendering runs at ~1 frame per
 second and takes minutes to load the flat: run long checks in the background and poll their output files.
 
-- `tools/perf/final-check.mjs <url> [webgpu]`: after the load-time warm-up, a play-through must build **no shaders**
-  and render no bursts of shadow faces. Run it on WebGL and WebGPU after anything that adds materials, lights or
-  effects.
+- `tools/perf/final-check.mjs <url> [webgpu]`: after the load-time warm-up, a play-through (Act I's interactions and
+  the night: the cut, fuse box, the figure, phone and LIVE, the hunt, the grab) must build **no shaders** and render no
+  bursts of shadow faces. Run it on WebGL and WebGPU after anything that adds materials, lights or effects.
+- `#play` runs the night without pointer lock (story time, the director, thoughts): headless play-throughs step the
+  systems by hand (see BUILD_013.md, Verification).
 - `tools/perf/hitch.mjs`, `leak.mjs`, `drink-shots.mjs`, `event-check.mjs`: see `tools/perf/README.md`.
 - `tools/shoot.mjs dist <out> name=x,z,yaw[,pitch] ...`: screenshots at chosen spots (`#shot` skips the intro).
 - URL hash options for tests: `#webgl`, `#q=1|2|3`, `#shot=x,z,yaw,pitch`, `#warm` (warm-up even with `#shot`),

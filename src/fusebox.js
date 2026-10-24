@@ -28,6 +28,9 @@ export class Fusebox {
     this.open = false; this.angle = 0;
     this.root = props.make('fusebox', { at: [FUSEBOX_AT.x, FUSEBOX_AT.y, FUSEBOX_AT.z], euler: [0, 180, 0], name: 'fuse box', configure: configureMaterial });
     this.hinge = this.root.findByName('cover');
+    // The shell's back plate lies a few millimetres off the wall, edge-on to the ceiling lights: their shadow maps put
+    // stripes (acne) on it. Its rim, levers and cover still receive shadows.
+    for (const r of this.root.findByName('box')?.findComponents('render') || []) for (const mi of r.meshInstances) mi.receiveShadow = false;
     const part = (name) => this.root.findByName(name);
     // The levers: row a = the circuits then a spare; row b = spares; the RCD; MAIN.
     const units = [

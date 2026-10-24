@@ -1,4 +1,5 @@
-// After the warm-up, nothing the player does should build a shader or re-render a burst of shadows.
+// After the warm-up, nothing the player does should build a shader or re-render a burst of shadows: Act I's
+// interactions, then the night of build 0.13 (the cut, the fuse box, the figure, the phone and LIVE, the hunt, the grab).
 // node tools/perf/final-check.mjs <url> [webgpu]
 import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
@@ -35,6 +36,17 @@ const [url, mode = 'webgl'] = process.argv.slice(2);
     await step('kitchen switch', async () => { s.switches.toggle(s.switches.rooms.find(r => r.id === 'kitchen')); }, 40);
     await step('flashlight', async () => { s.flashlight.pickUp(); }, 8);
     await step('coffee', async () => { s.devices.brew(s.devices.coffee); }, 20);
+    // Build 0.13: the night. Story time is stepped by hand (software rendering runs at about a frame a second).
+    const tick = async (seconds) => { for (let t = 0; t < seconds; t += 0.05) { s.story.update(0.05); s.power.update(0.05); s.seccam.update(0.05); s.fusebox.update(0.05); s.phone.update(0.05); } await frames(1); };
+    s.player.update = () => {};
+    await step('power cut', async () => { s.story.glassBreaks(); s.story.powerCut('test'); await tick(2); }, 10);
+    await step('fuse box', async () => { s.camera.setPosition(2.4, 1.6, 3.95); s.camera.lookAt(new s.pc.Vec3(2.33, 1.6, 4.3)); s.fusebox.toggleCover(); await tick(1.5); }, 6);
+    await step('levers', async () => { for (const id of ['bathroom', 'kitchen', 'rcd']) s.fusebox.flip(s.fusebox.switches.find(x => x.id === id)); await tick(2); }, 10);
+    await step('the figure', async () => { s.camera.setPosition(3.4, 1.62, 3.55); s.camera.lookAt(new s.pc.Vec3(12.3, 1.3, 3.55)); s.intruder.show(true); s.intruder.place(12.35, 3.55, -90); s.intruder.play('idle_breathe_01', { blend: 0 }); }, 6);
+    await step('phone', async () => { s.intruder.show(false); s.phone.take(); s.phone.charge = 40; s.phone.booted = true; s.phone.dirty = true; s.phone.raised = true; await tick(1); }, 6);
+    await step('LIVE', async () => { s.phone.openLive(); await tick(8); }, 10);
+    await step('hunt', async () => { s.phone.raised = false; s.seccam.stopLive(); s.story.huntStart('test'); await tick(6); }, 10);
+    await step('caught', async () => { s.story.caught(); }, 20);
     return out;
   });
   for (const st of result.steps) console.log(st.name.padEnd(16), JSON.stringify({ shaders: st.shaders, shadowFaces: st.shadowFaces, maxFacesPerFrame: st.maxFacesPerFrame }));

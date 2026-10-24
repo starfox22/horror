@@ -50,7 +50,7 @@ Your doctor told you to film your nights; **the camera arrived today and tonight
   upper section z 1.34..2.36 above the open shoe closet. The en-suite **bathroom** door is between them (x 9.15,
   z 0.39..1.25).
 - **Corridor** x 1.55-13.95, z 2.72..4.42, 12 m, windowless. The bedroom opens onto it at x 10.0-10.9; the **front door**
-  at its east end (x 12.9, south wall; the key bowl and post tray beside it); the **fuse box** at its west end on the
+  at its east end (x 12.9, south wall; nothing stands by it: the key bowl is on the kitchen worktop by the fridge, where you drop your keys coming in); the **fuse box** at its west end on the
   south wall (x 2.3, z 4.42) by the mouth into the open-plan room; the office opens onto it at x 3.75-5.6.
 - **Open-plan room** x -6.5..6.3: kitchen along the north wall (fridge x 1.55, sink x -2.9, oven clock, coffee machine
   and its coffee shelf), dining table, living room at the west end (sofa, laptop, arc lamp, windows), office at the
@@ -119,7 +119,7 @@ its minimum breathing room.
     the new quiet, something heavy shifts **in the ceiling**, moving towards the wardrobe. The mirror is fogged, with one
     band wiped clear at a head height above yours. *"Someone wiped the mirror."*
     - Nudge 45 s after power-back if not visited: *"...The bathroom."*
-11. **The nest.** The right wardrobe door. On its floor: a folded grey blanket, empty bottles, a cheap torch, a key that
+11. **The nest.** The right wardrobe door. On its floor: a folded charcoal blanket, water bottles, a key that
     doesn't fit your door, a returned letter for D. Kessler, and polaroids of your bed at night with you asleep in it,
     taken from where you are standing. *"That's my bed."* The oldest one has writing on the back. In the roof of the
     wardrobe a hatch is open onto black; when you look up a single drop of water falls through the torch beam.
@@ -140,7 +140,9 @@ The power is out again and stays out: the main switch is snapped off. Kessler hu
 - **First encounter (scripted, survivable, the tutorial).** His phone light comes on near the fuse box. He walks the
   open-plan room once, sweeping. For these 25 s he notices only a torch held on for more than 1.5 s or running.
   Thoughts: *"His light."* then *"Torch off. Get down."* and the prompt *C · crouch* once.
-- **Him.** A man in a dark hoodie with a phone torch (a cold white LED, the only light besides yours and the lightning).
+- **Him.** A man dressed all in black, hood up, black leather gloves, his face a blank white mask with dark eye holes (in
+  the infrared it glows; in your torch it is the first thing you see), and a phone torch (a cold white LED, the only light
+  besides yours and the lightning).
   He walks between the rooms, stops and sweeps his light, goes to noises. His light reaches a room before he does. In a
   doorway he always waits 2 s shining it down the corridor before stepping in; he never stops in the corridor. Within
   4 m you hear his breathing and his steps; sounds reach you along the flat's open paths (through doorways, never
@@ -160,7 +162,7 @@ The power is out again and stays out: the main switch is snapped off. Kessler hu
   chase, he goes up into the void for 25-40 s (creaks move across the ceiling) and comes back down. If he has been far
   away for 45 s, he heads to the room next to yours. During the hunt he pulls the nest up into the void.
 - **Caught.** The view turns to him in a quarter second, his LED fills it, black. Then the bedroom, you gasping awake,
-  in under 8 s (any key skips). The bedside clock glows 03:07 for a second in a flat with no power, then is dark; your
+  in under 8 s (any key skips). The bedside alarm clock (a wind-up one: its hands do not need the power) says 03:07 again; your
   phone says the real time. *"...A dream?"* (first), *"Again."* (second), *"Wake up. Wake up."* (third). The shards are
   still there. You keep everything you carried, everything you found, and a police call already made (with at least 30 s
   left). He starts up in the void (heard above you) and you have 20 s.
@@ -172,8 +174,8 @@ The power is out again and stays out: the main switch is snapped off. Kessler hu
     Is there somewhere you can hide?"* Survive ~100 s (60 on Story). If you hang up they call back, and a ringing phone
     is a 12 m noise unless you silenced it. Then: *"Police! Open the door!"* Your keys are gone from the bowl; they force
     it.
-  - **Get out.** The sleep diary on the office desk: *"Spare key: [the blue tin on the coffee shelf / the freezer, in the
-    peas / taped under the sofa cushion]. DON'T move it again."* (one per run). Take it, reach the front door, unlock it
+  - **Get out.** The sleep diary on the office desk: *"Spare key: [the red tin on the coffee shelf / taped under the sofa
+    cushion / in the plant pot in the hall]. DON'T move it again."* (each place can be searched without the diary) (one per run). Take it, reach the front door, unlock it
     (3 s, a 6 m noise), leave. Before the hunt, the door makes you think twice: *"Out? Barefoot? Over a glass?"*
 
 ## Endings
@@ -197,7 +199,7 @@ ceiling voids of floors 4-6; maintenance will inspect") · the prescription on t
 sleepwalking, complex sleep behaviours and hallucinations") · the sleep diary (woke on the sofa; fridge open in the
 morning; the toilet seat up — "I live alone"; "Dr. Haas says film the nights. Camera came today."; the spare key) ·
 the wiped mirror · the prints in the corridor · the nest · the old key · the returned letter · the polaroids (and what is
-written on the oldest) · clips 00:47 and 02:58 · the empty key bowl by the front door.
+written on the oldest) · clips 00:47 and 02:58 · the empty key bowl.
 
 The main menu keeps endings found, evidence found, best times, and unlocks chapter select (Act I-IV) after the first
 ending.

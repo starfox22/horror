@@ -14,10 +14,10 @@ export const BATH = { basin: [6.71, 0.93, 1.245], tap: [6.52, 1.08, 1.245], mirr
   dryer: { at: [6.72, 0.9, 1.26], euler: [8, 70, 14] },
   flood: { x0: 6.5, x1: 9.1, z0: -1.35, z1: 2.35 } };
 // Where things are (surfaces measured in the built flat): the pills on the north nightstand (top 0.57), the diary on the
-// office desk (0.86), the red tin on the coffee shelf's lower board (0.83), the key bowl on the shoe shelf inside the
-// bedroom door (0.88), the alarm clock on the south nightstand turned to the pillow; where the spare key can be: the tin,
+// office desk (0.86), the red tin on the coffee shelf's lower board (0.83), the key bowl on the kitchen worktop by the
+// fridge (0.835), the alarm clock on the south nightstand turned to the pillow; where the spare key can be: the tin,
 // under the sofa's west seat cushion, in the corridor plant's pot (rim 0.56).
-const PILLS = [13.6, 0.572, -1.0], DIARY = [3.95, 0.862, -1.05], TIN = [-4.9, 0.832, -1.15], KEY_BOWL = [9.48, 0.882, 2.02];
+const PILLS = [13.6, 0.572, -1.0], DIARY = [3.95, 0.862, -1.05], TIN = [-4.9, 0.832, -1.15], KEY_BOWL = [1.05, 0.835, -0.82];
 const CLOCK = { at: [13.62, 0.572, 1.53], yaw: -121 };
 export const SPARE_SPOTS = [
   { id: 'tin', at: [TIN[0], TIN[1] + 0.09, TIN[2]], size: 0.1 },
@@ -287,11 +287,11 @@ export class World {
   }
 
   // --- things about the flat -----------------------------------------------------------------------------------------
-  // The empty key bowl by the front door, the alarm clock by the bed (stopped at 03:07), the hair-dryer (in the basin
+  // The empty key bowl on the kitchen worktop, the alarm clock by the bed (stopped at 03:07), the hair-dryer (in the basin
   // once he has used it).
   buildThings() {
     const make = (id, at, yaw, zone, opts = {}) => this.props?.make(id, { parent: this.root, at, euler: [0, yaw, 0], configure: (m) => this.configureMaterial?.(m, zone), ...opts });
-    this.bowl = make('bowl', KEY_BOWL, 20, 'hall');
+    this.bowl = make('bowl', KEY_BOWL, 20, 'main');
     this.interactions.add({ pos: new Vec3(KEY_BOWL[0], KEY_BOWL[1] + 0.04, KEY_BOWL[2]), size: 0.14, label: () => 'The key bowl',
       use: () => { this.story?.keyBowl(); } });
     this.clock = make('clock', CLOCK.at, CLOCK.yaw, 'bed');
