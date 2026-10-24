@@ -16,11 +16,13 @@ The intended preview address is **https://starfox22.github.io/horror/codex/**. T
 
 In repository **Settings → Pages**, select **GitHub Actions** as the source. A private repository needs a GitHub plan that supports Pages for private repositories. The `github-pages` environment's deployment branch policy must permit `codex/apartment-lighting-pass`; required environment reviewers, if configured, must approve the deployment in GitHub.
 
-The branch was pushed successfully. [Deployment run 40055781528](https://github.com/starfox22/horror/actions/runs/40055781528) built both games and passed the preview checks, then failed at `actions/configure-pages@v5` because Pages is not enabled. The repository API reports `private: true` and `has_pages: false`; both site URLs return GitHub Pages “Site not found” (HTTP 404).
+The branch was pushed successfully. [Deployment run 40055781528](https://github.com/starfox22/horror/actions/runs/40055781528) built both games and passed the preview checks, then failed at `actions/configure-pages@v5` because Pages was not enabled.
 
-Initial API network failures cleared during the task. The current blocker is repository configuration and authorization: the agent's integration receives `403 Resource not accessible by integration` from the Pages API. The configure-pages action documents that automatic enablement needs a separate token with administration and Pages write permissions; its normal GITHUB_TOKEN cannot enable the site. No credentials or repository visibility were changed.
+The owner has since made the repository public. The current repository API reports `private: false` and `has_pages: false`. Creating the Pages site through this integration still returns `403 Resource not accessible by integration`; the Pages read endpoint returns 404 because no site exists. The `github-pages` deployment environment has no required reviewers or branch restrictions, so no environment-policy change is needed.
 
-The owner must enable **Settings → Pages → GitHub Actions** and allow the development branch in the `github-pages` environment. Then rerun the existing workflow. If the private repository's plan does not offer Pages, choose an eligible hosting arrangement with the owner rather than making the repository public automatically. The final documentation-only follow-up commit skips CI; it does not alter the tested game, so rerunning the linked deployment publishes the tested game revision.
+To unblock publication, the owner must open [Settings → Pages](https://github.com/starfox22/horror/settings/pages) and select **GitHub Actions** under **Build and deployment → Source**. Then rerun the existing workflow. Its normal GITHUB_TOKEN has the required permissions to deploy after the site is enabled, but cannot bootstrap Pages itself. Do not ask for a replacement token or change repository visibility again to work around the integration's missing Pages settings permission.
+
+The documentation-only follow-up commits skip CI and do not alter the tested game; rerunning the linked deployment publishes the tested game revision.
 
 ## Publish and verify
 
