@@ -1,6 +1,6 @@
 The intruder: "Male_Adult_18" and its animations from the Microsoft Rocketbox Avatar Library
 https://github.com/microsoft/Microsoft-Rocketbox (commit 0943055db6ec570bcef9f2c8b41c9e5467c808f9).
-Modified for this game: FBX converted to glTF; animations from the library retargeted by bone name (rotations and root translation); clothes, head and hands dyed black (hood, balaclava, leather gloves); textures resized to 1024 px; roughness derived from the specular map.
+Modified for this game: FBX converted to glTF; animations from the library retargeted by bone name (rotations and root translation); clothes, head and hands dyed black (hood, balaclava, leather gloves); a mask added ("White Mask" by shedmon, CC BY 4.0, https://sketchfab.com/3d-models/white-mask-c0d85900a7be438c8d2400bb71649d31: fitted to the head, textures resized); textures resized to 1024 px; roughness derived from the specular map.
 
 MIT License
 
@@ -23,3 +23,17 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+
+---
+The mask: Model Information:
+* title:	White Mask
+* source:	https://sketchfab.com/3d-models/white-mask-c0d85900a7be438c8d2400bb71649d31
+* author:	shedmon (https://sketchfab.com/shedmon)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "White Mask" (https://sketchfab.com/3d-models/white-mask-c0d85900a7be438c8d2400bb71649d31) by shedmon (https://sketchfab.com/shedmon) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

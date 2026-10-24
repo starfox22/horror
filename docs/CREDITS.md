@@ -52,15 +52,53 @@
 - **Basis Universal transcoder** (Apache-2.0) and **Draco decoder** (Apache-2.0), as built by PlayCanvas
   (`public/lib/basis`, `public/lib/draco`, from playcanvas/engine `examples/assets/wasm`).
 
+### Build 0.13: the intruder, the story's things, the recordings, the type
+
+- **The intruder**: "Male_Adult_18" and its animations (walks, run, crouch, idles, listening and trying doors, taking a
+  picture, texting) from the **Microsoft Rocketbox Avatar Library** (MIT, commit `0943055`), converted and retargeted
+  by `tools/intruder/` (FBX2glTF, BSD; glTF Transform): clothes, head and hands dyed black (hood, balaclava, leather
+  gloves). Runtime `public/assets/props/intruder.glb` + `intruder.LICENSE.txt`. "Male_Adult_20" (charcoal hoodie,
+  unmasked) is kept in `assets-src/intruder/intruder-plain.glb` and only used to bake the sleeper in the camera clips.
+- **His mask: "White Mask"** by shedmon (https://sketchfab.com/shedmon), **CC BY 4.0**,
+  https://sketchfab.com/3d-models/white-mask-c0d85900a7be438c8d2400bb71649d31 . Downloaded from the
+  `discover3d/godot_game_101` GitHub mirror (commit `242e1d6`, `tools/intruder/mask.json`; licence text in the
+  mirror's `license.txt`). Fitted to the head bone, textures resized to 1024/512 px; baked into `intruder.glb`.
+- **The story's props** (`public/assets/props/story/*.glb`, built by `tools/props/build.mjs` from
+  `tools/props/props.json`, each download pinned to a commit and checked against `tools/props/sources.lock.json`;
+  every licence and source is listed in `public/assets/props/story/LICENSES.txt`):
+  - CC BY 4.0 (Sketchfab, via GitHub mirrors; the licence is embedded in each glTF's `asset.extras`): "Smartphone" by
+    Naudaff3D (the phone; its screen shows the game's canvas) · "Prescription Pill Bottle" by 3Dexter (label repainted
+    for the story's zolpidem prescription) · "Note Book [2K]" by Lyndschoko (the sleep diary) · "door keys" by
+    artemtem (the spare keys; one of its keys alone is the old key in the nest) · "Water Bottles" by HGowl (two loose
+    bottles) · "Papers & Envelopes" by bossdeff (one envelope: the returned letter) · "Polaroid pictures" by
+    maria.jardan (three of its photos; their blood smears painted out and the photos replaced by the baked night shot
+    of your bed) · "Wood Clothes Hanger" by tedpermana.
+  - CC BY 4.0, **Google Scanned Objects** (Google Research), via `kevinzakka/mujoco_scanned_objects`: "Provence Bath
+    Towel, Royal Blue" (dyed charcoal: the nest's folded blanket) · "Remington T|Studio Hair Dryer" (in the basin).
+  - CC0 1.0, **Poly Haven**: "Power Box 01" by Rico Cilliers and Yann Kervran (the fuse box: its own levers, RCD and
+    main switch split out to move, its cover hinged) · "Cleaner Tin 01" by Tom Phillips · "Alarm Clock 01" by James
+    Ray Cock and Yann Kervran (hands on pivots, 03:07) · "Wooden Bowl 01" by Oliver Harries (the empty key bowl) ·
+    "Security Camera 02" (the Home Cam on the bedroom wall).
+- **Recordings** (`public/assets/audio/sfx/*.mp3`, 78 sounds; built by `tools/audio/build.mjs` from
+  `tools/audio/sounds.json`, which lists each one's author, title, licence, original page and GitHub mirror, pinned in
+  `sounds.lock.json`): real recordings from Freesound and OpenGameArt contributors, CC0 and CC BY 3.0/4.0, trimmed,
+  made mono, levelled and faded. The credits screen lists every author with the titles used (`src/credits.js` reads
+  `sfx.json`).
+- **Caveat** (the handwritten notes) by the Caveat Project Authors, SIL Open Font License 1.1; **Special Elite**
+  (typewritten papers) by Astigmatic, Apache License 2.0. Files and licences in `public/assets/fonts/`.
+
 ## Build tools (not shipped)
 
 glTF Transform (MIT), meshoptimizer (MIT), ktx2-encoder (MIT, wraps Basis Universal), draco3dgltf (Apache-2.0),
-sharp (Apache-2.0), Vite (MIT), Playwright (Apache-2.0).
+sharp (Apache-2.0), Vite (MIT), Playwright (Apache-2.0), FBX2glTF (BSD-3-Clause, via the `fbx2gltf` npm package),
+FFmpeg (LGPL, for the recordings).
 
 ## Made in code (placeholders until downloadable assets are reachable)
 
 - Ambience and fixture sounds: synthesized in `src/ambience.js`; the exhale and glass-break recordings above are sampled audio.
 - Rain drops, film grain and the flashlight's beam cookie are painted procedurally at runtime.
 - Small built pieces with no asset worth downloading: recessed ceiling downlight discs and the
-  wardrobe's inner carcass (shelf, rail, inner walls) in the model's own wood material.
+  wardrobe's inner carcass (shelf, rail, inner walls, the hatch and its lid) in the model's own wood material; the
+  story's paper (the building notice on the fridge, the label strips in the fuse box, the handwritten label in its
+  cover), his wet footprints, the spilt water and the bathroom's flood and mirror steam are painted at run time.
 - The coffee machine's steam puff texture and the flashlight's reflector cookie are painted at runtime.

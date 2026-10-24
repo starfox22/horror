@@ -7,10 +7,11 @@ import { areaAt, zoneAt, inWardrobe } from './zones.js';
 import { rng } from './stalker.js';
 
 export const ACTS = ['Water', 'Dark', 'Steam', 'The lodger'];
+// Where the spare key is on this run (world.js SPARE_SPOTS; the diary's line says it).
 export const SPARE_KEY = [
-  { id: 'tin', line: 'the blue tin on the coffee shelf', at: [-5.15, 1.2, -1.25] },
-  { id: 'freezer', line: 'the freezer, in the peas', at: [1.55, 0.6, -0.55] },
-  { id: 'sofa', line: 'taped under the sofa cushion', at: [-4.4, 0.45, 1.35] },
+  { id: 'tin', line: 'the red tin on the coffee shelf' },
+  { id: 'sofa', line: 'taped under the sofa cushion' },
+  { id: 'plant', line: 'in the plant pot in the hall' },
 ];
 const SAVE_KEY = 'horror.save.v1';
 const BED = [12.7, 0.5];
@@ -96,7 +97,6 @@ export class Story {
       this.sys.nest?.drop();
       this.say('...How long?', { delay: 1.2 });
     }
-    // The front door before the hunt: going out over a glass is not something you would do (yet).
     if (this.act === 4) this.sys.hunt?.update(dt);
   }
 
@@ -175,6 +175,7 @@ export class Story {
     if (this.nuisance !== 'none') this.sys.power.faults.add(this.nuisance);
     this.sys.power.trip([7.4, 0.9], cause);
     this.sys.world?.tap(true, { hot: true });
+    this.sys.world?.dryerInBasin(true);               // your hair-dryer, plugged in, dropped into the basin
     this.sys.rain?.burst?.(45);                         // lightning every 6-10 s for 45 s
     this.act = 2;
     this.save();
@@ -342,6 +343,7 @@ export class Story {
 
   wake() {
     this.dying = false;
+    this.flags.delete('woke'); this.set('woke');          // the bedside clock goes back to 03:07 (main.js)
     const lines = ['...A dream?', 'Again.', 'Wake up. Wake up.'];
     this.sys.death?.wakeUp(() => {
       this.say(lines[Math.min(this.deaths, 3) - 1], { delay: 0.6 });
@@ -365,6 +367,32 @@ export class Story {
   }
 
   escaped() { if (!this.has('ended')) this.sys.endings?.play('out'); }
+
+  // The front door (main.js). Locked at night, and the keys are not in the bowl. Before the hunt, going out over a glass
+  // is not something you would do; in the hunt, with the spare, it opens: three seconds of a stiff lock (a 6 m noise).
+  frontDoor() {
+    if (this.has('ended') || this.unlocking) return;
+    const at = [12.88, 1.05, 4.36];
+    if (!this.sys.items?.has('spare-key')) {
+      this.sys.sounds?.lockedDoor?.();
+      if (this.act < 4) {
+        if (!this.has('door-thought')) { this.set('door-thought'); this.say('Locked.'); this.say('Out? Barefoot? Over a glass?', { gap: 0.6 }); }
+        else this.say(this.has('key-bowl') ? 'My keys are gone.' : '...Where are my keys?');
+      } else this.say(this.has('key-bowl') ? 'The spare. Where’s the spare?' : 'Keys. Where are my keys?');
+      return;
+    }
+    if (this.act < 4) { this.say('Out? Barefoot? Over a glass?'); this.say('...No. Not yet.', { gap: 0.5 }); return; }
+    this.unlocking = true;
+    this.sfx('keys_unlock', { at, gain: 0.8 });
+    this.sys.hunt?.noise(at[0], at[2], 'unlock');
+    this.after(3, () => { this.unlocking = false; this.sfx('deadbolt', { at, gain: 0.9 }); this.escaped(); }, 'unlock');
+  }
+
+  // The empty key bowl by the front door.
+  keyBowl() {
+    if (this.set('key-bowl')) { this.say('Empty.'); this.say('My keys are always in here.', { gap: 0.5 }); this.sys.journal?.find('key-bowl'); }
+    else this.say('Empty.');
+  }
   sleptAgain() { if (!this.has('ended')) this.sys.endings?.play('sweet-dreams'); }
   canSleep() { return this.has('glass') && !this.has('power-cut'); }
 

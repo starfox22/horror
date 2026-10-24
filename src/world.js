@@ -2,13 +2,28 @@
 // bathroom (shut and locked with a tap running behind the door; later standing open, flooded, steamed up, the mirror
 // fogged with one band wiped clear), his wet prints in the corridor, the papers lying about (the notice on the fridge,
 // the prescription by the bed, the sleep diary on the desk), the spare key where the diary says, the empty key bowl,
-// the clocks stuck at 03:07. reset() lays out a new night; restore() rebuilds a checkpoint from the flags.
+// the alarm clock at 03:07, your hair-dryer in the basin. The things are downloaded models (props.js) where we have
+// them. reset() lays out a new night; restore() rebuilds a checkpoint from the flags.
 import { BLEND_NORMAL, CULLFACE_NONE, Color, Entity, Mesh, MeshInstance, StandardMaterial, Texture, Vec3, PIXELFORMAT_RGBA8, ADDRESS_CLAMP_TO_EDGE } from 'playcanvas';
 import { GLASS_SPOT } from './falling-glass.js';
 
 // Measured in the flat (docs/build-013): the bathroom basin's bowl and tap, its mirror, the corridor's prints.
-export const BATH = { basin: [6.78, 0.93, 1.12], tap: [6.62, 1.02, 1.12], mirror: { x: 6.485, y: 1.72, z: 1.13, w: 0.52, h: 0.82 }, floor: 0.165,
+// The bathroom (measured): the vessel basin on the vanity (bowl x 6.56-6.86, z 1.07-1.42, rim 0.97), its tap on the
+// wall side, the mirror over it (lit edge x 6.46-6.54, z 0.93-1.57), the floor; where the water spreads.
+export const BATH = { basin: [6.71, 0.93, 1.245], tap: [6.52, 1.08, 1.245], mirror: { x: 6.485, y: 1.68, z: 1.25, w: 0.56, h: 0.9 }, floor: 0.165,
+  dryer: { at: [6.72, 0.9, 1.26], euler: [8, 70, 14] },
   flood: { x0: 6.5, x1: 9.1, z0: -1.35, z1: 2.35 } };
+// Where things are (surfaces measured in the built flat): the pills on the north nightstand (top 0.57), the diary on the
+// office desk (0.86), the red tin on the coffee shelf's lower board (0.83), the key bowl on the shoe shelf inside the
+// bedroom door (0.88), the alarm clock on the south nightstand turned to the pillow; where the spare key can be: the tin,
+// under the sofa's west seat cushion, in the corridor plant's pot (rim 0.56).
+const PILLS = [13.6, 0.572, -1.0], DIARY = [3.95, 0.862, -1.05], TIN = [-4.9, 0.832, -1.15], KEY_BOWL = [9.48, 0.882, 2.02];
+const CLOCK = { at: [13.62, 0.572, 1.53], yaw: -121 };
+export const SPARE_SPOTS = [
+  { id: 'tin', at: [TIN[0], TIN[1] + 0.09, TIN[2]], size: 0.1 },
+  { id: 'sofa', at: [-5.75, 0.66, 2.6], size: 0.4 },
+  { id: 'plant', at: [7.94, 0.58, 3.02], size: 0.2 },
+];
 const PRINTS = [
   // From the bedroom opening east to the front door (left, right, ...), two side by side facing the fuse box, then back.
   [10.55, 2.85, 75, 'L'], [10.95, 3.15, 70, 'R'], [11.35, 3.3, 82, 'L'], [11.8, 3.5, 88, 'R'], [12.2, 3.42, 92, 'L'],
@@ -18,8 +33,8 @@ const PRINTS = [
 const paper = (w, h, draw) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); draw(g, w, h); return c; };
 
 export class World {
-  constructor({ app, sounds, bank, doors, closets, interactions, story, hud, configureMaterial, glassGeometry }) {
-    Object.assign(this, { app, sounds, bank, doors, closets, interactions, story, hud, configureMaterial });
+  constructor({ app, sounds, bank, doors, closets, interactions, story, hud, configureMaterial, glassGeometry, props }) {
+    Object.assign(this, { app, sounds, bank, doors, closets, interactions, story, hud, configureMaterial, props });
     this.root = new Entity('story world'); app.root.addChild(this.root);
     this.bathDoor = doors?.doors?.[0];
     this.buildShards(glassGeometry);
@@ -28,6 +43,7 @@ export class World {
     this.buildPrints();
     this.buildPapers();
     this.buildSpareKey();
+    this.buildThings();
     this.shards(false); this.flood(0); this.prints(false); this.mirrorFog(false);
     app.on('update', dt => this.update(dt));
   }
@@ -208,51 +224,94 @@ export class World {
   // Paper on surfaces, read with E (hud.examine): the notice on the fridge door, the prescription by the bed, the sleep
   // diary on the desk. Text on canvas in the notes' own hands (Special Elite for print, Caveat for handwriting).
   buildPapers() {
-    const sk = this.story?.spareKey;
     this.papers = [
       { id: 'notice', at: [1.25, 1.55, -0.355], size: [0.21, 0.297], yaw: 0, pitch: 90, className: 'typed', evidence: 'notice',
         html: '<h1>NOTICE TO RESIDENTS</h1>Following reports of noises in the ceiling voids of floors 4 to 6, the building’s maintenance company will inspect the service voids on Monday between 9:00 and 13:00.<br><br>Please make sure access hatches are clear.<br><br>Hot water is supplied centrally. Report leaks to the caretaker.<br><br>— The Management' },
-      { id: 'pills', at: [13.58, 0.66, -0.98], size: [0.07, 0.1], yaw: 30, pitch: 0, className: 'pills', evidence: 'pills', flat: true,
+      // The prescription: the bottle by the bed (its label printed for this story: tools/props).
+      { id: 'pills', model: 'pills', at: PILLS, size: [0.05, 0.08], yaw: 200, className: 'pills', evidence: 'pills',
         html: '<b>ZOLPIDEM TARTRATE 10 mg</b><br>Take ONE tablet at bedtime.<br><br>WARNING: May cause sleepwalking, sleep-driving and other complex sleep behaviours, with no memory of the event. May cause hallucinations. Do not take with alcohol.<br><br><small>Dr. M. Haas</small>' },
-      { id: 'diary', at: [3.82, 0.79, -0.98], size: [0.15, 0.21], yaw: -12, pitch: 0, className: '', evidence: 'diary', flat: true,
-        html: () => `<h2>SLEEP DIARY</h2>12th — woke on the sofa. Don’t remember going there.<br>15th — fridge open in the morning. Milk out.<br>19th — toilet seat up. I live alone.<br>21st — Dr Haas: film the nights. Keep taking the pills.<br>24th — Camera came today. Set it up on the dresser.<br><br>Spare key: ${this.story?.spareKey?.line || 'the blue tin on the coffee shelf'}. DON’T move it again.` },
+      { id: 'diary', model: 'diary', at: DIARY, size: [0.19, 0.14], yaw: -12, className: '', evidence: 'diary',
+        html: () => `<h2>SLEEP DIARY</h2>12th — woke on the sofa. Don’t remember going there.<br>15th — fridge open in the morning. Milk out.<br>19th — toilet seat up. I live alone.<br>21st — Dr Haas: film the nights. Keep taking the pills.<br>24th — Camera came today. Put it up in the bedroom corner, over the dresser.<br><br>Spare key: ${this.story?.spareKey?.line || 'the red tin on the coffee shelf'}. DON’T move it again.` },
     ];
     for (const p of this.papers) {
-      const c = paper(256, Math.round(256 * p.size[1] / p.size[0]), (g, w, h) => {
-        g.fillStyle = p.id === 'pills' ? '#fbfbf7' : '#ede7d9'; g.fillRect(0, 0, w, h);
-        g.fillStyle = 'rgba(30,28,25,0.75)';
-        for (let y = 24; y < h - 10; y += 14) g.fillRect(16, y, (w - 32) * (0.55 + Math.random() * 0.45), 3);
-      });
-      const m = this.material(`paper ${p.id}`, m => { m.diffuseMap = this.texture(c, `paper-${p.id}`); m.gloss = 0.15; m.cull = CULLFACE_NONE; });
-      const e = new Entity(`paper ${p.id}`); e.addComponent('render', { type: 'plane', material: m, castShadows: false, receiveShadows: true });
-      e.setPosition(...p.at); e.setEulerAngles(p.pitch, p.yaw, 0); e.setLocalScale(p.size[0], 1, p.size[1]);
-      this.root.addChild(e);
-      this.interactions.add({ pos: new Vec3(...p.at), size: Math.max(...p.size) * 0.7, label: () => p.id === 'notice' ? 'Read the notice' : p.id === 'pills' ? 'Look at the pills' : 'Read the diary',
-        use: () => { this.hud?.examine({ className: p.className, html: typeof p.html === 'function' ? p.html() : p.html }); this.story?.sys.journal?.find(p.evidence); } });
+      const model = p.model && this.props?.make(p.model, { parent: this.root, at: p.at, euler: [0, p.yaw, 0], configure: (m) => this.configureMaterial?.(m, p.id) });
+      if (!model) {
+        const c = paper(256, Math.round(256 * p.size[1] / p.size[0]), (g, w, h) => {
+          g.fillStyle = p.id === 'pills' ? '#fbfbf7' : '#ede7d9'; g.fillRect(0, 0, w, h);
+          g.fillStyle = 'rgba(30,28,25,0.75)';
+          for (let y = 24; y < h - 10; y += 14) g.fillRect(16, y, (w - 32) * (0.55 + Math.random() * 0.45), 3);
+        });
+        const m = this.material(`paper ${p.id}`, m => { m.diffuseMap = this.texture(c, `paper-${p.id}`); m.gloss = 0.15; m.cull = CULLFACE_NONE; });
+        const e = new Entity(`paper ${p.id}`); e.addComponent('render', { type: 'plane', material: m, castShadows: false, receiveShadows: true });
+        e.setPosition(...p.at); e.setEulerAngles(p.pitch ?? 0, p.yaw, 0); e.setLocalScale(p.size[0], 1, p.size[1]);
+        this.root.addChild(e);
+      }
+      const at = new Vec3(...p.at).add(new Vec3(0, p.model ? 0.03 : 0, 0));
+      this.interactions.add({ pos: at, size: Math.max(...p.size) * 0.7, label: () => p.id === 'notice' ? 'Read the notice' : p.id === 'pills' ? 'Look at the pills' : 'Read the diary',
+        use: () => {
+          this.hud?.examine({ className: p.className, html: typeof p.html === 'function' ? p.html() : p.html });
+          this.story?.sys.journal?.find(p.evidence);
+          if (p.id === 'diary') this.story?.set('diary-read-key');
+        } });
     }
   }
 
   // --- the spare key -----------------------------------------------------------------------------------------------
+  // Hidden in one of three places per run (story.js SPARE_KEY; the diary says which): in the red tin on the coffee
+  // shelf, taped under the sofa's cushion, pushed into the soil of the corridor's plant. Each place can be searched.
   buildSpareKey() {
-    const m = this.material('spare key brass', m => { m.diffuse = new Color(0.72, 0.56, 0.28); m.metalness = 1; m.gloss = 0.72; });
-    this.keyEntity = new Entity('spare key'); this.keyEntity.addComponent('render', { type: 'box', material: m, castShadows: false });
-    this.keyEntity.setLocalScale(0.055, 0.003, 0.022); this.root.addChild(this.keyEntity);
-    this.keyItem = this.interactions.add({ pos: new Vec3(), size: 0.12, active: () => this.keyEntity.enabled && this.story?.has('diary-read-key'),
-      label: () => 'Take the spare key', use: () => this.takeKey() });
+    this.keyEntity = this.props?.make('keys', { parent: this.root, name: 'spare key', configure: (m) => this.configureMaterial?.(m, 'key') });
+    if (!this.keyEntity) {
+      const m = this.material('spare key brass', m => { m.diffuse = new Color(0.72, 0.56, 0.28); m.metalness = 1; m.gloss = 0.72; });
+      this.keyEntity = new Entity('spare key'); this.keyEntity.addComponent('render', { type: 'box', material: m, castShadows: false });
+      this.keyEntity.setLocalScale(0.055, 0.003, 0.022); this.root.addChild(this.keyEntity);
+    }
+    this.keyEntity.enabled = false;            // hidden where it is: in the tin, under the cushion, in the soil
+    this.tin = this.props?.make('tin', { parent: this.root, at: TIN, euler: [0, 25, 0], configure: (m) => this.configureMaterial?.(m, 'tin') });
+    const where = { tin: ['Look in the tin', 'Old receipts. A screw.'], sofa: ['Feel under the cushion', 'Crumbs.'], plant: ['Feel in the pot', 'Soil.'] };
+    for (const spot of SPARE_SPOTS) {
+      this.interactions.add({ pos: new Vec3(...spot.at), size: spot.size, label: () => where[spot.id][0], active: () => !this.story?.sys.items?.has('spare-key'),
+        use: () => {
+          if (this.story?.spareKey?.id === spot.id) this.takeKey(spot);
+          else { this.bank?.play(spot.id === 'tin' ? 'latch_2' : 'blanket', { at: spot.at, gain: 0.3, rate: 1.2 }); this.story?.say(where[spot.id][1]); }
+        } });
+    }
   }
 
-  placeKey() {
-    const sk = this.story?.spareKey; if (!sk) return;
-    this.keyEntity.setPosition(...sk.at); this.keyItem.pos.set(...sk.at);
-    this.keyEntity.enabled = !this.story.sys.items?.has('spare-key');
-  }
+  placeKey() { if (this.keyEntity) this.keyEntity.enabled = false; }
 
-  takeKey() {
-    this.keyEntity.enabled = false;
+  takeKey(spot) {
     this.story?.sys.items?.add('spare-key');
-    this.bank?.play('keys_unlock', { gain: 0.2, rate: 1.3 });
-    this.story?.say('The spare.');
+    this.bank?.play('keys_unlock', { at: spot?.at, gain: 0.25, rate: 1.3 });
+    this.story?.say(this.story?.has('diary-read-key') ? 'The spare.' : '...My spare key.');
   }
+
+  // --- things about the flat -----------------------------------------------------------------------------------------
+  // The empty key bowl by the front door, the alarm clock by the bed (stopped at 03:07), the hair-dryer (in the basin
+  // once he has used it).
+  buildThings() {
+    const make = (id, at, yaw, zone, opts = {}) => this.props?.make(id, { parent: this.root, at, euler: [0, yaw, 0], configure: (m) => this.configureMaterial?.(m, zone), ...opts });
+    this.bowl = make('bowl', KEY_BOWL, 20, 'hall');
+    this.interactions.add({ pos: new Vec3(KEY_BOWL[0], KEY_BOWL[1] + 0.04, KEY_BOWL[2]), size: 0.14, label: () => 'The key bowl',
+      use: () => { this.story?.keyBowl(); } });
+    this.clock = make('clock', CLOCK.at, CLOCK.yaw, 'bed');
+    this.clockHands = this.clock ? { hour: this.clock.findByName('hand-hour'), minute: this.clock.findByName('hand-minute'), second: this.clock.findByName('hand-second') } : null;
+    this.setClock(3 * 3600 + 7 * 60);
+    this.dryer = make('dryer', BATH.dryer.at, 0, 'bath', { euler: BATH.dryer.euler });
+    if (this.dryer) this.dryer.enabled = false;
+  }
+
+  // The alarm clock's hands at `seconds` past midnight (the story's night starts at 03:07:00 and keeps time with play).
+  setClock(seconds) {
+    if (!this.clockHands) return;
+    const h = (seconds / 3600) % 12, m = (seconds / 60) % 60, s = Math.floor(seconds % 60);
+    this.clockHands.hour?.setLocalEulerAngles(0, 0, -h * 30);
+    this.clockHands.minute?.setLocalEulerAngles(0, 0, -m * 6);
+    this.clockHands.second?.setLocalEulerAngles(0, 0, -s * 6);
+  }
+
+  // Your hair-dryer in the basin (Act III: the bathroom stands open after the cut).
+  dryerInBasin(on) { if (this.dryer) this.dryer.enabled = on; }
 
   // --- whole states ------------------------------------------------------------------------------------------------
   reset(story) {
@@ -260,6 +319,7 @@ export class World {
     this.hot = false;
     if (this.bathDoor) { this.bathDoor.locked = false; }
     this.placeKey();
+    this.dryerInBasin(false);
     this.story?.sys.nest?.reset();
   }
 
@@ -270,7 +330,7 @@ export class World {
     if (f('glass') && !f('silhouette')) this.bathroomOccupied(true);
     if (f('silhouette')) { this.bathroomOccupied(false); this.prints(true); }
     if (f('power-cut') && !f('tap-off')) this.tap(true, { hot: true });
-    if (f('power-cut')) { this.flood(1); this.mirrorFog(true); }
+    if (f('power-cut')) { this.flood(1); this.mirrorFog(true); this.dryerInBasin(true); }
     this.story?.sys.nest?.restore(story);
   }
 

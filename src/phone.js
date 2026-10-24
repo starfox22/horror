@@ -6,10 +6,10 @@
 // emergency call: the dispatcher's lines, the player's whispered answers (what they can say depends on what they found),
 // a callback ring if they hang up (a 12 m noise unless the phone was silenced: hold Q).
 // Screen: a canvas (drawn when something changes) on the model's screen, the video on its own quad in front of it.
-import { Color, Entity, StandardMaterial, Texture, Vec3, Quat, PIXELFORMAT_RGBA8, FILTER_LINEAR, ADDRESS_CLAMP_TO_EDGE, BLEND_NONE } from 'playcanvas';
+import { Color, Entity, StandardMaterial, Texture, Vec2, Vec3, Quat, PIXELFORMAT_RGBA8, FILTER_LINEAR, ADDRESS_CLAMP_TO_EDGE, BLEND_NONE } from 'playcanvas';
 
 const W = 540, H = 1170;                   // screen canvas (iPhone-ish 19.5:9)
-const CHARGER = new Vec3(0.3, 0.97, -1.15);   // kitchen worktop, left of the fridge
+const CHARGER = new Vec3(0.3, 0.97, -1.15);   // kitchen worktop, left of the fridge (main.js lays a phone there)
 export const CLIPS = [
   { id: '0047', time: '00:47', title: 'Motion · Bedroom', evidence: 'clip-0047' },
   { id: '0258', time: '02:58', title: 'Motion · Bedroom', evidence: 'clip-0258' },
@@ -18,6 +18,7 @@ export const CLIPS = [
 export class Phone {
   constructor({ app, camera, interactions, bank, story, hud, seccam, clock }) {
     Object.assign(this, { app, camera, interactions, bank, story, hud, seccam, clock });
+    this.chargerAt = CHARGER;
     this.has = false; this.charge = 0; this.booted = false; this.onCharger = false; this.warm = 0; this.silenced = false;
     this.raised = false; this.raiseK = 0; this.app_ = 'lock'; this.sel = 0; this.dirty = true;
     this.call = null; this.notifications = [];
@@ -89,11 +90,30 @@ export class Phone {
     for (const e of [this.body, this.screen, this.video]) for (const mi of e.render.meshInstances) mi.isVisibleFunc = cam => cam === this.camera.camera.camera;
   }
 
-  // The downloaded phone model replaces the slab (main.js, once loaded).
+  // The downloaded phone (props.js 'phone') replaces the slab: its own screen mesh shows the screen canvas (the
+  // canvas fills the screen's UV rectangle). Copies of it lie dead on the fridge shelf and on the kitchen charger
+  // (main.js), their screens the same canvas.
   setModel(entity) {
     this.body.enabled = false;
     this.holder.addChild(entity);
     for (const r of entity.findComponents('render')) for (const mi of r.meshInstances) mi.isVisibleFunc = cam => cam === this.camera.camera.camera;
+    if (this.useScreen(entity)) this.screen.enabled = false;
+    this.video.setLocalScale(0.0626, 1, 0.0352);
+    this.video.setLocalPosition(0, 0.026, 0.0038);
+  }
+
+  // Puts the screen canvas on a phone model's own screen mesh (material 'Lock_Screen'); false if it has none.
+  useScreen(entity) {
+    const mi = entity.findComponents('render').flatMap(r => r.meshInstances).find(m => /^Lock_Screen/.test(m.material.name));
+    if (!mi) return false;
+    if (!this.modelScreenMat) {
+      const m = this.screenMat.clone();
+      m.emissiveMapTiling = new Vec2(1 / 0.7894, 1 / 0.9804); m.emissiveMapOffset = new Vec2(-0.0792 / 0.7894, -0.0069 / 0.9804);
+      m.update();
+      this.modelScreenMat = m;
+    }
+    mi.material = this.modelScreenMat;
+    return true;
   }
 
   // --- state ---------------------------------------------------------------------------------------------------

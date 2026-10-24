@@ -49,6 +49,7 @@ import { Journal } from './journal.js';
 import { Menu } from './menu.js';
 import { NavGrid } from './navgrid.js';
 import { creditsHtml } from './credits.js';
+import { Props } from './props.js';
 
 const ASSETS = new URL('./assets/apartment/', location.href).href;
 const SPAWN = { x: WAKE_EXIT.x, z: WAKE_EXIT.z, yaw: WAKE_EXIT.yaw }; // clear bedside landing
@@ -151,7 +152,7 @@ if (menu) { $('intro').style.display = 'none'; menu.setBuild('Build 0.13'); menu
 const ambience = new Ambience();
 const bank = new SoundBank(ambience);
 const soundsLoading = bank.load('./assets/audio/').catch(error => { console.warn(`Recorded sounds unavailable: ${error.message}`); return null; });
-const [grid, container, sightData] = await Promise.all([
+const [grid, container, sightData, props] = await Promise.all([
   fetch(`${ASSETS}collision.json`).then(r => {
     if (!r.ok) throw new Error(`Collision data: HTTP ${r.status}`);
     return r.json();
@@ -169,6 +170,7 @@ const [grid, container, sightData] = await Promise.all([
     asset.once('load', () => clearInterval(t)); asset.once('error', () => clearInterval(t));
   })),
   fetch(`${ASSETS}sight.json`).then(r => { if (!r.ok) throw new Error(`Sight data: HTTP ${r.status}`); return r.json(); }),
+  Props.load(app),
 ]).catch(failLoad);
 status('Lighting the rooms…', 0.9);
 
@@ -204,7 +206,6 @@ const doors = new Doors(app, apartment, interactions, grid, player, ambience);
 if (hash.has('open')) closets.doors.forEach(d => closets.toggle(d));
 const flashlight = new Flashlight(app, camera, apartment, interactions, ambience, toast,
   FLASHLIGHT_SPOT, grid, player);
-frontDoor(apartment);
 // The flashlight is stored far below the flat in the file (so its probe guess is the open-plan room); it lies in the bedroom.
 for (const r of flashlight.root.findComponents('render')) for (const mi of r.meshInstances) probes.assign(mi.material, 'bed');
 
@@ -257,25 +258,29 @@ switches.power = devices.power = fridge.power = closets.power = power;
 const nav = new NavGrid(grid, sightData);
 bank.nav = nav;
 const music = new Music(bank);
-const isPlaying = () => document.pointerLockElement === canvas && !document.hidden && !hud.reading && !story?.has('ended');
+// #play (tests): the night runs without pointer lock, so a headless browser can play it through.
+const forcePlay = hash.has('play');
+const isPlaying = () => (forcePlay || document.pointerLockElement === canvas && !document.hidden) && !hud.reading && !story?.has('ended');
 const sys = { app, camera, player, interactions, thought, bank, power, switches, devices, fridge, closets, doors, flashlight,
   intruder, hud, journal, items, music, nav };
 const story = new Story(sys);
 const events = new Director({ app, ctx: { story, fallingGlass: () => fallingGlass.play() }, isPlaying });
 sys.events = events;
-const fusebox = new Fusebox({ app, interactions, power, bank, story, hud, configureMaterial: m => probes.assign(m, 'hall') });
-const world = new World({ app, sounds: ambience, bank, doors, closets, interactions, story, hud, glassGeometry: fridge.glassGeometry,
-  configureMaterial: (m, name) => probes.assign(m, /mirror|flood/.test(name) ? 'bath' : /print|notice/.test(name) ? (/notice/.test(name) ? 'main' : 'hall') : /diary/.test(name) ? 'main' : 'bed') });
-const nest = new Nest({ app, interactions, story, hud, bank, closets });
-const seccam = new Seccam({ app, camera, intruder, closets, nest, story, bank });
+const fusebox = new Fusebox({ app, interactions, power, bank, story, hud, props, configureMaterial: m => probes.assign(m, 'hall') });
+const world = new World({ app, sounds: ambience, bank, doors, closets, interactions, story, hud, glassGeometry: fridge.glassGeometry, props,
+  configureMaterial: (m, name) => probes.assign(m, ['main', 'hall', 'bath', 'bed'].includes(name) ? name : /mirror|flood/.test(name) ? 'bath' : /print/.test(name) ? 'hall' : /notice|diary|tin/.test(name) ? 'main' : 'bed') });
+const nest = new Nest({ app, interactions, story, hud, bank, closets, props, configureMaterial: m => probes.assign(m, 'bed'),
+  stills: { url: id => `./assets/clips/${id}.jpg` } });
+const seccam = new Seccam({ app, camera, intruder, closets, nest, story, bank, props, configureMaterial: m => probes.assign(m, 'bed') });
 const phone = new Phone({ app, camera, interactions, bank, story, hud, seccam, clock: { now: () => nightClock() } });
 phone.power = power;
 const hunt = new Hunt({ app, intruder, nav, walk: grid, player, camera, flashlight, bank, story, music, difficulty: () => story.difficulty });
 const fadeEl = Object.assign(document.createElement('div'), { id: 'fade' }); document.body.appendChild(fadeEl);
 const death = new Death({ app, camera, player, intruder, bank, music, veil: fadeEl, clock: { flash: () => {} } });
 const endings = new Endings({ story, bank, music, hud, menu, fade: fadeEl, player, camera, clock: { label: () => nightClock().toTimeString().slice(0, 5) },
-  stills: { show: async (id) => { const url = await seccam.still('0258', 0); if (url) hud.examine({ className: 'photo', html: `<img src="${url}" alt="">` }); }, hide: () => hud.closeDoc() } });
-Object.assign(sys, { fusebox, world, nest, seccam, phone, hunt, death, endings, events });
+  stills: { show: async (id) => { const url = await seccam.still(id, 0); if (url) hud.examine({ className: 'photo', html: `<img src="${url}" alt="The camera, 03:14: the bed, and a man standing at its foot">` }); }, hide: () => hud.closeDoc() } });
+Object.assign(sys, { fusebox, world, nest, seccam, phone, hunt, death, endings, events, sounds: ambience });
+frontDoor(apartment);
 fridge.onShutAfterDrink = () => events.signal('fridge-shut-after-drink');
 doors.onLocked = () => story.bathroomTried();
 closets.stuck = (door) => story.wardrobeStuck(door);
@@ -297,16 +302,21 @@ power.onChange(event => {
     if (story.has('power-cut') && !story.has('restored') && power.rcd && power.main && power.live('lights2')) story.powerRestored();
   }
 });
-// The phone on the fridge's top shelf (found when the fridge is open: story.js phoneFound).
+// The phone (props.js 'phone'): in the hand (phone.js), dead on the fridge's top shelf (found when the fridge is open:
+// story.js phoneFound), and lying on the kitchen worktop while it charges.
 {
-  const m = new pc.StandardMaterial(); m.diffuse = new pc.Color(0.02, 0.02, 0.022); m.gloss = 0.8; m.useMetalness = true; m.metalness = 0.5; m.update();
-  probes.assign(m, 'main');
-  const e = new pc.Entity('phone in the fridge'); e.addComponent('render', { type: 'box', material: m, castShadows: false });
-  e.setLocalScale(0.0716, 0.0078, 0.1475);
-  fridge.frame.addChild(e); e.setLocalPosition(0.06, 1.7445, -0.06); e.setLocalEulerAngles(0, 18, 0);
+  const phoneMaterial = m => probes.assign(m, 'main');
+  const held = props.make('phone', { name: 'phone model', configure: phoneMaterial, castShadows: false });
+  if (held) phone.setModel(held);
+  const e = props.make('phone', { parent: fridge.frame, at: [0.06, 1.7445, -0.06], euler: [-90, 18, 0], name: 'phone in the fridge', configure: phoneMaterial, castShadows: false });
+  phone.useScreen(e);
   sys.fridgePhone = e;
   interactions.add({ pos: e.getPosition().clone().add(new pc.Vec3(0, 0.03, 0)), size: 0.12, active: () => e.enabled && fridge.angle > 60,
     label: () => 'Take the phone', use: () => { e.enabled = false; story.phoneFound(); } });
+  const charging = props.make('phone', { at: [phone.chargerAt.x, phone.chargerAt.y + 0.004, phone.chargerAt.z], euler: [-90, 160, 0], name: 'phone on charge', configure: phoneMaterial, castShadows: false });
+  phone.useScreen(charging);
+  charging.enabled = false;
+  phone.charger = on => { charging.enabled = on; };
 }
 // The bed: hold E to go back to sleep (Sweet Dreams), between the glass and the cut.
 {
@@ -318,6 +328,10 @@ let eDown = false;
 window.addEventListener('keydown', e => { if (e.code === 'KeyE') eDown = true; });
 window.addEventListener('keyup', e => { if (e.code === 'KeyE') eDown = false; });
 app.on('update', dt => thought.update(isPlaying() ? dt : 0));
+// The bedside clock keeps the night's time from 03:07, and is back at 03:07 every time you wake from him (story.wake).
+let clockFrom = 0;
+story.on(flag => { if (flag === 'woke') clockFrom = story.time; });
+app.on('update', () => world.setClock(3 * 3600 + 7 * 60 + Math.max(0, story.time - clockFrom)));
 if (hash.has('dark')) {
   switches.rooms.forEach(r => { if (r.on) switches.toggle(r); });
   devices.lamps.forEach(l => { if (l.on) devices.toggleLamp(l); });
@@ -365,12 +379,14 @@ if (!shot || hash.has('warm')) {
     // Build 0.13: the story's later things on view for the sweep (their shaders, and the intruder's light's shadows).
     revealInFront(phone.holder, new pc.Vec3(0.05, -0.1, -0.35)),
     () => {
-      const was = { shards: world.hasShards, flood: world.floodLevel, prints: world.printRoot.enabled, fog: world.fog.enabled, hatch: nest.hatchOpen };
+      const was = { shards: world.hasShards, flood: world.floodLevel, prints: world.printRoot.enabled, fog: world.fog.enabled, hatch: nest.hatchOpen, dryer: !!world.dryer?.enabled, charging: phone.onCharger };
       world.shards(true); world.flood(1); world.prints(true); world.mirrorFog(true); nest.hatch(true); nest.dustEntity.particlesystem.play();
+      world.dryerInBasin(true); phone.charger?.(true);
       intruder.show(true); intruder.setTorch(true); intruder.play('walk_slow_01', { blend: 0 });
       seccam.entity.camera.enabled = true;
       return () => {
         world.shards(was.shards); world.flood(was.flood); world.prints(was.prints); world.mirrorFog(was.fog); nest.hatch(was.hatch); nest.dustEntity.particlesystem.stop();
+        world.dryerInBasin(was.dryer); phone.charger?.(was.charging);
         intruder.setTorch(false); intruder.show(false); seccam.entity.camera.enabled = false;
       };
     },
@@ -541,7 +557,7 @@ if (menu) {
 }
 window.__state.ready = true;
 window.__app = { app, player, frame, camera, flashlight, interactions, switches, rain, doors, devices, closets, fridge, drink, probes, devMenu, eyes, graphics, frameLimiter, sceneQuality, wake, events, thought, fallingGlass, intruder,
-  bank, music, power, fusebox, story, world, nest, seccam, phone, hunt, death, endings, hud, journal, menu, nav, items, startNight, chapterSave, applyCheckpoint };
+  bank, music, power, fusebox, story, world, nest, seccam, phone, hunt, death, endings, hud, journal, menu, nav, items, props, startNight, chapterSave, applyCheckpoint, pc };
 
 // The artifact build (tools/make-artifact.mjs) ships the apartment as one GLB split into base64 text parts listed in
 // apartment.json; download them with real progress and reassemble the GLB in memory. Otherwise load the glTF.
@@ -586,7 +602,7 @@ function frontDoor(root) {
   for (const r of parts) for (const mi of r.meshInstances) box.add(mi.aabb);
   const c = box.center;
   interactions.add({ pos: new pc.Vec3(c.x, 1.05, box.getMin().z), size: 0.45, label: () => 'Front door',
-    use: () => { ambience.lockedDoor(); toast('It is locked.'); } });
+    use: () => story.frontDoor() });
 }
 
 function showHint() {

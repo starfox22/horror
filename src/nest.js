@@ -1,9 +1,9 @@
-// His nest (docs/STORY.md): the floor of the wardrobe's tall section behind its right door (the rail half): a blanket,
-// bottles, a cheap torch, a key that does not fit your door, a returned letter, and polaroids of you asleep, taken from
-// where you stand. Above, a hatch in the wardrobe's roof into the dark (the cabinets over it and the void above the
+// His nest (docs/STORY.md): the floor of the wardrobe's tall section behind its right door (the rail half): a folded
+// blanket, water bottles, a key that does not fit your door, a returned letter, and polaroids of you asleep, taken from
+// where you stand; your hangers pushed to the end of the rail to make room. Above, a hatch in the wardrobe's roof into the dark (the cabinets over it and the void above the
 // ceiling). Dust drifts down from it when it is open or he moves up there; once, a drop of water falls through the
 // torch beam. During the hunt he pulls all of it up after him.
-// Props are the downloaded models when they load (setProp), else simple stand-ins.
+// The things are downloaded models (props.js: tools/props), with simple stand-ins if one is missing.
 import { BLEND_NORMAL, Color, Curve, CurveSet, Entity, StandardMaterial, Texture, Vec3, EMITTERSHAPE_BOX, PIXELFORMAT_RGBA8 } from 'playcanvas';
 import { effectsLayers } from './lighting.js';
 
@@ -11,7 +11,7 @@ import { effectsLayers } from './lighting.js';
 export const NEST = { x0: 9.29, x1: 9.70, z0: -0.51, z1: 0.26, floor: 0.17, roof: 2.27, hatch: { x: 9.5, z: -0.12, size: 0.36 } };
 
 export class Nest {
-  constructor({ app, interactions, story, hud, bank, closets, stills }) {
+  constructor({ app, interactions, story, hud, bank, closets, stills, props, configureMaterial }) {
     Object.assign(this, { app, story, hud, bank, closets, stills });
     this.root = new Entity('nest'); app.root.addChild(this.root);
     const mat = (c, gloss, opts = {}) => { const m = new StandardMaterial(); m.diffuse = new Color(...c); m.gloss = gloss; m.useMetalness = true; m.metalness = opts.metal || 0;
@@ -24,20 +24,22 @@ export class Nest {
       const e = new Entity(name); e.addComponent('render', { type: 'cylinder', material: m, castShadows: true, receiveShadows: true });
       e.setLocalScale(r * 2, h, r * 2); e.setPosition(...at); e.setEulerAngles(...rot); this.root.addChild(e); return e;
     };
-    // Stand-ins (replaced by downloaded models where we have them: setProp).
+    // The downloaded models where they loaded; stand-ins otherwise. On the floor (y 0.17) and the folded blanket (0.125 high).
+    const F = NEST.floor, B = F + 0.125;
+    const model = (id, at, yaw, stand) => props?.make(id, { parent: this.root, at, euler: [0, yaw, 0], configure: (m) => configureMaterial?.(m) }) || stand();
     this.props = {
-      blanket: box('nest blanket', [0.36, 0.07, 0.5], [9.49, NEST.floor + 0.035, -0.18], mat([0.16, 0.16, 0.17], 0.08)),
-      bottle1: cyl('nest bottle', 0.033, 0.22, [9.38, NEST.floor + 0.035, 0.12], mat([0.75, 0.82, 0.86], 0.95, { opacity: 0.35 }), [90, 30, 0]),
-      bottle2: cyl('nest bottle', 0.033, 0.22, [9.62, NEST.floor + 0.11, 0.18], mat([0.75, 0.82, 0.86], 0.95, { opacity: 0.35 })),
-      torch: cyl('nest torch', 0.018, 0.16, [9.6, NEST.floor + 0.09, -0.42], mat([0.05, 0.05, 0.05], 0.6, { metal: 0.3 }), [90, 70, 0]),
-      key: box('old key', [0.05, 0.003, 0.02], [9.43, NEST.floor + 0.073, -0.3], mat([0.6, 0.5, 0.3], 0.7, { metal: 1 }), [0, 35, 0]),
-      letter: box('returned letter', [0.16, 0.002, 0.11], [9.56, NEST.floor + 0.073, -0.05], mat([0.86, 0.83, 0.76], 0.15), [0, -12, 0]),
-      polaroids: box('polaroids', [0.088, 0.008, 0.107], [9.4, NEST.floor + 0.075, -0.04], mat([0.93, 0.92, 0.89], 0.3), [0, 22, 0]),
+      blanket: model('blanket', [9.49, F, -0.19], 4, () => box('nest blanket', [0.36, 0.07, 0.5], [9.49, F + 0.035, -0.18], mat([0.16, 0.16, 0.17], 0.08))),
+      bottles: model('bottles', [9.5, F, 0.16], 35, () => cyl('nest bottle', 0.033, 0.22, [9.5, F + 0.11, 0.17], mat([0.75, 0.82, 0.86], 0.95, { opacity: 0.35 }))),
+      key: model('old-key', [9.4, B, -0.38], 35, () => box('old key', [0.05, 0.003, 0.02], [9.43, B, -0.3], mat([0.6, 0.5, 0.3], 0.7, { metal: 1 }), [0, 35, 0])),
+      letter: model('letter', [9.52, B, -0.05], -78, () => box('returned letter', [0.16, 0.002, 0.11], [9.56, B, -0.05], mat([0.86, 0.83, 0.76], 0.15), [0, -12, 0])),
+      polaroids: model('polaroids', [9.45, B, -0.24], 80, () => box('polaroids', [0.088, 0.008, 0.107], [9.4, B, -0.24], mat([0.93, 0.92, 0.89], 0.3), [0, 22, 0])),
     };
+    // Your hangers, pushed along the rail (closets.js: y 1.72, x 9.49) to its far end.
+    this.hangers = [-0.475, -0.452, -0.432, -0.405].map((z, i) => props?.make('hanger', { parent: this.root, at: [9.49, 1.733, z], euler: [0, 90 + [6, -4, 9, -7][i], 0], scale: 0.9, configure: (m) => configureMaterial?.(m) }));
     this.buildHatch(mat);
     this.buildDust();
     // E on the things in it.
-    const item = (prop, label, use) => interactions.add({ pos: prop.getPosition().clone().add(new Vec3(0, 0.02, 0)), size: 0.09,
+    const item = (prop, label, use) => interactions.add({ pos: prop.getPosition().clone().add(new Vec3(0, 0.03, 0)), size: 0.1,
       active: () => this.root.enabled && this.packed !== true && this.rightDoorOpen(), label: () => label, use });
     item(this.props.polaroids, 'Look at the polaroids', () => this.examinePolaroids());
     item(this.props.key, 'Pick up the key', () => { this.story?.oldKey(); this.hud?.examine({ className: 'typed', html: '<h1>A key</h1>Brass, worn. A front-door key.<br><br>It doesn’t fit my door: the landlord changed the lock in the spring.' }); });

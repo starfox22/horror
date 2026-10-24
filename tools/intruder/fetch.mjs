@@ -1,6 +1,7 @@
-// Downloads the intruder's sources from the Microsoft Rocketbox Avatar Library (MIT) into assets-src/intruder/:
-// the avatar "Male_Adult_20" (FBX + TGA textures) and the animations the game uses. Pinned to one commit; every file is
-// checked against its SHA-256 once recorded in sources.json (first run records them).
+// Downloads the intruder's sources into assets-src/intruder/: from the Microsoft Rocketbox Avatar Library (MIT) the
+// avatars (FBX + TGA textures) and the animations the game uses, and the mask (mask.json: "White Mask" by shedmon,
+// CC BY 4.0, from a GitHub mirror) into mask/. Each source is pinned to one commit; every file is checked against its
+// SHA-256 once recorded in sources.json (the first run records them).
 // Usage: node tools/intruder/fetch.mjs
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -30,11 +31,14 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const record = join(dirname(new URL(import.meta.url).pathname), 'sources.json');
   const known = existsSync(record) ? JSON.parse(readFileSync(record, 'utf8')).files : {};
   const files = {};
-  for (const path of FILES) {
-    const local = join(OUT, path.split('/').pop());
+  const mask = JSON.parse(readFileSync(join(dirname(new URL(import.meta.url).pathname), 'mask.json'), 'utf8'));
+  const MASK_RAW = `${mask.mirror.replace('github.com', 'raw.githubusercontent.com')}/${mask.commit}/${mask.dir}/`;
+  const sources = [...FILES.map(path => [path, RAW + encodeURI(path), join(OUT, path.split('/').pop())]),
+    ...mask.files.map(f => [`mask/${f}`, MASK_RAW + encodeURI(f), join(OUT, 'mask', f)])];
+  for (const [path, url, local] of sources) {
     mkdirSync(dirname(local), { recursive: true });
     if (!existsSync(local)) {
-      const response = await fetch(RAW + encodeURI(path));
+      const response = await fetch(url);
       if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
       writeFileSync(local, Buffer.from(await response.arrayBuffer()));
     }
@@ -44,5 +48,5 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.log(sha256.slice(0, 12), path);
   }
   writeFileSync(record, JSON.stringify({ library: 'Microsoft Rocketbox Avatar Library', repository: 'https://github.com/microsoft/Microsoft-Rocketbox',
-    commit: COMMIT, license: 'MIT', files }, null, 2) + '\n');
+    commit: COMMIT, license: 'MIT', mask: { mirror: mask.mirror, commit: mask.commit, license: mask.license }, files }, null, 2) + '\n');
 }

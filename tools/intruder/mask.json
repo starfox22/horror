@@ -1,0 +1,12 @@
+{
+  "title": "White Mask",
+  "author": "shedmon",
+  "authorUrl": "https://sketchfab.com/shedmon",
+  "source": "https://sketchfab.com/3d-models/white-mask-c0d85900a7be438c8d2400bb71649d31",
+  "license": "CC-BY-4.0",
+  "mirror": "https://github.com/discover3d/godot_game_101",
+  "commit": "242e1d6e12dcb0daef869c162e6381773e68a114",
+  "dir": "nc5432__Godot-Multiplayer/Models/white_mask",
+  "files": ["license.txt", "scene.gltf", "scene.bin", "textures/Default_baseColor.jpeg", "textures/Default_metallicRoughness.png", "textures/Default_normal.png"],
+  "fit": { "rotateX": 37, "scale": 0.68, "at": [0, 1.705, 0.098] }
+}

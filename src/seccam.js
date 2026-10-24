@@ -7,12 +7,20 @@
 import { Color, Entity, RenderTarget, Texture, Vec3, PIXELFORMAT_RGBA8, FILTER_LINEAR, ADDRESS_CLAMP_TO_EDGE, TONEMAP_ACES, GAMMA_SRGB,
   ShaderUtils, SEMANTIC_POSITION, BlendState, drawQuadWithShader } from 'playcanvas';
 
-export const CAM = { pos: [14.12, 1.98, 2.18], look: [10.6, 0.85, 0.05], fov: 96 };
+// The lens (the camera model's front: props.js 'camera', its bracket on the bed wall's panel at x 14.11) and what it looks at.
+export const CAM = { pos: [13.93, 1.95, 2.08], look: [10.6, 0.85, 0.05], fov: 96 };
 const RW = 384, RH = 216;
 
 export class Seccam {
-  constructor({ app, camera, intruder, closets, nest, story, bank }) {
+  constructor({ app, camera, intruder, closets, nest, story, bank, props, configureMaterial }) {
     Object.assign(this, { app, intruder, closets, nest, story, bank });
+    // The camera itself (Poly Haven's "Security Camera 02", CC0): aimed along the view, its back 0.2 m behind the lens.
+    const lens = new Vec3(...CAM.pos), dir = new Vec3(...CAM.look).sub(lens).normalize();
+    this.body = props?.make('camera', { name: 'security camera body', configure: configureMaterial });
+    if (this.body) {
+      this.body.setPosition(lens.clone().sub(dir.clone().mulScalar(0.225))); this.body.lookAt(lens.clone().sub(dir.clone().mulScalar(1)));
+      for (const r of this.body.findComponents('render')) for (const mi of r.meshInstances) mi.isVisibleFunc = cam => cam.node?.name !== 'security camera' && cam.frustum.containsAabb(mi.aabb);
+    }
     const device = app.graphicsDevice;
     const tex = (name) => new Texture(device, { name, width: RW, height: RH, format: PIXELFORMAT_RGBA8, mipmaps: false, minFilter: FILTER_LINEAR, magFilter: FILTER_LINEAR,
       addressU: ADDRESS_CLAMP_TO_EDGE, addressV: ADDRESS_CLAMP_TO_EDGE });

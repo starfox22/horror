@@ -62,7 +62,7 @@ export class Hunt {
   noise(x, z, kind) {
     if (!this.active) return;
     const hear = this.stalker.tune.hear;
-    const radius = kind === 'glass' ? 5 : kind === 'loud' ? hear.loud : kind === 'phone' ? 12 : hear[kind] ?? 0;
+    const radius = kind === 'glass' ? 5 : kind === 'unlock' ? 6 : kind === 'loud' ? hear.loud : kind === 'phone' ? 12 : hear[kind] ?? 0;
     this.stalker.noise(x, z, radius);
   }
 

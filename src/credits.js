@@ -1,6 +1,9 @@
 // The credits screen (menu.js) and its source of truth for what ships: keep in step with docs/CREDITS.md.
 import sfx from '../public/assets/audio/sfx.json' with { type: 'json' };
+import props from '../tools/props/props.json' with { type: 'json' };
 
+// One line per model (the keys and the old key are one download).
+const dedupe = (list) => [...new Map(list.map(p => [`${p.repo}/${p.file}`, p])).values()];
 const people = (list) => list.map(([what, who, licence, url]) => `<li>${what} — ${url ? `<a href="${url}" target="_blank" rel="noopener">${who}</a>` : who} (${licence})</li>`).join('');
 
 export function creditsHtml() {
@@ -21,8 +24,10 @@ export function creditsHtml() {
       ['“Glass Water Jug”', 'ShotaB', 'CC BY 4.0', 'https://sketchfab.com/ShotaB'],
       ['“Glass Collection”', 'RagingCow', 'CC BY 4.0', 'https://sketchfab.com/marcussamiran'],
     ])}</ul>
+    <h3>The night's things</h3><ul class="cols">${people(dedupe(props.props).map(p => [`“${p.title.replace(/ \(.*\)$/, '')}”`, p.author, p.license, p.authorUrl || p.source]))}</ul>
     <h3>People</h3><ul>${people([
       ['The intruder and the arm: avatars and animations from the Microsoft Rocketbox Avatar Library', 'Microsoft', 'MIT', 'https://github.com/microsoft/Microsoft-Rocketbox'],
+      ['His mask: “White Mask”', 'shedmon', 'CC BY 4.0', 'https://sketchfab.com/shedmon'],
     ])}</ul>
     <h3>Recordings</h3><p>Real recordings from Freesound and OpenGameArt contributors, through GitHub mirrors. Thank you:</p><ul class="cols">${rec}</ul>
     <h3>Type</h3><ul>${people([

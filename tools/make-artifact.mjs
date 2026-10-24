@@ -49,8 +49,8 @@ for (let at = 0, n = 0; at < glb.length; at += PART, n++) {
 }
 writeFileSync(`${APT}/apartment.json`, JSON.stringify({ bytes: glb.length, parts }));
 
-// Other models (assets/props/*.glb): one base64 text file each (src/packed.js reads them).
-for (const f of readdirSync(`${OUT}/assets/props`)) if (f.endsWith('.glb')) {
+// Other models (assets/props/**/*.glb): one base64 text file each (src/packed.js reads them).
+for (const f of readdirSync(`${OUT}/assets/props`, { recursive: true })) if (f.endsWith('.glb')) {
   writeFileSync(`${OUT}/assets/props/${f}.b64.txt`, readFileSync(`${OUT}/assets/props/${f}`).toString('base64'));
   rmSync(`${OUT}/assets/props/${f}`);
 }

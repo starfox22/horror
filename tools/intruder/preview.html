@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Intruder preview</title>
+<style>html,body{margin:0;background:#111;overflow:hidden}canvas{display:block}</style></head>
+<body>
+<canvas id="c" width="512" height="512"></canvas>
+<script type="module">
+// tools/intruder/preview.mjs drives this page: the intruder GLB under a studio light, the camera framed on a bone.
+import * as pc from '/pc/playcanvas.mjs';
+const canvas = document.getElementById('c');
+const app = new pc.Application(canvas, { graphicsDeviceOptions: { antialias: true, alpha: false } });
+app.setCanvasFillMode(pc.FILLMODE_NONE);
+app.setCanvasResolution(pc.RESOLUTION_FIXED, 512, 512);
+app.scene.ambientLight = new pc.Color(0.06, 0.06, 0.07);
+app.start();
+const camera = new pc.Entity('camera');
+camera.addComponent('camera', { clearColor: new pc.Color(0.1, 0.1, 0.11), fov: 30, nearClip: 0.01, farClip: 50 });
+camera.camera.toneMapping = pc.TONEMAP_ACES;
+camera.camera.gammaCorrection = pc.GAMMA_SRGB;
+app.root.addChild(camera);
+const light = (euler, intensity, color = new pc.Color(1, 0.96, 0.9)) => {
+  const e = new pc.Entity(); e.addComponent('light', { type: 'directional', color, intensity }); e.setEulerAngles(...euler); app.root.addChild(e);
+};
+light([45, 20, 0], 1.6); light([20, 200, 0], 0.5, new pc.Color(0.7, 0.8, 1)); light([-20, 120, 0], 0.4);
+window.frames = (n) => new Promise(r => { let i = 0; const f = () => (++i >= n ? r() : requestAnimationFrame(f)); requestAnimationFrame(f); });
+let body;
+window.boot = (url) => new Promise((resolve, reject) => {
+  const asset = new pc.Asset('intruder', 'container', { url });
+  asset.once('load', a => {
+    body = a.resource.instantiateRenderEntity();
+    app.root.addChild(body);
+    body.addComponent('anim', { activate: true });
+    for (const t of a.resource.animations) body.anim.assignAnimation(t.resource.name, t.resource, undefined, true);
+    resolve(a.resource.animations.map(t => t.resource.name));
+  });
+  asset.once('error', e => reject(String(e)));
+  app.assets.add(asset); app.assets.load(asset);
+});
+// A clip at a time (seconds), or the rest pose (clip null).
+window.pose = async (clip, time = 0) => {
+  if (clip) { body.anim.baseLayer.transition(clip, 0); await window.frames(2); body.anim.baseLayer.activeStateCurrentTime = time; body.anim.speed = 0; }
+  await window.frames(3);
+};
+// Camera at yaw/pitch degrees around a bone, at distance d.
+window.view = (bone, yaw, pitch, d) => {
+  const target = body.findByName(bone).getPosition().clone();
+  if (bone === "Bip01 Head") target.y += 0.09;
+  const y = yaw * Math.PI / 180, p = pitch * Math.PI / 180;
+  camera.setPosition(target.x + d * Math.cos(p) * Math.sin(y), target.y + d * Math.sin(p), target.z + d * Math.cos(p) * Math.cos(y));
+  camera.lookAt(target);
+};
+window.ready = true;
+</script>
+</body>
+</html>

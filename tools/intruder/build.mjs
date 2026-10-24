@@ -5,7 +5,9 @@
 //     proportions), the face's bones left at rest, redundant keys removed.
 //  3. Textures: the avatar's own 2048 px TGAs, base colour dyed for the look (below), normal map, and a roughness map
 //     derived from its specular map; 1024 px.
-//  4. A mask (tools/intruder/mask.json: a downloaded model) fixed to the head bone, when the look has one.
+//  4. The mask (tools/intruder/mask.json: "White Mask" by shedmon, CC BY 4.0, downloaded by fetch.mjs) fixed to the head
+//     bone: its geometry baked into the bone's rest space (fit: tilt, scale, where its centre sits on the standing
+//     avatar), textures 1024 px.
 // Looks: 'masked' (Male_Adult_18, the game's intruder: hood up, everything dyed black, black leather gloves, the face
 // under a mask) and 'plain' (Male_Adult_20 in a charcoal hoodie, the first draft; kept for later).
 // Usage: node tools/intruder/fetch.mjs && node tools/intruder/build.mjs [masked|plain]   (needs ffmpeg for the TGAs)
@@ -15,7 +17,7 @@ import { join } from 'node:path';
 import sharp from 'sharp';
 import { NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
-import { resample, prune, dedup } from '@gltf-transform/functions';
+import { resample, prune, dedup, mergeDocuments, transformMesh, unpartition } from '@gltf-transform/functions';
 import { ANIMATIONS, AVATARS, COMMIT, OUT } from './fetch.mjs';
 
 const FBX2GLTF = 'node_modules/fbx2gltf/bin/Linux/FBX2glTF';
@@ -120,17 +122,77 @@ for (const material of root.listMaterials()) {
     .setBaseColorFactor([1, 1, 1, 1]).setMetallicFactor(0).setRoughnessFactor(1).setEmissiveFactor([0, 0, 0]).setAlphaMode('OPAQUE');
 }
 
-await doc.transform(resample({ tolerance: 1e-4 }), prune({ keepLeaves: true }), dedup());
+// Column-major 4x4 matrices (glTF's layout), just what the mask's fit needs.
+const mat4 = {
+  identity: () => [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+  mul: (a, b) => { const o = new Array(16).fill(0); for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) for (let k = 0; k < 4; k++) o[c * 4 + r] += a[k * 4 + r] * b[c * 4 + k]; return o; },
+  translation: ([x, y, z]) => [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, z, 1],
+  scaling: (s) => [s, 0, 0, 0, 0, s, 0, 0, 0, 0, s, 0, 0, 0, 0, 1],
+  rotationX: (a) => [1, 0, 0, 0, 0, Math.cos(a), Math.sin(a), 0, 0, -Math.sin(a), Math.cos(a), 0, 0, 0, 0, 1],
+  // A rigid transform's inverse (rotation and translation; the head bone has no scale).
+  invertRigid: (m) => {
+    const o = [m[0], m[4], m[8], 0, m[1], m[5], m[9], 0, m[2], m[6], m[10], 0, 0, 0, 0, 1];
+    for (let r = 0; r < 3; r++) o[12 + r] = -(o[r] * m[12] + o[4 + r] * m[13] + o[8 + r] * m[14]);
+    return o;
+  },
+};
+
+// The mask over the balaclava: a rigid child of the head bone, so every clip carries it.
+if (LOOK === 'masked') {
+  const spec = JSON.parse(readFileSync(new URL('./mask.json', import.meta.url), 'utf8'));
+  const mdoc = await io.read(join(OUT, 'mask', 'scene.gltf'));
+  const mroot = mdoc.getRoot(), head = nodes.get('Bip01 Head');
+  // fit: the model's own centre to the origin, tilted upright (rotateX), scaled to a face, moved onto the face.
+  const meshNodes = mroot.listNodes().filter(n => n.getMesh());
+  const lo = [1e9, 1e9, 1e9], hi = [-1e9, -1e9, -1e9], v = [0, 0, 0];
+  for (const n of meshNodes) {
+    const w = n.getWorldMatrix();
+    for (const prim of n.getMesh().listPrimitives()) {
+      const pos = prim.getAttribute('POSITION');
+      for (let i = 0; i < pos.getCount(); i++) {
+        pos.getElement(i, v);
+        for (let k = 0; k < 3; k++) { const c = w[k] * v[0] + w[4 + k] * v[1] + w[8 + k] * v[2] + w[12 + k]; lo[k] = Math.min(lo[k], c); hi[k] = Math.max(hi[k], c); }
+      }
+    }
+  }
+  const fit = [mat4.translation(spec.fit.at), mat4.scaling(spec.fit.scale), mat4.rotationX(spec.fit.rotateX * Math.PI / 180),
+    mat4.translation([0, 1, 2].map(k => -(lo[k] + hi[k]) / 2))].reduce(mat4.mul);
+  const toHead = mat4.invertRigid(head.getWorldMatrix());
+  for (const n of meshNodes) {
+    transformMesh(n.getMesh(), mat4.mul(toHead, mat4.mul(fit, n.getWorldMatrix())));
+    n.setMatrix(mat4.identity());
+  }
+  // Textures from 4096 px down to 1024 (colour, JPEG) and 512 (normal and roughness, PNG): a smooth face.
+  for (const t of mroot.listTextures()) {
+    const jpeg = t.getMimeType() === 'image/jpeg', size = jpeg ? 1024 : 512;
+    const image = sharp(Buffer.from(t.getImage())).resize(size, size);
+    t.setImage(await (jpeg ? image.jpeg({ quality: 90, mozjpeg: true }) : image.png({ compressionLevel: 9 })).toBuffer());
+  }
+  for (const material of mroot.listMaterials()) material.setName(`mask ${material.getName()}`);
+  const map = mergeDocuments(doc, mdoc);
+  for (const n of meshNodes) {
+    const node = map.get(n);
+    node.setName(`mask ${n.getName()}`);
+    for (const p of node.listParents()) if (p.propertyType === 'Node' || p.propertyType === 'Scene') p.removeChild(node);
+    head.addChild(node);
+  }
+  const scene = root.listScenes()[0];
+  for (const s of root.listScenes()) if (s !== scene) s.dispose();
+  root.setDefaultScene(scene);
+}
+
+await doc.transform(unpartition(), resample({ tolerance: 1e-4 }), prune({ keepLeaves: true }), dedup());
 root.getAsset().copyright = 'Copyright (c) 2020 Microsoft (Microsoft Rocketbox Avatar Library), MIT License';
 root.getAsset().extras = {
   source: 'https://github.com/microsoft/Microsoft-Rocketbox', sourceCommit: COMMIT, avatar: AVATAR, license: 'MIT',
   licenseUrl: `https://github.com/microsoft/Microsoft-Rocketbox/blob/${COMMIT}/LICENSE.md`,
-  modifications: `FBX converted to glTF; animations from the library retargeted by bone name (rotations and root translation); ${LOOK === 'masked' ? 'clothes, head and hands dyed black (hood, balaclava, leather gloves)' : 'hoodie dyed charcoal'}; textures resized to 1024 px; roughness derived from the specular map.`,
+  modifications: `FBX converted to glTF; animations from the library retargeted by bone name (rotations and root translation); ${LOOK === 'masked' ? 'clothes, head and hands dyed black (hood, balaclava, leather gloves); a mask added ("White Mask" by shedmon, CC BY 4.0, https://sketchfab.com/3d-models/white-mask-c0d85900a7be438c8d2400bb71649d31: fitted to the head, textures resized)' : 'hoodie dyed charcoal'}; textures resized to 1024 px; roughness derived from the specular map.`,
   clips,
 };
 await io.write(TARGET, doc);
 writeFileSync(TARGET.replace('.glb', '.LICENSE.txt'), `The intruder: "${AVATAR}" and its animations from the Microsoft Rocketbox Avatar Library\n` +
   `https://github.com/microsoft/Microsoft-Rocketbox (commit ${COMMIT}).\nModified for this game: ${root.getAsset().extras.modifications}\n\n` +
-  readFileSync(join(OUT, 'LICENSE.md'), 'utf8'));
+  readFileSync(join(OUT, 'LICENSE.md'), 'utf8') +
+  (LOOK === 'masked' ? `\n\n---\nThe mask: ${readFileSync(join(OUT, 'mask', 'license.txt'), 'utf8')}` : ''));
 console.log(TARGET, (readFileSync(TARGET).length / 1e6).toFixed(2), 'MB');
 console.table(clips);
