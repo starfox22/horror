@@ -26,20 +26,26 @@ export function sampleDrink(time, { shelf = [0, -0.45, -0.9], reducedMotion = fa
     glass[1] += Math.sin((t - 3.85) * 9.4) * 0.0018 * sipWindow;
     tilt += Math.sin((t - 3.85) * 9.4) * 0.65 * sipWindow;
   }
-  const grip = drinkEase((t - 0.8) / 0.55) * (1 - drinkEase((t - 7.25) / 0.35));
+  // Reduced motion cuts to a held glass and replaces it directly after the
+  // sip. This removes the long reaching arm without an unsupported floating
+  // glass or a forced head turn; the recorded sip/relief clock is unchanged.
+  if (reducedMotion && t < 2.55) glass = chest.slice();
+  if (reducedMotion && t >= 6.3) glass = shelf;
+  const carried = reducedMotion ? t < 6.3 : t >= 1.35 && t < 7.25;
+  const grip = reducedMotion ? (carried ? 1 : 0) : drinkEase((t - 0.8) / 0.55) * (1 - drinkEase((t - 7.25) / 0.35));
   // This is the palm's point of contact. The hand asset's wrist offset is
   // calibrated separately; the shared transform keeps fingertips on the glass.
   const contactAngle = tilt * Math.PI / 180;
   const contact = [glass[0] + 0.044, glass[1] + 0.066 * Math.cos(contactAngle), glass[2] + 0.066 * Math.sin(contactAngle)];
   let hand = contact;
-  if (t < 1.15) hand = mix(offscreen, contact, drinkEase(t / 1.15));
-  else if (t > 7.55) hand = mix(contact, offscreen, drinkEase((t - 7.55) / 0.7));
+  if (!reducedMotion && t < 1.15) hand = mix(offscreen, contact, drinkEase(t / 1.15));
+  else if (!reducedMotion && t > 7.55) hand = mix(contact, offscreen, drinkEase((t - 7.55) / 0.7));
   const consumed = drinkEase((t - 3.85) / 1.55);
   return { time: t, glass, hand, tilt, grip, consumed, fill: Math.max(0.037, 0.104 - consumed * 0.067),
-    carried: t >= 1.35 && t < 7.25,
-    handVisible: t < 8.25,
+    carried,
+    handVisible: reducedMotion ? carried : t < 8.25,
     lean: reducedMotion ? 0 : drinkEase(t / 1.05) * (1 - drinkEase((t - 1.35) / 1.2)),
-    headLift: reducedMotion ? 0 : drinkEase((t - 2.45) / 0.8) * (1 - drinkEase((t - 6.1) / 1.2)),
+    headLift: reducedMotion ? 0 : drinkEase(t / 0.8) * (1 - drinkEase((t - 8.25) / 0.75)),
     complete: t >= DRINK_DURATION };
 }
 

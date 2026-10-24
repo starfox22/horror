@@ -8,6 +8,7 @@ from urllib.parse import urlsplit
 from playwright.sync_api import sync_playwright
 url,out=sys.argv[1:3];mode=sys.argv[3]if len(sys.argv)>3 else'webgl';Path(out).mkdir(parents=True,exist_ok=True)
 quality=int(os.environ.get('DRINK_QUALITY','1'));assert quality in(1,2,3)
+aim_glass=os.environ.get('DRINK_AIM_GLASS')=='1'
 errors=[];bad=[];console=[]
 with sync_playwright()as p:
     flags=['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist']
@@ -32,8 +33,10 @@ with sync_playwright()as p:
         page.evaluate('''()=>{const s=window.__app,p=s.player;p.bobOn=false;p.pos.set(1.12,0,.68);p.floor=p.grid.floorUnder(p.pos.x,p.pos.z,.22);p.eyeY=p.floor+1.62;p.vel.set(0,0,0);const d=s.fridge.handle.clone().sub(new (p.pos.constructor)(p.pos.x,p.eyeY,p.pos.z));p.yaw=Math.atan2(-d.x,-d.z)*180/Math.PI;p.pitch=Math.atan2(d.y,Math.hypot(d.x,d.z))*180/Math.PI;p.apply(0);s.interactions.enabled=true;s.interactions.update();}''')
         page.wait_for_function('window.__app.interactions.focus?.label()==="Open the refrigerator"');page.keyboard.press('e');page.wait_for_function('window.__app.fridge.openRequested')
         page.evaluate('''()=>{const f=window.__app.fridge;for(let i=0;i<300&&f.moving;i++)f.update(1/60);window.__app.interactions.update();}''')
+        if aim_glass:
+            page.evaluate('''()=>{const s=window.__app,p=s.player,d=s.fridge.glassTarget.clone().sub(s.camera.getPosition());p.yaw=Math.atan2(-d.x,-d.z)*180/Math.PI;p.pitch=Math.atan2(d.y,Math.hypot(d.x,d.z))*180/Math.PI;p.apply(0);s.interactions.update();}''')
         page.wait_for_function('window.__app.interactions.focus?.label()==="Take the glass and drink water"')
-        print('Native E opening; unchanged view offers glass on second E',flush=True)
+        print('Native E opening; glass offers second E'+(' after direct gaze'if aim_glass else' from unchanged view'),flush=True)
         page.evaluate('''()=>{window.__app.drink.clock=()=>0;}''');page.keyboard.press('e');page.wait_for_function('window.__app.drink.running');assert not state()['active'],state()
         page.keyboard.press('e');page.keyboard.press('w');assert page.evaluate('window.__app.fridge.openRequested && !window.__app.player.active && window.__app.drink.time===0')
         page.evaluate('''()=>{const d=window.__app.drink;d.time=.8;d.lastTime=.8;d.clock=()=>.8;d.update();}''');frames();page.screenshot(path=str(Path(out)/'drink-reach.png'))
@@ -54,5 +57,5 @@ with sync_playwright()as p:
         page.evaluate('''()=>{const s=window.__app,f=s.fridge,p=s.player,d=f.handle.clone().sub(s.camera.getPosition());p.yaw=Math.atan2(-d.x,-d.z)*180/Math.PI;p.pitch=Math.atan2(d.y,Math.hypot(d.x,d.z))*180/Math.PI;p.apply(0);s.interactions.enabled=true;s.interactions.update();}''')
         page.wait_for_function('window.__app.interactions.focus?.label()==="Close the refrigerator"');page.keyboard.press('e');page.wait_for_function('!window.__app.fridge.openRequested');page.evaluate('''()=>{const f=window.__app.fridge;for(let i=0;i<300&&f.moving;i++)f.update(1/60);}''');assert page.evaluate('window.__app.fridge.angle===0 && !window.__app.fridge.light.light.enabled')
         assert not errors,errors;assert not console,console;assert not bad,bad
-        result={'mode':mode,'quality':quality,'nativeSecondE':True,'pauseResume':True,'hiddenFreeze':True,'completed':done,'assets':s,'errors':errors,'consoleErrors':console,'httpErrors':bad,'method':'Native input; deterministic animation stepping for software rendering, not throughput.'};Path(out,'validation.json').write_text(json.dumps(result,indent=2));print(json.dumps(result),flush=True)
+        result={'mode':mode,'quality':quality,'gaze':'glass'if aim_glass else'opening','nativeSecondE':True,'pauseResume':True,'hiddenFreeze':True,'completed':done,'assets':s,'errors':errors,'consoleErrors':console,'httpErrors':bad,'method':'Native input; deterministic animation stepping for software rendering, not throughput.'};Path(out,'validation.json').write_text(json.dumps(result,indent=2));print(json.dumps(result),flush=True)
     finally:browser.close()

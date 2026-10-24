@@ -10,7 +10,7 @@ import { setupLighting, addDownlights } from './lighting.js';
 import { Probes, ZONES, baseName } from './probes.js';
 import { setupPost, EyeAdaptation } from './post.js';
 import { GraphicsPreferences, GraphicsSettings } from './graphics-settings.js';
-import { SceneQuality } from './scene-quality.js';
+import { SceneQuality, backingPixelRatio, sceneQualityOptions } from './scene-quality.js';
 import { installFrameLimiter } from './frame-limiter.js';
 import { WakeSequence, WAKE_EXIT } from './wake-sequence.js';
 import { Fridge } from './fridge.js';
@@ -86,7 +86,8 @@ const device = await pc.createGraphicsDevice(canvas, {
   deviceTypes: hash.has('webgl') ? [pc.DEVICETYPE_WEBGL2] : [pc.DEVICETYPE_WEBGPU, pc.DEVICETYPE_WEBGL2],
   antialias: false, powerPreference: 'high-performance',
 }).catch(failLoad);
-device.maxPixelRatio = Math.min(window.devicePixelRatio, 1.5);
+device.maxPixelRatio = backingPixelRatio(sceneQualityOptions(graphicsPreferences.effective.quality),
+  window.innerWidth, window.innerHeight, window.devicePixelRatio);
 
 const opts = new pc.AppOptions();
 opts.graphicsDevice = device;

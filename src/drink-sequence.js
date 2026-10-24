@@ -111,6 +111,7 @@ export class DrinkSequence {
     });
     this.glassInverse = new Mat4(); this.shelfLocal = new Vec3(); this.offset = new Vec3(); this.poseRotation = new Quat(); this.tiltRotation = new Quat();
     this.liquidRotation = new Quat(); this.liquidUp = new Vec3();
+    this.headRotation = new Quat(); this.cameraRotation = new Quat();
     this.onVisibility = () => { this.lastTime = null; if (ownerDocument?.hidden) this.audio.pause(); };
     ownerDocument?.addEventListener('visibilitychange', this.onVisibility);
     fridge.setDrinkAction(() => this.start());
@@ -125,9 +126,18 @@ export class DrinkSequence {
     this.running = true; this.time = 0; this.lastTime = this.clock();
     this.locked = this.ownerDocument ? !!this.ownerDocument.pointerLockElement : true;
     this.basePosition = this.camera.getPosition().clone(); this.baseRotation = this.camera.getEulerAngles().clone();
+    this.baseOrientation = this.camera.getRotation().clone();
     this.savedYaw = this.player.yaw; this.savedPitch = this.player.pitch;
     this.reachDirection = new Vec3().sub2(this.fridge.glassShelfPosition, this.basePosition);
     this.reachDirection.y = 0; this.reachDirection.normalize().mulScalar(0.10);
+    // Stage the reach below the eye from every allowed initial gaze. Looking
+    // toward the upper cabinet keeps the authored arm connected beyond the
+    // lower frame edge, including when E was aimed directly at the glass.
+    const target = this.fridge.glassTarget || this.fridge.glassShelfPosition.clone().add(new Vec3(0, 0.08, 0));
+    const distance = Math.hypot(target.x - this.basePosition.x, target.z - this.basePosition.z);
+    const glassPitch = Math.atan2(target.y - this.basePosition.y, distance) * 180 / Math.PI;
+    const initialPitch = Math.asin(Math.max(-1, Math.min(1, this.camera.forward.y))) * 180 / Math.PI;
+    this.reachPitchDelta = Math.min(38, Math.max(0, glassPitch + 20 - initialPitch));
     this.fridge.drinkRunning = true;
     this.holdPlayer();
     // Input arrives between RAF callbacks. Disable cached interaction focus here,
@@ -164,7 +174,8 @@ export class DrinkSequence {
     if (!this.basePosition) return null;
     const head = sampleDrink(time, { reducedMotion: this.reducedMotion });
     this.camera.setPosition(this.basePosition.x + this.reachDirection.x * head.lean, this.basePosition.y, this.basePosition.z + this.reachDirection.z * head.lean);
-    this.camera.setEulerAngles(this.baseRotation.x + head.headLift * Math.min(12, Math.max(0, -this.savedPitch + 2)), this.baseRotation.y, this.baseRotation.z);
+    this.headRotation.setFromEulerAngles(this.reachPitchDelta * head.headLift, 0, 0);
+    this.cameraRotation.mul2(this.baseOrientation, this.headRotation); this.camera.setRotation(this.cameraRotation);
     this.glassInverse.copy(this.camera.getWorldTransform()).invert();
     this.glassInverse.transformPoint(this.fridge.glassShelfPosition, this.shelfLocal);
     const pose = sampleDrink(time, { shelf: this.shelfLocal.toArray(), reducedMotion: this.reducedMotion });
