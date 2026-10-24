@@ -1,0 +1,71 @@
+{
+  "date": "2026-10-24",
+  "gameplayRevision": "259e12e6ade8d6ad97fcd6af81be4d2e95e453a4",
+  "mainDeployedSource": "73f66df26830f888c3c17869543f6df25a9ec844",
+  "mainDeployment": {
+    "run": 40111353532,
+    "status": "success",
+    "url": "https://github.com/starfox22/horror/actions/runs/40111353532"
+  },
+  "reviewRestoration": {
+    "run": 40109659758,
+    "attempt": 2,
+    "status": "success",
+    "buildInfo": {
+      "original": "73f66df26830f888c3c17869543f6df25a9ec844",
+      "preview": "259e12e6ade8d6ad97fcd6af81be4d2e95e453a4"
+    }
+  },
+  "productionUrl": "https://starfox22.github.io/horror/?v=0.11",
+  "reviewUrl": "https://starfox22.github.io/horror/codex/?v=0.11-final",
+  "runtimeMatchesReviewedGameplay": true,
+  "runtimeDiffCheck": "git diff --quiet 259e12e6ade8d6ad97fcd6af81be4d2e95e453a4 73f66df26830f888c3c17869543f6df25a9ec844 -- src public index.html package.json package-lock.json vite.config.js .github",
+  "productionBrowser": {
+    "mode": "webgpu",
+    "quality": 1,
+    "gaze": "opening",
+    "nativeSecondE": true,
+    "pauseResume": true,
+    "hiddenFreeze": true,
+    "completed": {
+      "running": false,
+      "time": 9,
+      "active": true,
+      "locked": true,
+      "audio": false,
+      "nodes": 0,
+      "carried": false,
+      "fill": 0.037,
+      "parent": "refrigerator cabinet",
+      "hand": false
+    },
+    "assets": {
+      "device": "webgpu",
+      "clips": [
+        {
+          "start": 3.65,
+          "duration": 0.5675736961451248
+        },
+        {
+          "start": 4.4,
+          "duration": 0.5675736961451248
+        },
+        {
+          "start": 5.12,
+          "duration": 0.5675736961451248
+        },
+        {
+          "start": 7.55,
+          "duration": 1.243219954648526
+        }
+      ],
+      "limit": 60,
+      "handMeshes": 1
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "httpErrors": [],
+    "method": "Native input; deterministic animation stepping for software rendering, not throughput."
+  },
+  "handoff": "CLAUDE_HANDOFF.md"
+}

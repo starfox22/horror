@@ -50,7 +50,7 @@ Read [REVIEW_09.md](REVIEW_09.md) for the previous review's feature and test gui
 
 ## Codex review 0.10
 
-Read [REVIEW_10.md](REVIEW_10.md) for the current review and continuation guide. The owner has now requested the first scripted events: a first-person waking sequence with the exact nightmare/water dialogue, then standing control beside the bed; and an opening refrigerator with a water jar and door-controlled interior light. These are implemented without adding another scare. `wake-sequence.js` owns the camera until handoff, pauses with pointer unlock and supports skip/reduced motion. `fridge.js` separates the existing authored upper leaf and adds its cavity, authored jar, fitted water and shadowed interior light. [FRIDGE_ASSETS.md](FRIDGE_ASSETS.md) records assets and adaptation. Graphics now saves a 30/60/90/120/Uncapped FPS limit (default60), with FPS display still on by default. Optional grain is stronger. Extractor output is doubled. The arc lamp source is inside its real shade opening; flashlight fill now respects actual surface occlusion and both flashlight maps remain realtime through probe/door refreshes. All 74 Node regressions pass. Keep later reviews on this branch and preserve the opening's pause/handoff and owned fridge-light restoration.
+Read [REVIEW_10.md](REVIEW_10.md) for the waking/refrigerator implementation and continuation guide. The owner has now requested the first scripted events: a first-person waking sequence with the exact nightmare/water dialogue, then standing control beside the bed; and an opening refrigerator with a water jar and door-controlled interior light. These are implemented without adding another scare. `wake-sequence.js` owns the camera until handoff, pauses with pointer unlock and supports skip/reduced motion. `fridge.js` separates the existing authored upper leaf and adds its cavity, authored jar, fitted water and shadowed interior light. [FRIDGE_ASSETS.md](FRIDGE_ASSETS.md) records assets and adaptation. Graphics now saves a 30/60/90/120/Uncapped FPS limit (default60), with FPS display still on by default. Optional grain is stronger. Extractor output is doubled. The arc lamp source is inside its real shade opening; flashlight fill now respects actual surface occlusion and both flashlight maps remain realtime through probe/door refreshes. All 74 Node regressions pass. Keep later reviews on this branch and preserve the opening's pause/handoff and owned fridge-light restoration.
 
 ## Codex review 0.11
 
@@ -58,13 +58,15 @@ Read [REVIEW_11.md](REVIEW_11.md) and [DRINK_ASSETS.md](DRINK_ASSETS.md). Auto n
 
 ## Published builds
 
+- Production 0.11 is on `main`: https://starfox22.github.io/horror/?v=0.11. Deployed source `73f66df26830f888c3c17869543f6df25a9ec844`, [Pages run 40111353532](https://github.com/starfox22/horror/actions/runs/40111353532), succeeded and native production WebGPU drinking passed. Later handoff-only commits do not change this gameplay. The review URL was restored by run `40109659758`, attempt 2; build-info records the promoted main source plus review source `259e12e6ade8d6ad97fcd6af81be4d2e95e453a4`.
+
 `/codex/` serves the latest review. The `?v=` query refreshes cached HTML; it does not preserve older builds. Historical entries below record their deployment commits and captures.
 - Current Codex review 0.11: https://starfox22.github.io/horror/codex/?v=0.11-final from `259e12e6ade8d6ad97fcd6af81be4d2e95e453a4`; deployment `40109659758` passed and live build-info matches. Auto targets 60, sparse waking lights and downloaded-hand drinking are documented in REVIEW_11.md. All 90 regressions, local WebGL/WebGPU and hosted native drinking checks pass.
 - Codex review 0.10: https://starfox22.github.io/horror/codex/?v=0.10 from `7c8af57a2a0e2962483f51fd538184418a7b7410`; deployment `40103998454` passed and live build-info matches. First waking sequence, refrigerator, FPS limit, grain and physically occluded lighting are documented in REVIEW_10.md.
 - Codex review 0.9: https://starfox22.github.io/horror/codex/?v=0.9 from `f39809820f6f3416f5330bb0fb4a7fae6efffc91`; deployment `40098710673` passed. Graphics/FPS, fixtures, lighting defaults and coffee changes are documented in REVIEW_09.md.
 - Builds 0.1-0.7 (2026-10-22/24): claude.ai artifact https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9 (always the
   latest build; private to the owner unless shared from its Share menu).
-- Codex review build 0.8: https://starfox22.github.io/horror/codex/ is published from `codex-review` commit `f6ae1f49d48478c08e0d88329480265a02e177fb`; deployment run `40094343463` succeeded. The original `main` build is served at https://starfox22.github.io/horror/. The owner enabled Pages and selected no deployment-branch restriction. See the deployment guide before publishing later reviews.
+- Codex review build 0.8: https://starfox22.github.io/horror/codex/ is published from `codex-review` commit `f6ae1f49d48478c08e0d88329480265a02e177fb`; deployment run `40094343463` succeeded. At that deployment the original main build was served at https://starfox22.github.io/horror/. The owner enabled Pages and selected no deployment-branch restriction. See the deployment guide before publishing later reviews.
 
 To republish the artifact: `npm run build && node tools/make-artifact.mjs`, then the Artifact tool with
 `file_path: dist-artifact/index.html`, `root: dist-artifact`, `url` above, and `files` from the JSON list the script prints.
@@ -87,15 +89,13 @@ The host serves no .bin/.ktx2 files, so make-artifact packs the model into one G
   The player is a 0.22 m circle that may step up 12 cm. `tools/check-reach.mjs` must report every room reachable.
 - **Lighting** (`src/lighting.js`): night. Lamps at the model's own fixtures (arc lamp, two dining pendants, cooker
   hood, bathroom mirror LED, desk lamp, screens; bedside lamps in `devices.js`) and recessed ceiling downlights in every
-  area, all with static PCF5 shadows; no moonlight (only during a lightning flash); a procedural night-sky cubemap
+  area, with cached physical shadows and quality-dependent PCF5/PCF3/PCF1 filtering; no moonlight (only during a lightning flash); a procedural night-sky cubemap
   outside. Reflections and bounce light come from probes captured inside the flat (`src/probes.js`, build 0.5/0.6
   sections below), scaled by `AMBIENT` in main.js.
 - **Camera effects** (`src/post.js`, PlayCanvas `CameraFrame`): neutral tone mapping, TAA, SSAO, bloom, volumetric
   haze lit by the spot lamps and the torch, grading (no contrast: see Gotchas), vignette, slight fringing, eye
-  adaptation (`EyeAdaptation`). Quality 3/2/1 (keys 1-3; automatic drop while walking below ~40 / ~24 fps).
-- **Sound** (`src/ambience.js`): all synthesised with Web Audio (rain per window, droplets, room tone, city rumble,
-  fridge cycling, dripping tap, footsteps by floor finish), HRTF-positioned with a generated reverb. Replace with
-  downloaded CC0 recordings when a source is reachable.
+  adaptation (`EyeAdaptation`). High/Medium/Low (keys 1-3); Auto targets 60 FPS through effect, shadow and resolution budgets (`scene-quality.js`, `graphics-settings.js`). The limiter defaults to 60; Unlimited is manual.
+- **Sound**: Web Audio ambience/fixture feedback (`src/ambience.js`) includes rain, droplets, room tone, fridge, tap and footsteps with HRTF/reverb. Drinking (`src/drink-sequence.js`) uses downloaded CC0 gulp/exhale recordings, synchronized with the paused animation clock. See DRINK_ASSETS.md for attribution and provenance.
 
 ## Build 0.7 changes (where they live)
 - **Switches gave different light each time** (owner report), three causes, all fixed and checked (probe levels after
@@ -288,13 +288,11 @@ The host serves no .bin/.ktx2 files, so make-artifact packs the model into one G
 - The cloud session reaches GitHub (git, media.githubusercontent.com, api.github.com for this repo) and npm/PyPI only;
   Sketchfab, Poly Haven, Zenodo and Hugging Face are blocked unless the owner allows them.
 
-## Next steps (suggested, not started)
-1. Owner feedback on build 0.5.
-2. Replace the synthesised sounds with downloaded CC0 recordings (search GitHub game repos, as for the props).
-3. Kitchen cabinets and the wardrobe's top row could open the same way as the wardrobe doors.
-3. Mirror reflections (bathroom) with a planar reflection; per-room reflection probes.
-4. Upgrade PlayCanvas when `CameraFrameEffect` ships in a release (true film grain / lens effects in the compose pass).
-5. Then the horror layer (the P.T. loop through the corridor), only when the owner asks.
+## Continuation
+
+1. Claude fetches the promoted `main` and merges it into its existing separate branch, preserving independent work; read [CLAUDE_HANDOFF.md](CLAUDE_HANDOFF.md).
+2. Continue from build 0.11 and the owner's next feedback. All implementation items from the current request are complete; 90 regressions, eight reachable destinations and hosted production/review checks pass.
+3. Additional scares, enemies, puzzles and the P.T. loop need a new owner request. Remaining ambience recordings, opening more cabinets, mirror reflections and engine upgrades are future ideas, not active tasks.
 
 ## History
 - 2026-10-22: proposal (docs/PROPOSAL.md) → owner picked Visthétique's apartment → build 0.1 walkable apartment.
