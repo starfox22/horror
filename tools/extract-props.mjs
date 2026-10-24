@@ -22,7 +22,9 @@ const PROPS = [
     src: 'assets/props/drinking-glass.glb', out: 'public/assets/props/drinking-glass.json',
     title: 'Glass Collection ("highball glass")', author: 'RagingCow', license: 'CC-BY-4.0',
     sourceUrl: 'https://sketchfab.com/3d-models/glass-collection-0ff8fc5007dd4e9da675109fe7c443d6',
-    // A slightly tapered tumbler: inner radius 22.6 mm at the floor to 31.9 mm at the rim.
+    // A slightly tapered tumbler: inner radius 22.6 mm at the floor to 31.9 mm at the rim, before scaling. Scaled by
+    // 1.05 (12.6 cm, about 300 ml) to the 72 mm glass the arm's grip was fitted to (public/assets/props/drinking-arm.json).
+    scale: 1.05,
     interior: { floor: 0.0071, brim: 0.1195, profile: [[0.0076, 0.0226], [0.119, 0.0319]] },
   },
 ];
@@ -42,7 +44,13 @@ for (const prop of PROPS) {
     }
     for (let i = 0; i < ids.getCount(); i++) indices.push(base + ids.getScalar(i));
   }
-  const { out, src, ...meta } = prop;
+  const { out, src, scale = 1, ...meta } = prop;
+  if (scale !== 1) {
+    for (let i = 0; i < positions.length; i++) positions[i] = +(positions[i] * scale).toFixed(5);
+    const k = v => +(v * scale).toFixed(5);
+    meta.interior = { floor: k(meta.interior.floor), brim: k(meta.interior.brim), profile: meta.interior.profile.map(([y, r]) => [k(y), k(r)]) };
+    meta.scale = scale;
+  }
   writeFileSync(out, JSON.stringify({ ...meta, positions, normals, indices }));
   console.log(out, positions.length / 3, 'vertices', indices.length / 3, 'triangles');
 }

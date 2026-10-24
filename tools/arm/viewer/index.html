@@ -1,0 +1,122 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Drinking arm preview</title>
+<style>html,body{margin:0;background:#1d1f22;overflow:hidden}canvas{display:block}</style>
+</head>
+<body>
+<canvas id="c" width="800" height="600"></canvas>
+<script type="module">
+import * as pc from '/pc/playcanvas.mjs';
+
+const canvas = document.getElementById('c');
+const app = new pc.Application(canvas, { graphicsDeviceOptions: { antialias: true, alpha: false } });
+app.setCanvasFillMode(pc.FILLMODE_NONE);
+app.setCanvasResolution(pc.RESOLUTION_FIXED, 800, 600);
+app.scene.ambientLight = new pc.Color(0.2, 0.205, 0.215);
+app.start();
+
+const camera = new pc.Entity('camera');
+camera.addComponent('camera', { clearColor: new pc.Color(...(new URLSearchParams(location.search).get("bg") || "0.115,0.12,0.13").split(",").map(Number)), fov: 30, nearClip: 0.01, farClip: 20 });
+camera.camera.toneMapping = pc.TONEMAP_ACES;
+camera.camera.gammaCorrection = pc.GAMMA_SRGB;
+app.root.addChild(camera);
+
+function light(name, color, intensity, euler, shadows) {
+  const e = new pc.Entity(name);
+  e.addComponent('light', { type: 'directional', color, intensity, castShadows: !!shadows, shadowResolution: 4096,
+    shadowDistance: 1.2, shadowType: pc.SHADOW_PCF5_32F, normalOffsetBias: 0.2, shadowBias: 0.4 });
+  e.setEulerAngles(...euler);
+  app.root.addChild(e);
+  return e;
+}
+const key = light('key', new pc.Color(1.0, 0.95, 0.88), 1.6, [50, 30, 0], true);
+const fill = light('fill', new pc.Color(0.70, 0.80, 1.0), 0.45, [30, -140, 0]);
+const rim = light('rim', new pc.Color(1.0, 1.0, 1.0), 0.9, [-30, 190, 0]);
+
+const holder = new pc.Entity('holder');   // world placement of the hand frame
+app.root.addChild(holder);
+let arm = null, glass = null, data = null;
+
+function loadContainer(url) {
+  return new Promise((resolve, reject) => {
+    const asset = new pc.Asset('arm', 'container', { url });
+    asset.once('load', a => resolve(a));
+    asset.once('error', e => reject(e));
+    app.assets.add(asset); app.assets.load(asset);
+  });
+}
+
+window.boot = async (glbUrl, dataUrl) => {
+  const asset = await loadContainer(glbUrl);
+  arm = asset.resource.instantiateRenderEntity({ castShadows: true, receiveShadows: true });
+  holder.addChild(arm);
+  if (dataUrl) data = await (await fetch(dataUrl)).json();
+  return true;
+};
+
+function q(a) { return new pc.Quat(a[0], a[1], a[2], a[3]); }
+window.pose = (name) => {
+  const p = name && data ? data.poses[name] : null;
+  for (const j of (data ? data.joints : [])) {
+    const node = arm.findByName(j.name);
+    node.setLocalRotation(p && p[j.name] ? q(p[j.name]) : q(j.restLocal.rotation));
+  }
+};
+
+window.showGlass = (on) => {
+  if (!glass) {
+    const mat = new pc.StandardMaterial();
+    mat.diffuse = new pc.Color(0.55, 0.68, 0.75); mat.opacity = 0.28; mat.blendType = pc.BLEND_NORMAL;
+    mat.depthWrite = false; mat.gloss = 0.9; mat.metalness = 0; mat.useMetalness = true; mat.specular = new pc.Color(1, 1, 1);
+    mat.cull = pc.CULLFACE_NONE; mat.update();
+    glass = new pc.Entity('glass');
+    glass.addComponent('render', { type: 'cylinder', material: mat, castShadows: false });
+    holder.addChild(glass);
+  }
+  glass.enabled = on;
+  if (on && data) {
+    const c = data.grip.cylinder;
+    glass.setLocalPosition(c.centre[0], c.centre[1], c.centre[2]);
+    const up = new pc.Vec3(0, 1, 0), ax = new pc.Vec3(c.axis[0], c.axis[1], c.axis[2]).normalize();
+    const rot = new pc.Quat();
+    const cr = new pc.Vec3().cross(up, ax); const d = up.dot(ax);
+    rot.set(cr.x, cr.y, cr.z, 1 + d).normalize();
+    glass.setLocalRotation(rot);
+    glass.setLocalScale(c.radius * 2, c.height, c.radius * 2);
+  }
+};
+
+// A view in the hand frame: camPos, target, up (hand-frame vectors). Lights follow the camera:
+// key from above-left-front, fill from the right, rim from behind the subject.
+function aim(entity, d) {   // directional light shines along its -Y
+  const from = new pc.Vec3(0, -1, 0), to = new pc.Vec3(d[0], d[1], d[2]).normalize();
+  const cr = new pc.Vec3().cross(from, to); const dot = from.dot(to);
+  const qq = new pc.Quat();
+  if (dot < -0.9999) qq.setFromAxisAngle(new pc.Vec3(1, 0, 0), 180); else qq.set(cr.x, cr.y, cr.z, 1 + dot).normalize();
+  entity.setRotation(qq);
+}
+window.view = (v) => {
+  holder.setLocalRotation(v.holderQuat ? q(v.holderQuat) : new pc.Quat());
+  const c = new pc.Vec3(...v.camPos), t = new pc.Vec3(...v.target), u = new pc.Vec3(...(v.up || [0, 1, 0]));
+  camera.setPosition(c);
+  camera.lookAt(t, u);
+  camera.camera.fov = v.fov || 30;
+  const f = new pc.Vec3().sub2(t, c).normalize();
+  const r = new pc.Vec3().cross(f, u).normalize();
+  const up = new pc.Vec3().cross(r, f).normalize();
+  const mix = (a, b, cc) => [r.x * a + up.x * b + f.x * cc, r.y * a + up.y * b + f.y * cc, r.z * a + up.z * b + f.z * cc];
+  key.light.castShadows = v.shadows !== false;
+  const k = v.keyMix || [0.45, -0.75, 0.5];
+  aim(key, mix(...k));
+  aim(fill, mix(-0.8, -0.15, 0.45));
+  aim(rim, mix(0.25, -0.35, -0.9));
+  return true;
+};
+
+window.frames = (n) => new Promise(res => { let k = 0; const f = () => { if (++k >= n) res(true); else requestAnimationFrame(f); }; requestAnimationFrame(f); });
+window.ready = true;
+</script>
+</body>
+</html>

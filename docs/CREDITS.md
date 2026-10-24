@@ -11,8 +11,8 @@
   before apartment simplification: its authored rocker and bevels are retained, the gang-frame end is cropped/mirrored
   into a single plate, and it is scaled/reused for wall controls. `tools/extract-switch.mjs` reproduces that extraction.
   The credit is also shown on the game's intro screen; keep it there.
-  Review 0.10 also separates its actual upper refrigerator leaf and reuses its hollow kitchen glass jar for the water
-  interaction, with fitted functional cabinet/liquid geometry. See `FRIDGE_ASSETS.md` for extraction and adaptation.
+  Review 0.10 also separates its actual upper refrigerator leaf, with fitted functional cabinet/liquid geometry. See
+  `FRIDGE_ASSETS.md` for extraction and adaptation.
 - **"Flash-Lite Flashlight"** by AndrewHunt95 (https://sketchfab.com/AndrewHunt95), licensed CC BY 4.0
   (http://creativecommons.org/licenses/by/4.0/). Source: https://sketchfab.com/3d-models/flash-lite-flashlight-e20e52c7a0eb466086af727588839d48 .
   Downloaded from https://github.com/JulianQuenet/three.js-game (`public/flash-lite_flashlight.glb`; the licence and
@@ -24,19 +24,28 @@
   Used as the apartment's front door and, since build 0.6, the bathroom door (each scaled to its opening; the bathroom
   copy's leaf swings). Its normal map is left out (it is not a tangent-space map and tilted the lighting).
 - **PlayCanvas Engine** (MIT), https://github.com/playcanvas/engine
-- **"Rigged hand"** by Elena FF (https://sketchfab.com/elenaferfor), licensed CC BY-SA 4.0
-  (https://creativecommons.org/licenses/by-sa/4.0/). Source:
-  https://sketchfab.com/3d-models/rigged-hand-eae97cc2a742413cb5338ab942b12c1e . Downloaded from
-  `bizzkoot/Hand-Math` at commit `4229f71c17cf7daf8ed060569b27c25b9697f687` (`assets/models/hand_right.glb`).
-  Runtime: `public/assets/props/drinking-hand.glb`. Adaptation: metre-scale wrist-origin transform;
-  existing wrist loops extended into a forearm and wrist normals rebuilt. Original hand surface, topology,
-  skin textures, UVs, skin weights, rig and Open/Close animation retained. This adapted hand remains CC BY-SA 4.0;
-  its attribution/license also ship in `drinking-hand.LICENSE.txt` and the GLB metadata. See [DRINK_ASSETS.md](DRINK_ASSETS.md).
-- **"Drink / Drinking liquid"** by Breviceps, CC0 1.0,
-  https://freesound.org/people/Breviceps/sounds/445970/; and **"Exhale_10115a.wav"** by otherthings, CC0 1.0,
-  https://freesound.org/people/otherthings/sounds/65619/ . Downloaded from the `Wh1teDuke/WilhelmSFX` mirror,
-  unchanged, as `public/assets/audio/drink-water.wav` and `drink-relief.wav`. Provenance and hashes ship in
-  `drink-sources.json`; see [DRINK_ASSETS.md](DRINK_ASSETS.md).
+- **First-person arm**: "Male_Adult_13" from the **Microsoft Rocketbox Avatar Library**,
+  https://github.com/microsoft/Microsoft-Rocketbox (commit `0943055db6ec570bcef9f2c8b41c9e5467c808f9`),
+  Copyright (c) 2020 Microsoft, **MIT License**. Runtime: `public/assets/props/drinking-arm.glb` (+ `drinking-arm.json`
+  rig data, `drinking-arm.LICENSE.txt`). Adaptation: the right arm only (knit sleeve, forearm, hand), cut below the
+  shoulder, re-rigged to 18 joints in a wrist-origin frame, finger poses fitted to the glass, textures converted to
+  glTF PBR. Reproduce with `tools/arm/` (see its README). Since build 0.12; it replaces the adapted "Rigged hand" by
+  Elena FF (CC BY-SA 4.0) used in 0.11, which no longer ships.
+- **"Glass Water Jug (High Poly)"** by ShotaB (https://sketchfab.com/ShotaB), **CC BY 4.0**,
+  https://sketchfab.com/3d-models/glass-water-jug-high-poly-c0b82c381cd34115ba1462ba0310aca1 . Downloaded from the
+  `Tejask001/EduQuest-AR` GitHub mirror (commit `5ed3fe7`). Normalised to metres (22 cm), one mesh, flat glass material;
+  kept in `assets/props/water-jug.glb` (+ `.LICENSE.txt`), runtime mesh `public/assets/props/water-jug.json`.
+- **"Glass Collection"** by RagingCow (https://sketchfab.com/marcussamiran), **CC BY 4.0**,
+  https://sketchfab.com/3d-models/glass-collection-0ff8fc5007dd4e9da675109fe7c443d6 : its "highball glass". Downloaded
+  from the `Nhucanada/Barline` GitHub mirror (commit `ded93c1`). Winding fixed (the source was inside-out), normalised
+  to metres, scaled to 12.6 cm; kept in `assets/props/drinking-glass.glb` (+ `.LICENSE.txt`), runtime mesh
+  `public/assets/props/drinking-glass.json`. Replaces the apartment's own table glass (0.11).
+- **"Glass Break"** by unfa, https://freesound.org/people/unfa/sounds/221528/ (listed CC0 today; listed CC BY 3.0
+  in 2015-2018 listings, so it is credited either way). Trimmed, faded, resampled to 48 kHz:
+  `public/assets/audio/glass-break.wav` (the falling glass event).
+- **"Exhale_10115a.wav"** by otherthings, CC0 1.0, https://freesound.org/people/otherthings/sounds/65619/ :
+  `public/assets/audio/drink-relief.wav`, the exhale after drinking (downloaded from the `Wh1teDuke/WilhelmSFX`
+  mirror, unchanged; provenance in `drink-sources.json`). The 0.11 gulp recording (Breviceps) no longer ships.
 - **Cormorant Garamond** by the Cormorant Project Authors, SIL Open Font License 1.1,
   https://github.com/google/fonts/tree/main/ofl/cormorantgaramond. The opening dialogue uses a locally bundled
   weight-500 Latin subset; licence and derivation notes are in `public/assets/fonts/`.
@@ -50,7 +59,7 @@ sharp (Apache-2.0), Vite (MIT), Playwright (Apache-2.0).
 
 ## Made in code (placeholders until downloadable assets are reachable)
 
-- Ambience and fixture sounds: synthesized in `src/ambience.js`; the drinking and relief recordings above are sampled audio.
+- Ambience and fixture sounds: synthesized in `src/ambience.js`; the exhale and glass-break recordings above are sampled audio.
 - Rain drops, film grain and the flashlight's beam cookie are painted procedurally at runtime.
 - Small built pieces with no asset worth downloading: recessed ceiling downlight discs and the
   wardrobe's inner carcass (shelf, rail, inner walls) in the model's own wood material.

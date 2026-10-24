@@ -34,6 +34,12 @@ The owner explicitly requested promoting verified build 0.11 to `main` and handi
   windows, which are otherwise almost black); switches must behave consistently (lights got darker after flicking
   switches); typing "developer" toggles developer mode with a splash, and while on the menu shows whenever paused or
   on the start screen. Owner approved pushing this build to `main`.
+- Build 0.12 (Claude, on `claude/pensive-volta-et0etl`, owner request of 2026-10-24 after 0.11): no freezes or stutters;
+  Auto graphics with VSync by default (stable 60); no light through walls (the bedroom closet, the corridor), a lighting
+  bug pass, AAA lighting; computer and laptop on at the start; a better drinking arm (downloaded), no gulping, only the
+  refreshing exhale; a normal water jug and glass; the first scripted event (3 s after the fridge is shut after drinking,
+  glass shatters in the bedroom, "What was that?") and a developer-menu Events list to play events in story order.
+  Details: [BUILD_012.md](BUILD_012.md). Published to the claude.ai artifact; not merged to `main` (not requested).
 - Show screenshots and links before big decisions; publish each prototype to a web link.
 - Keep everything documented so another AI can continue.
 
@@ -62,8 +68,8 @@ Read [REVIEW_11.md](REVIEW_11.md) and [DRINK_ASSETS.md](DRINK_ASSETS.md). Auto n
 - Current Codex review 0.11: https://starfox22.github.io/horror/codex/?v=0.11-final from `259e12e6ade8d6ad97fcd6af81be4d2e95e453a4`; deployment `40109659758` passed and live build-info matches. Auto targets 60, sparse waking lights and downloaded-hand drinking are documented in REVIEW_11.md. All 90 regressions, local WebGL/WebGPU and hosted native drinking checks pass.
 - Codex review 0.10: https://starfox22.github.io/horror/codex/?v=0.10 from `7c8af57a2a0e2962483f51fd538184418a7b7410`; deployment `40103998454` passed and live build-info matches. First waking sequence, refrigerator, FPS limit, grain and physically occluded lighting are documented in REVIEW_10.md.
 - Codex review 0.9: https://starfox22.github.io/horror/codex/?v=0.9 from `f39809820f6f3416f5330bb0fb4a7fae6efffc91`; deployment `40098710673` passed. Graphics/FPS, fixtures, lighting defaults and coffee changes are documented in REVIEW_09.md.
-- Builds 0.1-0.7 (2026-10-22/24): claude.ai artifact https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9 (always the
-  latest build; private to the owner unless shared from its Share menu).
+- Builds 0.1-0.7 and 0.12 (2026-10-22/24): claude.ai artifact https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9
+  (always the latest Claude build; private to the owner unless shared from its Share menu).
 - Codex review build 0.8: https://starfox22.github.io/horror/codex/ is published from `codex-review` commit `f6ae1f49d48478c08e0d88329480265a02e177fb`; deployment run `40094343463` succeeded. The original `main` build is served at https://starfox22.github.io/horror/. The owner enabled Pages and selected no deployment-branch restriction. See the deployment guide before publishing later reviews.
 
 To republish the artifact: `npm run build && node tools/make-artifact.mjs`, then the Artifact tool with
@@ -96,6 +102,24 @@ The host serves no .bin/.ktx2 files, so make-artifact packs the model into one G
 - **Sound** (`src/ambience.js`): all synthesised with Web Audio (rain per window, droplets, room tone, city rumble,
   fridge cycling, dripping tap, footsteps by floor finish), HRTF-positioned with a generated reverb. Replace with
   downloaded CC0 recordings when a source is reachable.
+
+## Build 0.12 changes (where they live)
+Full list, measurements and before/after renders: [BUILD_012.md](BUILD_012.md). In short:
+- **Freezes**: `fixShadowAtlas()` (lighting.js) fixes the shadow-atlas grid (re-layouts re-rendered every shadow);
+  `warmUp()` (warmup.js) builds every shader behind the loading screen, with later-only things shown and lamps that start
+  off switched on at zero; the lightning's directional light stays enabled at zero (toggling it recompiles everything);
+  probe captures are spread over ~20 frames and cross-faded (`Probes.captureAll`, `AtlasBlend`), the flashlight kept out
+  per camera by a light-mask patch of the clustered-light chunk instead of being switched off; `refreshShadows()` only
+  takes lamps that see the moving part; presets never change lit shaders or the shadow atlas (PCF3 + 4096 + AO on at
+  every level); particles on an `Effects` layer that probe cameras do not draw.
+- **VSync + Auto default** (frame-limiter.js `VSYNC` = -1, graphics-settings.js storage key v2).
+- **Light leaks**: every light shadowed (bedside spill, closet light, wardrobe LEDs, screen glows as spots); bedside
+  cone 55 deg. **Screens on at start** (devices.js).
+- **Drinking**: downloaded Rocketbox arm with IK and a fitted grip (arm-rig.js, drink-sequence.js, drink-timeline.js;
+  DRINK_ASSETS.md); only the exhale plays. **Jug and glass**: downloaded (FRIDGE_ASSETS.md, `tools/extract-props.mjs`).
+- **Scripted events**: `STORY_EVENTS` (story-events.js) in story order with `Director` (signals, play-time delays, once);
+  the falling glass (falling-glass.js: HRTF-placed recording, muffled through walls) and `Thought` subtitles; developer
+  menu > Events plays any event now.
 
 ## Build 0.7 changes (where they live)
 - **Switches gave different light each time** (owner report), three causes, all fixed and checked (probe levels after
@@ -287,6 +311,18 @@ The host serves no .bin/.ktx2 files, so make-artifact packs the model into one G
   give a prop copy its own materials after dedup (`separateMaterials`), never before.
 - The cloud session reaches GitHub (git, media.githubusercontent.com, api.github.com for this repo) and npm/PyPI only;
   Sketchfab, Poly Haven, Zenodo and Hugging Face are blocked unless the owner allows them.
+
+- Never toggle a directional light, the shadow filter, the shadow-atlas size or SSAO's LIGHTING mode during play: each
+  is part of every lit shader's key (or reallocates every shadow) and freezes the game while the flat recompiles.
+- Leave `scene.lighting.atlasSplit` fixed (`fixShadowAtlas`, after adding any shadowed or cookie light): the engine's
+  default grid follows the number of visible shadowed lights and re-renders all of them whenever it changes.
+- A light without shadows shines through walls. Every lamp casts shadows; keep it that way for new lights.
+- A camera that sees something for the first time builds its shaders then: new things that appear only later (props,
+  effects, the arm) belong in the warm-up's `reveal` list (main.js), and things probes must not see on the `Effects`
+  layer or behind `isVisibleFunc`.
+- `app.stats` frame counters and `_shaderStats` are only filled in the engine's profiler build: to count shadow renders
+  and new shaders, wrap `app.renderer.shadowRenderer.renderFace` and watch `graphicsDevice.shaders.length`
+  (`work/perf/hitch.mjs` did, see BUILD_012.md).
 
 ## Next steps (suggested, not started)
 1. Owner feedback on build 0.5.

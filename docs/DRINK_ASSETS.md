@@ -1,37 +1,68 @@
-# Drinking interaction assets
+# Drinking interaction assets (build 0.12)
 
-The visible hand is a downloaded textured and rigged game asset. Its authored hand surface was not generated or built from primitives. The drinking sounds are downloaded human recordings.
+Everything the player sees and hears while drinking is downloaded; nothing is modelled from primitives.
 
-## Hand and forearm
+## First-person arm
 
-- **Rigged hand** by **Elena FF**: https://sketchfab.com/3d-models/rigged-hand-eae97cc2a742413cb5338ab942b12c1e
-- Author: https://sketchfab.com/elenaferfor
-- License: **CC BY-SA 4.0**, https://creativecommons.org/licenses/by-sa/4.0/
-- Downloaded mirror, pinned to the reviewed commit: https://github.com/bizzkoot/Hand-Math/blob/4229f71c17cf7daf8ed060569b27c25b9697f687/assets/models/hand_right.glb
-- The source license is also embedded in `asset.extras` and recorded by that repository's `assets/license.txt`.
-- Source SHA256: `11fcdb53fd5c134a658dc93a8c331c4e9bb13df5f978aff44590e484ef5ceb11`.
+- **Source:** "Male_Adult_13" from the **Microsoft Rocketbox Avatar Library**, https://github.com/microsoft/Microsoft-Rocketbox
+  (commit `0943055db6ec570bcef9f2c8b41c9e5467c808f9`). Copyright (c) 2020 Microsoft, **MIT License**. The avatar wears a
+  grey knit jumper: its full-length sleeve with a ribbed cuff covers the arm, so the cut near the shoulder is never seen.
+- **Runtime:** `public/assets/props/drinking-arm.glb` (1.09 MB: one skinned mesh, 9,279 triangles, 18 joints, base
+  colour / normal / metallic-roughness textures embedded at 568x1008), `drinking-arm.json` (rig data, below) and
+  `drinking-arm.LICENSE.txt` (MIT text and the change notice; also linked from the start screen's credits).
+- **Made by** `tools/arm/` (`make_all.sh`: a pure-Python FBX reader adapted from the sibling GTA project, numpy and
+  Pillow; no Blender). It cuts the right arm out of the avatar, keeps its real UVs and skin weights, re-weights everything
+  onto upper arm, forearm, hand and the 15 finger joints, gives every joint an identity rest rotation in a wrist-origin
+  frame, converts the Rocketbox colour/normal/specular maps to glTF PBR, fixes three source flaws (a bright wedge on the
+  palm heel from shared cuff/skin normals, texture seams on the hand, the finger ring dropped) and fits the finger poses.
+  Source files, SHA256s and every step are in `tools/arm/README.md`; the downloads (about 200 MB) are not committed.
 
-Runtime asset: `public/assets/props/drinking-hand.glb`, about 2.23 MB. The single skin has 16,330 vertices, 28,994 triangles, 69 joints including source control/end joints, and three embedded skin textures: base color, metallic/roughness and specular. Its original **Open/Close** animation remains in the GLB: 3.208 seconds, open at time 0, closed around 0.8–1.2 seconds, returning open near the end. The interaction samples its finger motion up to **0.47 seconds** and blends three thumb-joint pose overrides to oppose the fingers across the tumbler. These are runtime poses of the downloaded rig; the source animation file is retained.
+### Rig conventions (what `src/arm-rig.js` relies on)
 
-The adaptation retains the original hand surface, topology, UVs, skin weights, rig, inverse bind matrices, embedded textures and animation. The existing wrist loops are lengthened 74 cm and widened toward the distant end to keep an attached arm extending out of view, including during the shelf reach. Normals are rebuilt on that adapted wrist surface. No new hand or finger geometry is created. A rigid parent transform puts the wrist at the origin in metres: fingers point **+Y**, the palm faces **-Z**, the back of the hand faces **+Z**, and the thumb is on **-X**. Open wrist-to-middle-tip distance is approximately 19 cm; the arm ends about 75 cm behind the wrist. The distant arm section must stay outside the player's view.
+- Metres. Origin = the wrist joint (`hand_r`). Fingers point **+Y**; forearm and upper arm run straight along **-Y**
+  (elbow at y = -0.271, shoulder joint at y = -0.557; the mesh starts 7 cm below the shoulder). Thumb on **-X**, back of
+  the hand **+Z**, palm **-Z**. Every rest rotation is identity, so a pose is a local rotation slerped from identity.
+- Joints: `upperarm_r > forearm_r > hand_r > thumb_01..03_r, index_, middle_, ring_, pinky_01..03_r`.
+- `drinking-arm.json`: `boneLengths` (upper arm 0.2858, forearm 0.2709), `elbowBendAxis` (a positive rotation of the
+  forearm about it flexes the elbow), `poses.relaxed` and `poses.grip` (local quaternions for the 15 finger joints),
+  `grip.cylinder` (the glass axis and centre in the hand frame for the grip: all fingertips and the thumb touch a 72 mm
+  glass within ~1 mm, at most 0.98 mm interpenetration), `wristToPalm`, landmark `points`.
+- No twist bones: pronation is carried by the forearm (under the sleeve), so the wrist only bends.
 
-The adapted hand remains **CC BY-SA 4.0**. Attribution and modification notices ship beside it as `drinking-hand.LICENSE.txt` and remain embedded in the GLB. Preserve those notices and the license when distributing or modifying this asset.
+### How the game poses it (`src/arm-rig.js`, `src/drink-sequence.js`, `src/drink-timeline.js`)
 
-Reproduce the adaptation with `python tools/prepare-drinking-hand.py` (Python 3 and NumPy). The script downloads the checksum-pinned source to `work/asset-research/` if absent. It evaluates the original glTF skin and first open animation sample directly, modifies only the existing wrist vertices, and preserves all other binary data. A blind Blender re-export is avoided: its importer interprets some of the source's control-bone rest matrices differently, while the original glTF skin and animation evaluate correctly.
+- The arm hangs in camera space under the camera, drawn only by the player's camera (`MeshInstance.isVisibleFunc`), so
+  probe captures never bake it into reflections. It casts no shadow.
+- `ArmRig.pose(shoulder, wrist, handRotation, {open, grip})`: two-bone IK from a shoulder 19 cm right, 25 cm below and
+  9 cm behind the eye (`SHOULDER`) to the wrist, the elbow bending down and out (`ArmRig.POLE`); if the wrist is out of
+  reach the shoulder follows (it is never in view). Fingers blend relaxed -> open -> grip.
+- `gripInGlass()` turns the asset's grip into the hand's pose in the glass's own frame, palm on the glass's right and a
+  little towards the eye (`GRIP_SIDE`); while the glass is held, the hand is exactly that pose relative to the glass, so
+  it cannot slip. The glass is round, so at the start it is turned about its own axis to face the way the player looks.
+- Timeline (9 s, pausable, tab-hide safe): the eyes go to the glass and the body leans in as far as the arm needs (up to
+  60 cm: a small step), the hand comes up from below the view, opens beside the glass, closes on it (0.86-1.18 s), lifts
+  it 2.5 cm clear of the shelf, swings it to the chest, then to the lips; three sips with small swallows while the head
+  tips back 7 degrees and the glass tips from 48 to 72 degrees as it empties; back to the chest, onto the shelf, the hand
+  opens, slides back and drops out of view. Reduced motion: the glass is simply in hand, no reach, no camera motion.
+- Checks: `tools/check-drink-sequence.mjs` drives the real joint hierarchy without a GPU: the wrist reaches its target
+  within 1 mm all the way through, the glass centre stays at the fitted grip within 1.5 mm, the sleeve's open end never
+  enters the view frustum, the elbow never folds past 150 degrees and the wrist never bends past 80, the camera framing
+  never jumps and the original view and position come back at the end.
 
-During preparation, the source's open and closed poses were evaluated from the actual glTF skin matrices and animation data, then rendered with the original UV-mapped skin in Blender. Open, closed and adapted-forearm previews were inspected for intact fingers, skin, nails, orientation and connected wrist geometry. These asset previews do not substitute for the in-game grip and camera checks.
+## Glass, jug and water
 
-The grip was also rendered from the actual skinned geometry against a cylinder matching the tumbler's 79 mm outer diameter and 139.5 mm height. `tools/drinking-grip-reference.json` records the source checksum, fixed clip time, coordinate basis, measured palm anchor, cylinder dimensions, thumb-joint local quaternion endpoints and inverse-kinematics target positions. The source wrist remains static across this clip; its original fist motion needs a separate thumb opposition pose for a wide glass. The local palm anchor is `[0, 0.099, -0.013]` in canonical metres. Keeping the palm, fingers and glass on one rigid transform during lift/tilt prevents their relative placement drifting with camera movement. The extended arm must still be reviewed in actual first-person reach, lift and sip views.
+See [FRIDGE_ASSETS.md](FRIDGE_ASSETS.md). The tumbler is "Glass Collection" by RagingCow (its highball glass, CC BY 4.0),
+scaled to 12.6 cm so the arm's 72 mm grip fits it; `src/drink-timeline.js` `GLASS_INTERIOR` follows its measured, slightly
+tapered inner wall (23.7 mm radius at the floor to 33.5 mm at the rim, 0.6 mm clearance), and the water's free surface
+stays level in the world whichever way the glass and camera turn.
 
-## Glass
+## Sound
 
-`public/assets/props/drinking-glass.json` reuses the apartment author's existing glass, extracted by `tools/extract-drinking-glass.mjs`. It shares **Modern Apartment** by **Visthétique**, **CC BY 4.0**, and retains attribution metadata. See [CREDITS.md](CREDITS.md) and [FRIDGE_ASSETS.md](FRIDGE_ASSETS.md) for the source apartment and jar.
+| Runtime file | Recording and author | Original source | License |
+| --- | --- | --- | --- |
+| `public/assets/audio/drink-relief.wav` | Exhale_10115a.wav — otherthings | https://freesound.org/people/otherthings/sounds/65619/ | CC0 1.0 |
+| `public/assets/audio/glass-break.wav` | Glass Break — unfa (trimmed to the impact, 48 kHz) | https://freesound.org/people/unfa/sounds/221528/ | CC0 (credited; older listings say CC BY 3.0) |
 
-## Recorded drinking and relief
-
-| Runtime file | Recording and author | Original source | License | Duration |
-| --- | --- | --- | --- | --- |
-| `public/assets/audio/drink-water.wav` | Drink / Drinking liquid — Breviceps | https://freesound.org/people/Breviceps/sounds/445970/ | CC0 1.0 | 0.568 s |
-| `public/assets/audio/drink-relief.wav` | Exhale_10115a.wav — otherthings | https://freesound.org/people/otherthings/sounds/65619/ | CC0 1.0 | 1.243 s |
-
-The recordings were downloaded from the `Wh1teDuke/WilhelmSFX` GitHub mirror; the original Freesound pages' CC0 licenses were checked on 2026-10-24. The WAV bytes are unchanged, stereo 44.1 kHz, 16-bit. `public/assets/audio/drink-sources.json` records each original URL, mirror URL/blob SHA, SHA256, duration and license URL. The gulp is a short human take, suitable for separately timed sips; the relief is a natural exhale. Other ambience and fixture feedback remain in the existing synthesized sound system.
+Only the refreshed exhale plays while drinking (after the last sip); the owner asked for no gulping, so the 0.11 gulp
+recording was removed. `drink-sources.json` keeps the exhale's provenance. The glass break is the falling-glass event
+(`src/falling-glass.js`).

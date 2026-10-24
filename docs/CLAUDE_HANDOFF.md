@@ -1,5 +1,7 @@
 # Claude continuation handoff — build 0.11
 
+> **Update: build 0.12** (Claude, branch `claude/pensive-volta-et0etl`, published to the claude.ai artifact, not merged to `main`) supersedes parts of the table below: the drinking hand is now a downloaded Rocketbox arm (MIT) with IK, the jar and glass are downloaded models, the defaults are Auto + VSync with lit shaders identical at every preset, the computer and laptop start on, and scripted events live in `src/story-events.js`. Read [BUILD_012.md](BUILD_012.md) first.
+
 Read [HANDOFF.md](HANDOFF.md), this file, [REVIEW_11.md](REVIEW_11.md), and [AGENTS.md](../AGENTS.md) before editing. The user explicitly requested promotion of the verified 0.11 review to `main` on 2026-10-24 and asked for this handoff. That authorization covers this promotion; future pushes or merges to `main` still require a new explicit request.
 
 ## Baseline and publication

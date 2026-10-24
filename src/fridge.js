@@ -197,7 +197,7 @@ export class Fridge {
   setDrinkAction(action) { this.drinkAction = action; }
   canDrink() {
     return !!this.drinkAction && !this.drinkRunning && !this.hasDrunk && this.angle > 75 && !this.moving &&
-      (!this.player?.camera || this.player.camera.getPosition().distance(this.glassTarget) < 1.6);
+      (!this.player?.camera || this.player.camera.getPosition().distance(this.glassTarget) < 1.3);
   }
 
   // Middle of the moving upper leaf, in the world.

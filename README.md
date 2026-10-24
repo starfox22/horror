@@ -1,14 +1,14 @@
 # horror
 True horror game
 
-A first-person browser horror game in the spirit of P.T., built on PlayCanvas. Current state: **build 0.11 (performance, waking lights and drinking interaction), a walkable
-night-time apartment** (no scares yet): a first-person waking opening, an opening refrigerator with a lit interior, water jar and visible-hand drinking action, light switches in every area, lamps with their own switches (bedside, desk, arc lamp), a bathroom door and wardrobe that
+A first-person browser horror game in the spirit of P.T., built on PlayCanvas. Current state: **build 0.12 (no freezes, VSync, leak-free lighting, a downloaded first-person arm, the first scripted event), a walkable
+night-time apartment**: a first-person waking opening, an opening refrigerator with a lit interior, a glass water jug and a tumbler to drink from with a downloaded first-person arm, the first scripted event (a glass shatters in the bedroom after you drink), light switches in every area, lamps with their own switches (bedside, desk, arc lamp), a bathroom door and wardrobe that
 open, a laptop, computer and coffee machine to use, a flashlight to find (only its beam is seen), rain gathering and running
 down the windows, lightning and thunder, warm night lighting that fades softly into darkness (bounce light from probes
 around the flat, eye adaptation), post-processing and ambient sound.
 
 Read `docs/HANDOFF.md` first if you are picking this up (state, owner's preferences, how things fit together).
-For Claude's continuation after the owner-approved 0.11 promotion, read [CLAUDE_HANDOFF.md](docs/CLAUDE_HANDOFF.md).
+For Claude's continuation after the owner-approved 0.11 promotion, read [CLAUDE_HANDOFF.md](docs/CLAUDE_HANDOFF.md); build 0.12 is described in [BUILD_012.md](docs/BUILD_012.md).
 
 All Codex reviews continue on `codex-review`, while Claude works on its own branch. Codex merges into or pushes to `main` only when the owner explicitly asks. The first review adds a lighting/material pass and interaction fixes. See [the change list and validation guide](docs/CODEX_ENVIRONMENT_PASS.md), [side-by-side screenshots](docs/review/README.md), and [preview deployment instructions](docs/PREVIEW_DEPLOYMENT.md).
 
@@ -18,16 +18,16 @@ The latest pass adds [a 60 FPS Auto target, lighter graphics budgets, sparse wak
 
 - Production web build: https://starfox22.github.io/horror/?v=0.11
 - Codex review: https://starfox22.github.io/horror/codex/?v=0.11-final
-- Earlier Claude artifact builds: https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9
+- Claude builds (0.1-0.7, 0.12): https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9
 - Locally: `npm install && npm run dev`, open the printed URL. Click to enter.
 
 Controls: WASD or arrows move · mouse look · Shift walk faster · E use (switches, doors, refrigerator, lamps, laptop, computer, coffee machine) · F flashlight (once found)
 · B head bob on/off · G graphics · 1 / 2 / 3 quality (low / medium / high; it also drops automatically on slow GPUs) · Esc pause.
 URL hash options: `#webgl` (force WebGL 2 instead of WebGPU), `#stats` (fps, draw calls); for tests `#dark`, `#flash`.
 
-Choose **Wake up** to begin in bed. The opening supports Space/Enter to skip and Esc/G to pause; resume continues the same sequence. Normal walking begins beside the bed. Only the bedside lamps, sofa arc lamp, extractor and bathroom mirror start lit. Open the refrigerator with E, then press E again toward its glass to drink. The downloaded rigged hand, glass and recorded gulp/exhale follow one pausable timeline.
+Choose **Wake up** to begin in bed. The opening supports Space/Enter to skip and Esc/G to pause; resume continues the same sequence. Normal walking begins beside the bed. The bedside lamps, sofa arc lamp, extractor, bathroom mirror, the office computer and the laptop start on. Open the refrigerator with E, then press E again toward its glass to drink: the arm reaches in, drinks and puts the glass back. Shut the refrigerator afterwards and listen.
 
-Graphics defaults to a saved 60 FPS limit; Unlimited is an explicit menu choice. Auto targets 60 through progressively lighter effects, shadow filtering and resolution, down to Low at 50%. Presets also bound high-DPI/4K rendering and rain work. A frame cap cannot raise hardware throughput; see [review 0.11](docs/REVIEW_11.md) for validation and limits.
+Graphics defaults to **Auto** with **VSync**: frames on whole display refreshes (60 FPS on a 60 Hz screen, every second refresh on 120-144 Hz), and Auto lowers resolution and effects if 60 cannot be held. Nothing in a preset change recompiles shaders or re-renders shadows, and every shader is built behind the loading screen. Type "developer" for the developer menu (lights, the scripted events, testing tools).
 
 ## Build
 
@@ -57,10 +57,12 @@ node tools/shoot.mjs dist out name=x,z,yaw ...   # headless screenshots (softwar
 | `src/main.js` | Boot: graphics device, decoders, loading, intro screen, quality, update loop |
 | `src/player.js`, `src/walkgrid.js` | First-person controller and its collision/floor grid |
 | `src/wake-sequence.js`, `src/wake-sequence.css` | First-person waking timeline, pause/skip/reduced-motion and dialogue |
-| `src/fridge.js`, `src/fridge-geometry.js`, `src/fridge-water.js` | Refrigerator leaf, collision, authored jar, fitted water and door-controlled light |
-| `src/drink-sequence.js`, `src/drink-timeline.js` | Downloaded hand rig, glass reach/grip/sips/return, recorded audio and pause ownership |
-| `src/frame-limiter.js`, `src/graphics-settings.js` | Saved graphics preferences, FPS limit and native settings dialog |
-| `src/scene-quality.js` | Pixel budgets, shadow atlases/filtering, texture detail and rain quality |
+| `src/fridge.js`, `src/fridge-geometry.js`, `src/fridge-water.js` | Refrigerator leaf, collision, downloaded jug and glass, fitted water and door-controlled light |
+| `src/drink-sequence.js`, `src/drink-timeline.js`, `src/arm-rig.js` | Downloaded first-person arm (IK, fitted grip), glass reach/grip/sips/return, exhale, pause ownership |
+| `src/story-events.js`, `src/falling-glass.js`, `src/thought.js` | Scripted events in story order (the developer menu plays any of them), the falling glass, the player's thoughts |
+| `src/warmup.js`, `src/packed.js` | Shader warm-up behind the loading screen; GLBs shipped as base64 in the artifact build |
+| `src/frame-limiter.js`, `src/graphics-settings.js` | Saved graphics preferences (Auto + VSync by default), FPS limit and native settings dialog |
+| `src/scene-quality.js` | Pixel budgets, texture detail and rain quality (shadows and lit shaders identical at every preset) |
 | `src/flashlight-surfaces.js` | Cached triangle tracing for occluded flashlight return light |
 | `src/lighting.js` | Lamps at their fixtures, ceiling downlights, lightning-only sky light, night sky, probe capture |
 | `src/post.js` | Camera effects (TAA, SSAO, bloom, volumetric haze, grading, vignette), eye adaptation, quality levels |
@@ -70,10 +72,11 @@ node tools/shoot.mjs dist out name=x,z,yaw ...   # headless screenshots (softwar
 | `src/closets.js` | Bedroom wardrobe: doors on hinges, interior, LED; the flashlight's shelf |
 | `src/doors.js` | Bathroom door (downloaded model): hinge, spring swing, collision (moving wall), stops against the player |
 | `src/devices.js` | Bedside reading lamps, laptop lid and screen, office computer, coffee machine with steam |
-| `src/probes.js` | Probes: per-room box-projected reflections; bounce light from 8 probes blended by position |
+| `src/probes.js` | Probes: per-room box-projected reflections; bounce light from 8 probes blended by position; captures spread over frames and cross-faded |
 | `src/devmenu.js` | Developer options (type "developer"): flashlight beam size, every light on/off, test actions |
 | `src/rain.js` | Rain on the glass (dark outside), rain outside seen in lightning, thunder |
-| `assets/props/` | Downloaded models merged into the apartment by the pipeline (credits in docs/CREDITS.md) |
+| `assets/props/` | Downloaded models: merged into the apartment by the pipeline (door, flashlight) or converted by `tools/extract-props.mjs` (jug, glass); credits in docs/CREDITS.md |
+| `tools/arm/` | Reproduces the first-person arm from the Rocketbox avatar (see its README) |
 | `tools/` | Asset pipeline and checks (see Build) |
 | `public/assets/apartment/` | Built model: `scene.gltf`, `geometry-*.bin`, `textures/*.ktx2`, `collision.json` |
 | `public/lib/` | PlayCanvas's Basis (KTX2) and Draco decoders |

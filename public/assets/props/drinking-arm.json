@@ -1,0 +1,1316 @@
+{
+ "asset": "drinking-arm.glb",
+ "source": "Microsoft Rocketbox Male_Adult_13 (MIT), https://github.com/microsoft/Microsoft-Rocketbox",
+ "units": "metres",
+ "frame": {
+  "origin": "wrist joint (hand_r)",
+  "+Y": "wrist -> middle-finger knuckle (fingers point +Y); forearm and upper arm extend along -Y",
+  "+X": "toward the little finger (the thumb is on -X): a RIGHT hand",
+  "+Z": "back of the hand (the palm faces -Z)",
+  "restRotations": "every joint has an identity rest rotation, so local axes = these axes at rest; poses are local rotations [x, y, z, w] relative to the parent, slerp from identity"
+ },
+ "joints": [
+  {
+   "name": "upperarm_r",
+   "parent": null,
+   "biped": "Bip01 R UpperArm",
+   "restLocal": {
+    "translation": [
+     0.0,
+     -0.556721,
+     -0.0
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "restPosition": [
+    0.0,
+    -0.556721,
+    -0.0
+   ]
+  },
+  {
+   "name": "forearm_r",
+   "parent": "upperarm_r",
+   "biped": "Bip01 R Forearm",
+   "restLocal": {
+    "translation": [
+     -0.0,
+     0.285801,
+     0.0
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "restPosition": [
+    0.0,
+    -0.27092,
+    0.0
+   ]
+  },
+  {
+   "name": "hand_r",
+   "parent": "forearm_r",
+   "biped": "Bip01 R Hand",
+   "restLocal": {
+    "translation": [
+     -0.0,
+     0.270919,
+     0.0
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "restPosition": [
+    0.0,
+    -1e-06,
+    0.0
+   ]
+  },
+  {
+   "name": "thumb_01_r",
+   "parent": "hand_r",
+   "biped": "Bip01 R Finger0",
+   "restLocal": {
+    "translation": [
+     -0.030154,
+     0.026144,
+     -0.013627
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "restPosition": [
+    -0.030154,
+    0.026143,
+    -0.013627
+   ]
+  },
+  {
+   "name": "thumb_02_r",
+   "parent": "thumb_01_r",
+   "biped": "Bip01 R Finger01",
+   "restLocal": {
+    "translation": [
+     -0.012144,
+     0.020135,
+     -0.015709
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "restPosition": [
+    -0.042298,
+    0.046278,
+    -0.029336
+   ]
+  },
+  {
+   "name": "thumb_03_r",
+   "parent": "thumb_02_r",
+   "biped": "Bip01 R Finger02",
+   "restLocal": {
+    "translation": [
+     -0.00711,
+     0.025218,
+     -0.016575
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "restPosition": [
+    -0.049408,
+    0.071496,
+    -0.045911
+   ]
+  },
+  {
+   "name": "index_01_r",
+   "parent": "hand_r",
+   "biped": "Bip01 R Finger1",
+   "restLocal": {
+    "translation": [
+     -0.023338,
+     0.09406,
+     -0.004952
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "restPosition": [
+    -0.023338,
+    0.094059,
+    -0.004952
+   ]
+  },
+  {
+   "name": "index_02_r",
+   "parent": "index_01_r",
+   "biped": "Bip01 R Finger11",
+   "restLocal": {
+    "translation": [
+     0.00086,
+     0.030427,
+     -0.007246
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "restPosition": [
+    -0.022478,
+    0.124486,
+    -0.012198
+   ]
+  },
+  {
+   "name": "index_03_r",
+   "parent": "index_02_r",
+   "biped": "Bip01 R Finger12",
+   "restLocal": {
+    "translation": [
+     0.001585,
+     0.021703,
+     -0.009616
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "restPosition": [
+    -0.020893,
+    0.146189,
+    -0.021814
+   ]
+  },
+  {
+   "name": "middle_01_r",
+   "parent": "hand_r",
+   "biped": "Bip01 R Finger2",
+   "restLocal": {
+    "translation": [
+     0.0,
+     0.095622,
+     0.0
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "restPosition": [
+    0.0,
+    0.095621,
+    0.0
+   ]
+  },
+  {
+   "name": "middle_02_r",
+   "parent": "middle_01_r",
+   "biped": "Bip01 R Finger21",
+   "restLocal": {
+    "translation": [
+     0.002578,
+     0.036144,
+     -0.011489
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "restPosition": [
+    0.002578,
+    0.131765,
+    -0.011489
+   ]
+  },
+  {
+   "name": "middle_03_r",
+   "parent": "middle_02_r",
+   "biped": "Bip01 R Finger22",
+   "restLocal": {
+    "translation": [
+     0.00164,
+     0.025721,
+     -0.012138
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "restPosition": [
+    0.004218,
+    0.157486,
+    -0.023627
+   ]
+  },
+  {
+   "name": "ring_01_r",
+   "parent": "hand_r",
+   "biped": "Bip01 R Finger3",
+   "restLocal": {
+    "translation": [
+     0.022006,
+     0.090214,
+     0.000741
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "restPosition": [
+    0.022006,
+    0.090213,
+    0.000741
+   ]
+  },
+  {
+   "name": "ring_02_r",
+   "parent": "ring_01_r",
+   "biped": "Bip01 R Finger31",
+   "restLocal": {
+    "translation": [
+     0.00174,
+     0.031133,
+     -0.012772
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "restPosition": [
+    0.023746,
+    0.121346,
+    -0.012031
+   ]
+  },
+  {
+   "name": "ring_03_r",
+   "parent": "ring_02_r",
+   "biped": "Bip01 R Finger32",
+   "restLocal": {
+    "translation": [
+     0.001035,
+     0.021567,
+     -0.011455
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "restPosition": [
+    0.024781,
+    0.142913,
+    -0.023486
+   ]
+  },
+  {
+   "name": "pinky_01_r",
+   "parent": "hand_r",
+   "biped": "Bip01 R Finger4",
+   "restLocal": {
+    "translation": [
+     0.040549,
+     0.080583,
+     -0.004952
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "restPosition": [
+    0.040549,
+    0.080582,
+    -0.004952
+   ]
+  },
+  {
+   "name": "pinky_02_r",
+   "parent": "pinky_01_r",
+   "biped": "Bip01 R Finger41",
+   "restLocal": {
+    "translation": [
+     0.001914,
+     0.024498,
+     -0.015566
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "restPosition": [
+    0.042463,
+    0.10508,
+    -0.020518
+   ]
+  },
+  {
+   "name": "pinky_03_r",
+   "parent": "pinky_02_r",
+   "biped": "Bip01 R Finger42",
+   "restLocal": {
+    "translation": [
+     0.000836,
+     0.012592,
+     -0.008753
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "restPosition": [
+    0.043299,
+    0.117672,
+    -0.029271
+   ]
+  }
+ ],
+ "points": {
+  "shoulder": [
+   0.0,
+   -0.55672,
+   -0.0
+  ],
+  "elbow": [
+   0.0,
+   -0.27092,
+   0.0
+  ],
+  "wrist": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "palmCentre": [
+   0.0043,
+   0.05259,
+   -0.02608
+  ],
+  "palmNormal": [
+   -0.17734,
+   0.11753,
+   -0.97711
+  ],
+  "fingertips": {
+   "thumb": [
+    -0.05565,
+    0.09362,
+    -0.06045
+   ],
+   "index": [
+    -0.01943,
+    0.16629,
+    -0.03072
+   ],
+   "middle": [
+    0.00555,
+    0.17836,
+    -0.03348
+   ],
+   "ring": [
+    0.02567,
+    0.16147,
+    -0.03334
+   ],
+   "pinky": [
+    0.04429,
+    0.1326,
+    -0.03965
+   ]
+  },
+  "knuckles": {
+   "thumb": [
+    -0.03015,
+    0.02614,
+    -0.01363
+   ],
+   "index": [
+    -0.02334,
+    0.09406,
+    -0.00495
+   ],
+   "middle": [
+    0.0,
+    0.09562,
+    0.0
+   ],
+   "ring": [
+    0.02201,
+    0.09021,
+    0.00074
+   ],
+   "pinky": [
+    0.04055,
+    0.08058,
+    -0.00495
+   ]
+  },
+  "cutEnd": [
+   0.0,
+   -0.48672,
+   0.0
+  ]
+ },
+ "wristToPalm": [
+  0.0043,
+  0.05259,
+  -0.02608
+ ],
+ "boneLengths": {
+  "upperArm": 0.2858,
+  "forearm": 0.27092,
+  "hand": 0.09562,
+  "upperArmKept": 0.2158,
+  "thumb": [
+   0.02828,
+   0.031,
+   0.0272
+  ],
+  "index": [
+   0.03129,
+   0.02379,
+   0.02203
+  ],
+  "middle": [
+   0.03801,
+   0.02849,
+   0.02311
+  ],
+  "ring": [
+   0.0337,
+   0.02444,
+   0.02103
+  ],
+  "pinky": [
+   0.02909,
+   0.01536,
+   0.01821
+  ]
+ },
+ "elbowBendAxis": [
+  -0.22886,
+  0.0,
+  0.973459
+ ],
+ "elbowBendNote": "rotate forearm_r about elbowBendAxis (in its parent frame; at rest = the hand frame) by a POSITIVE angle to flex the elbow; the wrist then moves toward [-0.94029, -0.25882, -0.22106] at first. The axis is the source avatar's own bind-pose elbow bend (20.7 deg), carried into the straight pose.",
+ "elbowFlexDirection": [
+  -0.94029,
+  -0.25882,
+  -0.22106
+ ],
+ "fingerFlexAxes": {
+  "thumb_01_r": [
+   0.317953,
+   -0.456524,
+   -0.830958
+  ],
+  "thumb_02_r": [
+   0.317953,
+   -0.456524,
+   -0.830958
+  ],
+  "thumb_03_r": [
+   0.317953,
+   -0.456524,
+   -0.830958
+  ],
+  "index_01_r": [
+   -0.976676,
+   -0.023231,
+   -0.213459
+  ],
+  "index_02_r": [
+   -0.976676,
+   -0.023231,
+   -0.213459
+  ],
+  "index_03_r": [
+   -0.976676,
+   -0.023231,
+   -0.213459
+  ],
+  "middle_01_r": [
+   -0.995042,
+   0.086549,
+   0.049
+  ],
+  "middle_02_r": [
+   -0.995042,
+   0.08655,
+   0.049
+  ],
+  "middle_03_r": [
+   -0.995042,
+   0.086549,
+   0.049
+  ],
+  "ring_01_r": [
+   -0.994465,
+   0.082355,
+   0.06525
+  ],
+  "ring_02_r": [
+   -0.994465,
+   0.082355,
+   0.06525
+  ],
+  "ring_03_r": [
+   -0.994465,
+   0.082355,
+   0.06525
+  ],
+  "pinky_01_r": [
+   -0.962226,
+   0.195541,
+   0.189431
+  ],
+  "pinky_02_r": [
+   -0.962226,
+   0.195541,
+   0.189431
+  ],
+  "pinky_03_r": [
+   -0.962227,
+   0.19554,
+   0.189431
+  ]
+ },
+ "jointAxes": {
+  "upperarm_r": {
+   "x": [
+    -0.0,
+    1.0,
+    0.0
+   ],
+   "y": [
+    0.973459,
+    -0.0,
+    0.22886
+   ],
+   "z": [
+    0.22886,
+    0.0,
+    -0.973459
+   ]
+  },
+  "forearm_r": {
+   "x": [
+    -0.0,
+    1.0,
+    0.0
+   ],
+   "y": [
+    0.971349,
+    0.0,
+    0.237656
+   ],
+   "z": [
+    0.237656,
+    0.0,
+    -0.971349
+   ]
+  },
+  "hand_r": {
+   "x": [
+    -0.010635,
+    0.999694,
+    -0.022317
+   ],
+   "y": [
+    0.215936,
+    -0.019496,
+    -0.976213
+   ],
+   "z": [
+    -0.97635,
+    -0.015201,
+    -0.215663
+   ]
+  },
+  "thumb_01_r": {
+   "x": [
+    -0.429456,
+    0.712025,
+    -0.555507
+   ],
+   "y": [
+    0.845265,
+    0.533485,
+    0.030334
+   ],
+   "z": [
+    0.317953,
+    -0.456524,
+    -0.830958
+   ]
+  },
+  "thumb_02_r": {
+   "x": [
+    -0.229326,
+    0.813384,
+    -0.534617
+   ],
+   "y": [
+    0.919954,
+    0.360544,
+    0.153925
+   ],
+   "z": [
+    0.317953,
+    -0.456524,
+    -0.830958
+   ]
+  },
+  "thumb_03_r": {
+   "x": [
+    -0.028604,
+    0.871422,
+    -0.4897
+   ],
+   "y": [
+    0.947675,
+    0.179471,
+    0.264013
+   ],
+   "z": [
+    0.317953,
+    -0.456524,
+    -0.830958
+   ]
+  },
+  "index_01_r": {
+   "x": [
+    0.027481,
+    0.972429,
+    -0.231573
+   ],
+   "y": [
+    0.212954,
+    -0.232038,
+    -0.94911
+   ],
+   "z": [
+    -0.976676,
+    -0.023231,
+    -0.213459
+   ]
+  },
+  "index_02_r": {
+   "x": [
+    0.066637,
+    0.912251,
+    -0.404176
+   ],
+   "y": [
+    0.204117,
+    -0.408973,
+    -0.889425
+   ],
+   "z": [
+    -0.976676,
+    -0.023231,
+    -0.213459
+   ]
+  },
+  "index_03_r": {
+   "x": [
+    0.075186,
+    0.894191,
+    -0.441327
+   ],
+   "y": [
+    0.201125,
+    -0.447082,
+    -0.871588
+   ],
+   "z": [
+    -0.976676,
+    -0.023231,
+    -0.213459
+   ]
+  },
+  "middle_01_r": {
+   "x": [
+    0.06782,
+    0.950818,
+    -0.302234
+   ],
+   "y": [
+    -0.072749,
+    -0.297412,
+    -0.951974
+   ],
+   "z": [
+    -0.995042,
+    0.086549,
+    0.049
+   ]
+  },
+  "middle_02_r": {
+   "x": [
+    0.057551,
+    0.902863,
+    -0.426059
+   ],
+   "y": [
+    -0.081116,
+    -0.421127,
+    -0.903367
+   ],
+   "z": [
+    -0.995042,
+    0.08655,
+    0.049
+   ]
+  },
+  "middle_03_r": {
+   "x": [
+    0.041992,
+    0.812201,
+    -0.581865
+   ],
+   "y": [
+    -0.090158,
+    -0.576922,
+    -0.811808
+   ],
+   "z": [
+    -0.995042,
+    0.086549,
+    0.049
+   ]
+  },
+  "ring_01_r": {
+   "x": [
+    0.051645,
+    0.92394,
+    -0.379035
+   ],
+   "y": [
+    -0.091503,
+    -0.373567,
+    -0.923079
+   ],
+   "z": [
+    -0.994465,
+    0.082355,
+    0.06525
+   ]
+  },
+  "ring_02_r": {
+   "x": [
+    0.042324,
+    0.882376,
+    -0.468637
+   ],
+   "y": [
+    -0.09617,
+    -0.463282,
+    -0.880978
+   ],
+   "z": [
+    -0.994465,
+    0.082355,
+    0.06525
+   ]
+  },
+  "ring_03_r": {
+   "x": [
+    0.037446,
+    0.85802,
+    -0.51225
+   ],
+   "y": [
+    -0.098172,
+    -0.506971,
+    -0.856354
+   ],
+   "z": [
+    -0.994465,
+    0.082355,
+    0.06525
+   ]
+  },
+  "pinky_01_r": {
+   "x": [
+    0.065794,
+    0.842192,
+    -0.535149
+   ],
+   "y": [
+    -0.264181,
+    -0.502471,
+    -0.823244
+   ],
+   "z": [
+    -0.962226,
+    0.195541,
+    0.189431
+   ]
+  },
+  "pinky_02_r": {
+   "x": [
+    0.054406,
+    0.819871,
+    -0.569958
+   ],
+   "y": [
+    -0.266759,
+    -0.538123,
+    -0.79954
+   ],
+   "z": [
+    -0.962226,
+    0.195541,
+    0.189431
+   ]
+  },
+  "pinky_03_r": {
+   "x": [
+    0.04103,
+    0.792005,
+    -0.609135
+   ],
+   "y": [
+    -0.26914,
+    -0.578353,
+    -0.770111
+   ],
+   "z": [
+    -0.962227,
+    0.19554,
+    0.189431
+   ]
+  }
+ },
+ "jointAxesNote": "the source 3ds Max Biped bind-pose bone axes, in the hand frame: x along the bone, y toward the palm/pad side, z the bend axis (positive rotation about z flexes). Rest rotations in the GLB are identity, so these are plain vectors to rotate about (in the parent frame).",
+ "fingerFlexNote": "positive rotation about these axes curls a segment toward the palm (fingers) / across the palm (thumb outer joints); the thumb base (thumb_01_r) takes a general rotation",
+ "nailDirections": {
+  "thumb": [
+   -0.94767,
+   -0.17947,
+   -0.26401
+  ],
+  "index": [
+   -0.20113,
+   0.44708,
+   0.87159
+  ],
+  "middle": [
+   0.09016,
+   0.57692,
+   0.81181
+  ],
+  "ring": [
+   0.09817,
+   0.50697,
+   0.85635
+  ],
+  "pinky": [
+   0.26914,
+   0.57835,
+   0.77011
+  ]
+ },
+ "poses": {
+  "rest": {
+   "thumb_01_r": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "thumb_02_r": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "thumb_03_r": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "index_01_r": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "index_02_r": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "index_03_r": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "middle_01_r": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "middle_02_r": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "middle_03_r": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "ring_01_r": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "ring_02_r": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "ring_03_r": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pinky_01_r": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pinky_02_r": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pinky_03_r": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ]
+  },
+  "relaxed": {
+   "thumb_01_r": [
+    0.022179,
+    -0.031845,
+    -0.057965,
+    0.997564
+   ],
+   "thumb_02_r": [
+    0.022179,
+    -0.031846,
+    -0.057965,
+    0.997564
+   ],
+   "thumb_03_r": [
+    0.027711,
+    -0.039789,
+    -0.072423,
+    0.996195
+   ],
+   "index_01_r": [
+    -0.085123,
+    -0.002025,
+    -0.018604,
+    0.996195
+   ],
+   "index_02_r": [
+    -0.135927,
+    -0.003233,
+    -0.029708,
+    0.990268
+   ],
+   "index_03_r": [
+    -0.068129,
+    -0.00162,
+    -0.01489,
+    0.997564
+   ],
+   "middle_01_r": [
+    -0.121265,
+    0.010548,
+    0.005972,
+    0.992546
+   ],
+   "middle_02_r": [
+    -0.172787,
+    0.015029,
+    0.008509,
+    0.984808
+   ],
+   "middle_03_r": [
+    -0.086724,
+    0.007543,
+    0.004271,
+    0.996195
+   ],
+   "ring_01_r": [
+    -0.155569,
+    0.012883,
+    0.010207,
+    0.987688
+   ],
+   "ring_02_r": [
+    -0.206761,
+    0.017123,
+    0.013566,
+    0.978148
+   ],
+   "ring_03_r": [
+    -0.10395,
+    0.008608,
+    0.00682,
+    0.994522
+   ],
+   "pinky_01_r": [
+    -0.183601,
+    0.037311,
+    0.036145,
+    0.981627
+   ],
+   "pinky_02_r": [
+    -0.232784,
+    0.047306,
+    0.045827,
+    0.970296
+   ],
+   "pinky_03_r": [
+    -0.117266,
+    0.02383,
+    0.023086,
+    0.992546
+   ]
+  },
+  "grip": {
+   "thumb_01_r": [
+    -0.149933,
+    -0.256301,
+    0.103014,
+    0.949325
+   ],
+   "thumb_02_r": [
+    -0.044251,
+    0.063536,
+    0.115647,
+    0.990268
+   ],
+   "thumb_03_r": [
+    0.0,
+    -0.0,
+    -0.0,
+    1.0
+   ],
+   "index_01_r": [
+    -0.059625,
+    -0.001418,
+    -0.013031,
+    0.998135
+   ],
+   "index_02_r": [
+    -0.261005,
+    -0.006208,
+    -0.057044,
+    0.96363
+   ],
+   "index_03_r": [
+    -0.127482,
+    -0.003032,
+    -0.027862,
+    0.991445
+   ],
+   "middle_01_r": [
+    -0.189863,
+    0.016514,
+    0.00935,
+    0.981627
+   ],
+   "middle_02_r": [
+    -0.181332,
+    0.015772,
+    0.00893,
+    0.983255
+   ],
+   "middle_03_r": [
+    -0.129879,
+    0.011297,
+    0.006396,
+    0.991445
+   ],
+   "ring_01_r": [
+    -0.155569,
+    0.012883,
+    0.010207,
+    0.987688
+   ],
+   "ring_02_r": [
+    -0.129804,
+    0.01075,
+    0.008517,
+    0.991445
+   ],
+   "ring_03_r": [
+    -0.095315,
+    0.007893,
+    0.006254,
+    0.995396
+   ],
+   "pinky_01_r": [
+    0.025188,
+    -0.005119,
+    -0.004959,
+    0.999657
+   ],
+   "pinky_02_r": [
+    -0.125596,
+    0.025523,
+    0.024726,
+    0.991445
+   ],
+   "pinky_03_r": [
+    -0.083864,
+    0.017042,
+    0.01651,
+    0.996195
+   ]
+  }
+ },
+ "grip": {
+  "cylinder": {
+   "centre": [
+    0.00903,
+    0.09008,
+    -0.05647
+   ],
+   "axis": [
+    -0.978148,
+    0.207912,
+    0.0
+   ],
+   "radius": 0.036,
+   "outerDiameter": 0.072,
+   "height": 0.12,
+   "note": "hand frame, hand_r at rest (only finger joints are posed by the grip). axis = the glass's UP direction (toward the thumb/index side); centre = mid-height of the 120 mm glass the previews use (rim 25 mm above the index finger). Any point on the axis line is a valid centre for a taller/shorter glass."
+  },
+  "axisPoint": [
+   0.0,
+   0.092,
+   -0.05647
+  ],
+  "placement": {
+   "axisAcrossPalmTiltDeg": 12.0,
+   "axisCrossesYAt": 0.092
+  },
+  "joints": {
+   "index_01_r": 7.0,
+   "index_02_r": 31.0,
+   "index_03_r": 15.0,
+   "middle_01_r": 22.0,
+   "middle_02_r": 21.0,
+   "middle_03_r": 15.0,
+   "ring_01_r": 18.0,
+   "ring_02_r": 15.0,
+   "ring_03_r": 11.0,
+   "pinky_01_r": -3.0,
+   "pinky_02_r": 15.0,
+   "pinky_03_r": 10.0
+  },
+  "thumbBase": {
+   "rollDeg": -22.0,
+   "swingDeg": -30.0,
+   "flexDeg": 4.0,
+   "note": "thumb_01_r grip rotation = Rz(flex) * Ry(swing) * Rx(roll) about the source bone axes jointAxes.thumb_01_r (x along the bone, y toward the pad, z bend axis)"
+  },
+  "thumbJointsDeg": {
+   "thumb_02_r": -16.0,
+   "thumb_03_r": 0.0
+  },
+  "thumbWrapDeg": 130.7,
+  "check": {
+   "maxPenetrationMm": 0.98,
+   "endSegmentGapMm": {
+    "thumb": -0.98,
+    "index": -0.83,
+    "middle": -0.36,
+    "ring": -0.62,
+    "pinky": -0.93
+   }
+  },
+  "howToUse": "pose the fingers with poses.grip, then orient hand_r so that grip.cylinder.axis points world-up (glass upright) and put the glass centre at grip.cylinder.centre (hand frame); or keep the hand where it is and place the glass there."
+ }
+}

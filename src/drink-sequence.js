@@ -1,36 +1,41 @@
-import { AnimClip, AnimEvaluator, Asset, DefaultAnimBinder, Entity, Mat4, Quat, Vec3 } from 'playcanvas';
-import { DRINK_DURATION, DRINK_TIMING, GLASS_EMPTY, sampleDrink } from './drink-timeline.js';
+// Drinking the glass of water from the refrigerator: a downloaded first-person arm (arm-rig.js: Microsoft Rocketbox, MIT;
+// sleeve, hand and fingers) reaches in, opens its hand, closes it round the glass, lifts it clear of the shelf, brings it
+// to the lips, drinks with the head tipping back, puts it back and withdraws, on one pausable clock (drink-timeline.js).
+// The eyes go to the glass and the body leans in while reaching. Only the refreshed exhale is heard, after the last sip.
+import { Asset, Entity, Mat4, Quat, Vec3 } from 'playcanvas';
+import { DRINK_DURATION, DRINK_TIMING, GLASS_EMPTY, GLASS_HEIGHT, sampleDrink } from './drink-timeline.js';
+import { ArmRig, gripInGlass, frameRotation } from './arm-rig.js';
 import { glbFile } from './packed.js';
 
-const HAND_URL = './assets/props/drinking-hand.glb';
+const ARM_URL = './assets/props/drinking-arm.glb';
+const ARM_DATA_URL = './assets/props/drinking-arm.json';
 // Only the refreshed exhale after the last sip (the owner asked for no gulping sounds).
 const AUDIO = [
   { file: 'drink-relief.wav', starts: [DRINK_TIMING.relief], gain: 0.65 },
 ];
-// The downloaded hand's root is normalized to wrist=0, fingers=+Y, thumb=-X.
-// +Z is the back of the hand. This basis turns the right palm toward the glass,
-// fingers away from the eye and the thumb upward. The source's own finger-rig
-// animation supplies the cylindrical grip; no hand geometry is generated here.
-const HAND_BASIS = new Mat4().set([0, -1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0, 0, 0, 0, 1]);
-const HAND_ROTATION = new Quat().setFromMat4(HAND_BASIS);
-const PALM_FROM_WRIST = new Vec3(0, 0.099, -0.013);
-// The author's close clip makes a fist. These three local thumb rotations were
-// fitted on that same rig to oppose the fingers around the 79 mm tumbler,
-// rather than drive the thumb through the glass. Geometry/weights stay authored.
-const THUMB_GRIP = [
-  ['thumb_01.R_08', [-0.0711311245, -0.3398414864, 0.3502761405, 0.8699165205]],
-  ['thumb_02.R_09', [0.2148195126, -0.2744761727, 0.0050699543, 0.9372778154]],
-  ['thumb_03.R_010', [-0.1920009365, -0.0190442885, 0.2389467365, 0.9516708530]],
-];
+// Camera space: the right shoulder joint (behind and below the eye, never in view: the mesh ends 7 cm from it), where the
+// hand rests below the view, and how far beside the glass the open hand pauses before closing on it.
+export const SHOULDER = new Vec3(0.19, -0.25, 0.09);
+const REST_WRIST = new Vec3(0.30, -0.62, -0.10);
+const PRE_GRASP = new Vec3(0.07, 0.035, 0.08);
+// The resting hand: fingers forward and down, back of the hand out to the right.
+const REST_HAND = frameRotation(new Vec3(0, 1, 0), new Vec3(0, 0, 1), new Vec3(0.05, -0.55, -0.83), new Vec3(0.9, 0.25, 0.1));
+const MAX_LEAN = 0.6;       // metres the body may lean (or step) towards the glass to reach it
+const LOOK_BELOW = 8;       // degrees: the eyes rest just above the glass while reaching
+const SIP_HEAD = 7;         // degrees the head tips back while drinking
 
-async function containerAsset(app) {
-  const file = await glbFile(HAND_URL);
-  return new Promise((resolve, reject) => {
-    const asset = new Asset('Elena FF · Rigged hand · CC BY-SA 4.0', 'container', file);
-    asset.once('load', () => resolve(asset.resource));
-    asset.once('error', error => reject(new Error(`Drinking hand: ${error}`)));
+async function loadArm(app) {
+  const [file, data] = await Promise.all([glbFile(ARM_URL), fetch(new URL(ARM_DATA_URL, location.href)).then(r => {
+    if (!r.ok) throw new Error(`Drinking arm data: HTTP ${r.status}`);
+    return r.json();
+  })]);
+  const container = await new Promise((resolve, reject) => {
+    const asset = new Asset('Microsoft Rocketbox · first-person arm · MIT', 'container', file);
+    asset.once('load', () => { if (file.url.startsWith('blob:')) URL.revokeObjectURL(file.url); resolve(asset.resource); });
+    asset.once('error', error => reject(new Error(`Drinking arm: ${error}`)));
     app.assets.add(asset); app.assets.load(asset);
   });
+  return { container, data };
 }
 
 // Recorded audio follows the same clock as the fingers and glass. Pausing stops
@@ -70,18 +75,18 @@ export class DrinkingAudio {
 
 export class DrinkSequence {
   static async create(options) {
-    const [container, audio] = await Promise.all([containerAsset(options.app), DrinkingAudio.create(options.sounds || options.fridge?.sounds)]);
-    return new DrinkSequence({ ...options, container, audio });
+    const [{ container, data }, audio] = await Promise.all([loadArm(options.app), DrinkingAudio.create(options.sounds || options.fridge?.sounds)]);
+    return new DrinkSequence({ ...options, container, armData: data, audio });
   }
 
   constructor({ app, camera, player, fridge, interactions, configureMaterial,
-    container, audio = new DrinkingAudio(), onStart = () => {}, onComplete = () => {},
+    container, armData, audio = new DrinkingAudio(), onStart = () => {}, onComplete = () => {},
     document: ownerDocument = globalThis.document, window: ownerWindow = globalThis.window,
     clock = () => performance.now() / 1000,
     reducedMotion = ownerWindow?.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false }) {
     Object.assign(this, { app, camera, player, fridge, interactions, audio, onStart, onComplete, ownerDocument, clock, reducedMotion });
     this.running = false; this.completed = false; this.time = 0; this.lastTime = null; this.locked = false;
-    this.carried = false; this.gripTime = 0.47;
+    this.carried = false;
     // Visibility is tested during camera culling, before a capture's render
     // passes. Probe cameras intentionally copy the player's layer list, so a
     // layer alone would still bake first-person hands into room reflections.
@@ -92,26 +97,24 @@ export class DrinkSequence {
       mi.isVisibleFunc = cam => this.carried ? cam === this.playerCamera : previous ? previous(cam) : cam.frustum.containsAabb(mi.aabb);
       return [mi, previous];
     });
-    this.handCarrier = new Entity('right hand and forearm · drinking'); camera.addChild(this.handCarrier);
-    this.hand = container.instantiateRenderEntity({ castShadows: false, receiveShadows: true });
-    this.handCarrier.addChild(this.hand); this.handCarrier.enabled = false;
-    for (const render of this.hand.findComponents('render')) {
+    // The arm hangs in camera space; only the player's camera draws it (probe cameras copy the player's layers, so a
+    // layer alone would bake it into room reflections).
+    this.handCarrier = new Entity('first-person right arm · drinking'); camera.addChild(this.handCarrier);
+    this.arm = container.instantiateRenderEntity({ castShadows: false, receiveShadows: true });
+    this.handCarrier.addChild(this.arm); this.handCarrier.enabled = false;
+    for (const render of this.arm.findComponents('render')) {
       for (const mi of render.meshInstances) {
         mi.castShadow = false; mi.cull = true;
         mi.isVisibleFunc = cam => cam === this.playerCamera;
-        // Preserve the downloaded skin albedo/normal/roughness maps and fine detail.
+        // Keep the downloaded skin and knit maps; the probes give it the kitchen's bounce light and reflections.
         if (!mi.material._drinkConfigured) { mi.material._drinkConfigured = true; configureMaterial?.(mi.material); }
       }
     }
-    const track = container.animations[0]?.resource;
-    if (!track) throw new Error('The downloaded hand is missing its authored finger animation');
-    this.handClip = new AnimClip(track, 0, 0, false, false);
-    this.handEvaluator = new AnimEvaluator(new DefaultAnimBinder(this.hand)); this.handEvaluator.addClip(this.handClip); this.handEvaluator.update(0);
-    this.thumbJoints = THUMB_GRIP.flatMap(([name, rotation]) => {
-      const node = this.hand.findByName(name);
-      return node ? [{ node, open: node.getLocalRotation().clone(), target: new Quat(...rotation), blended: new Quat() }] : [];
-    });
-    this.glassInverse = new Mat4(); this.shelfLocal = new Vec3(); this.offset = new Vec3(); this.poseRotation = new Quat(); this.tiltRotation = new Quat();
+    this.rig = new ArmRig(this.arm, armData);
+    this.grip = gripInGlass(armData, GLASS_HEIGHT);
+    this.glassInverse = new Mat4(); this.shelfLocal = new Vec3(); this.glassCamera = new Vec3(); this.glassCameraRotation = new Quat();
+    this.tiltRotation = new Quat(); this.inverseCamera = new Quat();
+    this.wrist = new Vec3(); this.handRotation = new Quat(); this.graspWrist = new Vec3(); this.graspRotation = new Quat(); this.step = new Vec3();
     this.liquidRotation = new Quat(); this.liquidUp = new Vec3();
     this.headRotation = new Quat(); this.cameraRotation = new Quat();
     this.onVisibility = () => { this.lastTime = null; if (ownerDocument?.hidden) this.audio.pause(); };
@@ -130,16 +133,24 @@ export class DrinkSequence {
     this.basePosition = this.camera.getPosition().clone(); this.baseRotation = this.camera.getEulerAngles().clone();
     this.baseOrientation = this.camera.getRotation().clone();
     this.savedYaw = this.player.yaw; this.savedPitch = this.player.pitch;
-    this.reachDirection = new Vec3().sub2(this.fridge.glassShelfPosition, this.basePosition);
-    this.reachDirection.y = 0; this.reachDirection.normalize().mulScalar(0.10);
-    // Stage the reach below the eye from every allowed initial gaze. Looking
-    // toward the upper cabinet keeps the authored arm connected beyond the
-    // lower frame edge, including when E was aimed directly at the glass.
-    const target = this.fridge.glassTarget || this.fridge.glassShelfPosition.clone().add(new Vec3(0, 0.08, 0));
-    const distance = Math.hypot(target.x - this.basePosition.x, target.z - this.basePosition.z);
-    const glassPitch = Math.atan2(target.y - this.basePosition.y, distance) * 180 / Math.PI;
-    const initialPitch = Math.asin(Math.max(-1, Math.min(1, this.camera.forward.y))) * 180 / Math.PI;
-    this.reachPitchDelta = Math.min(38, Math.max(0, glassPitch + 20 - initialPitch));
+    // The glass is round: turn it about its own axis to face the way the player looks, so the same grip (the palm on its
+    // right, towards the eye) fits it whatever angle it was approached from.
+    const forward = this.camera.forward;
+    this.carryRotation = new Quat().setFromEulerAngles(0, Math.atan2(-forward.x, -forward.z) * 180 / Math.PI, 0);
+    this.fridge.glass.setRotation(this.carryRotation);
+    // Lean the body in as far as the arm needs to close on the glass (the shoulder rides with the camera).
+    const glass = this.fridge.glassShelfPosition;
+    const wristWorld = this.carryRotation.transformVector(this.grip.position, new Vec3()).add(glass);
+    const shoulderWorld = this.baseOrientation.transformVector(SHOULDER, new Vec3()).add(this.basePosition);
+    const lean = Math.min(MAX_LEAN, Math.max(0, wristWorld.distance(shoulderWorld) - (this.rig.reach - 0.06)));
+    this.reachDirection = new Vec3().sub2(glass, this.basePosition);
+    this.reachDirection.y = 0; this.reachDirection.normalize().mulScalar(lean);
+    // Eyes to the glass while reaching and putting it back (it rests a little below the centre of view).
+    const centre = glass.clone().add(new Vec3(0, GLASS_HEIGHT / 2, 0));
+    const distance = Math.hypot(centre.x - this.basePosition.x, centre.z - this.basePosition.z) - lean;
+    const glassPitch = Math.atan2(centre.y - this.basePosition.y, Math.max(0.2, distance)) * 180 / Math.PI;
+    const initialPitch = Math.asin(Math.max(-1, Math.min(1, forward.y))) * 180 / Math.PI;
+    this.lookDelta = Math.min(25, Math.max(-35, glassPitch + LOOK_BELOW - initialPitch));
     this.fridge.drinkRunning = true;
     this.holdPlayer();
     // Input arrives between RAF callbacks. Disable cached interaction focus here,
@@ -176,41 +187,46 @@ export class DrinkSequence {
     if (!this.basePosition) return null;
     const head = sampleDrink(time, { reducedMotion: this.reducedMotion });
     this.camera.setPosition(this.basePosition.x + this.reachDirection.x * head.lean, this.basePosition.y, this.basePosition.z + this.reachDirection.z * head.lean);
-    this.headRotation.setFromEulerAngles(this.reachPitchDelta * head.headLift, 0, 0);
+    this.headRotation.setFromEulerAngles(this.lookDelta * head.look + SIP_HEAD * head.sip, 0, 0);
     this.cameraRotation.mul2(this.baseOrientation, this.headRotation); this.camera.setRotation(this.cameraRotation);
     this.glassInverse.copy(this.camera.getWorldTransform()).invert();
     this.glassInverse.transformPoint(this.fridge.glassShelfPosition, this.shelfLocal);
     const pose = sampleDrink(time, { shelf: this.shelfLocal.toArray(), reducedMotion: this.reducedMotion });
     if (pose.carried !== this.carried) {
       this.carried = pose.carried;
-      if (this.carried) {
-        this.camera.addChild(this.fridge.glass);
-      }
-      else this.returnGlass();
+      if (this.carried) this.camera.addChild(this.fridge.glass);
+      else this.returnGlass(this.carryRotation);
     }
+    // The glass in camera space: carried, as the timeline says; on the shelf, where it stands.
     if (pose.carried) {
+      this.tiltRotation.setFromEulerAngles(pose.tilt, 0, 0);
       this.fridge.glass.setLocalPosition(...pose.glass);
-      this.fridge.glass.setLocalEulerAngles(pose.tilt, 0, 0);
+      this.fridge.glass.setLocalRotation(this.tiltRotation);
+      this.glassCamera.set(...pose.glass); this.glassCameraRotation.copy(this.tiltRotation);
+    } else {
+      this.glassCamera.copy(this.shelfLocal);
+      this.inverseCamera.copy(this.cameraRotation).invert();
+      this.glassCameraRotation.mul2(this.inverseCamera, this.fridge.glass.getRotation());
     }
+    // The hand on the glass (the asset's fitted grip), beside it with the hand open, or resting below the view, with a
+    // gentle swing on the way.
+    this.graspRotation.mul2(this.glassCameraRotation, this.grip.rotation);
+    this.glassCameraRotation.transformVector(this.grip.position, this.graspWrist).add(this.glassCamera);
+    this.handRotation.slerp(REST_HAND, this.graspRotation, pose.approach);
+    this.wrist.lerp(REST_WRIST, this.step.add2(this.graspWrist, PRE_GRASP), pose.approach).lerp(this.wrist, this.graspWrist, pose.grasp);
+    const swing = Math.sin(Math.PI * pose.approach) * (1 - pose.grasp);
+    this.wrist.x += swing * 0.03; this.wrist.y += swing * 0.04;
     this.handCarrier.enabled = pose.handVisible;
-    this.tiltRotation.setFromEulerAngles(pose.tilt, 0, 0);
-    this.poseRotation.mul2(this.tiltRotation, HAND_ROTATION);
-    this.poseRotation.transformVector(PALM_FROM_WRIST, this.offset);
-    this.handCarrier.setLocalPosition(pose.hand[0] - this.offset.x, pose.hand[1] - this.offset.y, pose.hand[2] - this.offset.z);
-    this.handCarrier.setLocalRotation(this.poseRotation);
-    this.handClip.time = pose.grip * this.gripTime; this.handEvaluator.update(0);
-    for (const joint of this.thumbJoints) {
-      joint.blended.slerp(joint.open, joint.target, pose.grip); joint.node.setLocalRotation(joint.blended);
-    }
+    if (pose.handVisible) this.rig.pose(SHOULDER, this.wrist, this.handRotation, pose);
     this.liquidRotation.copy(this.fridge.glass.getRotation()).invert();
     this.liquidRotation.transformVector(Vec3.UP, this.liquidUp);
     this.fridge.setGlassWater(pose.fill, this.liquidUp.toArray());
     this.pose = pose; return pose;
   }
 
-  returnGlass() {
+  returnGlass(rotation = this.fridge.glassShelfRotation) {
     this.fridge.frame.addChild(this.fridge.glass);
-    this.fridge.glass.setPosition(this.fridge.glassShelfPosition); this.fridge.glass.setRotation(this.fridge.glassShelfRotation);
+    this.fridge.glass.setPosition(this.fridge.glassShelfPosition); this.fridge.glass.setRotation(rotation);
   }
 
   finish() {
@@ -226,7 +242,7 @@ export class DrinkSequence {
 
   destroy() {
     this.audio.pause(); this.ownerDocument?.removeEventListener('visibilitychange', this.onVisibility);
-    this.handEvaluator?.removeClips(); this.handCarrier?.destroy();
+    this.handCarrier?.destroy();
     for (const [mi, previous] of this.glassVisibility) mi.isVisibleFunc = previous;
   }
 }
