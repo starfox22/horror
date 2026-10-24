@@ -2,17 +2,19 @@
 
 Ongoing Codex development and review branch: `codex-review` (Git branch names cannot contain spaces). The branch was renamed from `codex/apartment-lighting-pass`; keep subsequent review passes on this same branch. Claude uses a separate branch. Merge into or push to `main` only when explicitly requested by the owner.
 
+The owner authorized promotion of 0.11 to `main` on 2026-10-24. [CLAUDE_HANDOFF.md](CLAUDE_HANDOFF.md) records the production publication and current continuation baseline. The original preview publication below predates this promotion; its old `original` SHA is historical.
+
 `.github/workflows/pages-preview.yml` builds two independent checkouts with Node 22 and `npm ci`: the current `main` commit and the exact development commit that triggered the workflow. It uploads one GitHub Pages artifact containing:
 
 | Path | Build |
 | --- | --- |
-| `/horror/` | Original game, built from `main` |
+| `/horror/` | Production game, built from `main` |
 | `/horror/codex/` | Codex environment and lighting pass |
 | `/horror/codex/build-info.json` | Full original and preview commit SHAs |
 
 The published preview is **https://starfox22.github.io/horror/codex/**. [Workflow run 40109659758](https://github.com/starfox22/horror/actions/runs/40109659758) deployed build 0.11 successfully. No changes to `main` or repository visibility are required by this workflow. Apartment assets are already committed; neither build regenerates them or downloads the source model.
 
-## Current deployment configuration
+## Deployment configuration and original 0.11 review publication
 
 The repository is public. GitHub Pages uses **GitHub Actions** as its source. The owner selected **No restriction** for deployment branches in the `github-pages` environment; the previously blocking main-only rule is gone. If restrictions are reintroduced later, they must permit `codex-review` for its preview workflow.
 
@@ -43,4 +45,4 @@ gh run list --repo starfox22/horror --branch codex-review --workflow pages-previ
 
 The preview is a subdirectory of the **same Pages site**. Both workflows use the `pages` concurrency group. The existing `pages.yml` workflow still publishes only `main` at the root: **a later `main` deployment will remove `/codex/`**. Run the preview workflow again after that deployment to restore both builds. Keeping previews across all future `main` deployments would require a separately reviewed change to the original workflow or a separate hosting repository.
 
-To restore just the original game, run the existing `Pages` workflow for `main`. This replaces the site's artifact with the original build. The preview workflow never commits generated assets or modifies either source checkout.
+To publish only current production, run the existing `Pages` workflow for `main`. This replaces the site's artifact with the current main build. The preview workflow never commits generated assets or modifies either source checkout.

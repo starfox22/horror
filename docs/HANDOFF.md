@@ -3,6 +3,10 @@
 A browser horror game in the spirit of Konami's P.T. (first person, one quiet home, photoreal, AAA look). The owner
 works with AI agents; whoever picks this up continues from the state below and keeps this file current.
 
+## Main promotion and Claude continuation — 2026-10-24
+
+The owner explicitly requested promoting verified build 0.11 to `main` and handing continuation to Claude. Read [CLAUDE_HANDOFF.md](CLAUDE_HANDOFF.md) for the current baseline, publication verification, Claude's existing branch, asset licenses, regression commands and implementation guardrails. The gameplay baseline is `259e12e6ade8d6ad97fcd6af81be4d2e95e453a4`; its review documentation is included. The canonical production URL is https://starfox22.github.io/horror/. This approval covers the current promotion; future main pushes still require an explicit owner request. Codex continues on `codex-review`; Claude updates its separate branch from the promoted `main` before continuing.
+
 ## Owner's requirements and preferences
 - Current branch policy: reuse `codex-review` for all Codex reviews; Claude works on a separate branch. Merge into or push to `main` only when the owner explicitly asks. Historical approvals below apply only to those completed builds.
 - AAA-looking graphics, playable in a desktop browser.
@@ -50,7 +54,7 @@ Read [REVIEW_10.md](REVIEW_10.md) for the current review and continuation guide.
 
 ## Codex review 0.11
 
-Read [REVIEW_11.md](REVIEW_11.md) and [DRINK_ASSETS.md](DRINK_ASSETS.md). Auto now targets 60 FPS through six transient steps, including resolution below Low. Presets reduce actual shadow-atlas/filter, backing-buffer and rain costs while preserving occlusion. Default cap remains 60; Unlimited requires a manual selection. Startup has only bedside lamps, sofa arc lamp, extractor and mirror on; ceilings, pendants, desk/closet lamps and screens are off. Refrigerator E then second E at the glass starts a nine-second visible-hand drinking action with downloaded rig/skin, authored apartment tumbler and CC0 gulp/exhale recordings. Preserve pause/hidden-tab timing, synchronous input blocking, camera-specific hand/carried-glass culling and the adapted hand's CC BY-SA attribution/license. Publication and current checks are recorded in REVIEW_11.md; keep all work on `codex-review`.
+Read [REVIEW_11.md](REVIEW_11.md) and [DRINK_ASSETS.md](DRINK_ASSETS.md). Auto now targets 60 FPS through six transient steps, including resolution below Low. Presets reduce actual shadow-atlas/filter, backing-buffer and rain costs while preserving occlusion. Default cap remains 60; Unlimited requires a manual selection. Startup has only bedside lamps, sofa arc lamp, extractor and mirror on; ceilings, pendants, desk/closet lamps and screens are off. Refrigerator E then second E at the glass starts a nine-second visible-hand drinking action with downloaded rig/skin, authored apartment tumbler and CC0 gulp/exhale recordings. Preserve pause/hidden-tab timing, synchronous input blocking, camera-specific hand/carried-glass culling and the adapted hand's CC BY-SA attribution/license. Publication and current checks are recorded in REVIEW_11.md. Codex reviews remain on `codex-review`; Claude continues from the promoted main baseline using [CLAUDE_HANDOFF.md](CLAUDE_HANDOFF.md).
 
 ## Published builds
 

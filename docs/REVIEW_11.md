@@ -46,10 +46,10 @@ python3 tools/check-browser.py http://127.0.0.1:4175/ webgpu
 DRINK_QUALITY=2 python3 tools/check-drink-browser.py http://127.0.0.1:4175/ work/drink-check webgpu
 ```
 
-## Publication
+## Original review publication before main promotion
 
 Published revision: `259e12e6ade8d6ad97fcd6af81be4d2e95e453a4`. [Deployment run 40109659758](https://github.com/starfox22/horror/actions/runs/40109659758) passed. Play **https://starfox22.github.io/horror/codex/?v=0.11-final**. Live build-info matches that preview commit and the unchanged original `main` revision `7b93acb3f34085e078ad32f0c2baae415341e486`. Both site roots load; the hosted hand SHA256 matches the final local asset, and both recordings and the hand license return HTTP 200.
 
 The actual hosted HTTPS WebGPU check passed native E opening and second-E drinking, decoded recorded audio, default 60 FPS cap, visible hand/glass, pause/resume, hidden-tab freeze, mostly empty glass return, restored walking control and native refrigerator closing. No unexpected page, console or HTTP failures occurred. [Hosted result](review-11/validation.json) records the check. A session proxy CA public-key pin was used for the cloud browser; general certificate-error bypass was not enabled.
 
-The `?v=` query refreshes cached HTML; it does not preserve an older build. Documentation-only follow-ups skip CI and do not change this deployed game revision. `main` was neither committed nor pushed.
+The `?v=` query refreshes cached HTML; it does not preserve an older build. Documentation-only follow-ups skip CI and do not change this deployed game revision. `main` was neither committed nor pushed during the review. The owner subsequently authorized promoting 0.11 to `main`; current production and continuation details are recorded in [CLAUDE_HANDOFF.md](CLAUDE_HANDOFF.md).

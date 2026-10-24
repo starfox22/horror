@@ -8,6 +8,7 @@ down the windows, lightning and thunder, warm night lighting that fades softly i
 around the flat, eye adaptation), post-processing and ambient sound.
 
 Read `docs/HANDOFF.md` first if you are picking this up (state, owner's preferences, how things fit together).
+For Claude's continuation after the owner-approved 0.11 promotion, read [CLAUDE_HANDOFF.md](docs/CLAUDE_HANDOFF.md).
 
 All Codex reviews continue on `codex-review`, while Claude works on its own branch. Codex merges into or pushes to `main` only when the owner explicitly asks. The first review adds a lighting/material pass and interaction fixes. See [the change list and validation guide](docs/CODEX_ENVIRONMENT_PASS.md), [side-by-side screenshots](docs/review/README.md), and [preview deployment instructions](docs/PREVIEW_DEPLOYMENT.md).
 
@@ -15,7 +16,8 @@ The latest pass adds [a 60 FPS Auto target, lighter graphics budgets, sparse wak
 
 ## Play
 
-- Codex review web build: https://starfox22.github.io/horror/codex/?v=0.11-final
+- Production web build: https://starfox22.github.io/horror/?v=0.11
+- Codex review: https://starfox22.github.io/horror/codex/?v=0.11-final
 - Earlier Claude artifact builds: https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9
 - Locally: `npm install && npm run dev`, open the printed URL. Click to enter.
 
