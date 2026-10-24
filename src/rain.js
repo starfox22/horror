@@ -6,6 +6,7 @@ import {
   Color, Entity, Texture, Vec3, Quat, Mat4, Curve, CurveSet, PIXELFORMAT_RGBA8, ADDRESS_REPEAT, ADDRESS_CLAMP_TO_EDGE,
   FILTER_LINEAR, FILTER_LINEAR_MIPMAP_LINEAR, EMITTERSHAPE_BOX, BLEND_ADDITIVE, BLEND_NORMAL, StandardMaterial, LIGHTFALLOFF_INVERSESQUARED, SHADOWUPDATE_THISFRAME,
 } from 'playcanvas';
+import { effectsLayers } from './lighting.js';
 
 const N = 512;               // glass texture pixels; it spans TILE metres of glass
 const TILE = 0.75;
@@ -228,6 +229,7 @@ export class Rain {
       alignToMotion: true, stretch: 0.35, startAngle: 0, scaleGraph: new Curve([0, 0.012]),
       alphaGraph: new Curve([0, 0.22]), colorGraph: new CurveSet([[0, 0.55], [0, 0.6], [0, 0.7]]),
       blendType: BLEND_ADDITIVE, depthWrite: false, lighting: false, intensity: 1, loop: true, autoPlay: true,
+      layers: effectsLayers(this.app),
     });
     e.setPosition(centre[0], centre[1] + ext[1], centre[2]);
     this.app.root.addChild(e);

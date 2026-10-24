@@ -1,5 +1,6 @@
 import { AnimClip, AnimEvaluator, Asset, DefaultAnimBinder, Entity, Mat4, Quat, Vec3 } from 'playcanvas';
 import { DRINK_DURATION, DRINK_TIMING, GLASS_EMPTY, sampleDrink } from './drink-timeline.js';
+import { glbFile } from './packed.js';
 
 const HAND_URL = './assets/props/drinking-hand.glb';
 // Only the refreshed exhale after the last sip (the owner asked for no gulping sounds).
@@ -23,8 +24,9 @@ const THUMB_GRIP = [
 ];
 
 async function containerAsset(app) {
+  const file = await glbFile(HAND_URL);
   return new Promise((resolve, reject) => {
-    const asset = new Asset('Elena FF · Rigged hand · CC BY-SA 4.0', 'container', { url: new URL(HAND_URL, location.href).href, filename: 'drinking-hand.glb' });
+    const asset = new Asset('Elena FF · Rigged hand · CC BY-SA 4.0', 'container', file);
     asset.once('load', () => resolve(asset.resource));
     asset.once('error', error => reject(new Error(`Drinking hand: ${error}`)));
     app.assets.add(asset); app.assets.load(asset);

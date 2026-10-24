@@ -7,7 +7,7 @@ import * as pc from 'playcanvas';
 import { SHADOWUPDATE_THISFRAME } from 'playcanvas';
 import { WalkGrid } from './walkgrid.js';
 import { Player } from './player.js';
-import { setupLighting, addDownlights, fixShadowAtlas } from './lighting.js';
+import { setupLighting, addDownlights, fixShadowAtlas, effectsLayer } from './lighting.js';
 import { Probes, ZONES, baseName } from './probes.js';
 import { setupPost, EyeAdaptation } from './post.js';
 import { GraphicsPreferences, GraphicsSettings } from './graphics-settings.js';
@@ -30,6 +30,7 @@ import { warmUp, revealInFront } from './warmup.js';
 import { Director } from './story-events.js';
 import { FallingGlass } from './falling-glass.js';
 import { Thought } from './thought.js';
+import { setPacked } from './packed.js';
 
 const ASSETS = new URL('./assets/apartment/', location.href).href;
 const SPAWN = { x: WAKE_EXIT.x, z: WAKE_EXIT.z, yaw: WAKE_EXIT.yaw }; // clear bedside landing
@@ -139,6 +140,7 @@ app.root.addChild(camera);
 // whenever a switch or lamp changes the lighting, with the flashlight beam held out of them.
 const ambientLevel = hash.has('amb') ? Number(hash.get('amb')) : AMBIENT;
 const probes = new Probes(app, camera, apartment, { ambient: ambientLevel });
+effectsLayer(app, camera);                   // particles: the player's camera only (lighting.js)
 app.scene.envAtlas = ZONES.main.atlas;       // for the few materials made at run time (switch plates, bezels)
 app.scene.skyboxIntensity = ambientLevel;
 const lit = setupLighting(app);
@@ -307,6 +309,7 @@ async function modelFile() {
   if (/^\s*</.test(text)) return unpacked;
   let manifest;
   try { manifest = JSON.parse(text); } catch { throw new Error('Apartment manifest is not valid JSON'); }
+  setPacked(true);       // the artifact build: other GLBs ship as base64 text too (packed.js)
   if (!Number.isSafeInteger(manifest?.bytes) || manifest.bytes <= 0 || !Array.isArray(manifest.parts) || !manifest.parts.length ||
       manifest.parts.some(p => typeof p.file !== 'string' || !Number.isSafeInteger(p.bytes) || p.bytes <= 0) ||
       manifest.parts.reduce((sum, part) => sum + part.bytes, 0) !== manifest.bytes) {

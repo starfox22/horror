@@ -3,6 +3,7 @@
 // - The host serves no .bin/.ktx2 files, so the apartment (scene.gltf + geometry-*.bin + textures/*.ktx2) is packed into
 //   one GLB, split into ~10 MB base64 text parts (assets/apartment/apartment-N.txt) plus a manifest (apartment.json);
 //   src/main.js downloads the parts, reassembles the GLB in memory and loads it from a blob URL.
+// - Other GLBs become base64 text files too (<file>.glb.b64.txt; src/packed.js).
 // Prints the JSON list of supporting files for the Artifact tool's `files` (with `root: dist-artifact`).
 // The host takes at most 64 MB per publish call: publish the list in slices to the same url.
 import { cpSync, readFileSync, writeFileSync, rmSync, readdirSync, statSync } from 'node:fs';
@@ -47,6 +48,12 @@ for (let at = 0, n = 0; at < glb.length; at += PART, n++) {
   parts.push({ file, bytes: Math.min(PART, glb.length - at) });
 }
 writeFileSync(`${APT}/apartment.json`, JSON.stringify({ bytes: glb.length, parts }));
+
+// Other models (assets/props/*.glb): one base64 text file each (src/packed.js reads them).
+for (const f of readdirSync(`${OUT}/assets/props`)) if (f.endsWith('.glb')) {
+  writeFileSync(`${OUT}/assets/props/${f}.b64.txt`, readFileSync(`${OUT}/assets/props/${f}`).toString('base64'));
+  rmSync(`${OUT}/assets/props/${f}`);
+}
 
 const files = readdirSync(OUT, { recursive: true }).filter(f => f !== 'index.html' && statSync(`${OUT}/${f}`).isFile()).sort();
 const total = files.reduce((n, f) => n + statSync(`${OUT}/${f}`).size, 0);

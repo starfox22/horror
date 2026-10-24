@@ -78,7 +78,8 @@ export class Devices {
     // The swing-arm lamp hangs over the pillow: a warm spot down onto the bed, and a faint spill around the shade.
     const spot = new Entity(`bedside lamp ${side}`);
     spot.addComponent('light', {
-      type: 'spot', color: WARM, intensity: 1.25, range: 4.5, innerConeAngle: 26, outerConeAngle: 72, castShadows: true,
+      // A dome shade's beam: ~55 deg (a 72 deg cone reached across the room into the shoe closet by the wardrobe).
+      type: 'spot', color: WARM, intensity: 1.25, range: 4.5, innerConeAngle: 24, outerConeAngle: 55, castShadows: true,
       falloffMode: LIGHTFALLOFF_INVERSESQUARED, shadowResolution: 512, shadowBias: 0.25, normalOffsetBias: 0.04,
       volumetricScattering: 0.5,
     });

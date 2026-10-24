@@ -2,6 +2,7 @@
 import { Color, Entity, StandardMaterial, Texture, Vec3, Curve, CurveSet,
   BLEND_NORMAL, PIXELFORMAT_SRGBA8 } from 'playcanvas';
 import { COFFEE_CUPS, COFFEE_NOZZLES } from './coffee-cycle.js';
+import { effectsLayers } from './lighting.js';
 
 export class CoffeeEffects {
   constructor(app) {
@@ -34,6 +35,7 @@ export class CoffeeEffects {
         alphaGraph: new Curve([0, 0, 0.18, 0.11, 0.6, 0.055, 1, 0]),
         colorGraph: new CurveSet([[0, 0.85], [0, 0.83], [0, 0.79]]),
         rotationSpeedGraph: new Curve([0, 15, 1, 3]),
+        layers: effectsLayers(app),
       });
       e.setPosition(cup.x, cup.bottom + 0.012, cup.z); this.root.addChild(e);
       return { entity: e, playing: false };

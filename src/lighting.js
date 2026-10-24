@@ -3,9 +3,9 @@
 // moonlight (outside is pitch black, as in P.T.): the 'moon' light is dark except in a lightning flash (rain.js), which
 // throws the window frames' shadows across the floor for an instant. Bounce light and reflections: probes.js.
 import {
-  Color, Entity, Quat, Vec3, Texture, RenderTarget, StandardMaterial,
+  Color, Entity, Layer, Quat, Vec3, Texture, RenderTarget, StandardMaterial,
   LIGHTFALLOFF_INVERSESQUARED, SHADOW_PCF3_32F, SHADOWUPDATE_THISFRAME, SHADOWUPDATE_REALTIME, PIXELFORMAT_RGBA16F, PIXELFORMAT_RGBA8,
-  FILTER_LINEAR, FILTER_LINEAR_MIPMAP_LINEAR, RENDERTARGET_ORIGIN_TOP, TONEMAP_LINEAR, GAMMA_NONE, ADDRESS_CLAMP_TO_EDGE,
+  FILTER_LINEAR, FILTER_LINEAR_MIPMAP_LINEAR, RENDERTARGET_ORIGIN_TOP, LAYERID_WORLD, TONEMAP_LINEAR, GAMMA_NONE, ADDRESS_CLAMP_TO_EDGE,
 } from 'playcanvas';
 import { ARC_LAMP, arcLampProfile } from './lamp-profiles.js';
 
@@ -233,6 +233,21 @@ export class ProbeRig {
     return this.frame().then(() => { for (const c of this.cams) c.enabled = false; });
   }
 }
+
+// Particle effects (rain outside, coffee steam) draw on their own layer, after the world's transparent things, seen by the
+// player's camera only: the probes must not capture steam, and a probe camera drawing particles builds another particle
+// shader mid-game. Create it after the probes (their cameras copy the player camera's layers when they are made).
+export function effectsLayer(app, camera) {
+  const layers = app.scene.layers;
+  let layer = layers.getLayerByName('Effects');
+  if (!layer) {
+    layer = new Layer({ name: 'Effects' });
+    layers.insertTransparent(layer, layers.getTransparentIndex(layers.getLayerByName('World')) + 1);
+  }
+  if (camera && !camera.camera.layers.includes(layer.id)) camera.camera.layers = [...camera.camera.layers, layer.id];
+  return layer.id;
+}
+export const effectsLayers = (app) => { const layer = app.scene?.layers?.getLayerByName('Effects'); return [layer ? layer.id : LAYERID_WORLD]; };
 
 // The shared shadow (and cookie) atlas is cut into one grid cell per shadowed or cookie light in the flat, fixed for good.
 // Left to itself the engine sizes the grid by how many such lights are on and in view this frame, and every change of
