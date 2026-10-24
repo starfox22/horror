@@ -52,6 +52,24 @@ One system per file, each opening with a comment on what it does.
 | `death.js`, `endings.js` | The grab and waking at 03:07 again; the four endings and their cards. |
 | `menu.js`, `hud.js`, `journal.js`, `credits.js`, `music.js`, `sound.js` | The menus (title, new night with difficulty, chapters, journal and endings, settings, brightness, credits, pause), prompts and captions, the evidence journal, the score and stings, and the recorded-sound bank. |
 
+### The home camera sees in the dark
+
+A real night camera has a ring of infrared LEDs round its lens; so does this one. `seccam.js` adds a spot light at the
+lens with only the *lightmapped* bit in its mask, and the clustered-light patch in `probes.js` accepts such a light only
+while the camera named `security camera` renders (`irView`):
+- the player and the probes never see it;
+- the infrared view (LIVE, and the baked clips) shows the bedroom even with every light off, and his white mask glows.
+
+It needs no shadow: from the lens it reaches exactly what the lens sees.
+
+`tools/bake-clips.mjs` records three things from the game itself with that camera:
+- **00:47:** zoomed on the wardrobe, the left door opens a hand's width with his face in the gap.
+- **02:58:** zoomed on the foot of the empty bed, he turns to the lens and looks up into it.
+- **03:14:** the still for Sweet Dreams, you curled up asleep and him standing at the foot of the bed.
+
+It also takes the polaroid: a flash photograph from inside the wardrobe, made to look like instant film and printed
+into the polaroid model.
+
 ### The glass is heard everywhere (owner report)
 
 The glass now plays the recorded `glass_break` through the sound bank:

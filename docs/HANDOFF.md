@@ -358,6 +358,9 @@ Full list, measurements and before/after renders: [BUILD_012.md](BUILD_012.md). 
 - WGSL: one declaration per line (attributes, varyings, uniforms, textures, samplers). The engine's WGSL preprocessor
   finds them line by line; several on one line compile but bind nothing (the 0.12 probes cross-fade wrote zeros on
   WebGPU: the "stray light" of 0.13).
+- A light seen by one camera only: give it the lightmapped mask bit alone (`MASK_AFFECT_LIGHTMAPPED`); the
+  clustered-light patch in probes.js accepts it only while the camera named `security camera` renders (`irView`).
+  The flashlight (dynamic + lightmapped) is the opposite case: every camera but the probes.
 - Placing a prop: measure the surface (`node tools/surfaces.mjs x0 x1 z0 z1 [y0 y1] [x|y|z]`). The corridor's south
   wall face is at z 4.337, not 4.42 (a prop put on 4.42 sat half inside the wall), the bed wall's panel at x 14.11.
 - Headless staging shots: `place()` puts the player through the collision grid, so a spot on the bed or in furniture

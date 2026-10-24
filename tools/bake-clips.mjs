@@ -3,7 +3,7 @@
 // ({ w, h, cols, frames, fps }), and the polaroid (public/assets/clips/polaroid.jpg: a flash photo of your bed taken from
 // inside the wardrobe, then made to look like instant film). Afterwards `node tools/props/build.mjs polaroids` prints
 // the polaroid into the photos' model.
-//   00:47  zoomed on the wardrobe: the left door opens a hand's width, a white face low in the gap, it closes (the
+//   00:47  zoomed on the wardrobe: the left door opens a hand's width, a white face in the gap, it closes (the
 //          right door's own panel hides its gap from the lens).
 //   02:58  zoomed on the foot of the empty bed (you were sleepwalking): a man; he turns to the lens and looks up into it.
 //   0314   one frame for Sweet Dreams: you asleep, and him standing at the foot of the bed.
@@ -97,8 +97,9 @@ const result = await page.evaluate(async (only) => {
   const clips = {
     // 00:47 — six frames a second, 4 s, zoomed on the wardrobe's right door.
     '0047': { fps: 6, n: 24, setup: () => {
-      sleeper.enabled = true; aim([9.78, 1.05, -0.62], 24);
-      man.show(true); man.setTorch(false); man.place(9.5, -0.72, 90, 0.17); pose('crouch_idle', 0.4);
+      sleeper.enabled = true; aim([9.76, 1.5, -0.62], 26);
+      // Standing in the shelf half (1.81 m under the shelf at 1.84), his face just behind the left door's free edge.
+      man.show(true); man.setTorch(false); man.place(9.44, -0.68, 90, 0.17); pose('idle_neutral_01', 0.4);
     }, step: (i, t) => {
       setDoor(0.17 * (ease((t - 0.6) / 0.9) - ease((t - 2.7) / 0.8)), 'left');
       man.headPitch = -6;

@@ -252,7 +252,7 @@ export class Story {
     this.sys.world?.prints(true);
     this.set('prints');
     this.sys.world?.bathroomOccupied(false);
-    this.sys.world?.hatch(true);
+    this.sys.nest?.hatch(true);                       // the hatch above the nest stands open now
   }
 
   // power.js reports the flat live again (the RCD up with the faulty circuit off).
