@@ -14,9 +14,9 @@ The hand, glass and audio provenance, licenses and preparation are documented in
 
 ## Continuation details
 
-`SceneQuality` applies the initial graphics budget before the first probe capture and follows Graphics changes. Local clustered shadow resolution is governed by the shared atlas, so per-lamp shadow-resolution settings should not be presented as the source of those savings. Directional moon-map resolution is reduced separately on lower presets. High detail can be restored without losing the original light settings.
+`SceneQuality` applies the initial graphics budget before the first probe capture; the backing-buffer budget is also installed when the graphics device is created, before model/hand downloads complete. It follows Graphics changes. Local clustered shadow resolution is governed by the shared atlas, so per-lamp shadow-resolution settings should not be presented as the source of those savings. Directional moon-map resolution is reduced separately on lower presets. High detail can be restored without losing the original light settings.
 
-`DrinkSequence` owns the camera and movement until completion. The main update skips `Player.update` while it runs; start clears keys/velocity and disables interactions synchronously, preventing rapid E/clicks from closing the door mid-reach. Pointer unlock, graphics/pause and document hiding freeze time and stop only the drinking voices. Resume schedules remaining recording offsets without repaying paused time. Reduced motion removes head movement and swallow tremor. Player position and viewing direction are restored at handoff.
+`DrinkSequence` owns the camera and movement until completion. The main update skips `Player.update` while it runs; start clears keys/velocity and disables interactions synchronously, preventing rapid E/clicks from closing the door mid-reach. Pointer unlock, graphics/pause and document hiding freeze time and stop only the drinking voices. Resume schedules remaining recording offsets without repaying paused time. A smooth head lift frames the glass below the eye during the reach and return, including direct or slightly lower initial gaze; the original orientation returns after the hand withdraws. Reduced motion keeps the camera stationary and cuts directly to a supported glass in hand, then directly back to the shelf after sipping. It omits the long reach and swallow tremor. Player position and viewing direction are restored at handoff.
 
 The downloaded Open/Close clip is evaluated with PlayCanvas `AnimEvaluator`/`DefaultAnimBinder`; no additional animation component system is needed. Its palm contact rotates rigidly with the glass. Public `MeshInstance.isVisibleFunc` callbacks keep the hand and carried glass/water out of probe cameras while retaining the real World-layer lights. A custom camera layer alone is insufficient because `captureCube` copies the primary camera layers. Returned shelf glass participates in ordinary rendering again. Refrigerator mesh extraction now compacts referenced vertex streams instead of copying every source vertex into each subset.
 
@@ -24,7 +24,7 @@ The downloaded Open/Close clip is evaluated with PlayCanvas `AnimEvaluator`/`Def
 
 ## Validation and publication
 
-All **88 Node regressions** pass across twelve check files, and all eight room destinations remain reachable. Production build passes. The review workflow now includes scene/rain quality and drinking regressions alongside the previous interaction, lighting, limiter, waking, fridge, coffee, switch and flashlight checks.
+All **90 Node regressions** pass across twelve check files, and all eight room destinations remain reachable. Production build passes. The review workflow now includes scene/rain quality and drinking regressions alongside the previous interaction, lighting, limiter, waking, fridge, coffee, switch and flashlight checks.
 
 Native graphics UI checks passed presets/effects, fresh default 60 FPS and FPS counter, explicit Unlimited/caps, persistence after reload, focus, pointer capture and the 320×480 layout. The real engine tick/cadence check compares accepted callbacks with independently counted RAF supply while temporarily stubbing update/render work. It validates the limiter without presenting software rendering as a GPU performance result.
 
@@ -48,4 +48,8 @@ DRINK_QUALITY=2 python3 tools/check-drink-browser.py http://127.0.0.1:4175/ work
 
 ## Publication
 
-Publication provenance is recorded after deployment verification.
+Published revision: `259e12e6ade8d6ad97fcd6af81be4d2e95e453a4`. [Deployment run 40109659758](https://github.com/starfox22/horror/actions/runs/40109659758) passed. Play **https://starfox22.github.io/horror/codex/?v=0.11-final**. Live build-info matches that preview commit and the unchanged original `main` revision `7b93acb3f34085e078ad32f0c2baae415341e486`. Both site roots load; the hosted hand SHA256 matches the final local asset, and both recordings and the hand license return HTTP 200.
+
+The actual hosted HTTPS WebGPU check passed native E opening and second-E drinking, decoded recorded audio, default 60 FPS cap, visible hand/glass, pause/resume, hidden-tab freeze, mostly empty glass return, restored walking control and native refrigerator closing. No unexpected page, console or HTTP failures occurred. [Hosted result](review-11/validation.json) records the check. A session proxy CA public-key pin was used for the cloud browser; general certificate-error bypass was not enabled.
+
+The `?v=` query refreshes cached HTML; it does not preserve an older build. Documentation-only follow-ups skip CI and do not change this deployed game revision. `main` was neither committed nor pushed.

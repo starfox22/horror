@@ -43,7 +43,7 @@
       },
       {
         "file": "tools/check-drink-sequence.mjs",
-        "tests": 7,
+        "tests": 9,
         "passed": true
       },
       {
@@ -62,7 +62,7 @@
         "passed": true
       }
     ],
-    "totalTests": 88,
+    "totalTests": 90,
     "reachableDestinations": 8
   },
   "graphicsUi": {
@@ -232,6 +232,7 @@
   "drinkWebGL": {
     "mode": "webgl",
     "quality": 2,
+    "gaze": "glass",
     "nativeSecondE": true,
     "pauseResume": true,
     "hiddenFreeze": true,
@@ -278,6 +279,7 @@
   "drinkFinalWebGPU": {
     "mode": "webgpu",
     "quality": 2,
+    "gaze": "opening",
     "nativeSecondE": true,
     "pauseResume": true,
     "hiddenFreeze": true,
@@ -438,7 +440,7 @@
   },
   "captures": {
     "before": "Hosted 0.10 / 7c8af57a2a0e2962483f51fd538184418a7b7410",
-    "after": "0.11 local production build",
+    "after": "0.11 / 259e12e6ade8d6ad97fcd6af81be4d2e95e453a4",
     "viewport": [
       720,
       480
@@ -447,6 +449,64 @@
     "exposure": 1,
     "lightning": "disabled",
     "noise": "seeded",
-    "poses": "Final hand and water; WebGPU; native input then deterministic pose stepping."
+    "poses": "Final hand, gravity-correct water and camera framing; hosted WebGPU; native input then deterministic pose stepping."
+  },
+  "publication": {
+    "preview": "259e12e6ade8d6ad97fcd6af81be4d2e95e453a4",
+    "original": "7b93acb3f34085e078ad32f0c2baae415341e486",
+    "run": "40109659758",
+    "url": "https://starfox22.github.io/horror/codex/?v=0.11-final",
+    "status": "success",
+    "buildInfoMatches": true,
+    "mainUnchanged": true,
+    "handSha256": "30f4eecc7ea1e76a887dc4f4fcd6d247ca0b6bcc86fdfd14ed8b6c4966dd20cd",
+    "audioAndLicenseHttp": 200,
+    "hostedWebGPU": {
+      "mode": "webgpu",
+      "quality": 2,
+      "gaze": "opening",
+      "nativeSecondE": true,
+      "pauseResume": true,
+      "hiddenFreeze": true,
+      "completed": {
+        "running": false,
+        "time": 9,
+        "active": true,
+        "locked": true,
+        "audio": false,
+        "nodes": 0,
+        "carried": false,
+        "fill": 0.037,
+        "parent": "refrigerator cabinet",
+        "hand": false
+      },
+      "assets": {
+        "device": "webgpu",
+        "clips": [
+          {
+            "start": 3.65,
+            "duration": 0.5675736961451248
+          },
+          {
+            "start": 4.4,
+            "duration": 0.5675736961451248
+          },
+          {
+            "start": 5.12,
+            "duration": 0.5675736961451248
+          },
+          {
+            "start": 7.55,
+            "duration": 1.243219954648526
+          }
+        ],
+        "limit": 60,
+        "handMeshes": 1
+      },
+      "errors": [],
+      "consoleErrors": [],
+      "httpErrors": [],
+      "method": "Native input; deterministic animation stepping for software rendering, not throughput."
+    }
   }
 }

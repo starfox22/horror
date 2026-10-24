@@ -1,8 +1,8 @@
 # horror
 True horror game
 
-A first-person browser horror game in the spirit of P.T., built on PlayCanvas. Current state: **build 0.10 (first waking sequence, refrigerator and lighting review), a walkable
-night-time apartment** (no scares yet): a first-person waking opening, an opening refrigerator with a lit interior and water jar, light switches in every area, lamps with their own switches (bedside, desk, arc lamp), a bathroom door and wardrobe that
+A first-person browser horror game in the spirit of P.T., built on PlayCanvas. Current state: **build 0.11 (performance, waking lights and drinking interaction), a walkable
+night-time apartment** (no scares yet): a first-person waking opening, an opening refrigerator with a lit interior, water jar and visible-hand drinking action, light switches in every area, lamps with their own switches (bedside, desk, arc lamp), a bathroom door and wardrobe that
 open, a laptop, computer and coffee machine to use, a flashlight to find (only its beam is seen), rain gathering and running
 down the windows, lightning and thunder, warm night lighting that fades softly into darkness (bounce light from probes
 around the flat, eye adaptation), post-processing and ambient sound.
@@ -11,12 +11,12 @@ Read `docs/HANDOFF.md` first if you are picking this up (state, owner's preferen
 
 All Codex reviews continue on `codex-review`, while Claude works on its own branch. Codex merges into or pushes to `main` only when the owner explicitly asks. The first review adds a lighting/material pass and interaction fixes. See [the change list and validation guide](docs/CODEX_ENVIRONMENT_PASS.md), [side-by-side screenshots](docs/review/README.md), and [preview deployment instructions](docs/PREVIEW_DEPLOYMENT.md).
 
-The latest pass adds [the waking opening, refrigerator, a saved FPS limit, stronger optional grain and corrected fixture/flashlight shadows](docs/REVIEW_10.md), with [matched comparison screenshots](docs/review-10/README.md). The [previous pass](docs/REVIEW_09.md) documents switch detail, coffee animation, shelf placement and lighting defaults.
+The latest pass adds [a 60 FPS Auto target, lighter graphics budgets, sparse waking lights and a downloaded rigged hand drinking water](docs/REVIEW_11.md), with [comparison screenshots](docs/review-11/README.md). The [0.10 pass](docs/REVIEW_10.md) documents the waking opening, refrigerator and fixture/flashlight shadows; [0.9](docs/REVIEW_09.md) documents switch detail, coffee animation and shelf placement.
 
 ## Play
 
-- Codex review web build: https://starfox22.github.io/horror/codex/
-- claude.ai link (latest build): https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9
+- Codex review web build: https://starfox22.github.io/horror/codex/?v=0.11-final
+- Earlier Claude artifact builds: https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9
 - Locally: `npm install && npm run dev`, open the printed URL. Click to enter.
 
 Controls: WASD or arrows move · mouse look · Shift walk faster · E use (switches, doors, refrigerator, lamps, laptop, computer, coffee machine) · F flashlight (once found)

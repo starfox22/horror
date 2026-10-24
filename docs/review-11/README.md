@@ -9,7 +9,7 @@ These are unretouched game renders. Before is the published 0.10 (`7c8af57`); af
 | Bedroom | ![0.10](before/bedroom.png) | ![0.11](after/bedroom.png) |
 | Open refrigerator | ![0.10](before/fridge.png) | ![0.11](after/fridge.png) |
 
-The drinking images use the final build, native E opening followed by a second E from the same view, Medium quality and WebGPU. Animation poses are deliberately frozen at 0.8, 1.8, 2.7 and 4.25 seconds to inspect the reach, lift, grip and sip. CPU SwiftShader throughput is not a desktop hardware benchmark.
+The drinking images use the final hosted build (`259e12e`), native E opening followed by a second E from the same view, Medium quality and WebGPU. Animation poses are deliberately frozen at 0.8, 1.8, 2.7 and 4.25 seconds to inspect the reach, lift, grip and sip. CPU SwiftShader throughput is not a desktop hardware benchmark.
 
 | Reach | Lift |
 | --- | --- |
@@ -18,3 +18,5 @@ The drinking images use the final build, native E opening followed by a second E
 | Raised glass | Sip |
 | --- | --- |
 | ![Raised](drink-raised.png) | ![Sip](drink-sip.png) |
+
+The reach also passes from direct and slightly lower glass aim. Normal motion frames the reach below the eye and restores the original view; reduced motion cuts directly to a supported held glass with a stationary camera.
