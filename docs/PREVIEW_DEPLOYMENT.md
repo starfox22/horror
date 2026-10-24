@@ -16,13 +16,13 @@ The intended preview address is **https://starfox22.github.io/horror/codex/**. T
 
 In repository **Settings → Pages**, select **GitHub Actions** as the source. A private repository needs a GitHub plan that supports Pages for private repositories. The `github-pages` environment's deployment branch policy must permit `codex/apartment-lighting-pass`; required environment reviewers, if configured, must approve the deployment in GitHub.
 
-The branch was pushed successfully. [Deployment run 40055781528](https://github.com/starfox22/horror/actions/runs/40055781528) built both games and passed the preview checks, then failed at `actions/configure-pages@v5` because Pages was not enabled.
+The owner made the repository public and enabled Pages with the GitHub Actions source. The rerun of [deployment 40055781528](https://github.com/starfox22/horror/actions/runs/40055781528) built both games, configured Pages, and uploaded the complete site artifact successfully.
 
-The owner has since made the repository public. The current repository API reports `private: false` and `has_pages: false`. Creating the Pages site through this integration still returns `403 Resource not accessible by integration`; the Pages read endpoint returns 404 because no site exists. The `github-pages` deployment environment has no required reviewers or branch restrictions, so no environment-policy change is needed.
+Enabling Pages created a custom `github-pages` environment policy that permits only `main`. Deployment of `codex/apartment-lighting-pass` was rejected before its job started. The integration's attempt to add that one branch alongside main returned `403 Resource not accessible by integration`; existing protections were left intact.
 
-To unblock publication, the owner must open [Settings → Pages](https://github.com/starfox22/horror/settings/pages) and select **GitHub Actions** under **Build and deployment → Source**. Then rerun the existing workflow. Its normal GITHUB_TOKEN has the required permissions to deploy after the site is enabled, but cannot bootstrap Pages itself. Do not ask for a replacement token or change repository visibility again to work around the integration's missing Pages settings permission.
+To unblock publication, open [Settings → Environments](https://github.com/starfox22/horror/settings/environments), choose **github-pages**, and add **codex/apartment-lighting-pass** under **Deployment branches and tags**, keeping **main**. Then rerun the failed deployment job in the linked run. Documentation-only follow-up commits skip CI and do not alter the tested game.
 
-The documentation-only follow-up commits skip CI and do not alter the tested game; rerunning the linked deployment publishes the tested game revision.
+The hosted browser checker uses the session's configured HTTP(S) proxy for remote URLs. In a managed cloud machine, Chromium must trust the provided session proxy CA through its certificate store; keep TLS verification enabled. Localhost checks do not use that proxy.
 
 ## Publish and verify
 

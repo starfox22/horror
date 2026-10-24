@@ -18,7 +18,18 @@ with sync_playwright() as p:
     flags = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']
     if mode == 'webgpu':
         flags += ['--enable-unsafe-webgpu', '--use-webgpu-adapter=swiftshader', '--enable-features=Vulkan', '--use-vulkan=swiftshader']
-    browser = p.chromium.launch(executable_path=os.environ.get('CHROMIUM_PATH', '/usr/bin/chromium'), headless=True, args=flags)
+    launch_options = {'executable_path': os.environ.get('CHROMIUM_PATH', '/usr/bin/chromium'), 'headless': True, 'args': flags}
+    target = urlsplit(url)
+    session_proxy = os.environ.get('HTTPS_PROXY' if target.scheme == 'https' else 'HTTP_PROXY')
+    if target.hostname not in ('localhost', '127.0.0.1', '::1') and session_proxy:
+        endpoint = urlsplit(session_proxy)
+        proxy = {'server': f'{endpoint.scheme}://{endpoint.hostname}:{endpoint.port or (443 if endpoint.scheme == "https" else 80)}'}
+        if endpoint.username:
+            proxy['username'] = endpoint.username
+        if endpoint.password:
+            proxy['password'] = endpoint.password
+        launch_options['proxy'] = proxy
+    browser = p.chromium.launch(**launch_options)
     page = browser.new_page(viewport={'width': 480, 'height': 270})
     page.set_default_timeout(60000)
     page.on('pageerror', lambda error: errors.append(str(error)))
