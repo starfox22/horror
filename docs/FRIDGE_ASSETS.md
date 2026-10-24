@@ -29,4 +29,4 @@ The class exposes `light`, `glow`, `baseIntensity`, `applyLighting()`, `angle`, 
 
 ## Verification
 
-`node --test tools/check-fridge.mjs` checks the actual source split/open cavity, unchanged lower freezer/kitchen, rigid hinge, water-to-glass clearance at every water-mesh vertex, shelf/door-bin clearance, opening/reversing, seal light state and player collision. Six tests pass. Browser/native-action and visual results are recorded in the review notes after integration.
+`node --test tools/check-fridge.mjs` checks the actual source split/open cavity, unchanged lower freezer/kitchen, rigid hinge, water-to-glass clearance at every water-mesh vertex, shelf/door-bin clearance, opening/reversing, seal light state and player collision. Six tests pass. Native browser E open/close/reopen passed with no unexpected page, console or request errors. The hosted WebGPU check also opened the final build through native E, confirmed full interior intensity and final jar bottom y=1.333600 (0.6 mm above the shelf), and verified that both flashlight shadow maps remained realtime after fridge/probe updates. Review notes and comparisons are in [REVIEW_10.md](REVIEW_10.md).

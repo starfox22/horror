@@ -10,18 +10,18 @@ Ongoing Codex development and review branch: `codex-review` (Git branch names ca
 | `/horror/codex/` | Codex environment and lighting pass |
 | `/horror/codex/build-info.json` | Full original and preview commit SHAs |
 
-The published preview is **https://starfox22.github.io/horror/codex/**. [Workflow run 40098710673](https://github.com/starfox22/horror/actions/runs/40098710673) deployed it successfully. No changes to `main` or repository visibility are required by this workflow. Apartment assets are already committed; neither build regenerates them or downloads the source model.
+The published preview is **https://starfox22.github.io/horror/codex/**. [Workflow run 40103998454](https://github.com/starfox22/horror/actions/runs/40103998454) deployed build 0.10 successfully. No changes to `main` or repository visibility are required by this workflow. Apartment assets are already committed; neither build regenerates them or downloads the source model.
 
 ## Current deployment configuration
 
 The repository is public. GitHub Pages uses **GitHub Actions** as its source. The owner selected **No restriction** for deployment branches in the `github-pages` environment; the previously blocking main-only rule is gone. If restrictions are reintroduced later, they must permit `codex-review` for its preview workflow.
 
-Deployment run **40098710673**, attempt 1, completed successfully. Its published provenance at [`/horror/codex/build-info.json`](https://starfox22.github.io/horror/codex/build-info.json) records:
+Deployment run **40103998454**, attempt 1, completed successfully. Its published provenance at [`/horror/codex/build-info.json`](https://starfox22.github.io/horror/codex/build-info.json) records:
 
-- Preview commit: `f39809820f6f3416f5330bb0fb4a7fae6efffc91`.
+- Preview commit: `7c8af57a2a0e2962483f51fd538184418a7b7410`.
 - Original commit: `7b93acb3f34085e078ad32f0c2baae415341e486`.
 
-Both site roots, the preview model and decoder WASM return HTTP 200. The hosted HTTPS WebGPU browser check passed: model loading, graphics menu and live controls, FPS default, nine fixture groups, wall/shelf placement, movement, mouse capture/release, flashlight pickup, coffee pour/replay, and all-off lighting/restoration, with no unexpected page, console or request errors. Documentation-only follow-up commits skip CI and do not change this deployed game revision. Future code changes should trigger and verify a new deployment on `codex-review`.
+Both site roots, the preview model/decoders, water jar JSON, local font and hashed JS/CSS return HTTP 200. Local opening, refrigerator and graphics browser checks passed. The final hosted HTTPS WebGPU check passed: loading, natural waking/bedside handoff, graphics/FPS controls, nine fixture defaults and placement, mouse capture, movement, developer lighting off/reset, flashlight pickup/realtime shadows, native coffee pour/completion/replay and native refrigerator opening with final shelf contact. No unexpected page, console or request errors occurred. All-off probes were zero with the sky disabled, and restoration drift was 0.000025. Documentation-only follow-up commits skip CI and do not change this deployed game revision. Future code changes should trigger and verify a new deployment on `codex-review`.
 
 The agent integration could read deployment status and rerun Actions, but attempts to enable Pages or edit environment branch policies returned HTTP 403. The owner resolved those settings in GitHub. Do not change `main` to work around a future deployment permission failure.
 

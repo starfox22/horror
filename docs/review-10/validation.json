@@ -1,0 +1,163 @@
+{
+  "gameRevision": "7c8af57a2a0e2962483f51fd538184418a7b7410",
+  "originalRevision": "7b93acb3f34085e078ad32f0c2baae415341e486",
+  "deployment": {
+    "run": 40103998454,
+    "status": "success",
+    "buildInfoMatches": true
+  },
+  "nodeRegressions": {
+    "passed": 74,
+    "failed": 0,
+    "finalJarContactSubsetPassed": 6
+  },
+  "reachabilityDestinations": 8,
+  "localBrowser": {
+    "wake": "PASS: native start, pause/resume, natural handoff, no restart, local font, focused-button skip, reduced motion",
+    "refrigerator": "PASS: native E open/close/reopen, moving target, sealed light/glow off, rendered interior/jar; real class stepped after native input for software-GPU inspection",
+    "graphics": "PASS: fresh FPS/default cap, controls, actual renderer options, genuine preference reload, mouse capture/focus, 320x480 layout"
+  },
+  "fpsTiming": {
+    "status": "PASS",
+    "source": "http://127.0.0.1:4177/",
+    "method": "Real PlayCanvas tick with update/render work stubbed; accepted frame counts compared to independent native RAF callbacks offered during the same interval. Not a scene GPU throughput benchmark.",
+    "guard": "uncapped >=45 FPS; per-cap difference <=max(4 FPS,12% of min(sample.rawFps,limit))",
+    "startupShadowModes": {
+      "beam": 2,
+      "bounce": 2
+    },
+    "measurements": [
+      {
+        "limit": 0,
+        "frames": 86,
+        "rawFrames": 86,
+        "updates": 86,
+        "renders": 86,
+        "elapsed": 1500.2000000011176,
+        "fps": 57.32568990796956,
+        "rawFps": 57.32568990796956
+      },
+      {
+        "limit": 30,
+        "frames": 45,
+        "rawFrames": 78,
+        "updates": 45,
+        "renders": 45,
+        "elapsed": 1500.0999999996275,
+        "fps": 29.998000133331896,
+        "rawFps": 51.996533564441954
+      },
+      {
+        "limit": 60,
+        "frames": 84,
+        "rawFrames": 84,
+        "updates": 84,
+        "renders": 84,
+        "elapsed": 1500.6000000014901,
+        "fps": 55.97760895636185,
+        "rawFps": 55.97760895636185
+      },
+      {
+        "limit": 90,
+        "frames": 75,
+        "rawFrames": 75,
+        "updates": 75,
+        "renders": 75,
+        "elapsed": 1500,
+        "fps": 50,
+        "rawFps": 50
+      },
+      {
+        "limit": 120,
+        "frames": 74,
+        "rawFrames": 74,
+        "updates": 74,
+        "renders": 74,
+        "elapsed": 1500.1000000014901,
+        "fps": 49.33004466364009,
+        "rawFps": 49.33004466364009
+      }
+    ],
+    "fullUiEvidence": "Earlier full browser run completed fresh FPS/defaults, keyboard/pointer-lock/menu access, presets/effects, FPS cap controls, reload persistence and small viewport assertions; this final focused check does not repeat those stages.",
+    "assertionCorrection": "The first final run incorrectly compared later samples to the initial uncapped RAF supply. Concurrent software GPU load changed that supply; revalidation uses independently recorded raw RAF callbacks from each identical measurement interval."
+  },
+  "directShadowRender": {
+    "method": "fixed pose/exposure, bounce off, real beam castShadows on/off after 16 frames convergence",
+    "changedPixelsAbove8of255": 3973,
+    "roi": [
+      270,
+      110,
+      520,
+      330
+    ]
+  },
+  "hostedWebGpu": {
+    "status": "PASS",
+    "url": "https://starfox22.github.io/horror/codex/?v=0.10",
+    "result": {
+      "state": {
+        "ready": true,
+        "error": null
+      },
+      "device": "webgpu",
+      "renderComponents": 265,
+      "rooms": 9,
+      "lamps": 4,
+      "frame": 234,
+      "floor": 0.19,
+      "probeLevels": [
+        0.24424262263841542,
+        0.08804263853380763,
+        0.2729838424994352,
+        0.012687211129562824,
+        0.005098375471888052,
+        0.003349933959931456,
+        0.009222771883933775,
+        0.030291110185500153
+      ],
+      "fixtureDefaultsAndPlacement": "passed",
+      "graphicsMenuAndLiveControls": "passed",
+      "wakeOpening": {
+        "dialogue": "I just had a nightmare, I will go get some water at the kitchen",
+        "landing": {
+          "x": 12.85,
+          "z": 1.8,
+          "clear": true,
+          "overlayHidden": true
+        }
+      },
+      "lighting": {
+        "allOffMax": 9.226205934760401e-05,
+        "allOffWithoutSkyMax": 0,
+        "restoreMaxDifference": 2.49671497138948e-05
+      },
+      "movement": {
+        "distance": 1.193363669480463,
+        "x": 11.701907509103439,
+        "z": 2.141670300741976
+      },
+      "coffeeNativeInteractionPourAndReplay": "passed",
+      "refrigeratorNativeOpenAndJar": {
+        "angle": 106,
+        "on": true,
+        "power": 0.24,
+        "jarBottom": 1.3336000442504883,
+        "water": 1.5320999999999998,
+        "shadowModes": [
+          2,
+          2
+        ]
+      },
+      "pageErrors": [],
+      "unexpectedFailedRequests": [],
+      "consoleErrors": [],
+      "expectedMissingResources": {
+        "https://starfox22.github.io/horror/codex/assets/apartment/apartment.json": 404
+      },
+      "developerMenu": "passed",
+      "flashlightPickup": "passed",
+      "loadingIndicatorHidden": true,
+      "pointerLockEntryAndRelease": "passed"
+    }
+  }
+}

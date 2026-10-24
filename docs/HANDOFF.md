@@ -42,15 +42,17 @@ This remains a quiet apartment prototype with no added scares. The default Vite 
 
 ## Codex review 0.9
 
-Read [REVIEW_09.md](REVIEW_09.md) for the current feature and test guide. Graphics is available with G or the start/pause button; FPS is on by default and preferences persist. The authored switch asset is reused with precise wall mounting. Flashlight body and lens rest diagonally on the shelf. Coffee uses a shared visual/audio timeline with two cups, crema, drips and steam. Bedroom/bathroom ceilings start off; mirror and extractor lights have separate dim controls and start on. Fixed closet illumination and bedside lamps remain independent.
+Read [REVIEW_09.md](REVIEW_09.md) for the previous review's feature and test guide. Graphics is available with G or the start/pause button; FPS is on by default and preferences persist. The authored switch asset is reused with precise wall mounting. Flashlight body and lens rest diagonally on the shelf. Coffee uses a shared visual/audio timeline with two cups, crema, drips and steam. Bedroom/bathroom ceilings start off; mirror and extractor lights have separate dim controls and start on. Fixed closet illumination and bedside lamps remain independent.
 
 ## Codex review 0.10
 
 Read [REVIEW_10.md](REVIEW_10.md) for the current review and continuation guide. The owner has now requested the first scripted events: a first-person waking sequence with the exact nightmare/water dialogue, then standing control beside the bed; and an opening refrigerator with a water jar and door-controlled interior light. These are implemented without adding another scare. `wake-sequence.js` owns the camera until handoff, pauses with pointer unlock and supports skip/reduced motion. `fridge.js` separates the existing authored upper leaf and adds its cavity, authored jar, fitted water and shadowed interior light. [FRIDGE_ASSETS.md](FRIDGE_ASSETS.md) records assets and adaptation. Graphics now saves a 30/60/90/120/Uncapped FPS limit (default60), with FPS display still on by default. Optional grain is stronger. Extractor output is doubled. The arc lamp source is inside its real shade opening; flashlight fill now respects actual surface occlusion and both flashlight maps remain realtime through probe/door refreshes. All 74 Node regressions pass. Keep later reviews on this branch and preserve the opening's pause/handoff and owned fridge-light restoration.
 
 ## Published builds
-<!-- Review 0.10 deployment provenance is added after hosted verification. -->
-- Current Codex review 0.9: https://starfox22.github.io/horror/codex/?v=0.9 from `f39809820f6f3416f5330bb0fb4a7fae6efffc91`; deployment `40098710673` passed. Graphics/FPS, fixtures, lighting defaults and coffee changes are documented in REVIEW_09.md.
+
+`/codex/` serves the latest review. The `?v=` query refreshes cached HTML; it does not preserve older builds. Historical entries below record their deployment commits and captures.
+- Current Codex review 0.10: https://starfox22.github.io/horror/codex/?v=0.10 from `7c8af57a2a0e2962483f51fd538184418a7b7410`; deployment `40103998454` passed and live build-info matches. First waking sequence, refrigerator, FPS limit, grain and physically occluded lighting are documented in REVIEW_10.md.
+- Codex review 0.9: https://starfox22.github.io/horror/codex/?v=0.9 from `f39809820f6f3416f5330bb0fb4a7fae6efffc91`; deployment `40098710673` passed. Graphics/FPS, fixtures, lighting defaults and coffee changes are documented in REVIEW_09.md.
 - Builds 0.1-0.7 (2026-10-22/24): claude.ai artifact https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9 (always the
   latest build; private to the owner unless shared from its Share menu).
 - Codex review build 0.8: https://starfox22.github.io/horror/codex/ is published from `codex-review` commit `f6ae1f49d48478c08e0d88329480265a02e177fb`; deployment run `40094343463` succeeded. The original `main` build is served at https://starfox22.github.io/horror/. The owner enabled Pages and selected no deployment-branch restriction. See the deployment guide before publishing later reviews.

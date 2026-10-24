@@ -1,6 +1,6 @@
 # Review 0.10 comparisons
 
-Published 0.9 is on the left; review 0.10 is on the right. These are real engine captures with matching camera, Medium quality, fixed exposure 1 and 720×480 viewport. Random lightning is disabled and noise is seeded. Grain animation is frozen so both versions can be inspected; its stronger opacity is retained. FPS is hidden only for scene comparisons. Images are not color-retouched.
+Published 0.9 is on the left; review 0.10 is on the right. Scene comparisons use real engine captures with matching camera, Medium quality, fixed exposure 1 and 720×480 viewport. Random lightning is disabled and noise is seeded. Grain animation is frozen so both versions can be inspected; its stronger opacity is retained. Most scene comparisons hide FPS; the final hosted refrigerator view retains it. Images are not color-retouched.
 
 ## First waking sequence
 
@@ -10,7 +10,7 @@ Two frames of the new opening: waking in bed at 3.4 seconds, then sitting and tu
 
 ## Refrigerator and water jar
 
-Matching camera, with the old closed refrigerator on the left and the new open interaction on the right. The cabinet light, shelves, inner door bins, authored glass jar and water are visible. The first local open capture precedes the final 4.4 mm shelf-contact adjustment; it is replaced with a hosted final-build capture after verification.
+Matching camera, with the old closed refrigerator on the left and the final hosted open interaction on the right. The cabinet light, shelves, inner door bins, authored glass jar and water are visible. The jar rests 0.6 mm above its shelf. The before view uses WebGL; the hosted after view uses WebGPU. The visible counter measures this cloud's CPU software renderer, not desktop GPU performance.
 
 ![Refrigerator before and after](fridge-comparison.png)
 
@@ -47,4 +47,4 @@ Camera position → target, in world metres:
 - Arc isolated: `[-3,1.60,3.9]` → `[-4.88,0.65,2.70]`.
 - Refrigerator: `[1.12,1.85,0.68]` → `[1.55,1.47,-0.70]`.
 
-[Changes, controls and validation](../REVIEW_10.md)
+[Changes, controls and validation](../REVIEW_10.md) · [Validation data](validation.json)
