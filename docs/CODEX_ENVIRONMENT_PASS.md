@@ -69,6 +69,6 @@ Software rendering is useful for correctness and comparison, but is not a deskto
 
 ## Publishing and continuity
 
-See [PREVIEW_DEPLOYMENT.md](PREVIEW_DEPLOYMENT.md) for the workflow that preserves the original game at the site root and adds this branch at `/codex/`. Do not claim a live preview until the Actions run succeeds and `/codex/build-info.json` matches the intended commit.
+The branch was pushed and the GitHub workflow built both games successfully, but publication stopped because Pages is disabled. The agent integration cannot enable Pages. See [PREVIEW_DEPLOYMENT.md](PREVIEW_DEPLOYMENT.md) for the workflow that preserves the original game at the site root and adds this branch at `/codex/`. Do not claim a live preview until the Actions run succeeds and `/codex/build-info.json` matches the intended commit.
 
 Use the existing isolated checkout for cloud tasks. Do not create an additional worktree unless explicitly requested. Keep further development on this branch until the owner chooses to merge it. Read `HANDOFF.md` for model conventions, light-switch ownership, collision geometry and licence information.
