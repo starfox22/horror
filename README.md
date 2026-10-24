@@ -16,8 +16,8 @@ The latest pass adds [a 60 FPS Auto target, lighter graphics budgets, sparse wak
 
 ## Play
 
-- Production web build: https://starfox22.github.io/horror/?v=0.11
-- Codex review: https://starfox22.github.io/horror/codex/?v=0.11-final
+- Production web build (build 0.12): https://starfox22.github.io/horror/?v=0.12
+- Codex review (0.11; a `main` deployment removes this path until the preview workflow is rerun): https://starfox22.github.io/horror/codex/?v=0.11-final
 - Claude builds (0.1-0.7, 0.12): https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9
 - Locally: `npm install && npm run dev`, open the printed URL. Click to enter.
 

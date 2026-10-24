@@ -1,6 +1,6 @@
 # Build 0.12 — no freezes, VSync, light leaks, drinking arm, new jug and glass, the first event
 
-Claude's continuation of the promoted 0.11 baseline, on `claude/pensive-volta-et0etl`. The owner asked (2026-10-24):
+Claude's continuation of the promoted 0.11 baseline, on `claude/pensive-volta-et0etl`, merged into `main` with the owner's approval (2026-10-24). The owner asked (2026-10-24):
 
 1. A general performance pass: the game sometimes froze for a second and then continued, even at a good frame rate.
    Minimise freezes and stutters.

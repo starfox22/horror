@@ -2,7 +2,7 @@
 
 Ongoing Codex development and review branch: `codex-review` (Git branch names cannot contain spaces). The branch was renamed from `codex/apartment-lighting-pass`; keep subsequent review passes on this same branch. Claude uses a separate branch. Merge into or push to `main` only when explicitly requested by the owner.
 
-The owner authorized promotion of 0.11 to `main` on 2026-10-24. [CLAUDE_HANDOFF.md](CLAUDE_HANDOFF.md) records the production publication and current continuation baseline. The original preview publication below predates this promotion; its old `original` SHA is historical.
+The owner authorized promotion of 0.11 to `main` on 2026-10-24. [CLAUDE_HANDOFF.md](CLAUDE_HANDOFF.md) records the production publication and current continuation baseline. Production deployment [40111353532](https://github.com/starfox22/horror/actions/runs/40111353532) succeeded from `73f66df26830f888c3c17869543f6df25a9ec844`; the preview workflow was then rerun to restore both URLs.
 
 `.github/workflows/pages-preview.yml` builds two independent checkouts with Node 22 and `npm ci`: the current `main` commit and the exact development commit that triggered the workflow. It uploads one GitHub Pages artifact containing:
 
@@ -12,16 +12,18 @@ The owner authorized promotion of 0.11 to `main` on 2026-10-24. [CLAUDE_HANDOFF.
 | `/horror/codex/` | Codex environment and lighting pass |
 | `/horror/codex/build-info.json` | Full original and preview commit SHAs |
 
-The published preview is **https://starfox22.github.io/horror/codex/**. [Workflow run 40109659758](https://github.com/starfox22/horror/actions/runs/40109659758) deployed build 0.11 successfully. No changes to `main` or repository visibility are required by this workflow. Apartment assets are already committed; neither build regenerates them or downloads the source model.
+The published preview is **https://starfox22.github.io/horror/codex/**. [Workflow run 40109659758, attempt 2](https://github.com/starfox22/horror/actions/runs/40109659758/attempts/2) restored build 0.11 at both production and review URLs after the main promotion. No changes to `main` or repository visibility are required by this workflow. Apartment assets are already committed; neither build regenerates them or downloads the source model.
 
-## Deployment configuration and original 0.11 review publication
+## Deployment configuration and current publication
 
 The repository is public. GitHub Pages uses **GitHub Actions** as its source. The owner selected **No restriction** for deployment branches in the `github-pages` environment; the previously blocking main-only rule is gone. If restrictions are reintroduced later, they must permit `codex-review` for its preview workflow.
 
-Deployment run **40109659758**, attempt 1, completed successfully. Its published provenance at [`/horror/codex/build-info.json`](https://starfox22.github.io/horror/codex/build-info.json) records:
+Deployment run **40109659758**, attempt 2, completed successfully after the main Pages deployment. Its published provenance at [`/horror/codex/build-info.json`](https://starfox22.github.io/horror/codex/build-info.json) records:
 
 - Preview commit: `259e12e6ade8d6ad97fcd6af81be4d2e95e453a4`.
-- Original commit: `7b93acb3f34085e078ad32f0c2baae415341e486`.
+- Main production source (`original`): `73f66df26830f888c3c17869543f6df25a9ec844`.
+
+The initial review publication (attempt 1) preserved main 0.7; that historical record is in REVIEW_11.md. Main is now owner-approved 0.11. Later documentation-only branch heads can differ from the deployed source without changing the game.
 
 Both site roots load, and the preview HTML identifies build 0.11. The hosted hand SHA256 matches the final adapted asset; both drinking recordings and the hand license return HTTP 200. All 90 local Node regressions, eight room destinations, graphics UI/persistence, native WebGL drinking and full WebGPU gameplay checks pass. The final hosted HTTPS WebGPU check passed default 60 FPS, native fridge opening/second-E drinking, loaded hand/audio, pause/resume and hidden-tab freeze, glass return, control handoff and native refrigerator closing, with no unexpected page, console or HTTP failures. See [REVIEW_11.md](REVIEW_11.md) and its validation JSON for the precise inspection method. CPU rendering does not establish desktop hardware throughput. Documentation-only follow-ups skip CI and do not change the deployed game revision. Future code changes should trigger and verify a new deployment on `codex-review`.
 
