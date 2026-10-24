@@ -17,7 +17,7 @@ export class DevMenu {
     this.splash = Object.assign(document.createElement('div'), { id: 'devsplash', hidden: true });
     document.body.appendChild(this.splash);
     window.addEventListener('keydown', (e) => {
-      if (e.key.length !== 1 || !/[a-z]/i.test(e.key)) return;
+      if (e.repeat || e.key.length !== 1 || !/[a-z]/i.test(e.key) || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName)) return;
       this.typed = (this.typed + e.key.toLowerCase()).slice(-CODE.length);
       this.lastKey = performance.now();
       if (this.typed === CODE) { this.typed = ''; this.setMode(!this.mode); }
@@ -58,9 +58,9 @@ export class DevMenu {
     }
     for (const lamp of devices.lamps) add(lamp.group, lamp.name, lamp.lights.map((e, i) => ({ e, base: lamp.base[i] })), lamp.mat ? [{ mat: lamp.mat, base: lamp.glow }] : []);
     if (closets) for (const [id, s] of Object.entries(closets.sections)) add('Bedroom', `Wardrobe LED (${id})`, [{ e: s.led, base: 0.55 }]);
-    if (devices.laptop?.glow) add('Living room', 'Laptop screen glow', [{ e: devices.laptop.glow, base: devices.laptop.glowBase }]);
-    if (devices.computer?.glow) add('Office', 'Computer screen glow', [{ e: devices.computer.glow, base: devices.computer.glowBase }]);
-    if (devices.coffee?.led) add('Kitchen', 'Coffee machine panel', [{ e: devices.coffee.led, base: 0.05 }]);
+    if (devices.laptop?.glow) add('Living room', 'Laptop screen glow', [{ e: devices.laptop.glow, base: devices.laptop.glowBase }], devices.laptop.glows);
+    if (devices.computer?.glow) add('Office', 'Computer screen glow', [{ e: devices.computer.glow, base: devices.computer.glowBase }], devices.computer.glows);
+    if (devices.coffee?.led) add('Kitchen', 'Coffee machine panel', [{ e: devices.coffee.led, base: 0.05 }], devices.coffee.glows);
     const skip = new Set(['flashlight beam', 'flashlight bounce', 'moon']);
     for (const l of app.root.findComponents('light')) {
       if (seen.has(l.entity) || skip.has(l.entity.name)) continue;
@@ -133,6 +133,7 @@ export class DevMenu {
   // Developer mode on/off, with a splash.
   setMode(on) {
     this.mode = on;
+    if (on && document.pointerLockElement) document.exitPointerLock?.();
     this.splash.textContent = on ? 'Developer mode enabled!' : 'Developer mode disabled';
     this.splash.hidden = false;
     this.splash.classList.remove('show');
@@ -178,7 +179,7 @@ export class DevMenu {
   }
 
   changed() {
-    for (const en of this.entries) for (const g of en.glows) if (en.force !== null) { g.mat.emissiveIntensity = en.force ? g.base : 0; g.mat.update(); }
+    for (const en of this.entries) this.applyOverride(en);
     this.refresh();
     clearTimeout(this.timer);
     this.timer = setTimeout(() => this.sys.recapture?.(), 250);   // bounce light follows (room probes)
@@ -190,9 +191,9 @@ export class DevMenu {
     this.entries.forEach(en => { en.force = null; });
     switches.rooms.forEach(r => switches.apply(r));
     devices.lamps.forEach(l => devices.applyLamp(l, l.level));
-    devices.laptop?.setPower(devices.laptop.open ? 1 : 0);
+    devices.laptop?.setPower(devices.laptop.power);
     devices.computer?.set(devices.computer.level);
-    devices.coffee?.glow(devices.coffee.busy ? 1 : 0);
+    devices.coffee?.glow(devices.coffee.level);
     if (closets) for (const [id, s] of Object.entries(closets.sections)) {
       const open = Math.max(...closets.doors.filter(d => d.section === id).map(d => d.angle));
       s.led.light.enabled = open > 0.02; s.led.light.intensity = 0.55 * Math.min(1, open * 4);
@@ -200,11 +201,20 @@ export class DevMenu {
     this.changed();
   }
 
-  update(dt) {
-    for (const en of this.entries) {
-      if (en.force === null) continue;
-      for (const l of en.lights) { l.e.light.enabled = en.force; l.e.light.intensity = en.force ? l.base : 0; }
+  // Light entities and the surfaces that emit them must agree, including while a
+  // native screen/lamp animation is running. Apply only forced entries; the owning
+  // device retains its actual power level so reset can restore it exactly.
+  applyOverride(en) {
+    if (en.force === null) return;
+    for (const l of en.lights) { l.e.light.enabled = en.force; l.e.light.intensity = en.force ? l.base : 0; }
+    for (const g of en.glows) {
+      const level = en.force ? g.base : 0;
+      if (g.mat.emissiveIntensity !== level) { g.mat.emissiveIntensity = level; g.mat.update(); }
     }
+  }
+
+  update(dt) {
+    for (const en of this.entries) this.applyOverride(en);
     if (!this.el.hidden) { this.t = (this.t || 0) + dt; if (this.t > 0.5) { this.t = 0; this.refresh(); } }
   }
 }

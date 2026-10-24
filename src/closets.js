@@ -49,14 +49,15 @@ export class Closets {
         e.reparent(pivot);
         e.setPosition(wp); e.setRotation(wr);
       }
-      const door = { ...d, pivot, angle: 0, target: 0, width: Math.abs(d.handle[2] - d.hinge) + 0.04 };
+      const door = { ...d, pivot, angle: 0, target: 0, openRequested: false, width: Math.abs(d.handle[2] - d.hinge) + 0.04,
+        handlePoint: new Vec3(...d.handle), handleLocal: new Vec3(...d.handle).sub(pivot.getPosition()) };
       // While open, the leaf stands out into the room: a moving wall for the walk grid.
       door.segment = (angle = door.angle) => {
         const a = d.sign * 100 * angle * Math.PI / 180, dir = Math.sign(d.handle[2] - d.hinge);
         return [FRONT, d.hinge, FRONT + Math.sin(a) * dir * door.width, d.hinge + Math.cos(a) * dir * door.width];
       };
       grid?.addBlocker(() => (door.angle < 0.02 ? null : door.segment()));
-      interactions.add({ pos: new Vec3(...d.handle), size: 0.16, label: () => `${door.target ? 'Close' : 'Open'} the wardrobe`,
+      interactions.add({ pos: door.handlePoint, size: 0.16, label: () => `${door.openRequested ? 'Close' : 'Open'} the wardrobe`,
         use: () => this.toggle(door), active: () => true });
       return door;
     });
@@ -95,12 +96,14 @@ export class Closets {
   }
 
   toggle(door) {
-    door.target = door.target ? 0 : 1;
+    door.openRequested = !door.openRequested;
+    door.target = door.openRequested ? 1 : 0;
     this.sounds?.wardrobe(door.target === 1);
     if (!this.moving.includes(door)) this.moving.push(door);
   }
 
   update(dt) {
+    dt = Math.min(dt, 0.05);       // avoid a tab-resume jump through the player's body
     if (!this.moving.length) return;
     for (const d of this.moving) {
       // Eased swing, ~0.7 s to 100 degrees.
@@ -111,6 +114,7 @@ export class Closets {
       const p = this.player?.pos;
       if (p && segmentDistance(p.x, p.z, d.segment()) < 0.25) { d.angle = old; d.target = old; }
       d.pivot.setEulerAngles(0, d.sign * 100 * d.angle, 0);
+      d.pivot.getWorldTransform().transformPoint(d.handleLocal, d.handlePoint);
       refreshShadows(this.app, d.pivot.getPosition(), 3);
     }
     this.moving = this.moving.filter(d => d.angle !== d.target);

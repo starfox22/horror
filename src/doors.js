@@ -34,7 +34,7 @@ export class Doors {
       e.reparent(pivot);
       e.setPosition(wp); e.setRotation(wr);
     }
-    const door = { ...def, pivot, angle: 0, vel: 0, target: 0, moving: false, handle: new Vec3() };
+    const door = { ...def, pivot, angle: 0, vel: 0, target: 0, openRequested: false, moving: false, handle: new Vec3() };
     door.segment = () => {
       const a = door.angle * Math.PI / 180;
       // Closed, the leaf runs from the hinge along +z; a turn of `angle` about Y moves the free end to (sin a, cos a) * width.
@@ -42,7 +42,7 @@ export class Doors {
     };
     this.grid.addBlocker(door.segment);
     this.placeHandle(door);
-    interactions.add({ pos: door.handle, size: 0.42, label: () => `${door.target ? 'Close' : 'Open'} ${def.label}`,
+    interactions.add({ pos: door.handle, size: 0.42, label: () => `${door.openRequested ? 'Close' : 'Open'} ${def.label}`,
       use: () => this.toggle(door) });
     return door;
   }
@@ -53,7 +53,10 @@ export class Doors {
   }
 
   toggle(door) {
-    door.target = door.target ? 0 : door.open;
+    // Keep the requested direction when a player blocks the swing at a partial angle.
+    // The next press then reverses it, even if it was closing when it got stuck.
+    door.openRequested = !door.openRequested;
+    door.target = door.openRequested ? door.open : 0;
     door.vel += (door.target ? door.open : -door.open) * 0.25;   // the push
     door.moving = true;
     door.blocked = false;

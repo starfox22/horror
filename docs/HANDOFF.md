@@ -32,6 +32,13 @@ works with AI agents; whoever picks this up continues from the state below and k
 - Show screenshots and links before big decisions; publish each prototype to a web link.
 - Keep everything documented so another AI can continue.
 
+## Codex development branch (build 0.8)
+
+The environment/lighting and interaction pass lives on `codex/apartment-lighting-pass`; `main` remains the original build.
+Read [CODEX_ENVIRONMENT_PASS.md](CODEX_ENVIRONMENT_PASS.md) for the full change list, validation commands, comparison methodology and follow-up constraints.
+[PREVIEW_DEPLOYMENT.md](PREVIEW_DEPLOYMENT.md) documents the separate `/codex/` Pages build and deployment prerequisites.
+This remains a quiet apartment prototype with no added scares. The default Vite configuration now handles optional missing assets correctly, so the earlier external onboarding override is unnecessary on this branch.
+
 ## Published builds
 - Builds 0.1-0.7 (2026-10-22/24): claude.ai artifact https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9 (always the
   latest build; private to the owner unless shared from its Share menu).

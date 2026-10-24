@@ -1,0 +1,84 @@
+name: Pages · Codex apartment preview
+
+on:
+  push:
+    branches: [codex/apartment-lighting-pass]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Share the original site's deployment lock: both workflows publish one Pages site.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.ref == 'refs/heads/codex/apartment-lighting-pass'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: read
+    steps:
+      - name: Check out the original game
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: sources/main
+          persist-credentials: false
+
+      - name: Check out the preview commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: sources/codex
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build the original game
+        working-directory: sources/main
+        run: |
+          npm ci
+          npm run build
+
+      - name: Check and build the preview
+        working-directory: sources/codex
+        run: |
+          npm ci
+          node tools/check-reach.mjs
+          node --test tools/check-interactions.mjs
+          npm run build
+
+      - name: Assemble both games in one site
+        run: |
+          mkdir -p site/codex
+          cp -a sources/main/dist/. site/
+          cp -a sources/codex/dist/. site/codex/
+          original_sha="$(git -C sources/main rev-parse HEAD)"
+          preview_sha="$(git -C sources/codex rev-parse HEAD)"
+          printf '{"original":"%s","preview":"%s"}\n' "$original_sha" "$preview_sha" > site/codex/build-info.json
+          test -s site/index.html
+          test -s site/codex/index.html
+          test -s site/codex/assets/apartment/scene.gltf
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}codex/
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

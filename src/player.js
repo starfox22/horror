@@ -26,11 +26,17 @@ export class Player {
     this.onStep = null;    // (surface, speed) => void, called on each footfall
 
     window.addEventListener('keydown', (e) => {
+      if (!this.active || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName)) return;
       this.keys.add(e.code);
-      if (e.code === 'KeyB') this.bobOn = !this.bobOn;
+      if (e.code === 'KeyB' && !e.repeat) this.bobOn = !this.bobOn;
+      if (e.code?.startsWith('Arrow')) e.preventDefault?.();
     });
     window.addEventListener('keyup', (e) => this.keys.delete(e.code));
-    window.addEventListener('blur', () => this.keys.clear());
+    const stop = () => { this.keys.clear(); this.vel.set(0, 0, 0); };
+    window.addEventListener('blur', stop);
+    document.addEventListener('pointerlockchange', () => {
+      if (document.pointerLockElement !== app.graphicsDevice.canvas) stop();
+    });
     document.addEventListener('mousemove', (e) => {
       if (!this.active || document.pointerLockElement !== app.graphicsDevice.canvas) return;
       this.yaw -= e.movementX * LOOK;
@@ -43,6 +49,8 @@ export class Player {
 
   update(dt) {
     dt = Math.min(dt, 0.05);
+    // Pausing must stop immediately, including the acceleration tail of the last step.
+    if (!this.active) { this.keys.clear(); this.vel.set(0, 0, 0); }
     let fx = 0, fz = 0;
     if (this.active) {
       const f = (this.held('KeyW', 'ArrowUp') ? 1 : 0) - (this.held('KeyS', 'ArrowDown') ? 1 : 0);

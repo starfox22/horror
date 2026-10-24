@@ -34,9 +34,28 @@ const $ = (id) => document.getElementById(id);
   g.putImageData(img, 0, 0);
   $('grain').style.backgroundImage = `url(${c.toDataURL()})`;
 }
-const status = (text, frac) => { $('status').textContent = text; if (frac !== undefined) $('bar').style.width = `${Math.round(frac * 100)}%`; };
+const status = (text, frac) => {
+  if (window.__state?.error) return;
+  $('status').textContent = text;
+  if (frac !== undefined) $('bar').style.width = `${Math.round(frac * 100)}%`;
+};
 window.__state = { ready: false, error: null };
-window.addEventListener('error', (e) => { window.__state.error = String(e.message); status(`Error: ${e.message}`); });
+const showError = (error) => {
+  if (window.__state.error) return;  // keep the useful cause instead of a later generic 'Script error'
+  const message = error?.message || String(error || 'Unknown loading error');
+  window.__state = { ready: false, error: message };
+  if (document.pointerLockElement) document.exitPointerLock?.();
+  $('loading').hidden = false;
+  $('status').textContent = `Unable to load the apartment: ${message}`;
+  $('enter').hidden = true;
+  $('retry').hidden = false;
+  $('intro').classList.remove('gone');
+  $('intro').style.display = '';
+};
+const failLoad = (error) => { showError(error); throw error; };
+window.addEventListener('error', (event) => showError(event.error || event.message));
+window.addEventListener('unhandledrejection', (event) => showError(event.reason));
+$('retry').addEventListener('click', () => location.reload());
 
 // Decoders: wasm where the page allows compiling it, the asm.js fallbacks otherwise (some sandboxes block wasm).
 const wasmOk = await WebAssembly.compile(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0])).then(() => true, () => false);
@@ -52,7 +71,7 @@ const canvas = $('app');
 const device = await pc.createGraphicsDevice(canvas, {
   deviceTypes: hash.has('webgl') ? [pc.DEVICETYPE_WEBGL2] : [pc.DEVICETYPE_WEBGPU, pc.DEVICETYPE_WEBGL2],
   antialias: false, powerPreference: 'high-performance',
-});
+}).catch(failLoad);
 device.maxPixelRatio = Math.min(window.devicePixelRatio, 1.5);
 
 const opts = new pc.AppOptions();
@@ -68,11 +87,15 @@ app.start();
 status(`Loading the apartment… (${device.isWebGPU ? 'WebGPU' : 'WebGL 2'})`, 0.1);
 
 const [grid, container] = await Promise.all([
-  fetch(`${ASSETS}collision.json`).then(r => r.json()).then(j => new WalkGrid(j)),
+  fetch(`${ASSETS}collision.json`).then(r => {
+    if (!r.ok) throw new Error(`Collision data: HTTP ${r.status}`);
+    return r.json();
+  }).then(j => new WalkGrid(j)),
   modelFile().then((file) => new Promise((resolve, reject) => {
     const asset = new pc.Asset('apartment', 'container', file);
-    asset.once('load', () => resolve(asset.resource));
-    asset.once('error', reject);
+    const release = () => { if (file.url.startsWith('blob:')) URL.revokeObjectURL(file.url); };
+    asset.once('load', () => { release(); resolve(asset.resource); });
+    asset.once('error', (error) => { release(); reject(new Error(`Apartment model: ${error}`)); });
     app.assets.add(asset);
     app.assets.load(asset);
     if (file.filename.endsWith('.glb')) { status('Preparing the apartment…', 0.85); return; }
@@ -80,7 +103,7 @@ const [grid, container] = await Promise.all([
     let f = 0.1; const t = setInterval(() => { f = Math.min(0.85, f + 0.02); status($('status').textContent, f); }, 400);
     asset.once('load', () => clearInterval(t)); asset.once('error', () => clearInterval(t));
   })),
-]);
+]).catch(failLoad);
 status('Lighting the rooms…', 0.9);
 
 const apartment = container.instantiateRenderEntity({ castShadows: true, receiveShadows: true });
@@ -120,22 +143,28 @@ frontDoor(apartment);
 for (const r of flashlight.root.findComponents('render')) for (const mi of r.meshInstances) probes.assign(mi.material, 'bed');
 
 let capturing = null, rain = null;
-const recapture = async () => {
-  if (capturing) { capturing.again = true; return; }
-  capturing = {};
-  do {
-    capturing.again = false;
-    // The window drops glow faintly with the room's light (they refract the lit room): by how many lights are on
-    // (switches, lamps, screens alike); with every light off they are black. Set before the capture, which sees them.
-    // (After a frame, so overrides from the developer menu have reached the lights.)
-    await new Promise(r => app.once('frameend', r));
-    const on = app.root.findComponents('light').filter(l => l.enabled && l.intensity > 0.01 && !/flashlight|moon/.test(l.entity.name)).length;
-    if (rain) rain.roomLight = Math.min(1, on / 12);
-    flashlight.suspend(true);
-    await probes.captureAll();
-    flashlight.suspend(false);
-  } while (capturing.again);
-  capturing = null;
+const recapture = () => {
+  if (capturing) { capturing.again = true; return capturing.promise; }
+  const capture = { again: false };
+  capturing = capture;
+  capture.promise = (async () => {
+    try {
+      do {
+        capture.again = false;
+        // Wait for fades/overrides before capturing the lamps that are actually on.
+        await new Promise(r => app.once('frameend', r));
+        const on = app.root.findComponents('light').filter(l => l.enabled && l.intensity > 0.01 && !/flashlight|moon/.test(l.entity.name)).length;
+        if (rain) rain.roomLight = Math.min(1, on / 12);
+        flashlight.suspend(true);
+        await probes.captureAll();
+        flashlight.suspend(false);
+      } while (capture.again);
+    } finally {
+      flashlight.suspend(false);
+      capturing = null;
+    }
+  })();
+  return capture.promise;
 };
 const switches = new Switches(app, grid, apartment, interactions, ambience, recapture, downlights);
 const devices = new Devices(app, apartment, interactions, ambience, recapture);
@@ -149,7 +178,7 @@ rain = new Rain(app, apartment, ambience, lit);
 
 // One frame of the lit rooms first, then capture the probes from them.
 await new Promise(r => app.once('frameend', r));
-await recapture();
+await recapture().catch(failLoad);
 const eyes = new EyeAdaptation(app, camera, frame, probes, flashlight, hash.has('ev') ? Number(hash.get('ev')) : null);
 
 player.onStep = (surface, speed) => ambience.step(surface, speed);
@@ -204,14 +233,27 @@ window.__app = { app, player, frame, camera, flashlight, interactions, switches,
 // The artifact build (tools/make-artifact.mjs) ships the apartment as one GLB split into base64 text parts listed in
 // apartment.json; download them with real progress and reassemble the GLB in memory. Otherwise load the glTF.
 async function modelFile() {
-  const manifest = await fetch(`${ASSETS}apartment.json`).then(r => (r.ok ? r.json() : null), () => null);
-  if (!manifest) return { url: `${ASSETS}scene.gltf`, filename: 'scene.gltf' };
+  const unpacked = { url: `${ASSETS}scene.gltf`, filename: 'scene.gltf' };
+  const response = await fetch(`${ASSETS}apartment.json`);
+  if (response.status === 404) return unpacked;
+  if (!response.ok) throw new Error(`Apartment manifest: HTTP ${response.status}`);
+  const text = await response.text();
+  // Some static hosts rewrite absent paths to index.html. This optional manifest is absent in the normal glTF build.
+  if (/^\s*</.test(text)) return unpacked;
+  let manifest;
+  try { manifest = JSON.parse(text); } catch { throw new Error('Apartment manifest is not valid JSON'); }
+  if (!Number.isSafeInteger(manifest?.bytes) || manifest.bytes <= 0 || !Array.isArray(manifest.parts) || !manifest.parts.length ||
+      manifest.parts.some(p => typeof p.file !== 'string' || !Number.isSafeInteger(p.bytes) || p.bytes <= 0) ||
+      manifest.parts.reduce((sum, part) => sum + part.bytes, 0) !== manifest.bytes) {
+    throw new Error('Apartment manifest has invalid part sizes');
+  }
   const glb = new Uint8Array(manifest.bytes);
   const offsets = manifest.parts.reduce((a, p) => [...a, a[a.length - 1] + p.bytes], [0]);
   let done = 0;
   const one = async (p, i) => {
     const text = await fetch(`${ASSETS}${p.file}`).then(r => { if (!r.ok) throw new Error(`${p.file}: HTTP ${r.status}`); return r.text(); });
     const bytes = Uint8Array.fromBase64 ? Uint8Array.fromBase64(text) : Uint8Array.from(atob(text), c => c.charCodeAt(0));
+    if (bytes.length !== p.bytes) throw new Error(`Apartment part ${p.file}: expected ${p.bytes} bytes, received ${bytes.length}`);
     glb.set(bytes, offsets[i]);
     done += p.bytes;
     status(`Loading the apartment… ${(done / 1e6).toFixed(0)} / ${(manifest.bytes / 1e6).toFixed(0)} MB`, 0.1 + 0.7 * done / manifest.bytes);
@@ -243,10 +285,14 @@ function showHint() {
 // Glass stays see-through but reflective; screens and lamp emitters glow into the bloom without blinding.
 function tuneMaterials(root) {
   const seen = new Set(), hidden = new Set(), noShadow = new Set(), noCast = new Set();
+  const anisotropy = Math.min(8, device.maxAnisotropy || 1);
+  const textureMaps = ['diffuseMap', 'normalMap', 'metalnessMap', 'glossMap', 'aoMap', 'emissiveMap', 'opacityMap'];
   for (const r of root.findComponents('render')) for (const mi of r.meshInstances) {
     const m = mi.material, name = baseName(m.name);
     if (seen.has(m)) continue;
     seen.add(m);
+    // Keep floor grain, fabric and normal detail legible at grazing angles without changing their authored roughness.
+    for (const name of textureMaps) if (m[name]) m[name].anisotropy = anisotropy;
     if (/^Glass/i.test(name)) { m.gloss = 0.95; m.metalness = 0; m.useMetalness = true; m.depthWrite = false; }
     if (/Screen/i.test(name)) m.emissiveIntensity = 0.35;
     if (name === 'Keylight') m.emissiveIntensity = 0.6;

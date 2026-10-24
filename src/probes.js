@@ -318,7 +318,9 @@ export class Probes {
       rerenderShadows(this.app);      // fresh shadows for this frame's atlas layout (lighting.js)
       const cubes = await Promise.all(shots.map(s => captureCube(this.app, this.camera, s.at, s.size)));
       shots.forEach((s, i) => {
-        const source = EnvLighting.generateLightingSource(cubes[i], { size: s.zone ? 128 : 64 });
+        // Keep the captured detail for glossy room reflections; diffuse-only
+        // probes retain the small source because their convolution removes detail.
+        const source = EnvLighting.generateLightingSource(cubes[i], { size: s.zone ? 256 : 64 });
         if (s.zone) EnvLighting.generateAtlas(source, { target: s.zone.atlas });
         reprojectTexture(source, this.bounce, { numSamples: 1024, distribution: 'lambert', rect: rect.set(s.slot * SLOT_W, 0, SLOT_W, SLOT_H), seamPixels: 1 });
         source.destroy();

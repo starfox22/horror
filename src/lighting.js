@@ -45,13 +45,15 @@ export const DOWNLIGHTS = [
   ['bathroom', 7.3, -0.6], ['bathroom', 7.9, 1.0],
   ['bedroom', 10.8, -0.5], ['bedroom', 12.8, -0.5], ['bedroom', 10.8, 1.6], ['bedroom', 12.8, 1.6],
 ];
-const DOWN = new Color(1.0, 0.85, 0.70);
-export const DOWNLIGHT = { intensity: 1.0, glow: 2.2, range: 6.0 };
+// Ceiling LEDs are a little more neutral than the practical lamps. This preserves
+// warm pools around lamps without giving white walls and every material one amber cast.
+const DOWN = new Color(1.0, 0.90, 0.80);
+export const DOWNLIGHT = { intensity: 0.92, glow: 2.2, range: 7.0 };
 // Beam of a recessed LED downlight (like a photometric profile): full in a ~60 deg beam, falling off to a dim wide field.
 // Walls near a downlight get the familiar bright arch ("scallop") instead of an even wash. As a function of the angle
 // from straight down; drawn into a cookie, whose radius is tan(angle) / tan(outer cone angle).
 const DOWN_OUTER = 72;
-const downProfile = (deg) => 0.28 + 0.72 * Math.exp(-((deg / 33) ** 4));
+const downProfile = (deg) => 0.34 + 0.66 * Math.exp(-((deg / 38) ** 4));
 
 // Each downlight: a shadowed spot pointing down plus a small glowing disc in a bezel, flush with the ceiling.
 // Returns { [room]: [{ light, glow }] } for the switches.
@@ -66,7 +68,7 @@ export function addDownlights(app, grid) {
     e.addComponent('light', {
       type: 'spot', color: DOWN, intensity: DOWNLIGHT.intensity, range: DOWNLIGHT.range, innerConeAngle: 12, outerConeAngle: DOWN_OUTER, castShadows: true,
       cookie, cookieIntensity: 1,
-      falloffMode: LIGHTFALLOFF_INVERSESQUARED, shadowResolution: 512, shadowBias: 0.25, normalOffsetBias: 0.04, volumetricScattering: 0.25,
+      falloffMode: LIGHTFALLOFF_INVERSESQUARED, shadowResolution: 512, shadowBias: 0.15, normalOffsetBias: 0.025, volumetricScattering: 0.18,
     });
     e.setPosition(x, y - 0.01, z);
     e.light.shadowUpdateMode = SHADOWUPDATE_THISFRAME;
@@ -221,7 +223,9 @@ export function rerenderShadows(app) {
 // Lamps render their shadows once (static rooms). Something that moves (a door, the laptop lid) asks the shadowed lamps
 // within `radius` of `pos` to render theirs again this frame.
 export function refreshShadows(app, pos, radius) {
-  const list = refreshShadows.list ||= app.root.findComponents('light').filter(l => l.castShadows && l.shadowUpdateMode !== undefined && l.entity.name !== 'flashlight beam');
+  // Discover lights per application: a process-global cache misses lamps created
+  // later and can retain destroyed lights when a second scene is initialized.
+  const list = app.root.findComponents('light').filter(l => l.castShadows && l.shadowUpdateMode !== undefined && l.entity.name !== 'flashlight beam');
   for (const l of list) {
     if (!l.enabled || l.type === 'directional') continue;
     if (l.entity.getPosition().distance(pos) < radius + l.range * 0.5) l.shadowUpdateMode = SHADOWUPDATE_THISFRAME;

@@ -16,14 +16,18 @@ export class Interactions {
     this.focus = null;
     this.enabled = false;
     const use = () => {
-      if (!this.enabled || !this.focus) return;
+      if (!this.enabled || !document.pointerLockElement) return;
+      // Input can arrive between frames: a moving handle or an object that just became
+      // busy must be checked again before using the cached focus (rapid clicks/E).
+      this.update();
+      if (!this.focus) return;
       this.focus.use();
       this.reticle?.classList.add('pressed');
       clearTimeout(this.pressTimer);
       this.pressTimer = setTimeout(() => this.reticle?.classList.remove('pressed'), 120);
     };
     // blockKey(): set by the developer menu, true while its code word is being typed.
-    window.addEventListener('keydown', (e) => { if (e.code === 'KeyE' && !e.repeat && !this.blockKey?.('e')) use(); });
+    window.addEventListener('keydown', (e) => { if (e.code === 'KeyE' && !e.repeat && !/^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName) && !this.blockKey?.('e')) use(); });
     window.addEventListener('mousedown', (e) => { if (e.button === 0 && document.pointerLockElement) use(); });
   }
 

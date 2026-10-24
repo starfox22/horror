@@ -7,41 +7,42 @@ export function setupPost(app, camera) {
   const frame = new CameraFrame(app, camera.camera);
   const r = frame.rendering;
   r.toneMapping = TONEMAP_NEUTRAL;
-  r.sharpness = 0.35;
+  r.sharpness = 0.25;
   frame.taa.enabled = true;
   frame.taa.jitter = 1;
 
   frame.ssao.type = SSAOTYPE_LIGHTING;
-  frame.ssao.intensity = 0.55;
-  frame.ssao.radius = 1.2;          // world units: this scene is in metres
-  frame.ssao.samples = 16;
-  frame.ssao.power = 3;
+  // Contact-scale occlusion grounds furniture without painting metre-wide dark halos.
+  frame.ssao.intensity = 0.65;
+  frame.ssao.radius = 0.35;         // world units: this scene is in metres
+  frame.ssao.samples = 24;
+  frame.ssao.power = 1.8;
   frame.ssao.blurEnabled = true;
   frame.ssao.scale = 0.75;
 
-  frame.bloom.intensity = 0.024;     // a soft halo round bulbs, screens and the lit lamp shades
-  frame.bloom.blurLevel = 14;
+  frame.bloom.intensity = 0.028;     // restrained halation around emissive fixtures
+  frame.bloom.blurLevel = 7;
 
   frame.grading.enabled = true;
-  frame.grading.saturation = 0.82;
+  frame.grading.saturation = 0.94;
   // No contrast: the engine applies it to linear light before tone mapping, around 0.5, so any value > 1 clips the darkest
   // quarter of the image to pure black (1.12 did: shadows went pitch black instead of fading out).
   frame.grading.contrast = 1.0;
   frame.grading.brightness = 1.0;
-  frame.grading.tint.set(0.94, 0.97, 1.04);
+  frame.grading.tint.set(1.0, 0.99, 0.98);
 
-  frame.vignette.intensity = 0.45;
-  frame.vignette.inner = 0.35;
+  frame.vignette.intensity = 0.22;
+  frame.vignette.inner = 0.5;
   frame.vignette.outer = 1.25;
   frame.vignette.curvature = 0.6;
 
-  frame.fringing.intensity = 2;
+  frame.fringing.intensity = 0.35;
 
   const moon = app.root.findByName('moon');
   const fog = frame.volumetricFog;
   fog.enabled = true;
   fog.light = moon?.light ?? null;
-  fog.density = 0.014;
+  fog.density = 0.006;
   fog.heightBase = 3;
   fog.heightFalloff = 0;
   fog.anisotropy = 0.55;
@@ -53,7 +54,7 @@ export function setupPost(app, camera) {
   fog.scale = 0.5;
   fog.localSpotLights = true;
   fog.localOmniLights = false;
-  fog.localIntensity = 0.6;
+  fog.localIntensity = 0.35;
   fog.localSteps = 10;
   fog.extinction = 0.6;
 
@@ -67,7 +68,8 @@ export function setQuality(frame, q) {
   frame.rendering.renderTargetScale = q === 1 ? 0.75 : 1;
   frame.volumetricFog.enabled = q === 3;
   frame.ssao.type = q === 1 ? 'none' : SSAOTYPE_LIGHTING;
-  frame.ssao.scale = q === 3 ? 0.75 : 0.5;
+  frame.ssao.scale = q === 3 ? 1 : 0.5;
+  frame.ssao.samples = q === 3 ? 24 : 12;
   frame.update();
 }
 

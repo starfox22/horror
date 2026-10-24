@@ -1,13 +1,15 @@
 # horror
 True horror game
 
-A first-person browser horror game in the spirit of P.T., built on PlayCanvas. Current state: **build 0.7, a walkable
+A first-person browser horror game in the spirit of P.T., built on PlayCanvas. Current state: **build 0.8 (Codex environment study), a walkable
 night-time apartment** (no scares yet): light switches in every area, lamps with their own switches (bedside, desk, arc lamp), a bathroom door and wardrobe that
 open, a laptop, computer and coffee machine to use, a flashlight to find (only its beam is seen), rain gathering and running
 down the windows, lightning and thunder, warm night lighting that fades softly into darkness (bounce light from probes
 around the flat, eye adaptation), post-processing and ambient sound.
 
 Read `docs/HANDOFF.md` first if you are picking this up (state, owner's preferences, how things fit together).
+
+This development branch adds a lighting/material pass and interaction fixes. See [the change list and validation guide](docs/CODEX_ENVIRONMENT_PASS.md), [side-by-side screenshots](docs/review/README.md), and [preview deployment instructions](docs/PREVIEW_DEPLOYMENT.md).
 
 ## Play
 

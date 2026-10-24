@@ -41,7 +41,12 @@ export class Devices {
   }
 
   // A small animation: fn(t in 0..1) over `seconds`, then done().
-  run(seconds, fn, done) { this.tasks.push({ t: 0, seconds, fn, done }); }
+  run(seconds, fn, done, owner = null) {
+    // A rapid toggle replaces that object's fade, rather than leaving two animations
+    // writing different brightness values in the same frame.
+    if (owner) this.tasks = this.tasks.filter(task => task.owner !== owner);
+    this.tasks.push({ t: 0, seconds, fn, done, owner });
+  }
 
   update(dt) {
     for (const k of this.tasks) { k.t = Math.min(1, k.t + dt / k.seconds); k.fn(k.t); }
@@ -111,9 +116,9 @@ export class Devices {
     const forced = this.override?.(lamp.lights);       // forced by the developer menu: hand it back (switches.js toggle)
     lamp.on = forced === true || forced === false ? !forced : !lamp.on;
     this.sounds?.lampClick?.(lamp.lights[0].getPosition(), lamp.on);
-    const from = lamp.level, to = lamp.on ? 1 : 0;
+    const from = forced === true ? 1 : forced === false ? 0 : lamp.level, to = lamp.on ? 1 : 0;
     // A warm filament-style ramp: quick to light, a short glow-down when switched off.
-    this.run(lamp.on ? 0.14 : 0.09, (t) => this.applyLamp(lamp, from + (to - from) * t), () => this.onLightChange?.());
+    this.run(lamp.on ? 0.14 : 0.09, (t) => this.applyLamp(lamp, from + (to - from) * t), () => this.onLightChange?.(), lamp);
   }
 
   applyLamp(lamp, level) {
@@ -138,9 +143,10 @@ export class Devices {
     const keys = [this.materials.get('Keylight'), this.materials.get('Keylight.laptoplid')].filter(Boolean);
     const glow = this.app.root.findByName('laptop glow');
     const laptop = { open: true, angle: 0, busy: false, pivot, screen, keys, glow, glowBase: glow?.light.intensity ?? 0, pos: new Vec3(), q: new Quat() };
+    laptop.glows = [...(screen ? [{ mat: screen, base: 0.55 }] : []), ...keys.map(mat => ({ mat, base: 0.6 }))];
     laptop.setPower = (k) => {
-      if (screen) { screen.emissiveIntensity = 0.55 * k; screen.update(); }
-      for (const m of keys) { m.emissiveIntensity = 0.6 * k; m.update(); }
+      laptop.power = k;
+      for (const { mat, base } of laptop.glows) { mat.emissiveIntensity = base * k; mat.update(); }
       if (glow) { glow.light.intensity = laptop.glowBase * k; glow.light.enabled = k > 0.01; }
     };
     laptop.setAngle = (a) => {
@@ -159,12 +165,16 @@ export class Devices {
   }
 
   toggleLaptop(l) {
+    if (l.busy) return;
     if (l.glow) this.override?.([l.glow]);          // hand its glow back from the developer menu
     l.busy = true;
     l.open = !l.open;
     const from = l.angle, to = l.open ? 0 : LID_SHUT;
     this.sounds?.laptop?.(LID_HINGE, l.open);
-    if (!l.open) this.run(0.25, (t) => l.setPower(1 - t));       // the screen sleeps as the lid comes down
+    if (!l.open) {
+      const power = l.power;
+      this.run(0.25, (t) => l.setPower(power * (1 - t)), () => this.onLightChange?.(), l);
+    }
     // Shutting: gathers speed and lands (ease-in); opening: lifted and slowing to a stop (ease-out).
     this.run(l.open ? 0.75 : 0.6, (t) => {
       const e = l.open ? 1 - (1 - t) ** 3 : t * t;
@@ -173,7 +183,7 @@ export class Devices {
     }, () => {
       l.busy = false;
       if (!l.open) this.sounds?.laptopShut?.(LID_HINGE);
-      else this.run(0.6, (t) => l.setPower(ease(t)));            // wakes once open
+      else this.run(0.6, (t) => l.setPower(ease(t)), () => this.onLightChange?.(), l); // wakes once open
     });
   }
 
@@ -183,9 +193,10 @@ export class Devices {
     if (!screens.length) return null;
     const glow = this.app.root.findByName('iMac glow');
     const pc = { on: true, busy: false, screens, glow, glowBase: glow?.light.intensity ?? 0, level: 1 };
+    pc.glows = screens.map(mat => ({ mat, base: 0.5 }));
     pc.set = (k) => {
       pc.level = k;
-      for (const m of screens) { m.emissiveIntensity = 0.5 * k; m.update(); }
+      for (const { mat, base } of pc.glows) { mat.emissiveIntensity = base * k; mat.update(); }
       if (glow) { glow.light.intensity = pc.glowBase * k; glow.light.enabled = k > 0.01; }
     };
     pc.set(1);
@@ -195,6 +206,7 @@ export class Devices {
   }
 
   toggleComputer(pc) {
+    if (pc.busy) return;
     if (pc.glow) this.override?.([pc.glow]);
     pc.busy = true;
     pc.on = !pc.on;
@@ -219,9 +231,10 @@ export class Devices {
     led.addComponent('light', { type: 'omni', color: new Color(0.75, 0.85, 1), intensity: 0, range: 0.8, castShadows: false, falloffMode: LIGHTFALLOFF_INVERSESQUARED, enabled: false });
     led.setPosition(-5.455, 1.2, -0.80);
     this.app.root.addChild(led);
-    const coffee = { busy: false, panel, led };
+    const coffee = { busy: false, panel, led, level: 0, glows: panel ? [{ mat: panel, base: 1.4 }] : [] };
     coffee.glow = (k) => {
-      if (panel) { panel.emissiveIntensity = 1.4 * k; panel.update(); }
+      coffee.level = k;
+      for (const { mat, base } of coffee.glows) { mat.emissiveIntensity = base * k; mat.update(); }
       led.light.intensity = 0.05 * k; led.light.enabled = k > 0.01;
     };
     interactions.add({ pos: new Vec3(-5.455, 1.08, -0.86), size: 0.2, label: () => (coffee.busy ? 'Brewing…' : 'Make a coffee'),
@@ -231,6 +244,7 @@ export class Devices {
 
   brew(c) {
     if (c.busy) return;
+    this.override?.([c.led]);
     c.busy = true;
     this.run(0.3, (t) => c.glow(t));
     const timing = this.sounds?.coffee?.(COFFEE_SPOUT) ?? { grind: 3.2, brew: 9 };
