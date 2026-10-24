@@ -16,7 +16,7 @@ Claude's continuation of the promoted 0.11 baseline, on `claude/pensive-volta-et
 
 ## 1. Freezes and stutters (where they came from, what fixed them)
 
-Measured with `work/perf/hitch.mjs`-style instrumentation (shadow-map faces rendered and shaders built per frame, draw
+Measured with `tools/perf/hitch.mjs` (shadow-map faces rendered and shaders built per frame, draw
 calls per frame) on the same scripted tour of the flat, before and after. Software rendering cannot time a real GPU,
 but these counts are what a freeze is made of.
 
@@ -94,5 +94,11 @@ and the apartment's table glass. Water is fitted to each one's measured inner wa
   (IK, grip, sleeve end out of view, joint limits, framing).
 - Browser checks (SwiftShader WebGL 2 and WebGPU, headless): the before/after hitch counts above, light-leak renders,
   start-up renders and drinking renders in `docs/build-012/`.
+- After the warm-up, a scripted play-through (open the fridge, drink, shut it, the falling glass, a lightning flash, a
+  room switch, the flashlight, a coffee) builds **no shader** on WebGL 2 and WebGPU and renders at most 1-3 shadow faces
+  per frame (8 once, when the flashlight's two realtime views coincide with one lamp's refresh). The scripts are in
+  `tools/perf/` (README there).
+- Codex's Python browser checks (`tools/check-browser.py`, `tools/check-graphics-ui.py`) were updated for the new
+  defaults (VSync, screens on, AO at every preset) but not run here: this session's image has no Python Playwright.
 - Not measured: real-GPU frame times. Software rendering runs at about one frame per second, so the freeze work is
   verified by counting what made frames slow (shadow passes, shader builds, draw calls), not by timing them.

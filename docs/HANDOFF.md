@@ -322,7 +322,7 @@ Full list, measurements and before/after renders: [BUILD_012.md](BUILD_012.md). 
   layer or behind `isVisibleFunc`.
 - `app.stats` frame counters and `_shaderStats` are only filled in the engine's profiler build: to count shadow renders
   and new shaders, wrap `app.renderer.shadowRenderer.renderFace` and watch `graphicsDevice.shaders.length`
-  (`work/perf/hitch.mjs` did, see BUILD_012.md).
+  (`tools/perf/hitch.mjs` does, see its README).
 
 ## Next steps (suggested, not started)
 1. Owner feedback on build 0.5.

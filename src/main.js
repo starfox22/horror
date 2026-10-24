@@ -234,7 +234,9 @@ if (!shot || hash.has('warm')) {
       mi.isVisibleFunc = cam => cam === playerCamera && cam.frustum.containsAabb(mi.aabb);
     }
   }
-  await warmUp({ app, camera, progress: f => status('Preparing the rooms…', 0.92 + 0.08 * f), reveal: [
+  // The lightning's sky light renders its shadow (fitted to the view) on every warm-up frame, so its shadow shaders for
+  // everything in the flat are built too.
+  await warmUp({ app, camera, progress: f => { lit.moon.light.shadowUpdateMode = SHADOWUPDATE_THISFRAME; status('Preparing the rooms…', 0.92 + 0.08 * f); }, reveal: [
     revealInFront(drink.handCarrier),
     () => {
       if (!coffee?.effects) return null;

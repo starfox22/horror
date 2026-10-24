@@ -345,6 +345,7 @@ export class Probes {
     try {
       if (instant) {
         for (const s of shots) { await this.rig.capture(s.at, s.size, [0, 1, 2, 3, 4, 5]); filter(s, this.rig.cube(s.size)); }
+        this.blend.run(this.bounceFrom, this.bounce, this.bounce, 0);      // builds the cross-fade shader now, not in play
       } else {
         for (const s of shots) {
           const faces = s.size > 64 ? [[0, 1], [2, 3], [4, 5]] : [[0, 1, 2, 3, 4, 5]];

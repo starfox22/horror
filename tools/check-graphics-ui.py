@@ -103,8 +103,8 @@ with sync_playwright() as p:
         page.wait_for_function('/^\\d+ FPS/.test(document.getElementById("stats").textContent)')
         assert page.locator('#stats').is_visible(), 'FPS must be on for a fresh browser'
         assert page.locator('#stats').count() == 1
-        assert snapshot()['fpsLimit'] == 60, 'A fresh browser must use the 60 FPS default'
-        assert page.evaluate('localStorage.getItem("horror.graphics.v1")') is None, 'A fresh context must not inherit preferences'
+        assert snapshot()['fpsLimit'] == -1, 'A fresh browser must use the VSync default'
+        assert page.evaluate('localStorage.getItem("horror.graphics.v2")') is None, 'A fresh context must not inherit preferences'
         results['freshFps'] = 'visible, one element'
         print('Fresh FPS counter PASS', flush=True)
 
@@ -134,7 +134,7 @@ with sync_playwright() as p:
         print('Menu access and mouse capture PASS', flush=True)
 
         for preset, expected in (
-            ('low', {'scale': 0.75, 'ao': False, 'fog': False}),
+            ('low', {'scale': 0.75, 'ao': True, 'fog': False}),
             ('medium', {'scale': 0.85, 'ao': True, 'fog': False}),
             ('high', {'scale': 1, 'ao': True, 'fog': True}),
             ('auto', {'scale': 1, 'ao': True, 'fog': True}),
@@ -146,13 +146,13 @@ with sync_playwright() as p:
         results['presets'] = 'Low, Medium, High, Auto update the render pipeline'
 
         choose('low')
-        for limit in (0, 30, 60, 90, 120):
+        for limit in (-1, 0, 30, 60, 90, 120):
             page.locator('#graphics-fps-limit').select_option(str(limit))
             state = snapshot()
             assert state['fpsLimit'] == state['settings']['fpsLimit'] == limit, state
             assert state['settings']['preset'] == 'low', 'FPS cap must not change quality'
             assert state['fps'], 'FPS cap must not switch off the counter'
-        results['fpsLimitControl'] = 'Uncapped, 30, 60, 90 and 120 apply without changing quality or FPS visibility'
+        results['fpsLimitControl'] = 'VSync, every refresh, 30, 60, 90 and 120 apply without changing quality or FPS visibility'
         state = toggle('showFps', False)
         assert state['settings']['preset'] == 'low', 'FPS display must not change graphics quality'
         assert not page.locator('#stats').is_visible()

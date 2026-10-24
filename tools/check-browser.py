@@ -93,10 +93,11 @@ with sync_playwright() as p:
         assert lamp['level'] == int(on) and all(enabled == on for enabled in lamp['enabled']), fixtures
         if not on:
             assert lamp['emission'] == 0, fixtures
-    assert fixtures['activeSources'] == sorted(['arc lamp', 'cooker hood', 'bathroom mirror',
+    # Build 0.12: the laptop and the office computer start on (their screen glows are shadowed spots).
+    assert fixtures['activeSources'] == sorted(['arc lamp', 'cooker hood', 'bathroom mirror', 'iMac glow', 'laptop glow',
         'bedside lamp left', 'bedside spill left', 'bedside lamp right', 'bedside spill right']), fixtures
-    assert fixtures['screens']['laptopPower'] == 0 and not fixtures['screens']['computerOn'] and fixtures['screens']['computerLevel'] == 0, fixtures
-    assert all(emission == 0 for emission in fixtures['screens']['emissions']), fixtures
+    assert fixtures['screens']['laptopPower'] == 1 and fixtures['screens']['computerOn'] and fixtures['screens']['computerLevel'] == 1, fixtures
+    assert all(emission > 0 for emission in fixtures['screens']['emissions'][:-1]), fixtures
     assert 0 < fixtures['mirrorIntensity'] < 0.2 and 0.4 <= fixtures['hoodIntensity'] <= 0.5, fixtures
     assert len(fixtures['mounts']) == 8 and all(mount['scale'] == [1, 1, 1] and 0 < mount['embed'] < 0.001 for mount in fixtures['mounts']), fixtures
     assert 150 <= fixtures['removedTriangles'] <= 180, fixtures
@@ -113,7 +114,7 @@ with sync_playwright() as p:
     page.locator('[data-option="bloom"]').check()
     page.wait_for_function('window.__app.frame.bloom.intensity > 0')
     page.locator('#graphics-preset').select_option('low')
-    assert page.locator('#graphics-fps-limit').input_value() == '60'
+    assert page.locator('#graphics-fps-limit').input_value() == '-1'
     page.locator('#graphics-fps-limit').select_option('30')
     page.wait_for_function('window.__app.frameLimiter.limit === 30 && window.__app.graphics.settings.fpsLimit === 30')
     assert page.evaluate('window.__app.graphics.settings.preset') == 'low'
