@@ -267,7 +267,9 @@ export class Rain {
     if (on && !this.lit) this.moon.light.shadowUpdateMode = SHADOWUPDATE_THISFRAME;
     this.lit = on;
     this.moon.light.intensity = this.moonBase + power;
-    for (const s of this.streaks) if (s.particlesystem.enabled !== on) s.particlesystem.enabled = on;   // the rain outside shows only in a flash
+    // The rain outside shows only in a flash (or while the loading warm-up builds its shader: `revealing`).
+    const show = on || !!this.revealing;
+    for (const s of this.streaks) if (s.particlesystem.enabled !== show) s.particlesystem.enabled = show;
     for (const s of this.streaks) s.particlesystem.intensity = power * 0.9;
     // Drops refract the lit room behind the viewer (a faint glow that follows how many lights are on), and flare in a flash.
     const glow = this.roomLight * 0.55 + power * 0.3;

@@ -20,7 +20,7 @@ const REST_WRIST = new Vec3(0.30, -0.62, -0.10);
 const PRE_GRASP = new Vec3(0.07, 0.035, 0.08);
 // The resting hand: fingers forward and down, back of the hand out to the right.
 const REST_HAND = frameRotation(new Vec3(0, 1, 0), new Vec3(0, 0, 1), new Vec3(0.05, -0.55, -0.83), new Vec3(0.9, 0.25, 0.1));
-const MAX_LEAN = 0.6;       // metres the body may lean (or step) towards the glass to reach it
+const MAX_LEAN = 0.5;       // metres the body leans towards the glass at most (the drink starts within 1.15 m)
 const LOOK_BELOW = 8;       // degrees: the eyes rest just above the glass while reaching
 const SIP_HEAD = 7;         // degrees the head tips back while drinking
 
@@ -142,7 +142,7 @@ export class DrinkSequence {
     const glass = this.fridge.glassShelfPosition;
     const wristWorld = this.carryRotation.transformVector(this.grip.position, new Vec3()).add(glass);
     const shoulderWorld = this.baseOrientation.transformVector(SHOULDER, new Vec3()).add(this.basePosition);
-    const lean = Math.min(MAX_LEAN, Math.max(0, wristWorld.distance(shoulderWorld) - (this.rig.reach - 0.06)));
+    const lean = Math.min(MAX_LEAN, Math.max(0, wristWorld.distance(shoulderWorld) - (this.rig.reach - 0.02)));
     this.reachDirection = new Vec3().sub2(glass, this.basePosition);
     this.reachDirection.y = 0; this.reachDirection.normalize().mulScalar(lean);
     // Eyes to the glass while reaching and putting it back (it rests a little below the centre of view).
@@ -150,7 +150,7 @@ export class DrinkSequence {
     const distance = Math.hypot(centre.x - this.basePosition.x, centre.z - this.basePosition.z) - lean;
     const glassPitch = Math.atan2(centre.y - this.basePosition.y, Math.max(0.2, distance)) * 180 / Math.PI;
     const initialPitch = Math.asin(Math.max(-1, Math.min(1, forward.y))) * 180 / Math.PI;
-    this.lookDelta = Math.min(25, Math.max(-35, glassPitch + LOOK_BELOW - initialPitch));
+    this.lookDelta = Math.min(20, Math.max(-25, glassPitch + LOOK_BELOW - initialPitch));
     this.fridge.drinkRunning = true;
     this.holdPlayer();
     // Input arrives between RAF callbacks. Disable cached interaction focus here,

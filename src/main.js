@@ -225,7 +225,15 @@ await recapture().catch(failLoad);
 if (!shot || hash.has('warm')) {
   status('Preparing the rooms…', 0.92);
   const coffee = devices.coffee;
-  if (coffee) coffee.effects ||= devices.createCoffeeEffects();
+  if (coffee) {
+    coffee.effects ||= devices.createCoffeeEffects();
+    // The coffee's liquid is the player's to see only: a probe capture during a brew would otherwise build shaders for
+    // it mid-game (and the probes have no use for a few millimetres of espresso).
+    const playerCamera = camera.camera.camera;
+    for (const r of coffee.effects.root.findComponents('render')) for (const mi of r.meshInstances) {
+      mi.isVisibleFunc = cam => cam === playerCamera && cam.frustum.containsAabb(mi.aabb);
+    }
+  }
   await warmUp({ app, camera, progress: f => status('Preparing the rooms…', 0.92 + 0.08 * f), reveal: [
     revealInFront(drink.handCarrier),
     () => {
@@ -235,7 +243,7 @@ if (!shot || hash.has('warm')) {
       fx.steam.forEach(s => s.entity.particlesystem.play());
       return () => fx.reset();
     },
-    () => { rain.streaks.forEach(s => { s.particlesystem.enabled = true; }); return () => rain.streaks.forEach(s => { s.particlesystem.enabled = false; }); },
+    () => { rain.revealing = true; return () => { rain.revealing = false; }; },
     // Every shadowed lamp that starts off, on at zero for the sweep: its shadow is drawn (and its shadow shaders built)
     // now, so switching it on later costs nothing; it keeps its cell of the fixed shadow atlas (fixShadowAtlas).
     () => {

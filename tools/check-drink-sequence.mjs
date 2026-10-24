@@ -101,8 +101,10 @@ function harness({ reducedMotion = false, rotation = [0, 0, 0], position = [1.55
 const local = (camera, p) => { const m = camera.getWorldTransform().clone().invert(); return m.transformPoint(p, new Vec3()); };
 
 test('the arm stays attached: the wrist reaches its target, the hand holds the glass rigidly, the shoulder cut is never seen', () => {
-  for (const rotation of [[0, 0, 0], [-25, 10, 0], [12, -15, 0]]) {
-    const h = harness({ rotation, position: [1.62, 1.82, .2] }); h.drink.start();
+  // Near the glass, and from the farthest places the drink can start (1.15 m from the glass, fridge.js canDrink).
+  for (const [rotation, position] of [[[0, 0, 0], [1.62, 1.82, .2]], [[-25, 10, 0], [1.62, 1.82, .2]], [[12, -15, 0], [1.62, 1.82, .2]],
+    [[-18, -21, 0], [1.31, 1.85, .38]], [[-10, 0, 0], [1.68, 1.85, .44]], [[-30, 30, 0], [1.05, 1.85, .2]]]) {
+    const h = harness({ rotation, position }); h.drink.start();
     const grip = gripInGlass(armData, GLASS_HEIGHT), centreInGlass = new Vec3(0, GLASS_HEIGHT / 2, 0);
     const halfV = Math.tan(34 * Math.PI / 180), halfH = halfV * 16 / 9;
     for (let i = 0; i <= DRINK_DURATION * 120; i++) {

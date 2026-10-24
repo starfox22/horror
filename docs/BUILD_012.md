@@ -51,6 +51,48 @@ but these counts are what a freeze is made of.
 - Light-leak renders (only the bedroom's lights on, everything else off) are in `docs/build-012/`: the bathroom was lit
   through its wall, the corridor ceiling glowed by the bedroom door; both are dark now.
 
-## 4-7
+## 4. Screens on at the start
 
-See the sections below and `src/story-events.js`, `src/falling-glass.js`, `src/thought.js`, `docs/DRINK_ASSETS.md`.
+`devices.js`: the laptop starts awake (screen and keyboard lit) and the office computer on, until the player shuts them.
+Their glow lights are shadowed spots out of each screen. `tools/check-switches.mjs` holds the new start state, and the
+developer menu's "Back to switches" restores it.
+
+## 5. The drinking arm
+
+A downloaded first-person right arm (Microsoft Rocketbox "Male_Adult_13", MIT: knit sleeve, real hand, 15 finger joints)
+replaces 0.11's stretched hand. It is posed by two-bone IK from an off-screen shoulder, its hand locked to the glass by a
+grip fitted on this rig, its fingers blending relaxed -> open -> gripping. The eyes go to the glass, the body leans in as
+far as the arm needs, the hand opens beside the glass, closes, lifts it clear of the shelf, drinks three sips with the
+head tipping back and the glass tipping further as it empties, and puts it back. Only the exhale plays. Details and the
+checks: [DRINK_ASSETS.md](DRINK_ASSETS.md).
+
+## 6. Jug and glass
+
+"Glass Water Jug (High Poly)" by ShotaB and RagingCow's highball glass (both CC BY 4.0) replace the scaled-up decor jar
+and the apartment's table glass. Water is fitted to each one's measured inner wall. [FRIDGE_ASSETS.md](FRIDGE_ASSETS.md).
+
+## 7. Scripted events
+
+- `src/story-events.js` `STORY_EVENTS` lists the scripted events **in story order**: `id`, `label`, `when` (a sentence),
+  `trigger: { signal, delay }`, `run(ctx)`. To add one, add an entry where it belongs in the story; to reorder, move it.
+  `Director` (same file) starts an event's delay when a system calls `events.signal(name)`, counts it in play time only
+  (paused or hidden-tab time does not count; a long frame counts at most 0.1 s), and runs each story event once.
+  `events.run(id)` plays one now without using up its story run (developer menu, console: `__app.events.run('falling-glass')`).
+- **Falling glass** (first event): `fridge.onShutAfterDrink` fires when the refrigerator door settles shut after the
+  glass has been drunk; 3 s of play later `FallingGlass.play()` (falling-glass.js) plays a downloaded glass-break
+  recording at `GLASS_SPOT`, on the floor by the bed's left side table: HRTF-placed, low-passed and wetter with distance
+  when the player is outside the bedroom (as heard through walls and the doorway). 1.1 s later the thought
+  "What was that?" appears in the waking line's subtitle style (`Thought`, thought.js) for 2.6 s.
+- **Developer menu > Events** (devmenu.js): a numbered list in story order, each button plays its event now; the
+  sentence under it says when it happens in the game. Type "developer" to switch developer mode on.
+
+## Verification
+
+- 107 Node regressions pass (`node --test tools/check-*.mjs`), including new ones for VSync pacing on 60-240 Hz
+  displays with jitter, the Auto/VSync defaults and the 0.11 settings migration, presets that never touch lit shaders or
+  the shadow atlas, the story-event director and thought timing, the jug and glass placement and water, and the arm
+  (IK, grip, sleeve end out of view, joint limits, framing).
+- Browser checks (SwiftShader WebGL 2 and WebGPU, headless): the before/after hitch counts above, light-leak renders,
+  start-up renders and drinking renders in `docs/build-012/`.
+- Not measured: real-GPU frame times. Software rendering runs at about one frame per second, so the freeze work is
+  verified by counting what made frames slow (shadow passes, shader builds, draw calls), not by timing them.

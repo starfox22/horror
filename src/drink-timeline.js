@@ -57,7 +57,9 @@ export function sampleDrink(time, { shelf = [0, -0.45, -0.9], reducedMotion = fa
   return { time: t, glass, tilt, carried, approach, grasp, open, grip, consumed,
     fill: GLASS_FULL - consumed * (GLASS_FULL - GLASS_EMPTY), handVisible,
     look: reducedMotion ? 0 : window01(t, 0, 0.7) * (1 - window01(t, 1.7, 2.5)) + window01(t, 6.2, 6.8) * (1 - window01(t, 7.6, 8.3)),
-    lean: reducedMotion ? 0 : window01(t, 0.15, 0.95) * (1 - window01(t, 1.5, 2.4)) + window01(t, 6.3, 7.0) * (1 - window01(t, 7.5, 8.3)),
+    // The body straightens only once the glass is near the chest, and leans back in before it leaves (the arm alone
+    // cannot reach the shelf from where the drink starts).
+    lean: reducedMotion ? 0 : window01(t, 0.15, 0.95) * (1 - window01(t, 2.2, 2.9)) + window01(t, 6.05, 6.65) * (1 - window01(t, 7.5, 8.3)),
     sip: reducedMotion ? 0 : window01(t, 3.0, 3.5) * (1 - window01(t, 5.4, 5.9)),
     complete: t >= DRINK_DURATION };
 }
