@@ -34,7 +34,7 @@ export class Doors {
       e.reparent(pivot);
       e.setPosition(wp); e.setRotation(wr);
     }
-    const door = { ...def, pivot, angle: 0, vel: 0, target: 0, openRequested: false, moving: false, handle: new Vec3() };
+    const door = { ...def, pivot, angle: 0, vel: 0, target: 0, openRequested: false, moving: false, handle: new Vec3(), locked: false };
     door.segment = () => {
       const a = door.angle * Math.PI / 180;
       // Closed, the leaf runs from the hinge along +z; a turn of `angle` about Y moves the free end to (sin a, cos a) * width.
@@ -42,8 +42,9 @@ export class Doors {
     };
     this.grid.addBlocker(door.segment);
     this.placeHandle(door);
+    // A locked door (story: he is in the bathroom) rattles instead (onLocked: story.js).
     interactions.add({ pos: door.handle, size: 0.42, label: () => `${door.openRequested ? 'Close' : 'Open'} ${def.label}`,
-      use: () => this.toggle(door) });
+      use: () => (door.locked ? this.onLocked?.(door) : this.toggle(door)) });
     return door;
   }
 

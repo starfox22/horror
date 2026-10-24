@@ -842,5 +842,35 @@
   "licenseConfirmedVia": "CDDA-Soundpacks credits.md in the sound folder (per-file licence + Freesound link)",
   "mono": true,
   "peak": -2
+ },
+ "glass_break": {
+  "title": "Glass Break",
+  "author": "unfa",
+  "license": "CC0 (listed CC BY 3.0 in 2015-2018; credited either way)",
+  "original": "https://freesound.org/people/unfa/sounds/221528/",
+  "mirror": "",
+  "local": "public/assets/audio/glass-break.wav",
+  "licenseConfirmedVia": "docs/CREDITS.md (build 0.12)",
+  "mono": true,
+  "peak": -1
+ },
+ "glass_crunch": {
+  "title": "Glass Break",
+  "author": "unfa",
+  "license": "CC0 (listed CC BY 3.0 in 2015-2018; credited either way)",
+  "original": "https://freesound.org/people/unfa/sounds/221528/",
+  "mirror": "",
+  "local": "public/assets/audio/glass-break.wav",
+  "licenseConfirmedVia": "docs/CREDITS.md (build 0.12)",
+  "mono": true,
+  "peak": -1,
+  "trim": [
+   0.06,
+   0.28
+  ],
+  "fade": [
+   0.005,
+   0.12
+  ]
  }
 }

@@ -32,10 +32,10 @@ export class Devices {
     this.lamps = [
       ...['left', 'right'].map(side => this.bedsideLamp(side, interactions)),
       // Arc lamp: its bulb hides in the dome shade over the sofa (no glow mesh in the model, so a small bulb is added).
-      this.ownLamp(interactions, { name: 'arc lamp', group: 'Living room', label: 'the arc lamp',
+      this.ownLamp(interactions, { name: 'arc lamp', group: 'Living room', label: 'the arc lamp', circuit: 'living',
         bulb: ARC_LAMP.position, bulbDiameter: ARC_LAMP.bulbDiameter, at: [-4.88, 1.39, 2.70], size: 0.3 }),
-      this.ownLamp(interactions, { name: 'desk lamp', group: 'Office', label: 'the desk lamp', glow: 'Light.office', at: [4.105, 1.36, -0.93], size: 0.16, on: false }),
-      this.ownLamp(interactions, { name: 'closet light', group: 'Bedroom', label: 'the closet light', at: [9.62, 1.08, 1.75], size: 0.14, on: false }),
+      this.ownLamp(interactions, { name: 'desk lamp', group: 'Office', label: 'the desk lamp', glow: 'Light.office', at: [4.105, 1.36, -0.93], size: 0.16, on: false, circuit: 'living' }),
+      this.ownLamp(interactions, { name: 'closet light', group: 'Bedroom', label: 'the closet light', at: [9.62, 1.08, 1.75], size: 0.14, on: false, circuit: 'lights2' }),
     ].filter(Boolean);
     this.laptop = this.makeLaptop(interactions);
     this.computer = this.makeComputer(interactions);
@@ -94,7 +94,7 @@ export class Devices {
     spill.light.shadowUpdateMode = SHADOWUPDATE_THISFRAME;
     spill.setPosition(bulb.x - 0.08, bulb.y + 0.03, bulb.z);
     this.app.root.addChild(spot); this.app.root.addChild(spill);
-    const lamp = { side, name: `Reading lamp (${side})`, group: 'Bedroom', on: true, level: 1, mat, glow: mat.emissiveIntensity, lights: [spot, spill], base: [1.25, 0.15] };
+    const lamp = { side, name: `Reading lamp (${side})`, group: 'Bedroom', on: true, level: 1, mat, glow: mat.emissiveIntensity, lights: [spot, spill], base: [1.25, 0.15], circuit: 'bed' };
     interactions.add({ pos: bulb, size: 0.14, label: () => `Turn the ${side} reading lamp ${lamp.on ? 'off' : 'on'}`,
       use: () => this.toggleLamp(lamp) });
     return lamp;
@@ -102,7 +102,7 @@ export class Devices {
 
   // A lamp already placed by lighting.js (`name`), switched here: its glowing bulb is the model's own mesh (`glow`
   // material) or a small sphere at `bulb`; E at `at`.
-  ownLamp(interactions, { name, group, label, glow, bulb, bulbDiameter = 0.05, at, size, on = true }) {
+  ownLamp(interactions, { name, group, label, glow, bulb, bulbDiameter = 0.05, at, size, on = true, circuit = 'living' }) {
     const light = this.app.root.findByName(name);
     if (!light) return null;
     let mat = glow ? this.materials.get(glow) : null;
@@ -115,7 +115,7 @@ export class Devices {
       this.app.root.addChild(b);
     }
     const lamp = { name: name.charAt(0).toUpperCase() + name.slice(1), group, on, level: on ? 1 : 0, mat, glow: mat?.emissiveIntensity ?? 0,
-      lights: [light], base: [light.light.intensity] };
+      lights: [light], base: [light.light.intensity], circuit };
     this.applyLamp(lamp, lamp.level);
     interactions.add({ pos: new Vec3(...at), size, label: () => `Turn ${label} ${lamp.on ? 'off' : 'on'}`, use: () => this.toggleLamp(lamp) });
     return lamp;
@@ -132,9 +132,26 @@ export class Devices {
 
   applyLamp(lamp, level) {
     lamp.level = level;
-    const k = level * level;
+    const k = level * level * (this.power ? this.power.k(lamp.circuit, lamp.lights[0].getPosition()) : 1);
     lamp.lights.forEach((l, i) => { l.light.intensity = lamp.base[i] * k; l.light.enabled = k > 0.001; });
     if (lamp.mat) { lamp.mat.emissiveIntensity = lamp.glow * k; lamp.mat.update(); }
+  }
+
+  // The power changed (power.js): every lamp and screen takes its circuit's level again. A computer left on when the
+  // power went comes back on its own, with its start-up chime, as a desktop set to restart after a power failure does.
+  powerChanged(event) {
+    for (const l of this.lamps) this.applyLamp(l, l.level);
+    const pc = this.computer;
+    if (pc) {
+      pc.set(pc.level);
+      const live = this.power?.live('living');
+      if (!live && pc.on) pc.down = true;
+      if (live && pc.down && event?.settled && !pc.busy) {
+        pc.down = false; pc.on = false; pc.level = 0; pc.set(0);
+        setTimeout(() => { if (this.power?.live('living')) this.toggleComputer(pc); }, 2500);
+      }
+    }
+    this.coffee?.glow(this.coffee.level);
   }
 
   // --- MacBook ----------------------------------------------------------------------------------------------------
@@ -205,8 +222,9 @@ export class Devices {
     pc.glows = screens.map(mat => ({ mat, base: 0.5 }));
     pc.set = (k) => {
       pc.level = k;
-      for (const { mat, base } of pc.glows) { mat.emissiveIntensity = base * k; mat.update(); }
-      if (glow) { glow.light.intensity = pc.glowBase * k; glow.light.enabled = k > 0.01; }
+      const p = this.power ? this.power.k('living', glow?.getPosition()) : 1, v = k * p;
+      for (const { mat, base } of pc.glows) { mat.emissiveIntensity = base * v; mat.update(); }
+      if (glow) { glow.light.intensity = pc.glowBase * v; glow.light.enabled = v > 0.01; }
     };
     pc.set(1);    // left on: the screens light the office until the player shuts the computer down
     interactions.add({ pos: new Vec3(5.24, 1.10, -1.10), size: 0.22, label: () => `${pc.on ? 'Shut down' : 'Turn on'} the computer`,
@@ -247,7 +265,8 @@ export class Devices {
       for (const { mat, base } of coffee.glows) {
         if (mat.emissiveIntensity !== base * k) { mat.emissiveIntensity = base * k; mat.update(); }
       }
-      led.light.intensity = 0.05 * k; led.light.enabled = k > 0.01;
+      const p = this.power ? this.power.k('kitchen', led.getPosition()) : 1;
+      led.light.intensity = 0.05 * k * p; led.light.enabled = k * p > 0.01;
     };
     interactions.add({ pos: new Vec3(COFFEE_POSITION.x, COFFEE_POSITION.y, COFFEE_POSITION.z), size: 0.2,
       label: () => coffee.busy ? `${coffee.phase}…` : coffee.cycle.state ? 'Coffee ready · brew fresh cups' : 'Make a coffee',

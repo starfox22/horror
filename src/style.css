@@ -117,3 +117,108 @@ h1 { margin: 0; font: 300 2.6rem/1.1 Georgia, "Times New Roman", serif; letter-s
 #dev ol { margin: 0; padding-left: 1.4em; }
 #dev ol li { margin: 0 0 8px; }
 #dev ol li small { display: block; margin-top: 3px; color: #6d6a62; font-size: .7rem; line-height: 1.35; }
+
+/* ---- Build 0.13: menus (menu.js) ------------------------------------------------------------------------------- */
+@font-face { font-family: 'Caveat'; src: url('/assets/fonts/caveat.ttf') format('truetype'); font-weight: 400 700; font-display: swap; }
+@font-face { font-family: 'Special Elite'; src: url('/assets/fonts/specialelite.ttf') format('truetype'); font-display: swap; }
+#menu { position: fixed; inset: 0; z-index: 20; display: grid; grid-template-columns: minmax(18rem, 34rem) 1fr; grid-template-rows: 1fr auto;
+  color: #ddd8cc; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+#menu[hidden] { display: none; }
+#menu .menu-veil { position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(120% 90% at 70% 40%, rgba(0,0,0,0.15), rgba(0,0,0,0.72) 60%, rgba(0,0,0,0.94)),
+    linear-gradient(90deg, rgba(2,2,3,0.9) 0%, rgba(2,2,3,0.55) 38%, rgba(2,2,3,0) 70%); }
+#menu.paused .menu-veil { background: rgba(2,2,3,0.72); backdrop-filter: blur(3px); }
+#menu .menu-title { grid-column: 1; grid-row: 1; align-self: start; padding: 9vh 0 0 6vw; }
+#menu .menu-title h1 { margin: 0; font: 500 clamp(2.6rem, 5vw, 4.4rem)/1 'Cormorant Garamond', Georgia, serif; letter-spacing: .14em;
+  text-transform: uppercase; color: #ece6d8; text-shadow: 0 0 40px rgba(0,0,0,.9); }
+#menu .menu-time { margin: .9rem 0 0; font: 300 1rem/1 'Helvetica Neue', Arial, sans-serif; letter-spacing: .5em; color: #b33a32; opacity: .85;
+  animation: menuClock 2s steps(1) infinite; }
+@keyframes menuClock { 50% { opacity: .35; } }
+#menu .menu-panel { grid-column: 1; grid-row: 1; align-self: end; display: grid; gap: .25rem; padding: 0 0 7vh 6vw; max-height: 72vh; overflow-y: auto;
+  scrollbar-width: thin; }
+#menu[data-screen="ending"] .menu-panel, #menu[data-screen="records"] .menu-panel, #menu[data-screen="journal"] .menu-panel,
+#menu[data-screen="credits"] .menu-panel, #menu[data-screen="settings"] .menu-panel { align-self: center; max-height: 80vh; padding-top: 4vh; }
+#menu[data-screen="ending"] .menu-title, #menu[data-screen="records"] .menu-title, #menu[data-screen="journal"] .menu-title,
+#menu[data-screen="credits"] .menu-title, #menu[data-screen="settings"] .menu-title, #menu.paused .menu-title { display: none; }
+#menu .menu-item { display: grid; gap: .15rem; justify-items: start; width: min(30rem, 80vw); padding: .55rem 0 .55rem .9rem; background: none; border: 0;
+  border-left: 1px solid transparent; color: #a9a397; font: 400 .95rem/1.2 'Helvetica Neue', Arial, sans-serif; letter-spacing: .22em;
+  text-transform: uppercase; text-align: left; cursor: pointer; transition: color .25s, border-color .25s, padding .25s; }
+#menu .menu-item small { font-size: .7rem; letter-spacing: .02em; text-transform: none; color: #6f6a62; line-height: 1.4; }
+#menu .menu-item:hover, #menu .menu-item:focus-visible { color: #f3eee3; border-left-color: #b33a32; padding-left: 1.2rem; outline: none; }
+#menu .menu-item:focus-visible small, #menu .menu-item:hover small { color: #9b958a; }
+#menu .menu-item:disabled { opacity: .35; cursor: default; }
+#menu .menu-item.primary span { color: #efe9dc; }
+#menu .menu-item.current span::after { content: ' ·'; color: #b33a32; }
+#menu .menu-item.back { margin-top: .8rem; font-size: .78rem; color: #7d786f; }
+#menu .menu-heading h2 { margin: 0 0 .3rem; font: 500 1.9rem/1.1 'Cormorant Garamond', Georgia, serif; letter-spacing: .06em; color: #ece6d8; }
+#menu .menu-heading p { margin: 0 0 1rem; max-width: 30rem; color: #8e897f; font-size: .85rem; line-height: 1.55; }
+#menu .menu-row { display: grid; grid-template-columns: 12rem 1fr 4rem; align-items: center; gap: 1rem; width: min(32rem, 85vw); padding: .35rem 0 .35rem .9rem;
+  font-size: .82rem; color: #b9b3a7; }
+#menu .menu-row small { display: block; font-size: .68rem; color: #6f6a62; }
+#menu .menu-row.toggle { grid-template-columns: 1fr auto; }
+#menu .menu-row input[type=range] { width: 100%; accent-color: #b33a32; }
+#menu .menu-row input[type=checkbox] { width: 1.05rem; height: 1.05rem; accent-color: #b33a32; }
+#menu .menu-row output { text-align: right; font-variant-numeric: tabular-nums; color: #8e897f; }
+#menu .menu-marks { display: flex; gap: 2rem; padding: 1rem 0 1rem .9rem; }
+#menu .menu-marks i { display: block; width: 6rem; height: 6rem; background: rgb(calc(var(--v) * 255), calc(var(--v) * 255), calc(var(--v) * 255)); outline: 1px solid #111; }
+#menu .menu-endings, #menu .menu-evidence { list-style: none; margin: 0 0 1.2rem; padding: 0 0 0 .9rem; display: grid; gap: .45rem; width: min(34rem, 85vw); }
+#menu .menu-endings li { display: flex; justify-content: space-between; gap: 1rem; font-size: .85rem; }
+#menu .menu-endings b { font-weight: 500; letter-spacing: .08em; color: #d8d2c6; }
+#menu .menu-endings span { color: #6f6a62; font-size: .78rem; font-style: italic; }
+#menu .menu-evidence { grid-template-columns: 1fr 1fr; font-size: .78rem; color: #4d4943; }
+#menu .menu-evidence li.got { color: #b9b3a7; }
+#menu .menu-journal { display: grid; gap: 1rem; width: min(36rem, 88vw); padding-left: .9rem; }
+#menu .menu-journal h3 { margin: 0 0 .25rem; font: 500 1.15rem 'Cormorant Garamond', Georgia, serif; color: #e2dccf; letter-spacing: .04em; }
+#menu .menu-journal p { margin: 0; font: 400 1.15rem/1.35 'Caveat', cursive; color: #a7a195; }
+#menu .menu-credits { width: min(40rem, 90vw); padding-left: .9rem; font-size: .76rem; line-height: 1.6; color: #8e897f; }
+#menu .menu-credits h3 { margin: 1rem 0 .2rem; font-size: .7rem; letter-spacing: .25em; text-transform: uppercase; color: #c9c3b6; }
+#menu .menu-credits a { color: inherit; }
+#menu .menu-ending { width: min(36rem, 88vw); padding: 0 0 1rem .9rem; }
+#menu .menu-ending .kicker { margin: 0; font-size: .7rem; letter-spacing: .3em; text-transform: uppercase; color: #b33a32; }
+#menu .menu-ending h2 { margin: .4rem 0 1rem; font: 500 clamp(2.2rem, 4vw, 3.4rem)/1 'Cormorant Garamond', Georgia, serif; letter-spacing: .08em; color: #f0eadc; }
+#menu .menu-ending .epilogue { margin: 0 0 1.4rem; font: 500 1.25rem/1.45 'Cormorant Garamond', Georgia, serif; color: #cfc8ba; max-width: 34rem; }
+#menu .menu-ending dl { display: grid; grid-template-columns: max-content 1fr; gap: .3rem 1.4rem; margin: 0 0 1rem; font-size: .8rem; }
+#menu .menu-ending dt { color: #6f6a62; letter-spacing: .12em; text-transform: uppercase; font-size: .68rem; align-self: center; }
+#menu .menu-ending dd { margin: 0; color: #cfc8ba; font-variant-numeric: tabular-nums; }
+#menu .menu-foot { grid-column: 1 / -1; grid-row: 2; display: flex; justify-content: space-between; align-items: end; padding: 0 3vw 2.4vh 6vw;
+  font-size: .66rem; letter-spacing: .14em; color: #5b5750; }
+#menu .menu-loading { display: grid; gap: .4rem; justify-items: end; }
+#menu .menu-loading[hidden] { display: none; }
+#menu .menu-bar { display: block; width: 14rem; height: 1px; background: #2a2825; }
+#menu .menu-bar i { display: block; height: 100%; width: 0; background: #b33a32; transition: width .3s; }
+#menu .menu-loading em { font-style: normal; text-transform: uppercase; }
+@media (max-width: 720px) { #menu { grid-template-columns: 1fr; } #menu .menu-panel, #menu .menu-title { padding-left: 1.2rem; } }
+
+/* ---- HUD (hud.js) ------------------------------------------------------------------------------------------------ */
+.hud-prompt { position: fixed; left: 50%; bottom: 22%; transform: translateX(-50%); z-index: 8; display: flex; gap: .6rem; align-items: center;
+  font: 500 .78rem/1 'Helvetica Neue', Arial, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: rgba(232,228,218,.85);
+  text-shadow: 0 1px 3px #000; transition: opacity .9s; pointer-events: none; }
+.hud-prompt.out { opacity: 0; }
+.hud-prompt kbd { display: inline-grid; place-items: center; min-width: 1.5rem; height: 1.5rem; border: 1px solid rgba(232,228,218,.55); border-radius: 3px;
+  font: 600 .72rem/1 'Helvetica Neue', Arial, sans-serif; background: rgba(10,10,12,.45); }
+.hud-crouch { position: fixed; left: 2.2rem; bottom: 2rem; z-index: 8; width: 1.1rem; height: .55rem; border: 1px solid rgba(232,228,218,.35); border-top: 0;
+  border-radius: 0 0 .6rem .6rem; pointer-events: none; }
+.hud-voice { position: fixed; left: 50%; bottom: 6.5%; transform: translateX(-50%); z-index: 8; width: min(40rem, calc(100vw - 3rem)); text-align: center;
+  font: 400 calc(1rem * var(--subtitle, 1))/1.4 'Helvetica Neue', Arial, sans-serif; color: #e8e4da; text-shadow: 0 1px 4px #000, 0 0 14px #000;
+  transition: opacity .9s; pointer-events: none; }
+.hud-voice b { font-weight: 600; letter-spacing: .1em; text-transform: uppercase; font-size: .78em; color: #9fb4c8; margin-right: .5em; }
+.hud-voice.out { opacity: 0; }
+.hud-toast { position: fixed; right: 2rem; top: 2rem; z-index: 8; font: 400 .72rem/1 'Helvetica Neue', Arial, sans-serif; letter-spacing: .16em;
+  text-transform: uppercase; color: rgba(232,228,218,.6); transition: opacity .9s; pointer-events: none; }
+.hud-toast.out { opacity: 0; }
+.hud-doc { position: fixed; inset: 0; z-index: 15; display: grid; place-items: center; background: rgba(0,0,0,.78); cursor: pointer; }
+.hud-doc[hidden] { display: none; }
+.hud-doc .sheet { width: min(30rem, 86vw); max-height: 78vh; overflow: auto; padding: 2.2rem 2.4rem; background: #e9e3d6; color: #24211d;
+  box-shadow: 0 30px 90px rgba(0,0,0,.8); font: 400 1.5rem/1.35 'Caveat', cursive; transform: rotate(-.6deg); }
+.hud-doc .sheet h1, .hud-doc .sheet h2 { font: 400 1.1rem/1.3 'Special Elite', 'Courier New', monospace; margin: 0 0 1rem; letter-spacing: .04em; }
+.hud-doc .sheet.typed { font: 400 1rem/1.5 'Special Elite', 'Courier New', monospace; }
+.hud-doc .sheet.label { font: 400 1.35rem/1.35 'Caveat', cursive; background: #f3efe5; }
+.hud-doc .sheet.photo { width: min(22rem, 80vw); padding: 1rem 1rem 3.4rem; background: #f5f2ea; transform: rotate(1.2deg); }
+.hud-doc .sheet.photo img { display: block; width: 100%; filter: contrast(1.1) saturate(.6); }
+.hud-doc .sheet.photo.back { display: grid; place-items: center; min-height: 20rem; font: 700 2.2rem/1.2 'Caveat', cursive; color: #1c1a17; text-align: center; }
+.hud-doc .sheet.pills { font: 400 .95rem/1.5 'Helvetica Neue', Arial, sans-serif; background: #fff; }
+.hud-doc .hint { position: fixed; bottom: 2.4rem; left: 0; right: 0; text-align: center; font: 500 .72rem/1 'Helvetica Neue', Arial, sans-serif;
+  letter-spacing: .2em; text-transform: uppercase; color: rgba(232,228,218,.6); }
+.wake-dialogue.thought { font-size: calc(clamp(1.45rem, 2.6vw, 2.05rem) * var(--subtitle, 1)); }
+body.subtitle-back .wake-dialogue.thought, body.subtitle-back .hud-voice { background: rgba(0,0,0,.55); padding: .3rem .8rem; }
+#fade { position: fixed; inset: 0; z-index: 12; background: #000; opacity: 0; pointer-events: none; transition: opacity 1.2s; }

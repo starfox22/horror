@@ -113,8 +113,10 @@ export class EyeAdaptation {
     if (p.distance(this.last) > 1.5) this.value = target;
     else this.value += (target - this.value) * (1 - Math.exp(-Math.min(dt, 0.1) / (target < this.value ? ADAPT.toLight : ADAPT.toDark)));
     this.last.copy(p);
-    this.frame.grading.brightness = this.value;
+    // The player's brightness setting (menu.js calibration) scales the adapted exposure.
+    const b = this.value * (this.brightness ?? 1);
+    this.frame.grading.brightness = b;
     const compose = this.frame.renderPassCamera?.composePass;
-    if (compose) compose.gradingBrightness = this.value;
+    if (compose) compose.gradingBrightness = b;
   }
 }

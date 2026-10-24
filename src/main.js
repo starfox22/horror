@@ -32,6 +32,23 @@ import { FallingGlass } from './falling-glass.js';
 import { Thought } from './thought.js';
 import { setPacked } from './packed.js';
 import { Intruder } from './intruder.js';
+import { SoundBank } from './sound.js';
+import { Music } from './music.js';
+import { Power } from './power.js';
+import { Fusebox } from './fusebox.js';
+import { Story } from './story.js';
+import { World } from './world.js';
+import { Nest } from './nest.js';
+import { Seccam } from './seccam.js';
+import { Phone } from './phone.js';
+import { Hunt } from './hunt.js';
+import { Death } from './death.js';
+import { Endings } from './endings.js';
+import { Hud } from './hud.js';
+import { Journal } from './journal.js';
+import { Menu } from './menu.js';
+import { NavGrid } from './navgrid.js';
+import { creditsHtml } from './credits.js';
 
 const ASSETS = new URL('./assets/apartment/', location.href).href;
 const SPAWN = { x: WAKE_EXIT.x, z: WAKE_EXIT.z, yaw: WAKE_EXIT.yaw }; // clear bedside landing
@@ -55,7 +72,9 @@ const status = (text, frac) => {
   if (window.__state?.error) return;
   $('status').textContent = text;
   if (frac !== undefined) $('bar').style.width = `${Math.round(frac * 100)}%`;
+  menu?.setLoading(frac ?? lastFrac, text); if (frac !== undefined) lastFrac = frac;
 };
+let lastFrac = 0, menu = null;
 window.__state = { ready: false, error: null };
 const showError = (error) => {
   if (window.__state.error) return;  // keep the useful cause instead of a later generic 'Script error'
@@ -72,6 +91,7 @@ const showError = (error) => {
   $('retry').hidden = false;
   $('intro').classList.remove('gone');
   $('intro').style.display = '';
+  if (menu) menu.root.hidden = true;
 };
 const failLoad = (error) => { showError(error); throw error; };
 window.addEventListener('error', (event) => showError(event.error || event.message));
@@ -109,7 +129,29 @@ window.addEventListener('resize', () => app.resizeCanvas());
 app.start();
 status(`Loading the apartment… (${device.isWebGPU ? 'WebGPU' : 'WebGL 2'})`, 0.1);
 
-const [grid, container] = await Promise.all([
+// The title screen (menu.js) is up from the start, over the loading; the sounds load alongside the flat.
+menu = shot ? null : new Menu({
+  newGame: (difficulty) => startNight({ difficulty }),
+  continueGame: () => startNight({ save: story.load() }),
+  chapter: (act) => startNight({ chapter: act }),
+  resume: () => lock(),
+  restartCheckpoint: () => startNight({ save: story.load() }),
+  quitToTitle: () => toTitle(),
+  apply: (settings) => applySettings(settings),
+  openGraphics: () => graphics?.open?.(),
+  hasSave: () => story?.hasSave() ? `${['', 'I · Water', 'II · Dark', 'III · Steam', 'IV · The lodger'][story.load().act]}` : '',
+  journal: () => journal?.entries() || [],
+  everFound: () => journal?.ever || new Set(),
+  status: () => story ? `${['', 'I · Water', 'II · Dark', 'III · Steam', 'IV · The lodger'][story.act]} · ${journal?.count || 0} in the journal` : '',
+  checkpointName: () => story?.hasSave() ? ['', 'the start of the night', 'the dark', 'the light back on', 'the hunt'][story.load().act] : '',
+  credits: creditsHtml(),
+  sound: (kind) => bank?.play(kind === 'hover' ? 'latch_2' : 'breaker_1', { gain: kind === 'hover' ? 0.05 : 0.12, rate: kind === 'hover' ? 2.4 : 1.8, bus: 'ui' }),
+});
+if (menu) { $('intro').style.display = 'none'; menu.setBuild('Build 0.13'); menu.open('loading'); }
+const ambience = new Ambience();
+const bank = new SoundBank(ambience);
+const soundsLoading = bank.load('./assets/audio/').catch(error => { console.warn(`Recorded sounds unavailable: ${error.message}`); return null; });
+const [grid, container, sightData] = await Promise.all([
   fetch(`${ASSETS}collision.json`).then(r => {
     if (!r.ok) throw new Error(`Collision data: HTTP ${r.status}`);
     return r.json();
@@ -126,6 +168,7 @@ const [grid, container] = await Promise.all([
     let f = 0.1; const t = setInterval(() => { f = Math.min(0.85, f + 0.02); status($('status').textContent, f); }, 400);
     asset.once('load', () => clearInterval(t)); asset.once('error', () => clearInterval(t));
   })),
+  fetch(`${ASSETS}sight.json`).then(r => { if (!r.ok) throw new Error(`Sight data: HTTP ${r.status}`); return r.json(); }),
 ]).catch(failLoad);
 status('Lighting the rooms…', 0.9);
 
@@ -153,7 +196,6 @@ const start = shot ? { x: shot[0], z: shot[1], yaw: shot[2] } : SPAWN;
 const player = new Player(app, camera, grid, start);
 if (shot && shot.length > 3) { player.pitch = shot[3]; player.apply(0); }
 
-const ambience = new Ambience();
 const interactions = new Interactions(camera, $('prompt'), $('reticle'));
 const toast = (text) => { const t = $('toast'); t.textContent = text; t.hidden = false; t.classList.remove('fade'); clearTimeout(toast.timer); toast.timer = setTimeout(() => t.classList.add('fade'), 4000); };
 const closets = new Closets(app, apartment, interactions, ambience, grid);
@@ -204,13 +246,78 @@ const drink = await DrinkSequence.create({ app, camera, player, fridge, interact
 const playerCam = camera.camera.camera;
 const intruder = await Intruder.create({ app, sounds: null, isPlayerCamera: cam => cam === playerCam || cam.node?.name === 'security camera' }).catch(failLoad);
 app.on('update', () => intruder.update());
-// Scripted events (story-events.js), in story order; the developer menu can play any of them.
+// --- The story (docs/STORY.md): power, the fuse box, the world's states, the nest, the phone and camera, the hunt ---
 const thought = new Thought();
 const fallingGlass = await FallingGlass.create({ sounds: ambience, thought, listener: () => camera.getPosition() });
-const events = new Director({ app, ctx: { fallingGlass: () => fallingGlass.play() },
-  isPlaying: () => document.pointerLockElement === canvas && !document.hidden });
+const hud = new Hud();
+const journal = new Journal({ hud });
+const items = { set: new Set(), has(k) { return this.set.has(k); }, add(k) { this.set.add(k); }, save() { return [...this.set]; }, load(a = []) { this.set = new Set(a); } };
+const power = new Power({ app });
+switches.power = devices.power = fridge.power = closets.power = power;
+const nav = new NavGrid(grid, sightData);
+bank.nav = nav;
+const music = new Music(bank);
+const isPlaying = () => document.pointerLockElement === canvas && !document.hidden && !hud.reading && !story?.has('ended');
+const sys = { app, camera, player, interactions, thought, bank, power, switches, devices, fridge, closets, doors, flashlight,
+  intruder, hud, journal, items, music, nav };
+const story = new Story(sys);
+const events = new Director({ app, ctx: { story, fallingGlass: () => fallingGlass.play() }, isPlaying });
+sys.events = events;
+const fusebox = new Fusebox({ app, interactions, power, bank, story, hud, configureMaterial: m => probes.assign(m, 'hall') });
+const world = new World({ app, sounds: ambience, bank, doors, closets, interactions, story, hud, glassGeometry: fridge.glassGeometry,
+  configureMaterial: (m, name) => probes.assign(m, /mirror|flood/.test(name) ? 'bath' : /print|notice/.test(name) ? (/notice/.test(name) ? 'main' : 'hall') : /diary/.test(name) ? 'main' : 'bed') });
+const nest = new Nest({ app, interactions, story, hud, bank, closets });
+const seccam = new Seccam({ app, camera, intruder, closets, nest, story, bank });
+const phone = new Phone({ app, camera, interactions, bank, story, hud, seccam, clock: { now: () => nightClock() } });
+phone.power = power;
+const hunt = new Hunt({ app, intruder, nav, walk: grid, player, camera, flashlight, bank, story, music, difficulty: () => story.difficulty });
+const fadeEl = Object.assign(document.createElement('div'), { id: 'fade' }); document.body.appendChild(fadeEl);
+const death = new Death({ app, camera, player, intruder, bank, music, veil: fadeEl, clock: { flash: () => {} } });
+const endings = new Endings({ story, bank, music, hud, menu, fade: fadeEl, player, camera, clock: { label: () => nightClock().toTimeString().slice(0, 5) },
+  stills: { show: async (id) => { const url = await seccam.still('0258', 0); if (url) hud.examine({ className: 'photo', html: `<img src="${url}" alt="">` }); }, hide: () => hud.closeDoc() } });
+Object.assign(sys, { fusebox, world, nest, seccam, phone, hunt, death, endings, events });
 fridge.onShutAfterDrink = () => events.signal('fridge-shut-after-drink');
-app.on('update', dt => thought.update(dt));
+doors.onLocked = () => story.bathroomTried();
+closets.stuck = (door) => story.wardrobeStuck(door);
+closets.opened = (door) => story.wardrobeOpened(door);
+phone.noise = (x, z, kind = 'phone') => { const p = player.pos; hunt.noise(x ?? p.x, z ?? p.z, kind); };
+player.onNoise = (x, z, kind) => hunt.noise(x, z, kind);
+player.surfaceAt = (x, z) => world.surfaceAt(x, z);
+// The bathroom visit (Act III): stepping into it once the door stands open.
+story.on(flag => { if (flag === 'restored') music.swell(0.25, 6); });
+power.onChange(event => {
+  // Every light and screen takes its circuit's level (during a cut or restore, every frame).
+  switches.rooms.forEach(r => switches.apply(r));
+  devices.powerChanged(event);
+  fridge.applyLighting();
+  closets.applyLeds();
+  ambience.setFridgePower(power.live('kitchen'));
+  if (event?.settled) {
+    recapture();
+    if (story.has('power-cut') && !story.has('restored') && power.rcd && power.main && power.live('lights2')) story.powerRestored();
+  }
+});
+// The phone on the fridge's top shelf (found when the fridge is open: story.js phoneFound).
+{
+  const m = new pc.StandardMaterial(); m.diffuse = new pc.Color(0.02, 0.02, 0.022); m.gloss = 0.8; m.useMetalness = true; m.metalness = 0.5; m.update();
+  probes.assign(m, 'main');
+  const e = new pc.Entity('phone in the fridge'); e.addComponent('render', { type: 'box', material: m, castShadows: false });
+  e.setLocalScale(0.0716, 0.0078, 0.1475);
+  fridge.frame.addChild(e); e.setLocalPosition(0.06, 1.7445, -0.06); e.setLocalEulerAngles(0, 18, 0);
+  sys.fridgePhone = e;
+  interactions.add({ pos: e.getPosition().clone().add(new pc.Vec3(0, 0.03, 0)), size: 0.12, active: () => e.enabled && fridge.angle > 60,
+    label: () => 'Take the phone', use: () => { e.enabled = false; story.phoneFound(); } });
+}
+// The bed: hold E to go back to sleep (Sweet Dreams), between the glass and the cut.
+{
+  let holdTimer = null;
+  const bedItem = interactions.add({ pos: new pc.Vec3(12.7, 0.75, 0.5), size: 0.9, active: () => story.canSleep(), label: () => 'Hold E · go back to sleep',
+    use: () => { clearTimeout(holdTimer); holdTimer = setTimeout(() => { if (eDown && story.canSleep() && interactions.focus === bedItem) story.sleptAgain(); }, 1500); } });
+}
+let eDown = false;
+window.addEventListener('keydown', e => { if (e.code === 'KeyE') eDown = true; });
+window.addEventListener('keyup', e => { if (e.code === 'KeyE') eDown = false; });
+app.on('update', dt => thought.update(isPlaying() ? dt : 0));
 if (hash.has('dark')) {
   switches.rooms.forEach(r => { if (r.on) switches.toggle(r); });
   devices.lamps.forEach(l => { if (l.on) devices.toggleLamp(l); });
@@ -240,7 +347,12 @@ if (!shot || hash.has('warm')) {
   }
   // The lightning's sky light renders its shadow (fitted to the view) on every warm-up frame, so its shadow shaders for
   // everything in the flat are built too.
-  await warmUp({ app, camera, progress: f => { lit.moon.light.shadowUpdateMode = SHADOWUPDATE_THISFRAME; status('Preparing the rooms…', 0.92 + 0.08 * f); }, reveal: [
+  await warmUp({ app, camera, progress: f => {
+    lit.moon.light.shadowUpdateMode = SHADOWUPDATE_THISFRAME; status('Preparing the rooms…', 0.92 + 0.08 * f);
+    // The intruder two metres in front of each view, so every angle of him (and his light's shadow) is built.
+    const c = camera.getPosition(), fw = camera.forward;
+    intruder.place(c.x + fw.x * 2, c.z + fw.z * 2, Math.atan2(-fw.x, -fw.z) * 180 / Math.PI, Math.max(0.16, c.y - 1.5));
+  }, reveal: [
     revealInFront(drink.handCarrier),
     () => {
       if (!coffee?.effects) return null;
@@ -250,6 +362,18 @@ if (!shot || hash.has('warm')) {
       return () => fx.reset();
     },
     () => { rain.revealing = true; return () => { rain.revealing = false; }; },
+    // Build 0.13: the story's later things on view for the sweep (their shaders, and the intruder's light's shadows).
+    revealInFront(phone.holder, new pc.Vec3(0.05, -0.1, -0.35)),
+    () => {
+      const was = { shards: world.hasShards, flood: world.floodLevel, prints: world.printRoot.enabled, fog: world.fog.enabled, hatch: nest.hatchOpen };
+      world.shards(true); world.flood(1); world.prints(true); world.mirrorFog(true); nest.hatch(true); nest.dustEntity.particlesystem.play();
+      intruder.show(true); intruder.setTorch(true); intruder.play('walk_slow_01', { blend: 0 });
+      seccam.entity.camera.enabled = true;
+      return () => {
+        world.shards(was.shards); world.flood(was.flood); world.prints(was.prints); world.mirrorFog(was.fog); nest.hatch(was.hatch); nest.dustEntity.particlesystem.stop();
+        intruder.setTorch(false); intruder.show(false); seccam.entity.camera.enabled = false;
+      };
+    },
     // Every shadowed lamp that starts off, on at zero for the sweep: its shadow is drawn (and its shadow shaders built)
     // now, so switching it on later costs nothing; it keeps its cell of the fixed shadow atlas (fixShadowAtlas).
     () => {
@@ -269,13 +393,23 @@ const wake = shot ? null : new WakeSequence({ camera, player, onComplete: () => 
 player.onStep = (surface, speed) => ambience.step(surface, speed);
 const fwd = new pc.Vec3(), up = new pc.Vec3();
 app.on('update', (dt) => {
-  if (wake && !wake.completed) wake.update();
+  if (death.busy || endings.running) { /* the camera is theirs */ }
+  else if (wake && !wake.completed) wake.update();
   else if (drink.running) drink.update();
   else player.update(dt);
-  interactions.enabled = player.active && !drink.running;
+  interactions.enabled = player.active && !drink.running && !phone.raised && !hud.reading && !death.busy;
   interactions.update();
   fwd.copy(camera.forward); up.copy(camera.up);
   ambience.listen(camera.getPosition(), fwd, up);
+  bank.listen(camera.getPosition());
+  const playing = isPlaying();
+  if (playing && (!wake || wake.completed)) story.update(dt);
+  music.update(dt); endings.update(dt);
+  nest.update(dt);
+  hud.crouch(player.active && player.isCrouched);
+  music.holding(player.active && player.isCrouched && player.vel.length() < 0.1 && hunt.active && hunt.stalker.state !== 'backstage' && Math.hypot(hunt.stalker.x - player.pos.x, hunt.stalker.z - player.pos.z) < 5);
+  if (flashlight.held) story.set('torch');
+  if (!story.has('bathroom-visited') && story.has('bathroom-open') && player.pos.x < 9.1 && player.pos.x > 6.5 && player.pos.z < 2.4) story.bathroomVisited();
 });
 
 // Settings, hotkeys and Auto quality share one persisted preference model.
@@ -288,28 +422,126 @@ const devMenu = new DevMenu({ app, flashlight, switches, devices, closets, fridg
   stats: () => graphics.setShowFps(true) });
 interactions.blockKey = (key) => devMenu.typing(key);
 
+await soundsLoading.then(b => ambience.startBeds(b));
 status('Ready.', 1);
 $('loading').hidden = true;
 const enter = $('enter');
 enter.hidden = false;
 enter.textContent = wake ? 'Wake up' : 'Click to enter';
 const intro = $('intro');
-const lock = () => canvas.requestPointerLock?.()?.catch?.(() => {});
+// Chrome refuses a new pointer lock for about a second after Esc: retry once.
+const lock = () => { const r = canvas.requestPointerLock?.(); r?.catch?.(() => setTimeout(() => canvas.requestPointerLock?.()?.catch?.(() => {}), 1100)); };
 enter.addEventListener('click', () => { ambience.start(); lock(); });
-canvas.addEventListener('click', () => { if (player.active && document.pointerLockElement !== canvas) lock(); });
+canvas.addEventListener('click', () => { if (player.active && document.pointerLockElement !== canvas && !menu?.isOpen) lock(); });
+canvas.addEventListener('contextmenu', e => e.preventDefault());
 document.addEventListener('pointerlockchange', () => {
   const locked = document.pointerLockElement === canvas;
   wake?.setLocked(locked);
   drink.setLocked(locked);
-  player.active = locked && (!wake || wake.completed) && !drink.running;
+  player.active = locked && (!wake || wake.completed) && !drink.running && !death.busy && !endings.running;
   intro.classList.toggle('gone', locked);
   $('reticle').hidden = !player.active;
   enter.textContent = locked ? 'Click to enter' : 'Click to continue';
+  if (menu) {
+    if (locked) menu.close();
+    else if (nightStarted && !story.has('ended') && !menu.isOpen) menu.open('pause');
+  }
+  ambience.pause(!locked && nightStarted && !story.has('ended'));
   if (player.active) showHint();
 });
 if (shot) { intro.classList.add('gone'); intro.style.display = 'none'; player.active = false; }
+
+// --- Nights: the menu's New night / Continue / Chapters. The first night of a page starts in place; any later one
+// reloads the page (every system back to its first state) and starts from the menu's single button.
+let nightStarted = false;
+function nightClock() { const d = new Date(2026, 9, 25, 3, 7, 0); d.setSeconds(d.getSeconds() + Math.floor(story.time)); return d; }
+const ACT_START = {
+  2: { x: 10.4, z: 1.0, yaw: 95 }, 3: { x: 2.6, z: 3.75, yaw: 180 }, 4: { x: 4.6, z: 0.4, yaw: 20 },
+};
+const CHAPTER_FLAGS = {
+  2: ['phone', 'glass', 'shards-seen', 'bath-tried', 'bath-knocked', 'power-cut'],
+  3: ['phone', 'glass', 'shards-seen', 'bath-tried', 'bath-knocked', 'power-cut', 'torch', 'fusebox-opened', 'silhouette', 'prints', 'restored', 'bathroom-open'],
+  4: ['phone', 'glass', 'shards-seen', 'bath-tried', 'bath-knocked', 'power-cut', 'torch', 'fusebox-opened', 'silhouette', 'prints', 'restored', 'bathroom-open',
+    'bathroom-visited', 'tap-off', 'nest-seen', 'alerts', 'live', 'hunt'],
+};
+function chapterSave(act) {
+  const flags = CHAPTER_FLAGS[act] || [];
+  const power = { main: act !== 4, rcd: act === 3, breakers: { lights1: true, lights2: true, kitchen: true, living: true, bed: true, bathroom: act !== 3, oven: true }, faults: act > 1 ? ['bathroom'] : [] };
+  if (act === 4) power.rcd = true, power.breakers.bathroom = false;
+  if (act === 2) power.rcd = false;
+  return { v: 1, act, flags, time: [0, 0, 110, 240, 420][act], deaths: 0, seed: Date.now() >>> 0, difficulty: menu?.settings.difficulty || 'normal', power,
+    journal: [], phone: { has: true, charge: act >= 4 ? 9 : 0, booted: act >= 4, onCharger: false, warm: act >= 4 ? 240 : 0, silenced: false, notifications: [] }, items: [] };
+}
+
+// The world as a checkpoint left it, beyond what world.js rebuilds from the flags.
+function applyCheckpoint(save) {
+  const f = new Set(save.flags);
+  if (f.has('phone')) sys.fridgePhone.enabled = false;
+  if (f.has('glass')) { fridge.hasDrunk = true; fridge.setGlassWater(0.12, 0); }
+  if (f.has('torch') && !flashlight.held) flashlight.pickUp();
+  if (save.act >= 2) { rain.burst?.(save.act === 2 ? 30 : 0); }
+  if (f.has('power-cut')) power.faults.add('bathroom');
+  if (save.act === 4) power.mainBroken = true;
+  wake?.skip?.(); if (wake) { wake.started = true; wake.completed = true; wake.running = false; }
+  const at = ACT_START[save.act];
+  if (at) { player.pos.set(at.x, 0, at.z); player.yaw = at.yaw; player.pitch = 0; player.floor = grid.floorUnder(at.x, at.z, 0.22); player.eyeY = player.floor + 1.62; player.apply(0); }
+}
+
+function startNight({ difficulty, save, chapter } = {}) {
+  if (nightStarted) {
+    try { sessionStorage.setItem('horror.autostart', JSON.stringify({ difficulty, save: !!save, chapter })); } catch { /* ignore */ }
+    location.reload();
+    return;
+  }
+  nightStarted = true;
+  menu?.close();
+  ambience.start();
+  journal.reset();
+  if (save || chapter) {
+    const data = save || chapterSave(chapter);
+    if (chapter) { const keep = journal.ever; data.difficulty = menu?.settings.difficulty || 'normal'; void keep; }
+    story.restore(data);
+    applyCheckpoint(data);
+  } else {
+    story.begin({ difficulty: difficulty || menu?.settings.difficulty || 'normal' });
+  }
+  lock();
+}
+
+function toTitle() {
+  if (nightStarted) { try { sessionStorage.removeItem('horror.autostart'); } catch { /* ignore */ } location.reload(); return; }
+  menu?.open('title');
+}
+
+// Settings (menu.js) to the systems.
+function applySettings(st) {
+  const v = (k) => st[k];
+  bank?.setVolume('sfx', v('sfx')); bank?.setVolume('amb', v('ambience')); bank?.setVolume('music', v('music')); bank?.setVolume('ui', 0.7);
+  if (ambience) ambience.volume = v('master');
+  player && (player.sensitivity = v('sensitivity'), player.invertY = v('invertY'), player.bobOn = v('headBob'));
+  document.documentElement.style.setProperty('--subtitle', String(v('subtitleSize')));
+  document.body.classList.toggle('subtitle-back', !!v('subtitleBack'));
+  if (rain) rain.reducedFlashes = v('reducedFlashes');
+  if (flashlight) flashlight.reducedFlashes = v('reducedFlashes');
+  if (eyes) eyes.brightness = v('brightness');
+  if (story && !nightStarted) story.difficulty = v('difficulty');
+}
+applySettings(menu?.settings || { sfx: 1, ambience: 0.9, music: 0.8, master: 0.9, sensitivity: 1, invertY: false, headBob: true, subtitleSize: 1, subtitleBack: false, reducedFlashes: false, brightness: 1, difficulty: 'normal' });
+
+if (menu) {
+  let auto = null;
+  try { auto = JSON.parse(sessionStorage.getItem('horror.autostart') || 'null'); sessionStorage.removeItem('horror.autostart'); } catch { /* ignore */ }
+  menu.setLoading(null);
+  if (auto) {
+    menu.open('title');
+    menu.panel.innerHTML = '';
+    menu.item('Wake up', () => startNight(auto.save ? { save: story.load() } : auto.chapter ? { chapter: auto.chapter } : { difficulty: auto.difficulty }), { cls: 'primary' });
+    menu.panel.querySelector('button')?.focus();
+  } else menu.open('title');
+}
 window.__state.ready = true;
-window.__app = { app, player, frame, camera, flashlight, interactions, switches, rain, doors, devices, closets, fridge, drink, probes, devMenu, eyes, graphics, frameLimiter, sceneQuality, wake, events, thought, fallingGlass, intruder };
+window.__app = { app, player, frame, camera, flashlight, interactions, switches, rain, doors, devices, closets, fridge, drink, probes, devMenu, eyes, graphics, frameLimiter, sceneQuality, wake, events, thought, fallingGlass, intruder,
+  bank, music, power, fusebox, story, world, nest, seccam, phone, hunt, death, endings, hud, journal, menu, nav, items, startNight, chapterSave, applyCheckpoint };
 
 // The artifact build (tools/make-artifact.mjs) ships the apartment as one GLB split into base64 text parts listed in
 // apartment.json; download them with real progress and reassemble the GLB in memory. Otherwise load the glTF.

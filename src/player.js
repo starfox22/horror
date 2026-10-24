@@ -1,8 +1,11 @@
-// First-person walker: pointer-lock mouse look, WASD/arrows, Shift to walk faster, subtle head bob (B toggles).
-// Moves on the WalkGrid (no physics engine): each axis is tried separately so walls slide instead of stopping you.
+// First-person walker: pointer-lock mouse look, WASD/arrows, Shift to walk faster, C to crouch (toggle; Ctrl held),
+// subtle head bob (B toggles). Moves on the WalkGrid (no physics engine): each axis is tried separately so walls slide
+// instead of stopping you. Each footstep reports how far it carries (onNoise), for the intruder's ears (stalker.js).
 import { Vec3, math } from 'playcanvas';
 
 const EYE = 1.62;          // eye height above the floor, metres
+const CROUCH_EYE = 1.05;   // crouched
+const CROUCH = 0.7;        // m/s crouched
 const RADIUS = 0.22;       // body radius, metres
 const WALK = 1.35, FAST = 2.4;   // m/s; a slow, deliberate pace suits the mood
 const ACCEL = 9;           // how quickly speed follows input (1/s)
@@ -24,11 +27,16 @@ export class Player {
     this.active = false;
     this.keys = new Set();
     this.onStep = null;    // (surface, speed) => void, called on each footfall
+    this.onNoise = null;   // (x, z, kind) => void: 'crouch' | 'walk' | 'run' on each footfall
+    this.surfaceAt = null; // (x, z) => 'glass' | 'water' | null: what is underfoot besides the floor (story world)
+    this.crouched = false; this.crouchHeld = false; this.crouchK = 0;
+    this.sensitivity = 1; this.invertY = false;
 
     window.addEventListener('keydown', (e) => {
       if (!this.active || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName)) return;
       this.keys.add(e.code);
       if (e.code === 'KeyB' && !e.repeat) this.bobOn = !this.bobOn;
+      if (e.code === 'KeyC' && !e.repeat) this.crouched = !this.crouched;
       if (e.code?.startsWith('Arrow')) e.preventDefault?.();
     });
     window.addEventListener('keyup', (e) => this.keys.delete(e.code));
@@ -39,8 +47,8 @@ export class Player {
     });
     document.addEventListener('mousemove', (e) => {
       if (!this.active || document.pointerLockElement !== app.graphicsDevice.canvas) return;
-      this.yaw -= e.movementX * LOOK;
-      this.pitch = math.clamp(this.pitch - e.movementY * LOOK, -85, 85);
+      this.yaw -= e.movementX * LOOK * this.sensitivity;
+      this.pitch = math.clamp(this.pitch - e.movementY * LOOK * this.sensitivity * (this.invertY ? -1 : 1), -85, 85);
     });
     this.apply(0);
   }
@@ -60,7 +68,10 @@ export class Player {
       fx = -Math.sin(r) * f + Math.cos(r) * s;
       fz = -Math.cos(r) * f - Math.sin(r) * s;
       const len = Math.hypot(fx, fz);
-      if (len > 0) { const speed = this.held('ShiftLeft', 'ShiftRight') ? FAST : WALK; fx = fx / len * speed; fz = fz / len * speed; }
+      this.crouchHeld = this.held('ControlLeft', 'ControlRight');
+      this.running = len > 0 && this.held('ShiftLeft', 'ShiftRight') && !this.isCrouched;
+      if (this.running && this.crouched) this.crouched = false;
+      if (len > 0) { const speed = this.isCrouched ? CROUCH : this.running ? FAST : WALK; fx = fx / len * speed; fz = fz / len * speed; }
     }
     const k = 1 - Math.exp(-ACCEL * dt);
     this.vel.x += (fx - this.vel.x) * k;
@@ -83,7 +94,11 @@ export class Player {
     if (speed > 0.15) {
       const before = Math.floor(this.bobPhase / Math.PI);
       this.bobPhase += dt * speed * 4.6;   // ~1.75 steps per second at walking pace
-      if (Math.floor(this.bobPhase / Math.PI) !== before && this.onStep) this.onStep(this.surface(), speed);
+      if (Math.floor(this.bobPhase / Math.PI) !== before) {
+        const under = this.surfaceAt?.(this.pos.x, this.pos.z);
+        this.onStep?.(under || this.surface(), speed, this.isCrouched);
+        this.onNoise?.(this.pos.x, this.pos.z, under === 'glass' ? 'glass' : this.isCrouched ? 'crouch' : speed > 1.8 ? 'run' : 'walk');
+      }
     } else {
       this.bobPhase += (Math.round(this.bobPhase / Math.PI) * Math.PI - this.bobPhase) * k;
     }
@@ -106,8 +121,11 @@ export class Player {
   // Floor finish under the player: the living area's stone sits higher (0.23 m) than the wood floors.
   surface() { return this.floor > 0.21 ? 'stone' : 'wood'; }
 
+  get isCrouched() { return this.crouched || this.crouchHeld; }
+
   apply(dt) {
-    const target = this.floor + EYE;
+    this.crouchK += ((this.isCrouched ? 1 : 0) - this.crouchK) * (dt ? 1 - Math.exp(-10 * dt) : 1);
+    const target = this.floor + EYE + (CROUCH_EYE - EYE) * this.crouchK;
     this.eyeY += (target - this.eyeY) * (dt ? 1 - Math.exp(-12 * dt) : 1);
     const amp = this.bobOn ? Math.min(1, Math.hypot(this.vel.x, this.vel.z) / WALK) : 0;
     const bobY = Math.abs(Math.sin(this.bobPhase)) * 0.022 * amp;

@@ -47,8 +47,9 @@ function onsets({ data, channels }, count, max = 0.7) {
 
 const manifest = {};
 for (const [key, s] of Object.entries(list)) {
-  const ext = (s.mirror.match(/\.(\w+)$/) || [, 'bin'])[1].toLowerCase();
-  const src = join(SRC, `${key}.${ext}`);
+  // `local`: a recording already in the repository (e.g. the 0.12 glass break).
+  const ext = ((s.local || s.mirror).match(/\.(\w+)$/) || [, 'bin'])[1].toLowerCase();
+  const src = s.local || join(SRC, `${key}.${ext}`);
   if (!existsSync(src)) {
     const response = await fetch(s.mirror);
     if (!response.ok) throw new Error(`${key}: HTTP ${response.status} from ${s.mirror}`);

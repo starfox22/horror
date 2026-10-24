@@ -160,6 +160,13 @@ export class WakeSequence {
     return pose;
   }
 
+  // A new night (the title's New night, Chapters): back to lying in bed, eyes shut, the opening not yet played.
+  reset() {
+    this.started = false; this.completed = false; this.running = false; this.time = 0; this.lastTime = null;
+    this.apply();
+    this.refreshVisibility();
+  }
+
   skip() {
     if (!this.running) return false;
     this.finish();

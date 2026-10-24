@@ -89,7 +89,12 @@ export class Closets {
     for (const s of Object.values(SECTIONS)) {
       const [z0, z1] = s.z, [y0, y1] = s.y;
       box(X0, X1, y0, y0 + T, z0, z1);                    // floor
-      box(X0, X1, y1 - T, y1, z0, z1);                    // top
+      if (s === SECTIONS.tall) {
+        // The rail half's roof has his hatch in it (nest.js): the top in four pieces round a 0.36 m square opening.
+        const hx0 = 9.32, hx1 = 9.68, hz0 = -0.30, hz1 = 0.06;
+        box(X0, X1, y1 - T, y1, z0, hz0); box(X0, X1, y1 - T, y1, hz1, z1);
+        box(X0, hx0, y1 - T, y1, hz0, hz1); box(hx1, X1, y1 - T, y1, hz0, hz1);
+      } else box(X0, X1, y1 - T, y1, z0, z1);           // top
       box(X0, X1, y0, y1, z0, z0 + T); box(X0, X1, y0, y1, z1 - T, z1);   // sides
       box(X0, X0 + T, y0, y1, z0, z1);                    // back lining
       box(X0, X1, y0, y1, s.divider - T / 2, s.divider + T / 2);          // divider between the two doors
@@ -105,9 +110,12 @@ export class Closets {
   }
 
   toggle(door) {
+    // Held shut from inside (story.js: the right door in Act I), it gives a centimetre and stops.
+    if (!door.openRequested && this.stuck?.(door)) { door.angle = 0.012; door.pivot.setEulerAngles(0, door.sign * 100 * door.angle, 0); setTimeout(() => { door.angle = 0; door.pivot.setEulerAngles(0, 0, 0); }, 180); return; }
     door.openRequested = !door.openRequested;
+    if (door.openRequested) this.opened?.(door);
     door.target = door.openRequested ? 1 : 0;
-    this.sounds?.wardrobe(door.target === 1);
+    this.sounds?.wardrobe(door.target === 1, [FRONT, 1.3, door.handlePoint.z]);
     if (!this.moving.includes(door)) this.moving.push(door);
   }
 
@@ -127,10 +135,16 @@ export class Closets {
       refreshShadows(this.app, d.handlePoint, d.width * 0.6 + 0.3);
     }
     this.moving = this.moving.filter(d => d.angle !== d.target);
+    this.applyLeds();
+  }
+
+  // The LED in each section is on while its doors are open and the bedroom's lighting circuit is live (power.js).
+  applyLeds() {
     for (const [id, s] of Object.entries(this.sections)) {
       const open = Math.max(...this.doors.filter(d => d.section === id).map(d => d.angle));
-      s.led.light.enabled = open > 0.02;
-      s.led.light.intensity = 0.55 * Math.min(1, open * 4);
+      const p = this.power ? this.power.k('lights2', s.led.getPosition()) : 1;
+      s.led.light.enabled = open > 0.02 && p > 0.001;
+      s.led.light.intensity = 0.55 * Math.min(1, open * 4) * p;
     }
   }
 }

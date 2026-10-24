@@ -1,8 +1,9 @@
 import { COFFEE_TIMING } from './coffee-cycle.js';
 
-// Night ambience, synthesised with the Web Audio API (no audio files yet; see docs/HANDOFF.md for replacing these
-// with downloaded CC0 recordings): rain on the windows, room tone, the fridge's hum, a dripping kitchen tap, distant
-// city rumble, and footsteps on wood or stone. Positional sources use HRTF panning and a generated room reverb.
+// Night ambience and the flat's own sounds. Since build 0.13 they are recordings (sound.js, CC0 / CC BY, credits in
+// docs/CREDITS.md): rain on each window, heavy rain outside, the room's tone, the fridge's compressor (off with the
+// kitchen circuit), the kitchen tap's drip, thunder near and far, footsteps, doors, the wardrobe. The synthesised
+// versions below are the fallback if the recordings cannot load. Positional sources use HRTF panning and a room reverb.
 
 const WINDOW_SPOTS = [[-6.4, 1.5, 1.5], [-3.5, 1.6, -1.4], [-0.5, 1.6, -1.4], [4.5, 1.6, -1.4], [11.5, 1.6, -1.4]];
 const FRIDGE = [1.55, 1.1, -0.66];
@@ -21,19 +22,54 @@ export class Ambience {
     this.reverb.connect(wet).connect(this.master);
     this.noise = this.noiseBuffer(6, 'pink');
     this.brown = this.noiseBuffer(6, 'brown');
+    this.bank = null;
+    this.fridgeOn = true;
+  }
 
-    this.roomTone();
-    this.cityRumble();
-    for (const p of WINDOW_SPOTS) this.rainAt(p);
-    this.rainBed();
-    this.fridge();
-    this.drips();
+  // The beds: recorded when the sound bank loaded (sound.js), else the synthesised fallback.
+  startBeds(bank) {
+    this.bank = bank;
+    if (!bank) {
+      this.roomTone(); this.cityRumble();
+      for (const p of WINDOW_SPOTS) this.rainAt(p);
+      this.rainBed(); this.fridge(); this.drips();
+      return;
+    }
+    this.beds = {
+      outside: bank.loop('rain_outside', { gain: 0.16, fadeIn: 3 }),
+      room: bank.loop('room_tone', { gain: 0.32, fadeIn: 3 }),
+      windows: WINDOW_SPOTS.map((p, i) => bank.loop('rain_window', { at: p, gain: 0.55, ref: 1.1, rolloff: 1.3, send: 0.12, rate: 0.96 + i * 0.02 })),
+      drip: bank.loop('tap_drip', { at: TAP, gain: 0.35, ref: 0.5, rolloff: 1.6, send: 0.5 }),
+      fridge: bank.loop('fridge_hum', { at: FRIDGE, gain: 0, ref: 0.6, rolloff: 1.5, send: 0.1 }),
+    };
+    // The compressor runs ~70 s, rests ~40 s; nothing without power.
+    const cycle = (on) => {
+      this.compressor = on;
+      this.beds.fridge.setGain(on && this.fridgeOn ? 0.5 : 0, on ? 2 : 0.8);
+      setTimeout(() => cycle(!on), (on ? 70 : 40) * 1000 * (0.8 + Math.random() * 0.4));
+    };
+    cycle(true);
+  }
+
+  // The kitchen circuit (power.js): the fridge hum dies with a drop in pitch, comes back with the power.
+  setFridgePower(on) {
+    if (this.fridgeOn === on) return;
+    this.fridgeOn = on;
+    const f = this.beds?.fridge;
+    if (!f) return;
+    if (!on) { f.setRate(0.82); f.setGain(0, 1.2); }
+    else { f.setRate(1); if (this.compressor) f.setGain(0.5, 2.5); }
   }
 
   start() {
     this.ctx.resume();
-    this.master.gain.setTargetAtTime(0.9, this.ctx.currentTime, 1.5);
+    this.started = true;
+    this.master.gain.setTargetAtTime(this._volume ?? 0.9, this.ctx.currentTime, 1.5);
   }
+
+  // Master volume (settings, menu.js).
+  set volume(v) { this._volume = v; if (this.started) this.master.gain.setTargetAtTime(v, this.ctx.currentTime, 0.1); }
+  get volume() { return this._volume ?? 0.9; }
 
   pause(on) { on ? this.ctx.suspend() : this.ctx.resume(); }
 
@@ -244,7 +280,12 @@ export class Ambience {
   }
 
   // Wardrobe door: a soft wooden creak (two detuned resonant noise bands gliding), then a catch click on closing.
-  wardrobe(opening) {
+  wardrobe(opening, at = [9.75, 1.3, -0.5]) {
+    if (this.bank) {
+      this.bank.play('wardrobe_creak', { at, segment: opening ? 'random' : 'random', gain: 0.55, rate: [0.95, 1.08], send: 0.3, ref: 0.8 });
+      if (!opening) this.bank.play('latch_2', { at, gain: 0.45, delay: 0.45, ref: 0.8 });
+      return;
+    }
     const t = this.ctx.currentTime, len = opening ? 0.7 : 0.5;
     const n = this.ctx.createBufferSource(); n.buffer = this.noise;
     const out = this.gain(0);
@@ -262,15 +303,29 @@ export class Ambience {
   }
 
   // A locked front door: the lever goes down and catches, the door knocks in its frame, twice.
-  lockedDoor() {
+  lockedDoor(at = [12.88, 1.05, 4.3]) {
+    if (this.bank) { this.bank.play('door_locked', { at, gain: 0.8, ref: 0.8, send: 0.35 }); return; }
     for (const [ms, f] of [[0, 1700], [90, 700], [380, 1800], [460, 650]]) setTimeout(() => this.click(f, f < 1000 ? 0.7 : 0.4, f < 1000 ? 0.8 : 0.2), ms);
   }
 
-  switchClick(on) { this.click(on ? 2400 : 2000, 0.5, 0.25); }
+  switchClick(on) {
+    if (this.bank) { this.bank.play('breaker_1', { gain: 0.32, rate: on ? 1.7 : 1.55, send: 0.15, bus: 'sfx' }); return; }
+    this.click(on ? 2400 : 2000, 0.5, 0.25);
+  }
+  fridgeDoor(open, p) {
+    if (this.bank) { this.bank.play(open ? 'fridge_open' : 'fridge_close', { at: [p.x, p.y, p.z], gain: 0.7, ref: 0.8, send: 0.25 }); return; }
+    this.lampClick(p, open);
+  }
   lampClick(p, on) { this.click(on ? 3000 : 2600, 0.35, 0.12, p); }
 
   // Interior door: the lever goes down and the latch slides (two ticks), then a long low wooden creak as it swings.
   door(opening, p) {
+    if (this.bank) {
+      const at = [p.x, p.y, p.z];
+      if (opening) this.bank.play('latch_1', { at, gain: 0.6, ref: 0.8 });
+      this.bank.play('door_creak', { at, gain: 0.45, delay: opening ? 0.12 : 0, rate: [0.9, 1.05], send: 0.35, ref: 0.9 });
+      return;
+    }
     const [dest, done] = this.out(p, 0.4);
     if (opening) { this.burst(dest, { freq: 1900, q: 3, level: 0.35, decay: 0.03 }); this.burst(dest, { t: 0.09, freq: 1200, q: 2, level: 0.4, decay: 0.05 }); }
     const len = 1.1, t0 = this.ctx.currentTime + (opening ? 0.12 : 0);
@@ -289,6 +344,7 @@ export class Ambience {
   }
   // The leaf meets the frame: a dull wooden thud and the latch snapping in.
   doorShut(p) {
+    if (this.bank) { this.bank.play('door_slam', { at: [p.x, p.y, p.z], gain: 0.4, rate: [1.0, 1.1], send: 0.4, ref: 0.9 }); return; }
     const [dest, done] = this.out(p, 0.5);
     this.tone(dest, { freq: 120, to: 55, level: 0.6, attack: 0.004, decay: 0.16 });
     this.burst(dest, { freq: 700, q: 1, level: 0.5, decay: 0.09 });
@@ -406,6 +462,12 @@ export class Ambience {
 
   // Rolling thunder: a crack (if close) and a long low rumble that swells and fades. `distance` in km.
   thunder(distance) {
+    if (this.bank) {
+      const near = distance < 2.3, keys = near ? ['thunder_near_1', 'thunder_near_2'] : ['thunder_far_1', 'thunder_far_2', 'thunder_far_3', 'thunder_far_4'];
+      const key = keys[Math.floor(Math.random() * keys.length)];
+      this.bank.play(key, { gain: near ? 0.75 : 0.55 + Math.random() * 0.2, rate: [0.92, 1.04], send: 0.55, bus: 'amb' });
+      return;
+    }
     const t = this.ctx.currentTime, near = Math.max(0, 1 - distance / 4);
     const rumble = this.ctx.createBufferSource(); rumble.buffer = this.brown; rumble.loop = true;
     const lp = this.filter('lowpass', 120 + near * 200, 0.5);
@@ -423,7 +485,15 @@ export class Ambience {
     rumble.onended = () => { g.disconnect(); send.disconnect(); };
   }
 
-  step(surface, speed) {
+  // The player's footsteps: bare feet / socks on wood (soft) or stone; in water on a flooded floor; on glass shards.
+  step(surface, speed, at = null) {
+    if (this.bank) {
+      const loud = Math.min(1, 0.3 + speed * 0.28);
+      if (surface === 'water') this.bank.play(Math.random() < 0.5 ? 'step_water' : 'step_puddle', { gain: 0.5 * loud, rate: [0.9, 1.1], send: 0.3 });
+      else if (surface === 'glass') this.bank.play('glass_crunch', { gain: 0.5, rate: [0.9, 1.15], send: 0.3 });
+      else this.bank.play('steps_socks', { segment: 'random', gain: (surface === 'stone' ? 0.42 : 0.36) * loud, rate: surface === 'stone' ? [1.05, 1.15] : [0.92, 1.04], send: 0.22 });
+      return;
+    }
     const t = this.ctx.currentTime, loud = Math.min(1, 0.45 + speed * 0.25) * (0.85 + Math.random() * 0.3);
     const thump = this.ctx.createOscillator(); thump.frequency.setValueAtTime(95, t); thump.frequency.exponentialRampToValueAtTime(45, t + 0.08);
     const tg = this.gain(0); tg.gain.setValueAtTime(0.0001, t); tg.gain.exponentialRampToValueAtTime(0.35 * loud, t + 0.008); tg.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);

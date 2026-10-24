@@ -74,5 +74,7 @@
  "elevator": "421b1a9e8394f2d038e18f195f3247a8d1306850eba593c587ffbe2fe9cc4bf7",
  "toilet": "acd0520cdb38439bc8add3930623b57df4613e889e08efd76146f2e4648d8cb6",
  "sirens_far": "3d7ae14cd7e643b8273b881eb90540679381cfadb3bf76bc9f49a08c4572ba05",
- "radio_chatter": "2be9730defe8d4fb8aef11a9da0cfc74f4801f161086bb91d81bfc2158bf6f58"
+ "radio_chatter": "2be9730defe8d4fb8aef11a9da0cfc74f4801f161086bb91d81bfc2158bf6f58",
+ "glass_break": "5a4ade685c932bda8439f071d67db81e99043a627f812e5db1de50ecba9c1ed3",
+ "glass_crunch": "5a4ade685c932bda8439f071d67db81e99043a627f812e5db1de50ecba9c1ed3"
 }

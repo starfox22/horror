@@ -168,6 +168,9 @@ export class Flashlight {
     this.beam.light.enabled = this.bounce.light.enabled = this.on || this.power > 0;
   }
 
+  // The cheap switch's contact: the beam stutters for `seconds` (story.js: the silhouette). Reduced flashes: a dip.
+  stutter(seconds = 0.35) { if (this.on) this.flicker = this.reducedFlashes ? 0 : seconds; if (this.reducedFlashes) this.dip = seconds; }
+
   // Beam size (developer menu): the cone's outer angle in degrees; the cookie's pattern scales with it.
   setSize(deg) {
     this.size = deg;
@@ -188,7 +191,8 @@ export class Flashlight {
     // Power: snaps on with a short stutter (a cheap switch's contact), off at once.
     if (this.on) {
       this.flicker = Math.max(0, this.flicker - dt);
-      const stutter = this.flicker > 0 ? (Math.sin(this.time * 90) > 0.2 ? 0.35 : 1) : 1;
+      this.dip = Math.max(0, (this.dip || 0) - dt);
+      const stutter = this.flicker > 0 && !this.reducedFlashes ? (Math.sin(this.time * 90) > 0.2 ? 0.35 : 1) : this.dip > 0 ? 0.25 : 1;
       this.power = Math.min(1, this.power + dt / 0.05) * stutter;
     } else this.power = 0;
     const lit = this.power > 0.001 && !this.suspended;

@@ -5,6 +5,13 @@
   "license": "MIT",
   "files": {
     "LICENSE.md": "17474e386e0b9e1a700cc3d06b2b0882a2c376d9c6b49c7f8274409b8f8d2352",
+    "Assets/Avatars/Adults/Male_Adult_18/Export/Male_Adult_18.fbx": "94bc6fb7efcdf7acad06c6a6b90910e0a58446df6beae578e1ceb35585d85306",
+    "Assets/Avatars/Adults/Male_Adult_18/Textures/m023_body_color.tga": "b47dc98ae870bad036d658a1c732faf026f219eaab488317644f970184d8e7f9",
+    "Assets/Avatars/Adults/Male_Adult_18/Textures/m023_body_normal.tga": "dd2165f38a6c6a22d47f017f04a3980775e4365e703bc2dc24521deec581d834",
+    "Assets/Avatars/Adults/Male_Adult_18/Textures/m023_body_specular.tga": "4048113f04e1f2981c14bb6d4a7385ce1be192261723ae56e7bf08a49e94b2dc",
+    "Assets/Avatars/Adults/Male_Adult_18/Textures/m023_head_color.tga": "086433bf57e1e9ef8690860ecf2adeeab1c4b0e663947e9c9fd0354b8abd6ad7",
+    "Assets/Avatars/Adults/Male_Adult_18/Textures/m023_head_normal.tga": "1bdb46ac5a7ef422f9d42da68b69190a974c40ae039ad33e32491de96c355f4f",
+    "Assets/Avatars/Adults/Male_Adult_18/Textures/m023_head_specular.tga": "d2cc0ac4cfb3f431c2881b44898a36daed8139b2d80b448ce06fd74b5fd31caf",
     "Assets/Avatars/Adults/Male_Adult_20/Export/Male_Adult_20.fbx": "78c6ffd6899afe415f7e22f088ac36f153046592a6867e5a9e80a10695d996c6",
     "Assets/Avatars/Adults/Male_Adult_20/Textures/m027_body_color.tga": "54cf6fe03676bea4cd9190ee2057c826e43f49d2f82170a92d1c0413eb153500",
     "Assets/Avatars/Adults/Male_Adult_20/Textures/m027_body_normal.tga": "ba4034af7ffee065bd32e346d2a14f9d6caa35298601bf1641c33efc40f5415d",

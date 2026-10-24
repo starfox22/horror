@@ -1,6 +1,6 @@
-The intruder: "Male_Adult_20" and its animations from the Microsoft Rocketbox Avatar Library
+The intruder: "Male_Adult_18" and its animations from the Microsoft Rocketbox Avatar Library
 https://github.com/microsoft/Microsoft-Rocketbox (commit 0943055db6ec570bcef9f2c8b41c9e5467c808f9).
-Modified for this game: FBX converted to glTF; animations from the library retargeted by bone name (rotations and root translation); hoodie dyed charcoal; textures resized to 1024 px; roughness derived from the specular map.
+Modified for this game: FBX converted to glTF; animations from the library retargeted by bone name (rotations and root translation); clothes, head and hands dyed black (hood, balaclava, leather gloves); textures resized to 1024 px; roughness derived from the specular map.
 
 MIT License
 

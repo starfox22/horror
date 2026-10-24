@@ -36,7 +36,7 @@ export class Fridge {
   }
 
   constructor({ app, apartment, interactions, grid, player, sounds, recapture, configureMaterial, jugGeometry, glassGeometry }) {
-    Object.assign(this, { app, grid, player, sounds, recapture, configureMaterial });
+    Object.assign(this, { app, grid, player, sounds, recapture, configureMaterial, glassGeometry });
     this.angle = 0; this.velocity = 0; this.target = 0; this.openRequested = false; this.moving = false;
     this.frame = new Entity('refrigerator cabinet');
     this.frame.setPosition(...FRIDGE.origin); this.frame.setEulerAngles(0, FRIDGE.yaw, 0); app.root.addChild(this.frame);
@@ -213,7 +213,7 @@ export class Fridge {
   }
 
   applyLighting() {
-    const level = Math.max(0, Math.min(1, (this.angle - 0.7) / 10));
+    const level = Math.max(0, Math.min(1, (this.angle - 0.7) / 10)) * (this.power ? this.power.k('kitchen', this.handle) : 1);
     this.light.light.enabled = level > 0;
     this.light.light.intensity = this.baseIntensity * level;
     if (this.glow.emissiveIntensity !== level * 2) { this.glow.emissiveIntensity = level * 2; this.glow.update(); }
@@ -225,7 +225,7 @@ export class Fridge {
     this.override?.([this.light]);
     this.openRequested = !this.openRequested; this.target = this.openRequested ? FRIDGE.opening : 0;
     this.moving = true; this.blocked = false;
-    this.sounds?.lampClick?.(this.handle, this.openRequested);
+    this.sounds?.fridgeDoor?.(this.openRequested, this.handle);
   }
 
   update(dt) {

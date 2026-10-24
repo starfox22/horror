@@ -9,7 +9,9 @@ import { dirname, join } from 'node:path';
 export const COMMIT = '0943055db6ec570bcef9f2c8b41c9e5467c808f9';
 export const OUT = 'assets-src/intruder';
 const RAW = `https://raw.githubusercontent.com/microsoft/Microsoft-Rocketbox/${COMMIT}/`;
-const AVATAR = 'Assets/Avatars/Adults/Male_Adult_20/';
+// Avatars: the intruder's body (Male_Adult_18: a hoodie with the hood up, dressed black by build.mjs) and the
+// unmasked man from the first draft (Male_Adult_20), kept for later use. Texture prefix per avatar.
+export const AVATARS = { Male_Adult_18: 'm023', Male_Adult_20: 'm027' };
 // Animations: in-place loops ('xy': horizontal motion extracted) and standing actions ('static').
 export const ANIMATIONS = {
   xy: ['m_walk_slow_01', 'm_walk_slow_02', 'm_walk_neutral_01', 'm_run_neutral_01', 'm_walk_start', 'm_walk_stop', 'm_crouch_in', 'm_crouch_out'],
@@ -19,8 +21,8 @@ export const ANIMATIONS = {
 };
 const FILES = [
   'LICENSE.md',
-  `${AVATAR}Export/Male_Adult_20.fbx`,
-  ...['body', 'head'].flatMap(part => ['color', 'normal', 'specular'].map(map => `${AVATAR}Textures/m027_${part}_${map}.tga`)),
+  ...Object.entries(AVATARS).flatMap(([name, prefix]) => [`Assets/Avatars/Adults/${name}/Export/${name}.fbx`,
+    ...['body', 'head'].flatMap(part => ['color', 'normal', 'specular'].map(map => `Assets/Avatars/Adults/${name}/Textures/${prefix}_${part}_${map}.tga`))]),
   ...Object.entries(ANIMATIONS).flatMap(([kind, names]) => names.map(n => `Assets/Animations/all_animations_max_motextr_${kind}/${n}.max.fbx`)),
 ];
 

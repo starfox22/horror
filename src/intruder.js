@@ -55,6 +55,8 @@ export class Intruder {
     this.root.enabled = false;
     app.root.addChild(this.root);
     this.pos = new Vec3(); this.yaw = 0; this.clip = null; this.speed = 0;
+    this.torchYaw = null;            // where his light points (stalker.js sweeps it); null: where he faces
+    this.headPitch = 0;              // degrees added to the animated head (seccam.js: looking up into the lens)
     this._q = new Quat(); this._v = new Vec3();
   }
 
@@ -85,12 +87,15 @@ export class Intruder {
 
   // Keeps the torch in his hand, aimed along his heading (pitch: degrees down), every frame after the animation.
   update() {
-    if (!this.root.enabled || !this.torchOn) return;
+    if (!this.root.enabled) return;
+    // A head turned on top of the animation (looking up into the camera's lens): Biped head bones nod about local Z.
+    if (this.headPitch && this.head) this.head.rotateLocal(0, 0, this.headPitch);
+    if (!this.torchOn) return;
     const p = this.hand ? this.hand.getPosition() : this.root.getPosition();
     this.torch.setPosition(p.x, Math.max(0.9, p.y), p.z);
     // The model faces +Z at yaw 0 (heading (sin yaw, cos yaw) in x, z); a spot shines along its local -Y, which
     // rotateLocal(90) turns onto the entity's -Z, so the light's yaw is his + 180.
-    this.torch.setEulerAngles(0, this.yaw + 180, 0);
+    this.torch.setEulerAngles(0, (this.torchYaw ?? this.yaw) + 180, 0);
     this.torch.rotateLocal(this.torchPitch, 0, 0);
     this.torch.rotateLocal(90, 0, 0);
   }

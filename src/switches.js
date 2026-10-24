@@ -5,18 +5,18 @@ import switchModel from './switch-model.json' with { type: 'json' };
 import { findMountSurface, isOriginalSwitchTriangle } from './switch-surfaces.js';
 
 export const ROOMS = [
-  { id: 'living', label: 'Living room lights', lights: [], from: [0.95, 3.9], dir: [0, 1], on: false, zone: 'main' },
+  { id: 'living', label: 'Living room lights', lights: [], from: [0.95, 3.9], dir: [0, 1], on: false, zone: 'main', circuit: 'lights1' },
   { id: 'dining', label: 'Dining pendants', lights: ['dining pendant L', 'dining pendant R'], glow: 'White1.pendant',
-    from: [1.13, 3.9], dir: [0, 1], on: false, zone: 'main' },
-  { id: 'kitchen', label: 'Kitchen ceiling lights', lights: [], from: [1.31, 3.9], dir: [0, 1], on: false, zone: 'main' },
-  { id: 'office', label: 'Office lights', lights: [], from: [3.0, 2.3], dir: [0, 1], on: false, zone: 'main' },
-  { id: 'hall', label: 'Hall lights', lights: [], from: [11.8, 3.6], dir: [0, 1], on: false, zone: 'hall' },
-  { id: 'bathroom', label: 'Bathroom ceiling lights', lights: [], from: [6.73, 1.45], height: 1.22, dir: [0, 1], on: false, zone: 'bath' },
-  { id: 'bedroom', label: 'Bedroom ceiling lights', lights: [], from: [11.67, 2.1], height: 1.17, dir: [0, 1], on: false, zone: 'bed' },
+    from: [1.13, 3.9], dir: [0, 1], on: false, zone: 'main', circuit: 'lights1' },
+  { id: 'kitchen', label: 'Kitchen ceiling lights', lights: [], from: [1.31, 3.9], dir: [0, 1], on: false, zone: 'main', circuit: 'lights1' },
+  { id: 'office', label: 'Office lights', lights: [], from: [3.0, 2.3], dir: [0, 1], on: false, zone: 'main', circuit: 'lights1' },
+  { id: 'hall', label: 'Hall lights', lights: [], from: [11.8, 3.6], dir: [0, 1], on: false, zone: 'hall', circuit: 'lights2' },
+  { id: 'bathroom', label: 'Bathroom ceiling lights', lights: [], from: [6.73, 1.45], height: 1.22, dir: [0, 1], on: false, zone: 'bath', circuit: 'bathroom' },
+  { id: 'bedroom', label: 'Bedroom ceiling lights', lights: [], from: [11.67, 2.1], height: 1.17, dir: [0, 1], on: false, zone: 'bed', circuit: 'lights2' },
   { id: 'mirror', label: 'Bathroom mirror light', lights: ['bathroom mirror'], glow: 'Light.bathroom', glowScale: 0.35,
-    from: [6.91, 1.45], height: 1.22, dir: [0, 1], on: true, zone: 'bath' },
+    from: [6.91, 1.45], height: 1.22, dir: [0, 1], on: true, zone: 'bath', circuit: 'bathroom' },
   { id: 'hood', label: 'Extractor hood light', lights: ['cooker hood'], glow: 'Light.kitchen', glowScale: 0.52,
-    kind: 'fixture', at: [-0.94, 1.50, -0.93], on: true, zone: 'main' },
+    kind: 'fixture', at: [-0.94, 1.50, -0.93], on: true, zone: 'main', circuit: 'lights1' },
 ];
 const PLATE_HEIGHT = 1.15;
 export const SWITCH_BACK_EMBED = 0.0005; // rear half-millimetre sits in the wall; no visible air gap
@@ -161,11 +161,16 @@ export class Switches {
     }
   }
 
+  // A light shows when its switch is on and its circuit is live (power.js: cut and restore animate per light).
   apply(room) {
-    const k = room.level * room.level;
-    room.lights.forEach((l, i) => { l.light.intensity = room.base[i] * k; l.light.enabled = k > 0.001; });
-    if (room.glowMat) { room.glowMat.emissiveIntensity = room.glowBase * k; room.glowMat.update(); }
-    for (const glow of room.glows) { glow.mat.emissiveIntensity = glow.base * k; glow.mat.update(); }
+    const k = room.level * room.level, power = this.power;
+    room.lights.forEach((l, i) => {
+      const p = power ? power.k(room.circuit, l.getPosition()) : 1;
+      l.light.intensity = room.base[i] * k * p; l.light.enabled = k * p > 0.001;
+    });
+    const pg = power ? power.k(room.circuit, room.controlPosition) : 1;
+    if (room.glowMat) { room.glowMat.emissiveIntensity = room.glowBase * k * pg; room.glowMat.update(); }
+    for (const glow of room.glows) { glow.mat.emissiveIntensity = glow.base * k * pg; glow.mat.update(); }
     this.tilt(room);
   }
 }

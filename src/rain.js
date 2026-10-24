@@ -240,12 +240,22 @@ export class Rain {
 
   get flashing() { return this.flash.seq.length > 0; }
 
+  // Lightning every 6-10 s for `seconds` (the first minute after the power cut); 0 ends it. `dark`: no power, the
+  // flashes keep coming every 20-35 s.
+  burst(seconds) {
+    this.burstLeft = seconds;
+    this.dark = seconds > 0 || this.dark;
+    if (seconds > 0) this.flash.next = Math.min(this.flash.next, 2.5);
+    if (seconds === 0) this.dark = false;
+  }
+
   // Lightning every 25-70 s: two or three flickers of cold light from the sky, thunder a few seconds later.
   lightning(dt) {
     const f = this.flash;
     f.next -= dt;
     if (f.next <= 0) {
-      f.next = 25 + Math.random() * 45;
+      // After the power cut lightning comes often for a while (rain.burst): the flat is lit only by it.
+      f.next = this.burstLeft > 0 ? 6 + Math.random() * 4 : this.dark ? 20 + Math.random() * 15 : 25 + Math.random() * 45;
       const n = 2 + Math.floor(Math.random() * 2);
       let t = 0;
       f.seq = [];
@@ -254,10 +264,13 @@ export class Rain {
       const distance = 1.5 + Math.random() * 4;
       setTimeout(() => this.sounds?.thunder(distance), distance * 1000);
     }
+    this.burstLeft = Math.max(0, (this.burstLeft || 0) - dt);
     let power = 0;
     if (f.seq.length) {
       f.time += dt;
       for (const s of f.seq) if (f.time >= s.at && f.time < s.at + s.len) power = Math.max(power, s.power * (1 - (f.time - s.at) / s.len));
+      // Reduced flashes (settings): one soft swell instead of hard flickers.
+      if (this.reducedFlashes) power = f.time < 1.2 ? 4 * Math.sin(Math.min(1, f.time / 1.2) * Math.PI) : 0;
       if (f.time > 2) f.seq = [];
     }
     // Lightning is the only light from outside: the sky light is dark except during a flash (its shadow re-rendered at
