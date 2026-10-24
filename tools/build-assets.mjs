@@ -21,12 +21,19 @@ const FAST = process.argv.includes('--fast');
 const OUT = arg('--out', 'public/assets/apartment');
 const CHUNK = 12 * 1024 * 1024;
 // Downloaded props merged into the apartment (assets/props/, credited in docs/CREDITS.md), placed in world metres.
-// The front door replaces the model's own entrance door (a flat panel with only a thin bar for a handle).
+// The front door replaces the model's own entrance door (a flat panel with only a thin bar for a handle). The bathroom
+// door is the same downloaded door with frame, in place of the model's (its leaf was a million-triangle shell and its
+// handles were modelled into the frame): scaled to the wall's opening (z 0.363-1.287, top 2.272, wall x 9.145-9.256;
+// the casing's back sits on each wall face), hinges on the bathroom side. `moving`: that node and its children (the
+// leaf with its lever and latch) get material copies '<material>.<tag>' so the game can swing them (src/doors.js).
+// `noNormalMap`: the file's normal map is not tangent-space (every texel tilts the surface ~55 degrees), so drop it.
 const PROPS = [
   { file: 'assets/props/flashlite_flashlight.glb', name: 'Prop_flashlight', at: [0, -10, 0], scale: [1, 1, 1], yaw: 0 },
-  { file: 'assets/props/door_with_frame.glb', name: 'Prop_front_door', at: [12.88, 0.14, 4.40], scale: [0.01155, 0.0120, 0.01], yaw: 180 },
+  { file: 'assets/props/door_with_frame.glb', name: 'Prop_front_door', at: [12.88, 0.14, 4.40], scale: [0.01155, 0.0120, 0.01], yaw: 180, noNormalMap: true },
+  { file: 'assets/props/door_with_frame.glb', name: 'Prop_bath_door', at: [9.2005, 0.146, 0.825], scale: [0.0100, 0.01045, 0.00925], yaw: -90,
+    noNormalMap: true, moving: { node: 'Plane.001', tag: 'bathdoor' } },
 ];
-const REMOVE = /^EnteranceDoor_/;
+const REMOVE = /^EnteranceDoor_|^Door\.001_/;   // the model's entrance door; its bathroom door (leaf, frame, handles)
 // Bedroom wardrobe doors cut out of the carcass so the game can swing them open: front panels (x > 9.70) and their
 // chrome handles inside each box. Hinge edges are the outer edges (handles sit at the inner edges).
 const WARDROBE = [
@@ -36,30 +43,25 @@ const WARDROBE = [
   { id: 'upperright', z: [1.866, 2.357], y: [1.205, 2.28] },
 ];
 // Parts the game switches or moves on their own get their own material copy '<material>.<tag>' (see separateMaterials):
-// lamp glows per room, the iMac's screen, the coffee machine's panel, the bathroom door leaf (hung on a hinge at run time).
+// lamp glows per room, the iMac's screen, the coffee machine's panel (the bathroom door's leaf: PROPS `moving`).
 const FIXTURES = { BathroomFurnitures_Light_0: 'bathroom', Hood_Light_0: 'kitchen', OficeDecors_Light_0: 'office',
   iMac_Screen_0: 'imac', 'Coffee+Maker_Coffee_Maker_Material5_0': 'coffee', Curtatins_White1_0: 'curtain' };
-// The bathroom door leaf: the white panels and the black piece that starts at the hinge edge (handles); the other black
-// piece is the frame. Left out of the walk grid: the game blocks the doorway while the door is shut.
-const BATH_DOOR = (n, b) => /^Door\.001_White1_0$/.test(n.getName()) || (/^Door\.001_Black_0$/.test(n.getName()) && b.min[2] > 0.38);
 // Triangle-level splits: [node name pattern, (world centroid) => tag or null]. The two bedside reading lamps share one
 // glowing mesh (split at the bed's centre line, z 0.5); the MacBook's lid (everything above its base, y > 0.522) swings.
-// The bathroom door's lever handles, rose and lock are modelled into the frame's mesh (the black piece that starts at
-// z 0.30): cut them out so they swing with the leaf.
 const SPLITS = [
   [/^BedDecors_Light_0$/, (c) => (c[2] < 0.5 ? 'bedside-left' : 'bedside-right')],
   [/^MacBook_/, (c) => (c[1] > 0.522 ? 'laptoplid' : null)],
   // the dining pendants' opal globes (diameter ~0.35 m round each bulb): they glow when lit and cast no shadow
   [/^DiningTable\.001_White1_0$/, (c) => (c[1] > 1.74 && c[1] < 2.13 && Math.min(Math.hypot(c[0] + 0.44, c[2] - 1.523), Math.hypot(c[0] - 0.777, c[2] - 1.523)) < 0.2 ? 'pendant' : null)],
-  [/^Door\.001_Black_0$/, (c, b) => (b.min[2] < 0.38 && c[0] > 9.0 && c[0] < 9.32 && c[1] > 0.9 && c[1] < 1.3 && c[2] > 0.9 && c[2] < 1.215 ? 'bathdoor' : null)],
 ];
 // Rooms, for per-room reflection probes: every surface is cut exactly at these planes (inside the walls: room / hall
 // wall faces at z 2.41 / 2.72, main room / bathroom at x 6.34 / 6.45, bathroom / bedroom at x 9.15 / 9.26; x 1.55 is
 // where the open-plan room meets the corridor) and its material copied per room as '<material>@<room>'.
 const ZONE_CUTS = [[0, 1.55], [0, 6.40], [0, 9.20], [2, 2.57]];
 const zoneOf = ([x, , z]) => (z > 2.57 ? (x < 1.55 ? 'main' : 'hall') : x < 6.40 ? 'main' : x < 9.20 ? 'bath' : 'bed');
-// Left whole (the game finds them by name, or they move): tagged parts, props, lamp glows, screens.
-const UNZONED = /\.(bathdoor|wardrobe-\w+|laptoplid|bedside-\w+|imac|coffee|kitchen|office|bathroom|pendant)$|^Prop_|^Light|Screen|^Keylight/;
+// Left whole (the game finds them by name, or they move): tagged parts, props, lamp glows, screens. The bathroom door's
+// frame is cut like the walls (its bathroom half takes the bathroom's light, its bedroom half the bedroom's).
+const UNZONED = /\.(bathdoor|wardrobe-\w+|laptoplid|bedside-\w+|imac|coffee|kitchen|office|bathroom|pendant)$|^Prop_(?!bath_door\.)|^Light|Screen|^Keylight/;
 // Materials the walk grid ignores (moving parts).
 export const NO_COLLISION = /\.bathdoor$/;
 
@@ -98,7 +100,21 @@ async function mergeProps(doc) {
     const src = await io.read(p.file);
     for (const e of src.getRoot().listExtensionsUsed()) if (e.extensionName === 'EXT_meshopt_compression') e.dispose();
     // Material names get a prefix so they never collide with (or dedup into) the apartment's own.
-    for (const m of src.getRoot().listMaterials()) m.setName(`${p.name}.${m.getName() || 'material'}`);
+    for (const m of src.getRoot().listMaterials()) {
+      m.setName(`${p.name}.${m.getName() || 'material'}`);
+      if (p.noNormalMap) m.setNormalTexture(null);
+    }
+    // Props of their own (lit per room or moving): mark every mesh node with the prop's name, and the moving part's
+    // nodes with its tag too ('Prop_x/tag/<node>'); separateMaterials gives them their own materials after dedup.
+    if (p.moving) {
+      const part = src.getRoot().listNodes().find(n => n.getName() === p.moving.node);
+      const mark = (n, tag) => {
+        if (n === part) tag = p.moving.tag;
+        n.setName(`${p.name}/${tag ? `${tag}/` : ''}${n.getName()}`);
+        n.listChildren().forEach(c => mark(c, tag));
+      };
+      src.getRoot().listScenes()[0].listChildren().forEach(n => mark(n, null));
+    }
     const srcScene = src.getRoot().listScenes()[0];
     const map = mergeDocuments(doc, src);
     const holder = doc.createNode(p.name).setTranslation(p.at).setScale(p.scale)
@@ -283,9 +299,22 @@ function zoneSplit(doc) {
 // keeps them apart and the game can switch each room's glow off. Window panes get their own 'WindowGlass' material and
 // world-planar UVs (1 unit = 1 m along the wall, v = height) for the rain-on-glass effect.
 function separateMaterials(doc) {
+  const propMats = new Map();
   for (const n of doc.getRoot().listScenes()[0].listChildren()) {
     const window = n.getName() === 'Windows_Glass_0';
-    const room = FIXTURES[n.getName()] ?? (n.getMesh() && BATH_DOOR(n, getBounds(n)) ? 'bathdoor' : undefined);
+    const room = FIXTURES[n.getName()], prop = /^(Prop_\w+?)\/(?:(\w+)\/)?/.exec(n.getName());
+    if (prop && n.getMesh()) {
+      // A marked prop (mergeProps): dedup may have shared its meshes and materials with another copy of the same model,
+      // so give it its own: 'Prop_x.<material>', or 'Prop_x.<material>.<tag>' for its moving part.
+      const mesh = doc.createMesh(n.getMesh().getName());
+      for (const prim of n.getMesh().listPrimitives()) {
+        const base = prim.getMaterial().getName().replace(/^Prop_[a-z_]+\./, ''), name = `${prop[1]}.${base}${prop[2] ? `.${prop[2]}` : ''}`;
+        if (!propMats.has(name)) propMats.set(name, prim.getMaterial().clone().setName(name));
+        mesh.addPrimitive(prim.clone().setMaterial(propMats.get(name)));
+      }
+      n.setMesh(mesh);
+      continue;
+    }
     if (!n.getMesh() || (!room && !window)) continue;
     for (const prim of n.getMesh().listPrimitives()) {
       const mat = prim.getMaterial().clone().setName(window ? 'WindowGlass' : `${prim.getMaterial().getName()}.${room}`);

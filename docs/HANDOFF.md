@@ -22,11 +22,13 @@ works with AI agents; whoever picks this up continues from the state below and k
 - Build 0.5 (done, owner feedback on 0.4): dining pendants, kitchen and hall start off; the bathroom door's handle
   moves with the door; shadows and reflections must be physically believable (no shadow from a light you cannot see);
   flashlight circle a little smaller; a hidden developer menu (type "developer") for testing.
+- Build 0.6 (done, owner feedback on 0.5): lights slightly dimmer but spreading further; no pitch-black areas: light must
+  fade softly into darkness; the bathroom door's knob still looked wrong when open (replace the door if easier).
 - Show screenshots and links before big decisions; publish each prototype to a web link.
 - Keep everything documented so another AI can continue.
 
 ## Published builds
-- Builds 0.1-0.4 (2026-10-22/23): claude.ai artifact https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9 (always the
+- Builds 0.1-0.6 (2026-10-22/24): claude.ai artifact https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9 (always the
   latest build; private to the owner unless shared from its Share menu).
 - GitHub Pages: `.github/workflows/pages.yml` deploys `main` to https://starfox22.github.io/horror/ once the owner turns
   Pages on (Settings → Pages → Source: GitHub Actions). The repository is private, which needs a paid plan for Pages;
@@ -51,17 +53,53 @@ The host serves no .bin/.ktx2 files, so make-artifact packs the model into one G
 - **Collision** (`tools/collision.mjs` bakes, `src/walkgrid.js` reads): 5 cm grid over x/z. A cell is blocked when any
   surface crosses 0.25–1.9 m height; floor height = highest up-facing surface under 0.5 m (floors are 0.15–0.24 m).
   The player is a 0.22 m circle that may step up 12 cm. `tools/check-reach.mjs` must report every room reachable.
-- **Lighting** (`src/lighting.js`): night. Lamps placed at the model's own fixtures (arc lamp, two dining pendants,
-  cooker hood, bathroom mirror LED, bedside strip, desk lamp, screens), one fake "living bounce" fill, a hall night
-  light, blue moonlight (directional, shadows) through the windows, a procedural night-sky cubemap outside. After the
-  first frame a cubemap probe is captured from inside the lit room (2.8, 1.5, 1.0) and becomes the environment atlas
-  (ambient + reflections), scaled by `AMBIENT` in main.js.
+- **Lighting** (`src/lighting.js`): night. Lamps at the model's own fixtures (arc lamp, two dining pendants, cooker
+  hood, bathroom mirror LED, desk lamp, screens; bedside lamps in `devices.js`) and recessed ceiling downlights in every
+  area, all with static PCF5 shadows; no moonlight (only during a lightning flash); a procedural night-sky cubemap
+  outside. Reflections and bounce light come from probes captured inside the flat (`src/probes.js`, build 0.5/0.6
+  sections below), scaled by `AMBIENT` in main.js.
 - **Camera effects** (`src/post.js`, PlayCanvas `CameraFrame`): neutral tone mapping, TAA, SSAO, bloom, volumetric
-  haze lit by the moon and the spot lamps, grading, vignette, slight fringing. Quality 3/2/1 (keys 1-3; automatic drop
-  while walking below ~40 / ~24 fps).
+  haze lit by the spot lamps and the torch, grading (no contrast: see Gotchas), vignette, slight fringing, eye
+  adaptation (`EyeAdaptation`). Quality 3/2/1 (keys 1-3; automatic drop while walking below ~40 / ~24 fps).
 - **Sound** (`src/ambience.js`): all synthesised with Web Audio (rain per window, droplets, room tone, city rumble,
   fridge cycling, dripping tap, footsteps by floor finish), HRTF-positioned with a generated reverb. Replace with
   downloaded CC0 recordings when a source is reachable.
+
+## Build 0.6 changes (where they live)
+- **No more pitch black** (the main cause): `CameraFrame` grading applies contrast to linear light before tone mapping,
+  `mix(0.5, colour, contrast)`, so 1.12 subtracted 0.06 from everything and clipped the darkest quarter of the image to
+  black. `grading.contrast` is now 1.0. SSAO power 5 -> 3 (intensity 0.55), vignette 0.45.
+- **Bounce light that fades with distance** (`src/probes.js`): eight bounce probes (`BOUNCE`: the four room probes plus
+  living room, office, corridor west end and corridor by the bedroom door), each lambert-filtered with
+  `reprojectTexture` into a 64x32 slot of one 512x32 atlas (`this.bounce`, one sampler for all). Open-plan surfaces
+  blend three probes along x (`CHAIN.main`: living -> dining/kitchen -> office), corridor surfaces three more
+  (`CHAIN.hall`), mixed across the corridor's mouth and office opening by `envBlendWeight` as before; bathroom and
+  bedroom use their own probe. So the corridor is brighter by a lit doorway and dims away from it. Strength `AMBIENT`
+  0.6 (was 0.3; 1 = what the probes saw); probes captured 3 times at start-up (multiple bounces), once per change.
+  `Probes` is now created before the doors, wardrobe and flashlight take their parts out of the apartment (before, the
+  door leaf and wardrobe doors were missed and lit by the open-plan room's probe); the flashlight is assigned 'bed'.
+  Reflections are unchanged (per-room env atlases, box-projected). The bathroom door's leaf takes the bathroom's or the
+  bedroom's bounce by which way it faces (`bounceMix.z`).
+- **Dimmer lights that reach further** (`src/lighting.js`, `devices.js`): downlights 0.8 (was 1.35) with range 6 m
+  (was 4.2; PlayCanvas windows inverse-square falloff to zero at `range`, so a short range cut the light off hard);
+  lamps ~25 % dimmer with ~1.5x range. Measured on six default-state views against 0.5: the brightest 10 % of pixels
+  a little darker (p90 167-174 vs 173-181), pure-black pixels 0-2 % (were 23-99 %). Spot cones stay <= 72 deg: an 80 deg cone makes a 160 deg shadow frustum
+  whose edges leak light through walls (seen as bright V shapes on the corridor ceiling).
+- **Eye adaptation** (`EyeAdaptation` in `src/post.js`): `scene.exposure` follows the bounce level around the eye
+  (`Probes.levelAt`, the CPU copy of the shader's blend; levels read back from the atlas after each capture):
+  `(0.26 / level) ^ 0.35` (0.26 = the lit living room's level), clamped 0.65-1.35, faster to light (0.7 s) than to
+  dark (2.4 s), snaps after a teleport; +0.05 level while the torch is on. Levels: `readLevels` (immediate reads,
+  retried when a read comes back empty, see Gotchas).
+  The dark corridor opens up a little; with every light on the flat is not washed out. Developer menu: Testing ->
+  "Eye adaptation" toggle with the current exposure. `#ev=<n>` fixes the exposure (adaptation off).
+- **Bathroom door replaced** (`tools/build-assets.mjs` PROPS): the model's own door (leaf, frame and the handles
+  modelled into the frame: `Door.001_*`, now in `REMOVE`) is gone; a second copy of the downloaded "Door with frame"
+  (as the front door) stands in the opening (wall hole z 0.363-1.287, top 2.272, wall x 9.145-9.256), scaled so its
+  casings sit on the wall faces, hinges on the bathroom side. PROPS `moving: { node, tag }` marks the leaf subtree
+  (leaf, lever, latch) and `separateMaterials` gives it its own materials `Prop_bath_door.<mat>.bathdoor` after dedup
+  (dedup would otherwise merge them with the front door's); the frame is zone-split like the walls. `src/doors.js`:
+  hinge (9.1086, 0.390) at the hinge pins, 0.86 m to the free edge, lever at 1.245 m. The file's normal map is not
+  tangent-space (every texel tilts the surface ~55 deg): `noNormalMap` drops it for both doors.
 
 ## Build 0.5 changes (where they live)
 - **Per-room probes** (`src/probes.js`, pipeline `zoneSplit` in `tools/build-assets.mjs`): every surface is cut exactly
@@ -82,8 +120,7 @@ The host serves no .bin/.ktx2 files, so make-artifact packs the model into one G
   the black windows as dark streaks). The dining pendants are opal globes: `SPLITS` cuts them out (`White1.pendant`),
   they glow on the dining switch and cast no shadow, with an omni light at each bulb inside.
 - **Developer code and E**: while "developer" is being typed, its E does not use things (`interactions.blockKey`).
-- **Bathroom door handle**: the levers, rose and lock were modelled into the frame mesh; `SPLITS` cuts them onto the
-  leaf (`.bathdoor`), so they swing with it.
+- **Bathroom door handle**: (superseded in 0.6: the whole door is now the downloaded model.)
 - **Defaults**: dining pendants, kitchen and hall lights start off (`switches.js` ROOMS `on`).
 - **Flashlight**: `BEAM_SIZE` 38 deg (was 44); `Flashlight.setSize(deg)`.
 - **Developer menu** (`src/devmenu.js`): typing "developer" (in game or on the start screen) toggles it; it releases the
@@ -177,6 +214,15 @@ The host serves no .bin/.ktx2 files, so make-artifact packs the model into one G
   `scene.skybox`, glossy surfaces reflected the night-sky cubemap (ENVATLASHQ): another reason for per-room atlases.
 - The volumetric haze draws a spot light's cone as a flat disc when the camera is near the light: keep the
   flashlight's `volumetricScattering` low (0.35) or its circle gets a hard edge.
+- `CameraFrame` grading contrast is applied to linear HDR before tone mapping around 0.5: any contrast > 1 clips the
+  darks to pure black (1.12 clipped everything below 0.054). Keep it 1; grade contrast elsewhere if ever needed.
+- Spot shadows use a frustum of twice the outer cone: above ~72 deg the map is so stretched at its edges that light
+  leaks through walls.
+- `Texture.read` on WebGPU sometimes resolves with all zeros (non-immediate reads especially): check alpha and retry.
+- WGSL needs texture reads in uniform control flow: when the texture or slot depends on position, pick the slot with
+  arithmetic and use `textureSampleLevel`, never sample inside a branch.
+- `dedup()` merges identical materials and meshes across props (two copies of the same downloaded door share both):
+  give a prop copy its own materials after dedup (`separateMaterials`), never before.
 - The cloud session reaches GitHub (git, media.githubusercontent.com, api.github.com for this repo) and npm/PyPI only;
   Sketchfab, Poly Haven, Zenodo and Hugging Face are blocked unless the owner allows them.
 

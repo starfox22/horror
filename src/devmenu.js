@@ -4,7 +4,7 @@
 const CODE = 'developer';
 
 export class DevMenu {
-  // sys: { app, flashlight, switches, devices, closets, rain, recapture, stats }
+  // sys: { app, flashlight, switches, devices, closets, rain, recapture, eyes, stats }
   constructor(sys) {
     this.sys = sys;
     this.typed = '';
@@ -82,6 +82,7 @@ export class DevMenu {
       <section>
         <h2>Testing</h2>
         <div class="btns"><button id="dev-lightning">Lightning strike</button><button id="dev-stats">Show FPS</button></div>
+        <label class="light"><input type="checkbox" id="dev-eyes"> Eye adaptation <output id="dev-ev"></output></label>
       </section>
       <p class="hint">Type “developer” again to close.</p>`;
     const $ = (id) => el.querySelector(`#${id}`);
@@ -103,6 +104,7 @@ export class DevMenu {
     $('dev-reset').onclick = () => this.reset();
     $('dev-lightning').onclick = () => { if (this.sys.rain) this.sys.rain.flash.next = 0; };
     $('dev-stats').onclick = () => { this.sys.stats?.(); $('dev-stats').disabled = true; };
+    $('dev-eyes').addEventListener('change', (e) => { if (this.sys.eyes) this.sys.eyes.enabled = e.target.checked; });
     el.querySelector('.x').onclick = () => this.toggle(false);
     // The list: one checkbox per light, under its area's heading.
     const list = $('dev-list');
@@ -135,6 +137,9 @@ export class DevMenu {
     this.$('dev-give').hidden = fl.held;
     this.$('dev-flash').hidden = !fl.held;
     this.$('dev-size').value = fl.size;
+    const eyes = this.sys.eyes;
+    this.$('dev-eyes').checked = !!eyes?.enabled;
+    this.$('dev-ev').textContent = eyes ? `exposure ${eyes.value.toFixed(2)}` : '';
   }
 
   changed() {

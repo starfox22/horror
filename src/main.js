@@ -8,7 +8,7 @@ import { WalkGrid } from './walkgrid.js';
 import { Player } from './player.js';
 import { setupLighting, addDownlights } from './lighting.js';
 import { Probes, ZONES, baseName } from './probes.js';
-import { setupPost, setQuality } from './post.js';
+import { setupPost, setQuality, EyeAdaptation } from './post.js';
 import { Ambience } from './ambience.js';
 import { Interactions } from './interact.js';
 import { Switches } from './switches.js';
@@ -21,7 +21,7 @@ import { DevMenu } from './devmenu.js';
 
 const ASSETS = new URL('./assets/apartment/', location.href).href;
 const SPAWN = { x: 13.0, z: 3.55, yaw: 90 };          // entrance hall, looking down the corridor
-const AMBIENT = 0.3;                                  // strength of the room probes' bounce light (probes.js)
+const AMBIENT = 0.6;                                  // strength of the room probes' bounce light (probes.js)
 const hash = new URLSearchParams(location.hash.slice(1));
 const shot = hash.get('shot')?.split(',').map(Number);
 
@@ -90,6 +90,13 @@ tuneMaterials(apartment);
 const camera = new pc.Entity('camera');
 camera.addComponent('camera', { fov: 68, nearClip: 0.05, farClip: 60, clearColor: new pc.Color(0, 0, 0) });
 app.root.addChild(camera);
+// Reflection and bounce-light probes (probes.js): set up on every apartment material before the doors, wardrobe and
+// flashlight take their parts out of the apartment; captured from the lit rooms once everything is in place, and again
+// whenever a switch or lamp changes the lighting, with the flashlight beam held out of them.
+const ambientLevel = hash.has('amb') ? Number(hash.get('amb')) : AMBIENT;
+const probes = new Probes(app, camera, apartment, { ambient: ambientLevel });
+app.scene.envAtlas = ZONES.main.atlas;       // for the few materials made at run time (switch plates, bezels)
+app.scene.skyboxIntensity = ambientLevel;
 const lit = setupLighting(app);
 const downlights = addDownlights(app, grid);
 const frame = setupPost(app, camera);
@@ -109,13 +116,9 @@ if (hash.has('open')) closets.doors.forEach(d => closets.toggle(d));
 const flashlight = new Flashlight(app, camera, apartment, interactions, ambience, toast,
   { x: FLASHLIGHT_SPOT.pos.x, z: FLASHLIGHT_SPOT.pos.z, shelf: 1.84, yaw: 0 }, grid, player);
 frontDoor(apartment);
+// The flashlight is stored far below the flat in the file (so its probe guess is the open-plan room); it lies in the bedroom.
+for (const r of flashlight.root.findComponents('render')) for (const mi of r.meshInstances) probes.assign(mi.material, 'bed');
 
-// Room probes (bounce light + box-projected reflections, one per room) are captured from the lit rooms, and again
-// whenever a switch or lamp changes the lighting, with the flashlight beam held out of them.
-const ambientLevel = hash.has('amb') ? Number(hash.get('amb')) : AMBIENT;
-const probes = new Probes(app, camera, apartment, { ambient: ambientLevel });
-app.scene.envAtlas = ZONES.main.atlas;       // for the few materials made at run time (switch plates, bezels)
-app.scene.skyboxIntensity = ambientLevel;
 let capturing = null, rain = null;
 const recapture = async (passes = 1) => {
   if (capturing) { capturing.again = true; return; }
@@ -141,10 +144,11 @@ if (hash.has('allon')) switches.rooms.forEach(r => { if (!r.on) switches.toggle(
 if (hash.has('flash')) flashlight.pickUp();
 rain = new Rain(app, apartment, ambience, lit);
 
-// One frame of the lit rooms first, then capture the probes from them (twice: each then holds the others' bounce).
+// One frame of the lit rooms first, then capture the probes from them (three times: light bouncing round the rooms).
 await new Promise(r => app.once('frameend', r));
-await recapture(2);
-if (hash.has('ev')) app.scene.exposure = Number(hash.get('ev'));
+await recapture(3);
+const eyes = new EyeAdaptation(app, camera, probes, flashlight);
+if (hash.has('ev')) { eyes.enabled = false; app.on('update', () => { app.scene.exposure = Number(hash.get('ev')); }); }
 
 player.onStep = (surface, speed) => ambience.step(surface, speed);
 const fwd = new pc.Vec3(), up = new pc.Vec3();
@@ -171,7 +175,7 @@ app.on('update', (dt) => {
   else manual = true;   // fast enough: stop checking
 });
 if (hash.has('stats')) stats(app, device);
-const devMenu = new DevMenu({ app, flashlight, switches, devices, closets, rain, recapture,
+const devMenu = new DevMenu({ app, flashlight, switches, devices, closets, rain, recapture, eyes,
   stats: () => { if (!document.getElementById('stats')) stats(app, device); } });
 interactions.blockKey = (key) => devMenu.typing(key);
 
@@ -193,7 +197,7 @@ document.addEventListener('pointerlockchange', () => {
 });
 if (shot) { intro.classList.add('gone'); intro.style.display = 'none'; player.active = false; }
 window.__state.ready = true;
-window.__app = { app, player, frame, camera, flashlight, interactions, switches, rain, doors, devices, closets, probes, devMenu };
+window.__app = { app, player, frame, camera, flashlight, interactions, switches, rain, doors, devices, closets, probes, devMenu, eyes };
 
 // The artifact build (tools/make-artifact.mjs) ships the apartment as one GLB split into base64 text parts listed in
 // apartment.json; download them with real progress and reassemble the GLB in memory. Otherwise load the glTF.

@@ -18,21 +18,21 @@ const SCREEN = new Color(0.55, 0.70, 1.0);
 // No stand-in lights: bounce light comes from the room probes (probes.js).
 export const LAMPS = [
   // inside the arc lamp's dome shade (CouchSet_Black, centre -4.88, 1.50, 2.70; rim at 1.28 m)
-  ['arc lamp', 'spot', [-4.88, 1.52, 2.70], WARM, 3.2, 6.0, true, { inner: 20, outer: 68 }],
+  ['arc lamp', 'spot', [-4.88, 1.52, 2.70], WARM, 2.3, 8.0, true, { inner: 20, outer: 70 }],
   // at the bulbs inside the pendants' opal globes (y 1.76-2.11): light all round, the globes glow and cast no shadow
-  ['dining pendant L', 'omni', [-0.44, 1.94, 1.523], WARM, 0.55, 4.5, true],
-  ['dining pendant R', 'omni', [0.777, 1.94, 1.523], WARM, 0.55, 4.5, true],
-  ['cooker hood', 'spot', [-0.94, 1.53, -1.13], NEUTRAL, 1.1, 3.0, true, { inner: 30, outer: 78 }],
+  ['dining pendant L', 'omni', [-0.44, 1.94, 1.523], WARM, 0.4, 6.5, true],
+  ['dining pendant R', 'omni', [0.777, 1.94, 1.523], WARM, 0.4, 6.5, true],
+  ['cooker hood', 'spot', [-0.94, 1.53, -1.13], NEUTRAL, 0.8, 4.5, true, { inner: 30, outer: 72 }],
   // in front of the vertical LED strips beside the bathroom mirror (x 6.46-6.54, y 1.04-2.32)
-  ['bathroom mirror', 'omni', [6.62, 1.65, 1.25], NEUTRAL, 0.45, 3.0, true],
+  ['bathroom mirror', 'omni', [6.62, 1.65, 1.25], NEUTRAL, 0.34, 4.5, true],
   // The bedside reading lamps are in devices.js (each has its own switch).
   // LED inside the bedroom's open shoe closet (where the flashlight lies), on the bedroom switch.
-  ['closet light', 'omni', [9.62, 1.08, 1.75], WARM, 0.3, 1.2, false],
+  ['closet light', 'omni', [9.62, 1.08, 1.75], WARM, 0.25, 1.8, false],
   // at the desk lamp's bulb, inside its shade (the shade shadows all but its opening)
-  ['desk lamp', 'omni', [4.105, 1.375, -0.93], WARM, 0.4, 2.4, true],
+  ['desk lamp', 'omni', [4.105, 1.375, -0.93], WARM, 0.3, 3.6, true],
   // screens: a soft glow just in front of each panel
-  ['iMac glow', 'omni', [5.24, 1.10, -0.90], SCREEN, 0.35, 2.2, false],
-  ['laptop glow', 'omni', [-4.29, 0.66, 2.46], SCREEN, 0.18, 1.5, false],
+  ['iMac glow', 'omni', [5.24, 1.10, -0.90], SCREEN, 0.3, 3.2, false],
+  ['laptop glow', 'omni', [-4.29, 0.66, 2.46], SCREEN, 0.15, 2.2, false],
 ];
 
 // Recessed ceiling downlights (2700 K, dimmed), the main light of each area as in a real flat. [room, x, z]
@@ -46,7 +46,7 @@ export const DOWNLIGHTS = [
   ['bedroom', 10.8, -0.5], ['bedroom', 12.8, -0.5], ['bedroom', 10.8, 1.6], ['bedroom', 12.8, 1.6],
 ];
 const DOWN = new Color(1.0, 0.85, 0.70);
-export const DOWNLIGHT = { intensity: 1.35, glow: 2.2 };
+export const DOWNLIGHT = { intensity: 0.8, glow: 2.2, range: 6.0 };
 
 // Each downlight: a shadowed spot pointing down plus a small glowing disc in a bezel, flush with the ceiling.
 // Returns { [room]: [{ light, glow }] } for the switches.
@@ -58,7 +58,7 @@ export function addDownlights(app, grid) {
     const y = (grid.ceilingAt(x, z) ?? 2.76) - 0.004;
     const e = new Entity(`downlight ${room}`);
     e.addComponent('light', {
-      type: 'spot', color: DOWN, intensity: DOWNLIGHT.intensity, range: 4.2, innerConeAngle: 14, outerConeAngle: 74, castShadows: true,
+      type: 'spot', color: DOWN, intensity: DOWNLIGHT.intensity, range: DOWNLIGHT.range, innerConeAngle: 12, outerConeAngle: 72, castShadows: true,
       falloffMode: LIGHTFALLOFF_INVERSESQUARED, shadowResolution: 512, shadowBias: 0.25, normalOffsetBias: 0.04, volumetricScattering: 0.25,
     });
     e.setPosition(x, y - 0.01, z);

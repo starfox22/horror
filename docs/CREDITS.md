@@ -4,7 +4,8 @@
 
 - **"Modern Apartment"** by Visthétique (https://sketchfab.com/visthetique), licensed CC BY 4.0
   (http://creativecommons.org/licenses/by/4.0/). Source: https://sketchfab.com/3d-models/modern-apartment-1fbb649cd6624f2bb7b7d6e30c6533a5
-  Changes: simplified, re-compressed (Draco geometry, KTX2 textures); the bathroom door leaf, wardrobe doors, laptop lid,
+  Changes: simplified, re-compressed (Draco geometry, KTX2 textures); its bathroom door and entrance door removed
+  (replaced by the downloaded door below); the wardrobe doors, laptop lid,
   bedside lamp glows, iMac screen and coffee machine panel cut into separate parts so the game can move or switch them.
   The credit is also shown on the game's intro screen; keep it there.
 - **"Flash-Lite Flashlight"** by AndrewHunt95 (https://sketchfab.com/AndrewHunt95), licensed CC BY 4.0
@@ -15,7 +16,8 @@
 - **"Door with frame"** by witnessk (https://sketchfab.com/witnessk), licensed CC BY 4.0. Source:
   https://sketchfab.com/3d-models/door-with-frame-2f2f149f3ec44d658a02c1f924dfa449 . Downloaded from
   https://github.com/pmndrs/xr (`examples/handle/public/door.glb`); kept in `assets/props/door_with_frame.glb`.
-  Used as the apartment's front door (scaled to the opening).
+  Used as the apartment's front door and, since build 0.6, the bathroom door (each scaled to its opening; the bathroom
+  copy's leaf swings). Its normal map is left out (it is not a tangent-space map and tilted the lighting).
 - **PlayCanvas Engine** (MIT), https://github.com/playcanvas/engine
 - **Basis Universal transcoder** (Apache-2.0) and **Draco decoder** (Apache-2.0), as built by PlayCanvas
   (`public/lib/basis`, `public/lib/draco`, from playcanvas/engine `examples/assets/wasm`).

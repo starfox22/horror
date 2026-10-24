@@ -61,4 +61,5 @@ h1 { margin: 0; font: 300 2.6rem/1.1 Georgia, "Times New Roman", serif; letter-s
 #dev output { text-align: right; font-variant-numeric: tabular-nums; }
 #dev .light { display: flex; align-items: center; gap: 8px; padding: 3px 0; cursor: pointer; }
 #dev .light input { accent-color: #c9b48a; }
+#dev .light output { margin-left: auto; opacity: 0.7; }
 #dev .hint { margin: 16px 0 0; color: #6d6a62; font-size: .72rem; }

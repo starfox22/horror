@@ -1,5 +1,6 @@
-// Camera look: HDR with neutral (hue-preserving) tone mapping, TAA, ambient occlusion, bloom, light volumetric haze (moonbeams through the
-// windows, glow around lamps), a cool night grade and a soft vignette. Quality keys 1-3 trade these for speed.
+// Camera look: HDR with neutral (hue-preserving) tone mapping, TAA, ambient occlusion, bloom, light volumetric haze (glow
+// around lamps, the torch's beam), a cool night grade, a soft vignette, and eye adaptation (EyeAdaptation below).
+// Quality keys 1-3 trade these for speed.
 import { CameraFrame, TONEMAP_NEUTRAL, SSAOTYPE_LIGHTING } from 'playcanvas';
 
 export function setupPost(app, camera) {
@@ -11,10 +12,10 @@ export function setupPost(app, camera) {
   frame.taa.jitter = 1;
 
   frame.ssao.type = SSAOTYPE_LIGHTING;
-  frame.ssao.intensity = 0.65;
+  frame.ssao.intensity = 0.55;
   frame.ssao.radius = 1.2;          // world units: this scene is in metres
   frame.ssao.samples = 16;
-  frame.ssao.power = 5;
+  frame.ssao.power = 3;
   frame.ssao.blurEnabled = true;
   frame.ssao.scale = 0.75;
 
@@ -23,11 +24,13 @@ export function setupPost(app, camera) {
 
   frame.grading.enabled = true;
   frame.grading.saturation = 0.82;
-  frame.grading.contrast = 1.12;
+  // No contrast: the engine applies it to linear light before tone mapping, around 0.5, so any value > 1 clips the darkest
+  // quarter of the image to pure black (1.12 did: shadows went pitch black instead of fading out).
+  frame.grading.contrast = 1.0;
   frame.grading.brightness = 1.0;
   frame.grading.tint.set(0.94, 0.97, 1.04);
 
-  frame.vignette.intensity = 0.55;
+  frame.vignette.intensity = 0.45;
   frame.vignette.inner = 0.35;
   frame.vignette.outer = 1.25;
   frame.vignette.curvature = 0.6;
@@ -66,4 +69,28 @@ export function setQuality(frame, q) {
   frame.ssao.type = q === 1 ? 'none' : SSAOTYPE_LIGHTING;
   frame.ssao.scale = q === 3 ? 0.75 : 0.5;
   frame.update();
+}
+
+// Eye adaptation: the view brightens a little in dim places and dims where everything is lit, as eyes (and a game
+// camera's auto exposure) do. It follows how bright the bounce light around the eye is (Probes.levelAt), only part of
+// the way (level ^ -0.35), within limits; it adapts faster to light than to darkness, and at once after a teleport.
+// ref: the level of a room lit by its own lamps (exposure 1 there).
+const ADAPT = { ref: 0.26, power: 0.35, min: 0.65, max: 1.35, toLight: 0.7, toDark: 2.4 };
+export class EyeAdaptation {
+  constructor(app, camera, probes, flashlight) {
+    Object.assign(this, { app, camera, probes, flashlight, enabled: true, value: 1 });
+    this.last = camera.getPosition().clone();
+    app.on('update', (dt) => this.update(dt));
+  }
+
+  update(dt) {
+    const p = this.camera.getPosition();
+    let level = this.enabled ? this.probes.levelAt(p.x, p.z) : null;
+    if (level !== null && this.flashlight?.held && this.flashlight.on) level += 0.05;   // its beam lights what you look at
+    const target = level === null ? 1 : Math.min(ADAPT.max, Math.max(ADAPT.min, (ADAPT.ref / Math.max(level, 1e-4)) ** ADAPT.power));
+    if (p.distance(this.last) > 1.5) this.value = target;
+    else this.value += (target - this.value) * (1 - Math.exp(-Math.min(dt, 0.1) / (target < this.value ? ADAPT.toLight : ADAPT.toDark)));
+    this.last.copy(p);
+    this.app.scene.exposure = this.value;
+  }
 }

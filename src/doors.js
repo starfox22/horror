@@ -1,12 +1,15 @@
-// Hinged doors that the player opens and shuts with E: the bathroom door (its leaf is cut out of the model by
-// tools/build-assets.mjs, materials '<name>.bathdoor', and left out of the baked walk grid). The leaf is a moving wall
+// Hinged doors that the player opens and shuts with E: the bathroom door (a downloaded door with frame merged in by
+// tools/build-assets.mjs; its leaf, lever and latch have materials '<name>.bathdoor' and are left out of the baked walk
+// grid). The leaf is a moving wall
 // in the walk grid, stops when it swings into the player, and asks nearby lamps to re-render their static shadows while
 // it moves. The swing is a damped spring (a push, a slight overshoot, settling), with latch, creak and closing thud.
 import { Entity, Vec3 } from 'playcanvas';
 import { segmentDistance } from './walkgrid.js';
 import { refreshShadows } from './lighting.js';
 
-const BATHROOM = { tag: 'bathdoor', hinge: [9.15, 0.375], width: 0.85, open: -92, handleY: 1.1, label: 'the bathroom door' };
+// hinge: the hinge pins' axis (x, z); width: from the axis to the leaf's free edge; handleAt: the lever's middle, as a share
+// of the width, and its height (tools/build-assets.mjs PROPS 'Prop_bath_door').
+const BATHROOM = { tag: 'bathdoor', hinge: [9.1086, 0.390], width: 0.86, open: -92, handleAt: 0.89, handleY: 1.245, label: 'the bathroom door' };
 const BODY = 0.22 + 0.05;     // player radius + half the leaf's thickness and a little air
 
 export class Doors {
@@ -45,7 +48,7 @@ export class Doors {
   }
 
   placeHandle(door) {
-    const a = door.angle * Math.PI / 180, r = door.width * 0.86;
+    const a = door.angle * Math.PI / 180, r = door.width * door.handleAt;
     door.handle.set(door.hinge[0] + Math.sin(a) * r, door.handleY, door.hinge[1] + Math.cos(a) * r);
   }
 

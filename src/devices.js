@@ -63,7 +63,7 @@ export class Devices {
     // The swing-arm lamp hangs over the pillow: a warm spot down onto the bed, and a faint spill around the shade.
     const spot = new Entity(`bedside lamp ${side}`);
     spot.addComponent('light', {
-      type: 'spot', color: WARM, intensity: 1.7, range: 3.2, innerConeAngle: 26, outerConeAngle: 72, castShadows: true,
+      type: 'spot', color: WARM, intensity: 1.25, range: 4.5, innerConeAngle: 26, outerConeAngle: 72, castShadows: true,
       falloffMode: LIGHTFALLOFF_INVERSESQUARED, shadowResolution: 512, shadowBias: 0.25, normalOffsetBias: 0.04,
       volumetricScattering: 0.5,
     });
@@ -72,10 +72,10 @@ export class Devices {
     spot.rotateLocal(90, 0, 0);
     spot.light.shadowUpdateMode = SHADOWUPDATE_THISFRAME;
     const spill = new Entity(`bedside spill ${side}`);
-    spill.addComponent('light', { type: 'omni', color: WARM, intensity: 0.18, range: 1.6, castShadows: false, falloffMode: LIGHTFALLOFF_INVERSESQUARED });
+    spill.addComponent('light', { type: 'omni', color: WARM, intensity: 0.15, range: 2.4, castShadows: false, falloffMode: LIGHTFALLOFF_INVERSESQUARED });
     spill.setPosition(bulb.x - 0.08, bulb.y + 0.03, bulb.z);
     this.app.root.addChild(spot); this.app.root.addChild(spill);
-    const lamp = { side, on: true, level: 1, mat, glow: mat.emissiveIntensity, lights: [spot, spill], base: [1.7, 0.18] };
+    const lamp = { side, on: true, level: 1, mat, glow: mat.emissiveIntensity, lights: [spot, spill], base: [1.25, 0.15] };
     interactions.add({ pos: bulb, size: 0.14, label: () => `Turn the ${side} reading lamp ${lamp.on ? 'off' : 'on'}`,
       use: () => this.toggleLamp(lamp) });
     return lamp;
