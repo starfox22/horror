@@ -67,8 +67,10 @@ Software rendering is useful for correctness and comparison, but is not a deskto
 - WebGPU all-off maximum: `0.0001006688`; with the faint exterior sky disabled for diagnosis, every probe was exactly zero. Restoring switches changed values by at most `0.0000296114`. The browser check asserts zero forced indoor emitters, near-zero sky-isolated probes, and allows the small backend filtering difference in the exterior contribution.
 - Four matched full-quality room views completed without page errors. The revised `shoot.mjs` also completed a real Chromium screenshot using installed Playwright discovery.
 
+- Hosted HTTPS WebGPU verification passed after publication: movement, mouse capture/release, developer menu, flashlight pickup and lighting restoration. Sky-isolated all-off probes were zero; restored probe values differed by at most `0.0000387893`. No unexpected page, console or request errors occurred.
+
 ## Publishing and continuity
 
-The branch was pushed and the GitHub workflow built both games successfully, but publication stopped because Pages is disabled. The agent integration cannot enable Pages. See [PREVIEW_DEPLOYMENT.md](PREVIEW_DEPLOYMENT.md) for the workflow that preserves the original game at the site root and adds this branch at `/codex/`. Do not claim a live preview until the Actions run succeeds and `/codex/build-info.json` matches the intended commit.
+The review build is published at https://starfox22.github.io/horror/codex/ from commit `f6ae1f49d48478c08e0d88329480265a02e177fb`. GitHub deployment run `40094343463` succeeded and hosted `build-info.json` matches that preview commit and original commit `7b93acb3f34085e078ad32f0c2baae415341e486`. See [PREVIEW_DEPLOYMENT.md](PREVIEW_DEPLOYMENT.md) for the workflow that keeps the original game at the site root and this review at `/codex/`.
 
 Use the existing isolated checkout for cloud tasks. Do not create an additional worktree unless explicitly requested. Keep all Codex review passes on `codex-review`. Merge into or push to `main` only when the owner explicitly requests that operation. Read `HANDOFF.md` for model conventions, light-switch ownership, collision geometry and licence information.

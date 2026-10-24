@@ -13,6 +13,7 @@ All Codex reviews continue on `codex-review`, while Claude works on its own bran
 
 ## Play
 
+- Codex review web build: https://starfox22.github.io/horror/codex/
 - claude.ai link (latest build): https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9
 - Locally: `npm install && npm run dev`, open the printed URL. Click to enter.
 

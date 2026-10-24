@@ -43,8 +43,7 @@ This remains a quiet apartment prototype with no added scares. The default Vite 
 ## Published builds
 - Builds 0.1-0.7 (2026-10-22/24): claude.ai artifact https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9 (always the
   latest build; private to the owner unless shared from its Share menu).
-- GitHub Pages: `.github/workflows/pages.yml` deploys `main` to https://starfox22.github.io/horror/ once the owner turns
-  Pages on (Settings → Pages → Source: GitHub Actions). The repository is now public and Pages is enabled. The Codex preview still requires `codex-review` in the Pages environment’s allowed deployment branches; see the deployment guide for current status.
+- Codex review build 0.8: https://starfox22.github.io/horror/codex/ is published from `codex-review` commit `f6ae1f49d48478c08e0d88329480265a02e177fb`; deployment run `40094343463` succeeded. The original `main` build is served at https://starfox22.github.io/horror/. The owner enabled Pages and selected no deployment-branch restriction. See the deployment guide before publishing later reviews.
 
 To republish the artifact: `npm run build && node tools/make-artifact.mjs`, then the Artifact tool with
 `file_path: dist-artifact/index.html`, `root: dist-artifact`, `url` above, and `files` from the JSON list the script prints.
