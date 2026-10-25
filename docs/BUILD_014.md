@@ -58,6 +58,24 @@ STORY.md; the designer's fixes that were kept are listed under Gameplay below.
 | The crow at the window | `crow.js`, `tools/crow/`, `tools/check-crow.mjs` | Once a night, before the man has been seen and never near another scare (SCARY_TIMERS: the cut, the glass's fallbacks, the kitchen creaks, the door handle, the hunt): looking at a window from within 2.6 m for 0.5 s brings "Crow" by Alexei Ostapenko (CC BY 4.0) out of the dark at eye height. He rears up to brake (a black bird seen head-on is a line against the night: his breast and spread wings face the room), his beak hits the glass at the measured strike point: a thud on the scare path, a burst of feathers, caws, wings below, lightning 1.15 s later, a feather stuck in a smear of blood (ExileGL, CC0) that the rain washes off over 40 s. *"Jesus. ...Just a bird."* Contact and clearance measured per pitch (`tools/crow/build.mjs measure`): the beak 7-8 mm from the glass, 4.4 cm clear of the bars. Captures: `crow-approach.jpg`, `crow-impact.jpg`, `crow-smear.jpg`, `crow-sequence.jpg`, `crow-model.jpg`. |
 | Storm | `main.js`, `rain.js` | `sys.rain` was never wired, so the designed storm never came: lightning every 6-10 s for 45 s after the cut (the flat lit only by it), every 20-35 s until power-back. |
 
+## Verification
+
+- Node regressions: `node --test tools/check-*.mjs` 205/205 (new or grown this build: check-story 22, check-hunt 9,
+  check-stalker 21, check-crow 11, check-doors 7, check-taps 4, check-death 4, check-intruder 4, check-phone 3);
+  `node tools/check-reach.mjs`: every room reachable.
+- `tools/perf/final-check.mjs` on WebGL and on WebGPU (SwiftShader, headless) at the final commit: 24 steps (Act I's
+  fridge, drink, glass, lightning, switches, torch, coffee and taps; the light under the bathroom door; the cut; the
+  fuse box; the figure; his run; the nest's hanger; the phone booting on the nightstand; LIVE; the hunt; the crow; the
+  catch; the wake): no shader built, no burst of shadow faces, no page error. It caught two real hitches on the way
+  (his head and mask in the torch's shadow; the light under the door), both fixed in the warm-up.
+- Captures in `docs/build-014/` (headless, `tools/perf/scene-shots.mjs`, `tools/shoot.mjs` and the agents' stage
+  tools): the fridge notice before/after and close, the taps, the knife rack, the light under the door before/after,
+  the phone on the nightstand and waking, his run, the intruder before/after (and in the corridor), the knife raised,
+  the death (the knife up, the stab, the floor), the crow (approach, impact, smear, sequence).
+- Three independent reviews: a horror director's read of a first night, a QA correctness read (both below, every
+  finding fixed), and a final verification read of the fixed build.
+- The preview deploys on every push (`.github/workflows/pages-claude.yml`): https://starfox22.github.io/horror/claude/
+
 ## The director's review (an independent read of the night as built)
 
 A horror-director agent read STORY.md and the code and walked a first night minute by minute (with Node simulations

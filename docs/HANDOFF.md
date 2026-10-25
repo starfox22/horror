@@ -414,6 +414,10 @@ Full list, measurements and before/after renders: [BUILD_012.md](BUILD_012.md). 
 - The flashlight follows the camera with a lag (a slerp): in staged shots snap `flashlight.rot` to the camera.
 - The phone's canvas is drawn only when it is dirty and either held or lying on the nightstand (that copy shares it).
 - Story fallbacks use `story.soonest()`: a later event must never push a fallback later (the cut, the hunt).
+- Warming a shadow pass: the light must actually draw the thing. Clustered lighting leaves out a light of intensity 0
+  (warm the torch at 0.01), and a spot only draws what is inside its cone (the warm-up's torch aims at his head: aimed
+  along the camera it drew his body and knife but not his head and mask, whose shadow shaders were then built in play).
+  To see what a warm-up missed, compare `material.variants.size` before and after the moment in a page evaluate.
 - A black thing outside a lit window reads as nothing (the crow): show its broad side to the room. The window bars stand
   2.2 cm out of the glass and the wall face 3.6-4.3 cm; transparent decals on a window must sort against the room's
   single glass mesh. Headless captures that jump far ahead in time keep a trace of the previous frame (TAA): render
