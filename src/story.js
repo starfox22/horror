@@ -266,9 +266,9 @@ export class Story {
     this.set('power-cut');
     this.cancel('cut-fallback'); this.cancel('cut');
     const at = [7.0, 1.2, 1.2];
-    this.sfx('arc_crackle', { at, gain: 1, send: 0.4, min: 0.25 });
-    this.sfx('arc_discharge', { at, gain: 1, delay: 0.12, send: 0.5, min: 0.3 });
-    this.sfx('boom', { gain: 0.45, delay: 0.1, bus: 'music' });
+    this.sfx('arc_crackle', { at, gain: 1, send: 0.4, min: 0.3 });
+    this.sfx('arc_discharge', { at, gain: 1, delay: 0.12, send: 0.5, min: 0.35 });
+    this.sfx('boom', { gain: 0.6, delay: 0.1, bus: 'scare' });
     this.sfx('rcd_trip', { at: [FUSEBOX[0], 1.7, 4.4], gain: 0.6, delay: 0.35, min: 0.08 });
     this.sfx('power_down', { gain: 0.35, delay: 0.25, bus: 'amb' });
     this.sys.power.faults.add('bathroom');

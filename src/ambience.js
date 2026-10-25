@@ -24,13 +24,14 @@ export class Ambience {
     const ctx = this.ctx = new AudioContext();
     this.master = ctx.createGain();            // the master volume (settings); everything connects here
     this.master.gain.value = 0;
+    this.fader = ctx.createGain();             // fades everything out and back (sound.js silence: the death's black)
     this.makeup = ctx.createGain();
     this.makeup.gain.value = 10 ** (MAKEUP_DB / 20);
     const lim = this.limiter = ctx.createDynamicsCompressor();
     for (const [k, v] of Object.entries(LIMITER)) lim[k].value = v;
     this.trim = ctx.createGain();
     this.trim.gain.value = 10 ** (-limiterMakeupDb() / 20);
-    this.master.connect(this.makeup).connect(lim).connect(this.trim).connect(ctx.destination);
+    this.master.connect(this.fader).connect(this.makeup).connect(lim).connect(this.trim).connect(ctx.destination);
     this.reverb = ctx.createConvolver();
     this.reverb.buffer = this.impulse(1.6, 2.8);
     const wet = ctx.createGain(); wet.gain.value = 0.35;

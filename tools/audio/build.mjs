@@ -1,9 +1,9 @@
 // Builds the game's recorded sounds (public/assets/audio/sfx/*.mp3 + sfx.json) from tools/audio/sounds.json: real
 // recordings (CC0 / CC BY) downloaded from the GitHub mirrors listed there, pinned by SHA-256 in sounds.lock.json.
 // Processing only: trim, mono for sounds placed in the flat (HRTF works on mono), a high-pass where a recording carries
-// a DC offset (`highpass`, Hz: the offset would count in the peak and click at the start), peak-normalise, fades, and
-// for takes of many footsteps or creaks the onsets of each hit (sfx.json `segments`, so the game plays one at a time).
-// No synthesis.
+// a DC offset (`highpass`, Hz: the offset would count in the peak and click at the start), mixing a few recordings into
+// one (`layers`), peak-normalise, fades, and for takes of many footsteps or creaks the onsets of each hit (sfx.json
+// `segments`, so the game plays one at a time). No synthesis.
 // Usage: node tools/audio/build.mjs [key ...]   (needs ffmpeg; with keys, only those are rebuilt and the rest of
 // sfx.json is kept as it is)
 import { execFileSync } from 'node:child_process';
@@ -52,21 +52,40 @@ function onsets({ data, channels }, count, max = 0.7) {
   }).filter(([a, b]) => b - a > 0.08);
 }
 
+// The file for `id` (a key, or key#n for its n-th layer): `local`, a recording already in the repository (e.g. the 0.12
+// glass break), or the mirror's, downloaded once into assets-src/audio and checked against sounds.lock.json.
+async function source(id, { local, mirror }) {
+  const ext = ((local || mirror).match(/\.(\w+)$/) || [, 'bin'])[1].toLowerCase();
+  const file = local || join(SRC, `${id.replace('#', '.')}.${ext}`);
+  if (!existsSync(file)) {
+    const response = await fetch(mirror);
+    if (!response.ok) throw new Error(`${id}: HTTP ${response.status} from ${mirror}`);
+    writeFileSync(file, Buffer.from(await response.arrayBuffer()));
+  }
+  const sha256 = createHash('sha256').update(readFileSync(file)).digest('hex');
+  if (lock[id] && lock[id] !== sha256) throw new Error(`${id}: checksum differs from ${LOCK}`);
+  lock[id] = sha256;
+  return file;
+}
+
+// b mixed into a (same channel count) at `gain` (linear), starting `offset` frames in.
+function mix(a, b, gain, offset) {
+  const ch = a.channels, data = new Float32Array(Math.max(a.data.length, (offset * ch) + b.data.length));
+  data.set(a.data);
+  for (let i = 0; i < b.data.length; i++) data[offset * ch + i] += b.data[i] * gain;
+  return { data, channels: ch };
+}
+
 const manifest = {};
 for (const [key, s] of Object.entries(list)) {
   if (only.length && !only.includes(key)) { if (built[key]) manifest[key] = built[key]; continue; }
-  // `local`: a recording already in the repository (e.g. the 0.12 glass break).
-  const ext = ((s.local || s.mirror).match(/\.(\w+)$/) || [, 'bin'])[1].toLowerCase();
-  const src = s.local || join(SRC, `${key}.${ext}`);
-  if (!existsSync(src)) {
-    const response = await fetch(s.mirror);
-    if (!response.ok) throw new Error(`${key}: HTTP ${response.status} from ${s.mirror}`);
-    writeFileSync(src, Buffer.from(await response.arrayBuffer()));
+  let pcm = decode(await source(key, s), s);
+  // `layers`: more real recordings mixed into the first ({ mirror, gain dB, delay s, trim, highpass }), for a sound no
+  // single take sells (a bird against a window: a soft heavy thud and a pane's ring). Mixing only, no synthesis.
+  for (const [i, layer] of (s.layers || []).entries()) {
+    const more = decode(await source(`${key}#${i + 1}`, layer), { ...layer, mono: s.mono });
+    pcm = mix(pcm, more, 10 ** ((layer.gain ?? 0) / 20), Math.round((layer.delay ?? 0) * RATE));
   }
-  const sha256 = createHash('sha256').update(readFileSync(src)).digest('hex');
-  if (lock[key] && lock[key] !== sha256) throw new Error(`${key}: checksum differs from ${LOCK}`);
-  lock[key] = sha256;
-  const pcm = decode(src, s);
   let max = 0;
   for (const v of pcm.data) max = Math.max(max, Math.abs(v));
   const gain = max > 0 ? 10 ** ((s.peak ?? -1) / 20) / max : 1;

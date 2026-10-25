@@ -195,7 +195,10 @@
   "licenseConfirmedVia": "LUN-game asset-credits/audio.md (per-file Freesound link + CC0 1.0)",
   "mono": true,
   "highpass": 20,
-  "fade": [0.01, 0],
+  "fade": [
+   0.01,
+   0
+  ],
   "peak": -1
  },
  "arc_zap": {
@@ -779,7 +782,10 @@
   "original": "https://freesound.org/people/hotpin7/sounds/846789/",
   "mirror": "https://raw.githubusercontent.com/erladitia14/Silencio/51836ab8f9614b1c9614e49f92e6026fe199f0fd/audio/chase/detect/detect_jumpscare__fs846789.mp3",
   "licenseConfirmedVia": "Silencio audio/chase/MANIFEST.json (freesound_id, original title, CC0)",
-  "trim": [0.14, 8.33],
+  "trim": [
+   0.14,
+   8.33
+  ],
   "peak": -1
  },
  "sting_riser": {
@@ -789,7 +795,10 @@
   "original": "https://freesound.org/people/AudioPapkin/sounds/647430/",
   "mirror": "https://raw.githubusercontent.com/erladitia14/Silencio/51836ab8f9614b1c9614e49f92e6026fe199f0fd/audio/chase/detect/detect_riser_hit__fs647430.mp3",
   "licenseConfirmedVia": "Silencio audio/chase/MANIFEST.json (freesound_id, original title, CC0)",
-  "trim": [0.1, 4.279],
+  "trim": [
+   0.1,
+   4.279
+  ],
   "peak": -1
  },
  "elevator": {
@@ -876,5 +885,105 @@
    0.005,
    0.12
   ]
+ },
+ "crow_caw": {
+  "title": "Hooded Crow: Panic Cawing",
+  "author": "Mish7913",
+  "license": "CC0",
+  "original": "https://freesound.org/s/741365/",
+  "mirror": "https://raw.githubusercontent.com/hatmix/gwj-78/48863cf179ff7fe595e50e184a96a504dbc1e369/game/maps/features/trees/assets/audio/crow-angry.ogg",
+  "licenseConfirmedVia": "gwj-78 game/maps/features/trees/assets/audio/_readme_and_license.txt (Freesound pack 41274 'Birds' readme: Creative Commons 0, lists 741365__mish7913__hooded-crow-panic-cawing.flac); Circuit-Stitch/AnimalSpin-Resources records/asset-credits.csv (741365, CC0)",
+  "mono": true,
+  "slice": 4,
+  "peak": -1
+ },
+ "window_thud": {
+  "title": "Impact Sounds: impactGlass_heavy_000 + impactSoft_heavy_000",
+  "author": "Kenney (www.kenney.nl)",
+  "license": "CC0",
+  "original": "https://kenney.nl/assets/impact-sounds",
+  "mirror": "https://media.githubusercontent.com/media/series-ai/jam-ready-assets/2d7c41049c1db4d670b1ded88a7aeec0d7c2f38c/kenney-impact-sounds/audio/Audio/impactGlass_heavy_000.ogg",
+  "licenseConfirmedVia": "kenney-impact-sounds/audio/License.txt in the mirror (Kenney Impact Sounds, Creative Commons Zero, CC0)",
+  "layers": [
+   {
+    "mirror": "https://media.githubusercontent.com/media/series-ai/jam-ready-assets/2d7c41049c1db4d670b1ded88a7aeec0d7c2f38c/kenney-impact-sounds/audio/Audio/impactSoft_heavy_000.ogg",
+    "gain": -4,
+    "delay": 0.004
+   }
+  ],
+  "mono": true,
+  "peak": -1
+ },
+ "wing_flap": {
+  "title": "wings-flap-large-1",
+  "author": "dave.des",
+  "license": "CC0",
+  "original": "https://freesound.org/people/dave.des/sounds/127197/",
+  "mirror": "https://raw.githubusercontent.com/arianne/stendhal/fcd8330db06034098f9b164aa67fed82f261ae59/data/sounds/lossless_sources/wings-flap-large-1.flac",
+  "licenseConfirmedVia": "stendhal doc/sources/audio-sfx.txt line 193 (dave.des; CC0)",
+  "mono": true,
+  "slice": 3,
+  "peak": -1
+ },
+ "knife_stab": {
+  "title": "Nasty knife stab 2",
+  "author": "Aris621",
+  "license": "CC BY 3.0",
+  "original": "https://freesound.org/people/Aris621/sounds/478145/",
+  "mirror": "https://media.githubusercontent.com/media/Mooses2k/SecretHistories/902ce1c2702b9a9b5f71524ec35b8a5ff468f9a7/resources/sounds/impacts/blade_to_flesh/478145__aris621__nasty-knife-stab-2.wav",
+  "licenseConfirmedVia": "Fris0uman/CDDA-Soundpacks melee_hit_flesh/big_cutting/credits.md (Aris621, 478145, CC BY 3.0); the file from SecretHistories under its original Freesound name",
+  "trim": [
+   0.29,
+   0.8
+  ],
+  "fade": [
+   0,
+   0.15
+  ],
+  "peak": -1
+ },
+ "knife_slash": {
+  "title": "Deep Cut / Slash / Gash",
+  "author": "SypherZent",
+  "license": "CC0",
+  "original": "https://freesound.org/people/SypherZent/sounds/420674/",
+  "mirror": "https://media.githubusercontent.com/media/Mooses2k/SecretHistories/902ce1c2702b9a9b5f71524ec35b8a5ff468f9a7/resources/sounds/melee/blade/slash_flesh/420674__sypherzent__deep-cut-slash-gash.wav",
+  "licenseConfirmedVia": "Zafnok/visions-of-shuyi THIRD_PARTY_ASSETS.md ('Deep Cut / Slash / Gash' by SypherZent, freesound 420674, CC0-1.0); SecretHistories *_license.txt links the Freesound page",
+  "peak": -1
+ },
+ "body_fall": {
+  "title": "Falling body hits the floor",
+  "author": "courtneyeck",
+  "license": "CC0",
+  "original": "https://freesound.org/people/courtneyeck/sounds/673424/",
+  "mirror": "https://raw.githubusercontent.com/erladitia14/Silencio/51836ab8f9614b1c9614e49f92e6026fe199f0fd/audio/clown/hit/hit_bodyfall__fs673424.mp3",
+  "licenseConfirmedVia": "Silencio audio/clown/MANIFEST.json (CC0, each Freesound page checked) + README",
+  "trim": [
+   1.07,
+   1.02
+  ],
+  "fade": [
+   0.005,
+   0.3
+  ],
+  "peak": -1
+ },
+ "faucet_open": {
+  "title": "Kitchen Faucet with Water running into the Sink (Take B)",
+  "author": "ani_music",
+  "license": "CC0",
+  "original": "https://freesound.org/s/632456/",
+  "mirror": "https://raw.githubusercontent.com/NARBEHOUSE/Narbehouse.github.io/c7efeff25531191706f0064f6253db854a0eb186/bennyshub/apps/games/BENNYSMATCHYMATCH/packs/home_and_hobbies/aroundthehouse/sink.mp3",
+  "licenseConfirmedVia": "NARBEHOUSE bennyshub/apps/games/BENNYSMATCHYMATCH/packs/CREDITS.md (CC0); docs/sound-candidates.json",
+  "mono": true,
+  "trim": [
+   0,
+   1.6
+  ],
+  "fade": [
+   0.005,
+   0.6
+  ],
+  "peak": -1
  }
 }

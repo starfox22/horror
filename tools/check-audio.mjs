@@ -7,6 +7,7 @@
 //  - The master chain ends in a safety limiter that nothing bypasses, and its ceiling stays under 0 dBFS.
 //  - A scare (bank.scare, music.sting, the glass) ducks the beds by ~10 dB for about a second, not itself.
 //  - The volume sliders still act on master, effects (and their echo), ambience and music (and the scare path).
+//  - silence() (the death's black) fades everything out, stops what plays, and brings the beds back slowly.
 // node --test tools/check-audio.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -264,6 +265,12 @@ test('a scare ducks the beds by about 10 dB for about a second, never itself', (
   const t2 = ctx.currentTime;
   bank.play('glass_break', { at: GLASS_SPOT });
   assert.ok(dB(bank.beds.amb.gain.at(t2 + 0.2)) <= -8.5, 'the glass ducks the beds');
+  // The bird against the window (crow.js): a placed scare is an effect, at its scare level (the thud is short and low).
+  ctx.currentTime += 10;
+  const thud = bank.scare('window_thud', { at: [11.5, 1.6, -1.4], gain: 1 });
+  assert.ok(dryWays(thud.source, ctx, 1000, ctx.currentTime).every(w => w.via.includes(bank.buses.sfx)), 'a placed scare plays on the effects bus');
+  assert.ok(thud.gain.gain.value >= 2, 'the thud plays 6 dB over its file');
+  assert.ok(dB(bank.beds.amb.gain.at(ctx.currentTime + 0.2)) <= -8.5, 'and ducks the beds');
   clearInterval(bank._timer);
 });
 
@@ -287,5 +294,22 @@ test('the volume sliders act on master, effects (and their echo), ambience, musi
   const bed = bank.loop('rain_window', { at: [4.5, 1.6, -1.4], send: 0.12 });
   assert.ok(ways(bed.gain, amb.reverb).every(w => w.includes(bank.bedSends.amb) && w.includes(bank.sends.amb)), 'a bed\'s echo: bed send, then the ambience send');
   bed.stop(0);
+  clearInterval(bank._timer);
+});
+
+test('silence (the death\'s black): everything fades out and stops; the next sound is heard at once; the beds come back slowly', () => {
+  const r = rig(), { amb, bank, ctx } = r;
+  const loop = bank.loop('rain_outside', { gain: 0.2 });
+  const waiting = bank.play('heartbeat', { gain: 0.9, delay: 1.25 });
+  const t0 = ctx.currentTime;
+  bank.silence(0.4);
+  assert.ok(dB(amb.fader.gain.at(t0 + 0.4)) < -20, 'everything fades out');
+  assert.ok(waiting.gain.gain.at(t0 + 0.8) < 0.01, 'a sound waiting to start is stopped');
+  assert.ok(amb.fader.gain.at(t0 + 1.1) > 0.9, 'back at once for what plays next (the gasp)');
+  const bed = (s) => dB(bank.beds.amb.gain.at(t0 + s));
+  assert.ok(bed(0.5) < -60, 'the beds are out');
+  assert.ok(bed(1.1) < -12, `the beds come back slowly (${bed(1.1).toFixed(1)} dB at 1.1 s)`);
+  assert.ok(bed(6) > -1, `and are back by 6 s (${bed(6).toFixed(1)} dB)`);
+  loop.stop(0);
   clearInterval(bank._timer);
 });
