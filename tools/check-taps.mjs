@@ -1,13 +1,14 @@
 // The taps (src/taps.js) without a browser: E turns each tap on and off (its recording at the spout, a click, a drop
 // after), only from the room it is in; the story forces the bathroom tap on and off through world.tap() (hot after the
-// cut, the bowl brimming), and the player turning that hot tap off is the story's beat (story.tapOff); a running tap is
-// a noise every 2 s of play, which the hunt hears 7 m away.
+// cut, the bowl brimming), and the player turning that hot tap off is the story's beat (main.js -> story.tapClosed ->
+// story.tapOff); a running tap is a noise every 2 s of play, which the hunt hears 7 m away.
 // node --test tools/check-taps.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Vec3 } from 'playcanvas';
 import { Taps, TAPS } from '../src/taps.js';
 import { World } from '../src/world.js';
+import { Story } from '../src/story.js';
 import { Hunt } from '../src/hunt.js';
 
 function setup() {
@@ -77,10 +78,15 @@ test('a running tap is a noise every 2 s of play, at its spout', () => {
 
 test('the story runs the bathroom tap (hot after the cut); the player turning the hot tap off is the story\'s beat', () => {
   const { taps, item, eye, sounds } = setup();
-  let tapOff = 0;
+  // The world and the story as main.js joins them: every tap the player shuts goes to story.tapClosed.
   const world = Object.create(World.prototype);
-  Object.assign(world, { taps, story: { tapOff: () => { tapOff++; world.tap(false); } } });
+  const story = new Story({ world, bank: { play() {} }, thought: { say() {} } });
+  Object.assign(world, { taps, story });
   world.watchTaps();
+  taps.on((id, on, { by } = {}) => { if (!on && by === 'player') story.tapClosed(id); });
+  let tapOff = 0;
+  const realTapOff = story.tapOff.bind(story);
+  story.tapOff = () => { tapOff++; realTapOff(); };
   // He runs it behind the locked door (no click on), then turns it off when the handle is tried (a click).
   world.tap(true);
   assert.equal(taps.isOn('bathroom'), true); assert.equal(taps.isHot('bathroom'), false); assert.equal(world.tapOn, true);
@@ -90,6 +96,7 @@ test('the story runs the bathroom tap (hot after the cut); the player turning th
   assert.equal(sounds.filter(s => s.key === 'latch_2').length, 1);
   // The cut: hot, the bowl brimming (it stays full). The player, in the bathroom, turns it off: tapOff once.
   assert.equal(taps.taps.get('bathroom').full ?? false, false);
+  story.set('power-cut');
   world.tap(true, { hot: true });
   assert.equal(taps.isHot('bathroom'), true);
   assert.equal(taps.taps.get('bathroom').full, true);
@@ -97,10 +104,10 @@ test('the story runs the bathroom tap (hot after the cut); the player turning th
   const bathroom = item('bathroom');
   assert.equal(bathroom.label(), 'Turn off the bathroom tap');
   bathroom.use();
-  assert.equal(taps.isOn('bathroom'), false); assert.equal(tapOff, 1); assert.equal(world.tapOn, false);
+  assert.equal(taps.isOn('bathroom'), false); assert.equal(tapOff, 1); assert.equal(story.has('tap-off'), true); assert.equal(world.tapOn, false);
   // Back on is the player's own water (not hot), off again is no beat.
   bathroom.use(); assert.equal(taps.isHot('bathroom'), false);
-  bathroom.use(); assert.equal(tapOff, 1);
+  bathroom.use(); assert.equal(story.has('tap-off'), true);
   // The story can still force it either way, and a new night shuts every tap without a sound.
   world.tap(true, { hot: true }); assert.equal(taps.isHot('bathroom'), true);
   item('kitchen').use();
