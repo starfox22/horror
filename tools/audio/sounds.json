@@ -194,6 +194,8 @@
   "mirror": "https://raw.githubusercontent.com/4ismael1/LUN-game/82089674bc112638d8032b4a6f42916f05f7a1a6/public/assets/audio/electric_spark.mp3",
   "licenseConfirmedVia": "LUN-game asset-credits/audio.md (per-file Freesound link + CC0 1.0)",
   "mono": true,
+  "highpass": 20,
+  "fade": [0.01, 0],
   "peak": -1
  },
  "arc_zap": {
@@ -777,6 +779,7 @@
   "original": "https://freesound.org/people/hotpin7/sounds/846789/",
   "mirror": "https://raw.githubusercontent.com/erladitia14/Silencio/51836ab8f9614b1c9614e49f92e6026fe199f0fd/audio/chase/detect/detect_jumpscare__fs846789.mp3",
   "licenseConfirmedVia": "Silencio audio/chase/MANIFEST.json (freesound_id, original title, CC0)",
+  "trim": [0.14, 8.33],
   "peak": -1
  },
  "sting_riser": {
@@ -786,6 +789,7 @@
   "original": "https://freesound.org/people/AudioPapkin/sounds/647430/",
   "mirror": "https://raw.githubusercontent.com/erladitia14/Silencio/51836ab8f9614b1c9614e49f92e6026fe199f0fd/audio/chase/detect/detect_riser_hit__fs647430.mp3",
   "licenseConfirmedVia": "Silencio audio/chase/MANIFEST.json (freesound_id, original title, CC0)",
+  "trim": [0.1, 4.279],
   "peak": -1
  },
  "elevator": {

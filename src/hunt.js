@@ -62,7 +62,8 @@ export class Hunt {
   noise(x, z, kind) {
     if (!this.active) return;
     const hear = this.stalker.tune.hear;
-    const radius = kind === 'glass' ? 5 : kind === 'unlock' ? 6 : kind === 'loud' ? hear.loud : kind === 'phone' ? 12 : hear[kind] ?? 0;
+    // A tap left running (taps.js) carries 7 m: running water is a lure.
+    const radius = kind === 'glass' ? 5 : kind === 'unlock' ? 6 : kind === 'tap' ? 7 : kind === 'loud' ? hear.loud : kind === 'phone' ? 12 : hear[kind] ?? 0;
     this.stalker.noise(x, z, radius);
   }
 

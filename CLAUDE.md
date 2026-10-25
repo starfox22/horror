@@ -9,11 +9,12 @@ on its own branch, Codex on `codex-review`) and asks for one batch of changes at
 1. `AGENTS.md`: branch and merge rules shared with Codex.
 2. `docs/HANDOFF.md`: the owner's requirements build by build, how everything fits together, published builds,
    **Gotchas learned the hard way** (read them all before touching lighting, probes, shaders or the shadow atlas).
-3. `docs/BUILD_013.md`: the latest Claude build (the night: story, the masked intruder and his AI, power and the fuse
-   box, the phone and camera, the hunt, endings, menus, downloaded props and recordings) and how it was verified;
-   `docs/STORY.md`: the design every beat follows (truth, triggers, fallbacks, endings, evidence). `docs/BUILD_012.md`
-   (freezes, VSync, light leaks, the drinking arm, the scripted-event system) and `docs/CLAUDE_HANDOFF.md` (Codex's 0.11
-   handoff: waking sequence, fridge and drinking contracts) remain useful.
+3. `docs/BUILD_014.md`: the latest Claude build (the owner's simpler story: the evicted man never left; the knife,
+   the porcelain mask, the crow, the taps, the death with blood and the fall, the hold-to-unlock escape, the developer
+   menu's delayed events) and how it was verified; `docs/STORY.md` (v3): the design every beat follows (truth,
+   triggers, fallbacks, scares, endings, evidence). `docs/BUILD_013.md` (the night's systems: power, fuse box, phone and
+   camera, the stalker AI, endings, menus, props and recordings), `docs/BUILD_012.md` (freezes, VSync, light leaks, the
+   drinking arm, the scripted-event system) and `docs/CLAUDE_HANDOFF.md` (Codex's 0.11 handoff) remain useful.
 4. Topic docs when you touch that area: `docs/DRINK_ASSETS.md`, `docs/FRIDGE_ASSETS.md`, `docs/CREDITS.md`,
    `tools/perf/README.md`, `tools/arm/README.md`; the headers of `tools/intruder/build.mjs`, `tools/props/build.mjs`,
    `tools/audio/build.mjs` and `tools/bake-clips.mjs` (each says how to reproduce its assets).
@@ -22,17 +23,26 @@ on its own branch, Codex on `codex-review`) and asks for one batch of changes at
 
 ## Working rules (the owner's)
 
-- Work on `claude/pensive-volta-et0etl`; start by fetching it and `main` and merging `main` in if it moved (Codex
-  pushes docs there). Merge into or push to `main` **only when the owner asks in the current conversation**; a past
-  approval does not carry over. No pull requests unless asked. Never touch `codex-review`.
+- Work on `claude/pensive-volta-et0etl` (the owner: "do not create a new one", even if the session suggests another
+  branch); start by fetching it and `main` and merging `main` in if it moved (Codex pushes docs there). Merge into or
+  push to `main` **only when the owner asks in the current conversation**; a past approval does not carry over. No
+  pull requests unless asked. Never touch `codex-review`.
+- Every push to `claude/pensive-volta-et0etl` publishes a playable preview at **https://starfox22.github.io/horror/claude/**
+  (`.github/workflows/pages-claude.yml`: main at the root, codex-review at /codex/, this branch at /claude/; it runs the
+  Node regressions first). Check the run with the GitHub tools (`actions_list` for the branch); github.io itself is not
+  reachable from the sandbox.
 - **Download assets, don't build them**: models, textures and sounds come from ready-made assets with a clean licence
   (CC0 / CC BY / MIT / BSD), credited in `docs/CREDITS.md` and, for shipped assets, on the start screen's credit line
   (`index.html`). Only GitHub, npm and PyPI are reachable from the cloud sandbox (Sketchfab, Poly Haven, Freesound
   are blocked); GitHub repos often mirror them with their licence. Show the owner previews before swapping in a new
   look. Primitive geometry only for small functional pieces (water surfaces, fridge lining).
-- No scares, enemies, puzzles or story beyond what the owner asked for (build 0.13's night is what was asked: follow
-  `docs/STORY.md`). Scripted events go in `src/story-events.js` (`STORY_EVENTS`, in story order; the developer menu's
-  Events list plays them); the beats themselves live in `src/story.js`.
+- Follow `docs/STORY.md` (v3, build 0.14): the owner wants the story **simple** (the evicted man never left; no names,
+  no backstory: "let the player imagine the rest"), plenty of believable jump scares with tension built before he is
+  seen, and escape as the goal. The owner **rejected** a helpful-caretaker-is-the-killer twist and a chained front door
+  (too close to Netflix's "Unhinged"): don't bring them back. From 0.14 the owner handed over creative control ("make
+  the game AAA"), but keep new beats in STORY.md first. Scripted events go in `src/story-events.js` (`STORY_EVENTS`, in
+  story order; the developer menu's Events list queues them to play 3 s after the game resumes); the beats live in
+  `src/story.js`.
 - Place props on measured surfaces (`node tools/surfaces.mjs x0 x1 z0 z1 [y0 y1] [x|y|z]`), never on guessed heights.
 - Every visual change: before/after captures (headless) in `docs/build-0NN/`, and a section in a `docs/BUILD_0NN.md`
   for the build plus a short entry in `docs/HANDOFF.md` (requirements list and "where they live"). Bump the build number

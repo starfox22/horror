@@ -25,11 +25,14 @@ export class Music {
     this.swellTimer = setTimeout(() => h?.setGain(0, seconds * 0.7), seconds * 300);
   }
 
+  // The few hard moments: the sting on the scare path (sound.js scare: its own bus at the "Music and stings" volume,
+  // never ducked) with the beds ducked by `duck` dB under it, so it lands. kind: low (the bang), hit (the hunt begins),
+  // chase (he has seen you), scare (he has you).
   sting(kind) {
-    if (!this.bank) return;
-    const map = { low: ['boom', 0.35], hit: ['sting_braam', 0.55], chase: ['sting_riser', 0.4], scare: ['sting_scare', 0.75] };
-    const [key, gain] = map[kind] || map.low;
-    this.bank.play(key, { gain, bus: 'music' });
+    if (!this.bank) return null;
+    const map = { low: ['boom', 0.5, 6], hit: ['sting_braam', 0.8, 10], chase: ['sting_riser', 0.8, 8], scare: ['sting_scare', 1, 10] };
+    const [key, gain, duck] = map[kind] || map.low;
+    return this.bank.scare ? this.bank.scare(key, { gain, duck }) : this.bank.play(key, { gain, bus: 'music' });
   }
 
   hunt(on) {

@@ -1,0 +1,4 @@
+blood.webp: "Blood Splatter" by ExileGL, CC0 1.0 (public domain), OpenGameArt https://opengameart.org/content/blood-splatter
+Downloaded unaltered from the GitHub mirror KurtBliss/Karnage at commit 8dfaa32779482b0de927ddcf46be0a18ce523c09
+(assets/opengameart/ExileGL/ExileGL__blood.png, sha256 2f625d3ce46c723c54f3a78a94cd54aef808ef2480b470dd70bf7b6fdbb42c14),
+then resized to 1280x960 and converted to WebP for the game (the stab overlay in src/death.js).

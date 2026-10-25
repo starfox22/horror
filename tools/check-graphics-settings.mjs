@@ -17,11 +17,11 @@ function sample(prefs, start, fps) {
   for (let frame = 1; frame <= fps * 4; frame++) prefs.sampleFrame(start + frame * 1000 / fps, true);
 }
 
-test('fresh and corrupt preferences default to Auto, visible FPS and VSync', () => {
+test('fresh and corrupt preferences default to Auto, no FPS counter and VSync', () => {
   for (const value of [null, '{broken', 'false', '[]', '{"showFps":"false","preset":"ultra","resolutionScale":9,"fpsLimit":999}']) {
     const prefs = new GraphicsPreferences({ storage: storage(value) });
     assert.equal(prefs.state.preset, 'auto');
-    assert.equal(prefs.state.showFps, true);
+    assert.equal(prefs.state.showFps, false);
     assert.equal(prefs.state.fpsLimit, -1);
     assert.equal(prefs.autoTarget, 60);
     assert.equal(prefs.effective.resolutionScale, 1);

@@ -145,7 +145,7 @@ h1 { margin: 0; font: 300 2.6rem/1.1 Georgia, "Times New Roman", serif; letter-s
 #menu .menu-item { display: grid; gap: .15rem; justify-items: start; width: min(30rem, 80vw); padding: .55rem 0 .55rem .9rem; background: none; border: 0;
   border-left: 1px solid transparent; color: #a9a397; font: 400 .95rem/1.2 'Helvetica Neue', Arial, sans-serif; letter-spacing: .22em;
   text-transform: uppercase; text-align: left; cursor: pointer; transition: color .25s, border-color .25s, padding .25s; }
-#menu .menu-item small { font-size: .7rem; letter-spacing: .02em; text-transform: none; color: #6f6a62; line-height: 1.4; }
+#menu .menu-item small { font-size: .74rem; letter-spacing: .02em; text-transform: none; color: #9a958a; line-height: 1.4; }
 #menu .menu-item:hover, #menu .menu-item:focus-visible { color: #f3eee3; border-left-color: #b33a32; padding-left: 1.2rem; outline: none; }
 #menu .menu-item:focus-visible small, #menu .menu-item:hover small { color: #9b958a; }
 #menu .menu-item:disabled { opacity: .35; cursor: default; }
@@ -156,7 +156,7 @@ h1 { margin: 0; font: 300 2.6rem/1.1 Georgia, "Times New Roman", serif; letter-s
 #menu .menu-heading p { margin: 0 0 1rem; max-width: 30rem; color: #8e897f; font-size: .85rem; line-height: 1.55; }
 #menu .menu-row { display: grid; grid-template-columns: 12rem 1fr 4rem; align-items: center; gap: 1rem; width: min(32rem, 85vw); padding: .35rem 0 .35rem .9rem;
   font-size: .82rem; color: #b9b3a7; }
-#menu .menu-row small { display: block; font-size: .68rem; color: #6f6a62; }
+#menu .menu-row small { display: block; font-size: .72rem; color: #9a958a; }
 #menu .menu-row.toggle { grid-template-columns: 1fr auto; }
 #menu .menu-row input[type=range] { width: 100%; accent-color: #b33a32; }
 #menu .menu-row input[type=checkbox] { width: 1.05rem; height: 1.05rem; accent-color: #b33a32; }
@@ -166,7 +166,7 @@ h1 { margin: 0; font: 300 2.6rem/1.1 Georgia, "Times New Roman", serif; letter-s
 #menu .menu-endings, #menu .menu-evidence { list-style: none; margin: 0 0 1.2rem; padding: 0 0 0 .9rem; display: grid; gap: .45rem; width: min(34rem, 85vw); }
 #menu .menu-endings li { display: flex; justify-content: space-between; gap: 1rem; font-size: .85rem; }
 #menu .menu-endings b { font-weight: 500; letter-spacing: .08em; color: #d8d2c6; }
-#menu .menu-endings span { color: #6f6a62; font-size: .78rem; font-style: italic; }
+#menu .menu-endings span { color: #9a958a; font-size: .8rem; font-style: italic; }
 #menu .menu-evidence { grid-template-columns: 1fr 1fr; font-size: .78rem; color: #4d4943; }
 #menu .menu-evidence li.got { color: #b9b3a7; }
 #menu .menu-journal { display: grid; gap: 1rem; width: min(36rem, 88vw); padding-left: .9rem; }
@@ -180,7 +180,7 @@ h1 { margin: 0; font: 300 2.6rem/1.1 Georgia, "Times New Roman", serif; letter-s
 #menu .menu-ending h2 { margin: .4rem 0 1rem; font: 500 clamp(2.2rem, 4vw, 3.4rem)/1 'Cormorant Garamond', Georgia, serif; letter-spacing: .08em; color: #f0eadc; }
 #menu .menu-ending .epilogue { margin: 0 0 1.4rem; font: 500 1.25rem/1.45 'Cormorant Garamond', Georgia, serif; color: #cfc8ba; max-width: 34rem; }
 #menu .menu-ending dl { display: grid; grid-template-columns: max-content 1fr; gap: .3rem 1.4rem; margin: 0 0 1rem; font-size: .8rem; }
-#menu .menu-ending dt { color: #6f6a62; letter-spacing: .12em; text-transform: uppercase; font-size: .68rem; align-self: center; }
+#menu .menu-ending dt { color: #9a958a; letter-spacing: .12em; text-transform: uppercase; font-size: .72rem; align-self: center; }
 #menu .menu-ending dd { margin: 0; color: #cfc8ba; font-variant-numeric: tabular-nums; }
 #menu .menu-foot { grid-column: 1 / -1; grid-row: 2; display: flex; justify-content: space-between; align-items: end; padding: 0 3vw 2.4vh 6vw;
   font-size: .66rem; letter-spacing: .14em; color: #5b5750; }
@@ -200,7 +200,7 @@ h1 { margin: 0; font: 300 2.6rem/1.1 Georgia, "Times New Roman", serif; letter-s
   font: 600 .72rem/1 'Helvetica Neue', Arial, sans-serif; background: rgba(10,10,12,.45); }
 .hud-crouch { position: fixed; left: 2.2rem; bottom: 2rem; z-index: 8; width: 1.1rem; height: .55rem; border: 1px solid rgba(232,228,218,.35); border-top: 0;
   border-radius: 0 0 .6rem .6rem; pointer-events: none; }
-.hud-voice { position: fixed; left: 50%; bottom: 6.5%; transform: translateX(-50%); z-index: 8; width: min(40rem, calc(100vw - 3rem)); text-align: center;
+.hud-voice { position: fixed; left: 50%; bottom: 6.5%; transform: translateX(-50%); z-index: 13; width: min(40rem, calc(100vw - 3rem)); text-align: center;
   font: 400 calc(1rem * var(--subtitle, 1))/1.4 'Helvetica Neue', Arial, sans-serif; color: #e8e4da; text-shadow: 0 1px 4px #000, 0 0 14px #000;
   transition: opacity .9s; pointer-events: none; }
 .hud-voice b { font-weight: 600; letter-spacing: .1em; text-transform: uppercase; font-size: .78em; color: #9fb4c8; margin-right: .5em; }

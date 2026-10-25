@@ -4,8 +4,20 @@
 // the prescription by the bed, the sleep diary on the desk), the spare key where the diary says, the empty key bowl,
 // the alarm clock at 03:07, your hair-dryer in the basin. The things are downloaded models (props.js) where we have
 // them. reset() lays out a new night; restore() rebuilds a checkpoint from the flags.
-import { BLEND_NORMAL, CULLFACE_NONE, Color, Entity, Mesh, MeshInstance, StandardMaterial, Texture, Vec3, PIXELFORMAT_RGBA8, ADDRESS_CLAMP_TO_EDGE } from 'playcanvas';
+import { BLEND_ADDITIVE, BLEND_NORMAL, CULLFACE_NONE, Color, Entity, Mesh, MeshInstance, StandardMaterial, Texture, Vec3, PIXELFORMAT_RGBA8, PIXELFORMAT_SRGBA8, ADDRESS_CLAMP_TO_EDGE } from 'playcanvas';
 import { GLASS_SPOT } from './falling-glass.js';
+import { FRIDGE, fridgeWorld } from './fridge-geometry.js';
+
+// The notice on the refrigerator door, as printed (first line the heading, last the signature). Edit freely: the sheet
+// on the door and the one read with E are both drawn from it.
+export const NOTICE = `NOTICE TO RESIDENTS
+The resident who had been causing disturbances over the last month has finally been evicted.
+Thank you for your patience.
+— The Management`;
+// Where it hangs (refrigerator-local, fridge-geometry.js: x across the door, y up, z out of the room's side): an A6 sheet
+// on the outer face of the upper door (measured at z 0.3346), right of the door's middle and clear of its panel, held at
+// the top by one round magnet, a degree and a half off square. It swings with the door.
+export const NOTICE_SHEET = { x: 0.118, y: 1.612, face: 0.3346, gap: 0.0012, size: [0.105, 0.148], tilt: -1.6, magnet: { radius: 0.0115, depth: 0.0055, below: 0.006 } };
 
 // Measured in the flat (docs/build-013): the bathroom basin's bowl and tap, its mirror, the corridor's prints.
 // The bathroom (measured): the vessel basin on the vanity (bowl x 6.56-6.86, z 1.07-1.42, rim 0.97), its tap on the
@@ -16,13 +28,13 @@ export const BATH = { basin: [6.71, 0.93, 1.245], tap: [6.52, 1.08, 1.245], mirr
 // Where things are (surfaces measured in the built flat): the pills on the north nightstand (top 0.57), the diary on the
 // office desk (0.86), the red tin on the coffee shelf's lower board (0.83), the key bowl on the kitchen worktop by the
 // fridge (0.835), the alarm clock on the south nightstand turned to the pillow; where the spare key can be: the tin,
-// under the sofa's west seat cushion, in the corridor plant's pot (rim 0.56).
+// under the sofa's west seat cushion, in the green vase on the coffee table (top 0.69). All in the west half (build 0.14).
 const PILLS = [13.6, 0.572, -1.0], DIARY = [3.95, 0.862, -1.05], TIN = [-4.9, 0.832, -1.15], KEY_BOWL = [1.05, 0.835, -0.82];
 const CLOCK = { at: [13.62, 0.572, 1.53], yaw: -121 };
 export const SPARE_SPOTS = [
   { id: 'tin', at: [TIN[0], TIN[1] + 0.09, TIN[2]], size: 0.1 },
   { id: 'sofa', at: [-5.75, 0.66, 2.6], size: 0.4 },
-  { id: 'plant', at: [7.94, 0.58, 3.02], size: 0.2 },
+  { id: 'plant', at: [-3.97, 0.70, 2.285], size: 0.15 },      // the green vase on the coffee table (top 0.69, measured)
 ];
 const PRINTS = [
   // From the bedroom opening east to the front door (left, right, ...), two side by side facing the fuse box, then back.
@@ -38,16 +50,25 @@ export function noProbes(root) {
   }
 }
 const paper = (w, h, draw) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); draw(g, w, h); return c; };
+// The notice as the full-screen sheet shows it (hud.examine, 'typed').
+const escape = (t) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+export function noticeHtml() {
+  const [heading, ...rest] = NOTICE.split('\n').map(s => s.trim()).filter(Boolean);
+  return `<h1>${escape(heading)}</h1>${rest.map(escape).join('<br><br>')}`;
+}
 
 export class World {
-  constructor({ app, sounds, bank, doors, closets, interactions, story, hud, configureMaterial, glassGeometry, props }) {
-    Object.assign(this, { app, sounds, bank, doors, closets, interactions, story, hud, configureMaterial, props });
+  constructor({ app, sounds, bank, doors, closets, interactions, story, hud, configureMaterial, glassGeometry, props, fridge, taps }) {
+    Object.assign(this, { app, sounds, bank, doors, closets, interactions, story, hud, configureMaterial, props, fridge, taps });
     this.root = new Entity('story world'); app.root.addChild(this.root);
     this.bathDoor = doors?.doors?.[0];
     this.buildShards(glassGeometry);
     this.buildFlood();
     this.buildMirrorFog();
     this.buildPrints();
+    this.buildDoorGlow();
+    this.buildNotice();
+    this.watchTaps();
     this.buildPapers();
     this.buildSpareKey();
     this.buildThings();
@@ -145,12 +166,27 @@ export class World {
     }
   }
 
-  // The basin's tap: a recording at the bowl; hot (steam, and the basin overflowing onto the floor).
-  tap(on, { hot = false } = {}) {
-    if (on && !this.tapLoop) this.tapLoop = this.bank?.loop('tap_running', { at: BATH.basin, gain: 0.55, ref: 0.6, rolloff: 1.3, send: 0.4, fadeIn: 0.3 });
-    if (!on && this.tapLoop) { this.tapLoop.stop(0.4); this.tapLoop = null; this.bank?.play('latch_2', { at: BATH.tap, gain: 0.25, rate: 1.4 }); }
+  // The basin's tap (taps.js: its water, its recording, the handle the player turns): the story runs it here, behind the
+  // locked door and hot after the cut (the bowl brimming, overflowing onto the floor: update()). quiet: no click (a
+  // checkpoint).
+  tap(on, { hot = false, quiet = false } = {}) {
+    if (this.taps) { this.taps.set('bathroom', on, { hot, quiet }); if (hot) this.taps.fill('bathroom', true); }
+    else {
+      if (on && !this.tapLoop) this.tapLoop = this.bank?.loop('tap_running', { at: BATH.basin, gain: 0.55, ref: 0.6, rolloff: 1.3, send: 0.4, fadeIn: 0.3 });
+      if (!on && this.tapLoop) { this.tapLoop.stop(0.4); this.tapLoop = null; if (!quiet) this.bank?.play('latch_2', { at: BATH.tap, gain: 0.25, rate: 1.4 }); }
+    }
     this.tapOn = on;
     if (hot) this.hot = true;
+  }
+
+  // The player at the bathroom tap (taps.js): turning off the hot water the story left running is the story's beat
+  // (story.tapOff: in the new quiet, something heavy shifts in the ceiling).
+  watchTaps() {
+    this.taps?.on((id, on, { by, wasHot }) => {
+      if (id !== 'bathroom') return;
+      this.tapOn = on;
+      if (!on && by === 'player' && wasHot) this.story?.tapOff();
+    });
   }
 
   buildFlood() {
@@ -224,17 +260,161 @@ export class World {
       e.setPosition(x, 0.168, z); e.setEulerAngles(0, yaw + 180, 0); e.setLocalScale(0.1, 1, 0.25);
       this.printRoot.addChild(e);
     }
+    // One bare footprint in the spilt water by the bed, heading for the bathroom door: he trod in it (it comes and goes
+    // with the shards).
+    const step = new Entity('footprint in the spill'); step.addComponent('render', { type: 'plane', material: L, castShadows: false });
+    this.shardRoot.addChild(step);
+    step.setPosition(GLASS_SPOT[0] - 0.36, 0.1712, GLASS_SPOT[2] + 0.16); step.setEulerAngles(0, -68 + 180, 0); step.setLocalScale(0.1, 1, 0.25);
+  }
+
+  // --- the light under the bathroom door ---------------------------------------------------------------------------
+  // While someone is in there with the light on and the door shut, a thin warm line shows on the bedroom floor along
+  // the door's foot (the gap under a door; the real light inside is shadowed by the leaf). It goes when the light goes
+  // (story.js bathroomLightOut), when the power goes, or as the door opens.
+  buildDoorGlow() {
+    const c = paper(16, 64, (g, w, h) => {
+      const grad = g.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, 'rgba(255,255,255,1)'); grad.addColorStop(0.35, 'rgba(255,255,255,0.45)'); grad.addColorStop(1, 'rgba(255,255,255,0)');
+      g.fillStyle = grad; g.fillRect(0, 0, w, h);
+    });
+    const mat = this.material('light under the bathroom door', m => {
+      m.diffuse = Color.BLACK; m.emissive = new Color(1, 0.84, 0.64); m.emissiveIntensity = 0; m.useLighting = false;
+      m.opacityMap = this.texture(c, 'door-glow'); m.opacityMapChannel = 'a'; m.blendType = BLEND_ADDITIVE; m.depthWrite = false;
+    });
+    this.doorGlowMat = mat;
+    this.doorGlow = new Entity('light under the bathroom door');
+    this.doorGlow.addComponent('render', { type: 'plane', material: mat, castShadows: false, receiveShadows: false });
+    // The leaf's foot on the bedroom side (wall x 9.256), the opening z 0.39-1.25; the gradient runs out into the room.
+    this.doorGlow.setPosition(9.32, 0.1695, 0.82); this.doorGlow.setEulerAngles(0, 90, 0); this.doorGlow.setLocalScale(0.8, 1, 0.12);
+    this.root.addChild(this.doorGlow);
+    this.doorGlowLevel = -1;
+  }
+
+  updateDoorGlow() {
+    const sys = this.story?.sys, sw = sys?.switches, d = this.bathDoor;
+    let light = 0;
+    for (const room of sw?.rooms || []) if (room.id === 'mirror' || room.id === 'bathroom') light = Math.max(light, room.level * room.level * (sys.power ? sys.power.k(room.circuit, room.controlPosition) : 1));
+    const shut = d ? Math.max(0, 1 - Math.abs(d.angle || 0) / 6) : 1;
+    const level = Math.round(light * shut * 100) / 100;
+    if (level === this.doorGlowLevel) return;
+    this.doorGlowLevel = level;
+    this.doorGlowMat.emissiveIntensity = 0.55 * level; this.doorGlowMat.update();
+    this.doorGlow.enabled = level > 0.005 || this.warming;
   }
 
   prints(on) { this.printRoot.enabled = on; this.printsAt = on ? this.story?.time ?? 0 : null; }
 
+  // --- the notice on the refrigerator ------------------------------------------------------------------------------
+  // A small printed sheet (A6) on the outer face of the upper door, held by a round magnet: hung on the moving leaf
+  // (fridge.js), so it swings with the door. Printed in the typed face once that has loaded; read with E (full screen,
+  // the journal's 'notice') from in front of it.
+  buildNotice() {
+    const S = NOTICE_SHEET, [w, h] = S.size;
+    // On the leaf (its hinge's frame), or without one where the shut door's hinge is.
+    let leaf = this.fridge?.door;
+    if (!leaf) { leaf = new Entity('notice hinge'); this.root.addChild(leaf); leaf.setPosition(...fridgeWorld(FRIDGE.hinge)); leaf.setEulerAngles(0, FRIDGE.yaw, 0); }
+    this.notice = new Entity('notice on the refrigerator');
+    leaf.addChild(this.notice);
+    this.notice.setLocalPosition(S.x - FRIDGE.hinge[0], S.y, S.face + S.gap - FRIDGE.hinge[2]);
+    this.notice.setLocalEulerAngles(0, 0, S.tilt);
+    const canvas = paper(600, Math.round(600 * h / w), (g, cw, ch) => this.drawNotice(g, cw, ch, '"Courier New", monospace'));
+    const tex = new Texture(this.app.graphicsDevice, { width: canvas.width, height: canvas.height, format: PIXELFORMAT_SRGBA8, mipmaps: true,
+      anisotropy: 8, name: 'notice', addressU: ADDRESS_CLAMP_TO_EDGE, addressV: ADDRESS_CLAMP_TO_EDGE });
+    tex.setSource(canvas);
+    const sheetMat = this.material('notice sheet', m => { m.diffuseMap = tex; m.gloss = 0.22; });
+    const sheet = new Entity('notice sheet');
+    sheet.addComponent('render', { type: 'plane', material: sheetMat, castShadows: false, receiveShadows: true });
+    sheet.setLocalEulerAngles(90, 0, 0); sheet.setLocalScale(w, 1, h);    // the plane's face turned out of the door
+    this.notice.addChild(sheet);
+    // The magnet: a round plastic button, its dome towards the room.
+    const M = S.magnet, magnetMat = this.material('notice magnet', m => { m.diffuse = new Color(0.52, 0.09, 0.07); m.gloss = 0.62; });
+    const base = new Entity('notice magnet');
+    base.addComponent('render', { type: 'cylinder', material: magnetMat, castShadows: false, receiveShadows: true });
+    base.setLocalEulerAngles(90, 0, 0); base.setLocalScale(M.radius * 2, M.depth * 0.6, M.radius * 2);
+    base.setLocalPosition(0, h / 2 - M.below, 0.0003 + M.depth * 0.3);
+    const dome = new Entity('notice magnet dome');
+    dome.addComponent('render', { type: 'sphere', material: magnetMat, castShadows: false, receiveShadows: true });
+    dome.setLocalScale(M.radius * 1.92, M.radius * 1.92, M.depth * 0.8);
+    dome.setLocalPosition(0, h / 2 - M.below, 0.0003 + M.depth * 0.6);
+    this.notice.addChild(base); this.notice.addChild(dome);
+    noProbes(this.notice);
+    // The typed face, once it has loaded (the sheet keeps the stand-in until then).
+    document.fonts?.load('34px "Special Elite"').then(faces => {
+      if (!faces?.length) return;
+      this.drawNotice(canvas.getContext('2d'), canvas.width, canvas.height, '"Special Elite", "Courier New", monospace');
+      tex.setSource(canvas);
+    }).catch(() => {});
+    // E reads it, from in front of the sheet (the target follows the swinging door: update()).
+    this.noticeAt = new Vec3(); this.notice.getWorldTransform().getTranslation(this.noticeAt);
+    const toEye = new Vec3(), out = new Vec3();
+    this.interactions.add({ pos: this.noticeAt, size: h * 0.7, label: () => 'Read the notice',
+      active: () => {
+        const eye = this.interactions.camera?.getPosition();
+        if (!eye) return true;
+        this.notice.getWorldTransform().getZ(out);
+        return toEye.sub2(eye, this.noticeAt).dot(out) > 0.05;
+      },
+      use: () => { this.hud?.examine({ className: 'typed', html: noticeHtml() }); this.story?.sys.journal?.find('notice'); } });
+  }
+
+  // The sheet as printed: off-white paper with a little grain and a fold, the heading spaced out and struck twice over a
+  // rule, the text set to the page, the signature to the right, the magnet's soft shadow at the top.
+  drawNotice(g, w, h, font) {
+    const [heading, ...rest] = NOTICE.split('\n').map(s => s.trim()).filter(Boolean), signature = rest.length > 1 ? rest.pop() : null;
+    const margin = Math.round(w * 0.09), width = w - 2 * margin;
+    g.save();
+    g.fillStyle = '#efebe1'; g.fillRect(0, 0, w, h);
+    // Grain (the same every time: a seeded scatter) and a faint shade towards the edges.
+    let seed = 7;
+    const rand = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    for (let i = 0; i < 2600; i++) { g.fillStyle = `rgba(${rand() < 0.5 ? '90,80,64' : '255,255,250'},${0.05 + rand() * 0.06})`; g.fillRect(rand() * w, rand() * h, 1 + rand() * 2, 1 + rand() * 2); }
+    const edge = g.createRadialGradient(w / 2, h * 0.45, h * 0.25, w / 2, h / 2, h * 0.75);
+    edge.addColorStop(0, 'rgba(120,100,70,0)'); edge.addColorStop(1, 'rgba(120,100,70,0.12)');
+    g.fillStyle = edge; g.fillRect(0, 0, w, h);
+    // Folded once (it came under the door), the crease low across the empty foot of the sheet.
+    const crease = Math.round(h * 0.68);
+    g.fillStyle = 'rgba(255,255,255,0.35)'; g.fillRect(0, crease, w, 1);
+    g.fillStyle = 'rgba(80,70,55,0.12)'; g.fillRect(0, crease + 1, w, 2);
+    // The magnet's soft shadow round where it sits on the top edge (down and to the right of it).
+    const S = NOTICE_SHEET, px = w / S.size[0], mr = S.magnet.radius * px, mx = w / 2 + 4, my = S.magnet.below * px + 6;
+    const shadow = g.createRadialGradient(mx, my, mr * 0.8, mx, my, mr * 1.25);
+    shadow.addColorStop(0, 'rgba(30,24,18,0.35)'); shadow.addColorStop(1, 'rgba(30,24,18,0)');
+    g.fillStyle = shadow; g.beginPath(); g.arc(mx, my, mr * 1.25, 0, Math.PI * 2); g.fill();
+    // Text: near-black toner.
+    const ink = 'rgba(28,25,22,0.93)';
+    g.fillStyle = ink; g.textBaseline = 'alphabetic';
+    let size = 38;
+    const set = (px) => { g.font = `${px}px ${font}`; };
+    set(size);
+    const spaced = heading.split('').join(String.fromCharCode(8202));      // hair spaces: a printed heading's tracking
+    while (g.measureText(spaced).width > width && size > 18) set(--size);
+    let y = Math.round(h * 0.17);
+    g.textAlign = 'center';
+    g.fillText(spaced, w / 2, y); g.fillText(spaced, w / 2 + 1.2, y);      // struck twice: bold
+    y += Math.round(size * 0.55);
+    g.fillRect(margin, y, width, 3);
+    y += Math.round(size * 1.6);
+    // Paragraphs, wrapped to the measure.
+    const body = 31, line = Math.round(body * 1.42);
+    set(body); g.textAlign = 'left';
+    for (const text of rest) {
+      let row = '';
+      for (const word of text.split(/\s+/)) {
+        const next = row ? `${row} ${word}` : word;
+        if (g.measureText(next).width > width && row) { g.fillText(row, margin, y); y += line; row = word; } else row = next;
+      }
+      if (row) { g.fillText(row, margin, y); y += line; }
+      y += Math.round(line * 0.5);
+    }
+    if (signature) { g.textAlign = 'right'; g.fillText(signature, w - margin, y + Math.round(line * 0.6)); }
+    g.restore();
+  }
+
   // --- papers ------------------------------------------------------------------------------------------------------
-  // Paper on surfaces, read with E (hud.examine): the notice on the fridge door, the prescription by the bed, the sleep
-  // diary on the desk. Text on canvas in the notes' own hands (Special Elite for print, Caveat for handwriting).
+  // Paper on surfaces, read with E (hud.examine): the prescription by the bed, the sleep diary on the desk (and the
+  // notice on the fridge door: buildNotice). Text in the notes' own hands (Special Elite for print, Caveat for handwriting).
   buildPapers() {
     this.papers = [
-      { id: 'notice', at: [1.25, 1.55, -0.355], size: [0.21, 0.297], yaw: 0, pitch: 90, className: 'typed', evidence: 'notice',
-        html: '<h1>NOTICE TO RESIDENTS</h1>Following reports of noises in the ceiling voids of floors 4 to 6, the building’s maintenance company will inspect the service voids on Monday between 9:00 and 13:00.<br><br>Please make sure access hatches are clear.<br><br>Hot water is supplied centrally. Report leaks to the caretaker.<br><br>— The Management' },
       // The prescription: the bottle by the bed (its label printed for this story: tools/props).
       { id: 'pills', model: 'pills', at: PILLS, size: [0.05, 0.08], yaw: 200, className: 'pills', evidence: 'pills',
         html: '<b>ZOLPIDEM TARTRATE 10 mg</b><br>Take ONE tablet at bedtime.<br><br>WARNING: May cause sleepwalking, sleep-driving and other complex sleep behaviours, with no memory of the event. May cause hallucinations. Do not take with alcohol.<br><br><small>Dr. M. Haas</small>' },
@@ -255,7 +435,7 @@ export class World {
         this.root.addChild(e);
       }
       const at = new Vec3(...p.at).add(new Vec3(0, p.model ? 0.03 : 0, 0));
-      this.interactions.add({ pos: at, size: Math.max(...p.size) * 0.7, label: () => p.id === 'notice' ? 'Read the notice' : p.id === 'pills' ? 'Look at the pills' : 'Read the diary',
+      this.interactions.add({ pos: at, size: Math.max(...p.size) * 0.7, label: () => p.id === 'pills' ? 'Look at the pills' : 'Read the diary',
         use: () => {
           this.hud?.examine({ className: p.className, html: typeof p.html === 'function' ? p.html() : p.html });
           this.story?.sys.journal?.find(p.evidence);
@@ -266,7 +446,7 @@ export class World {
 
   // --- the spare key -----------------------------------------------------------------------------------------------
   // Hidden in one of three places per run (story.js SPARE_KEY; the diary says which): in the red tin on the coffee
-  // shelf, taped under the sofa's cushion, pushed into the soil of the corridor's plant. Each place can be searched.
+  // shelf, taped under the sofa's cushion, at the bottom of the green vase on the coffee table. Each place can be searched.
   buildSpareKey() {
     this.keyEntity = this.props?.make('keys', { parent: this.root, name: 'spare key', configure: (m) => this.configureMaterial?.(m, 'key') });
     if (!this.keyEntity) {
@@ -276,7 +456,7 @@ export class World {
     }
     this.keyEntity.enabled = false;            // hidden where it is: in the tin, under the cushion, in the soil
     this.tin = this.props?.make('tin', { parent: this.root, at: TIN, euler: [0, 25, 0], configure: (m) => this.configureMaterial?.(m, 'tin') });
-    const where = { tin: ['Look in the tin', 'Old receipts. A screw.'], sofa: ['Feel under the cushion', 'Crumbs.'], plant: ['Feel in the pot', 'Soil.'] };
+    const where = { tin: ['Look in the tin', 'Old receipts. A screw.'], sofa: ['Feel under the cushion', 'Crumbs.'], plant: ['Feel in the vase', 'Stems. Cold water.'] };
     for (const spot of SPARE_SPOTS) {
       this.interactions.add({ pos: new Vec3(...spot.at), size: spot.size, label: () => where[spot.id][0], active: () => !this.story?.sys.items?.has('spare-key'),
         use: () => {
@@ -323,7 +503,8 @@ export class World {
 
   // --- whole states ------------------------------------------------------------------------------------------------
   reset(story) {
-    this.shards(false); this.flood(0); this.prints(false); this.mirrorFog(false); this.tap(false);
+    this.shards(false); this.flood(0); this.prints(false); this.mirrorFog(false); this.tap(false, { quiet: true });
+    this.taps?.reset();                         // the kitchen tap too, if it was left running
     this.hot = false;
     if (this.bathDoor) { this.bathDoor.locked = false; }
     this.placeKey();
@@ -337,13 +518,17 @@ export class World {
     this.shards(f('glass'));
     if (f('glass') && !f('silhouette')) this.bathroomOccupied(true);
     if (f('silhouette')) { this.bathroomOccupied(false); this.prints(true); }
-    if (f('power-cut') && !f('tap-off')) this.tap(true, { hot: true });
-    if (f('power-cut')) { this.flood(1); this.mirrorFog(true); this.dryerInBasin(true); }
+    if (f('power-cut') && !f('tap-off')) this.tap(true, { hot: true, quiet: true });
+    if (f('power-cut')) { this.flood(1); this.mirrorFog(true); this.dryerInBasin(true); this.taps?.fill('bathroom', true); }
     this.story?.sys.nest?.restore(story);
   }
 
   update(dt) {
+    this.updateDoorGlow();
+    // The notice's E target rides the refrigerator door.
+    this.notice?.getWorldTransform().getTranslation(this.noticeAt);
     // The basin overflows while the hot tap runs after the cut; the mirror fogs with it.
-    if (this.tapOn && this.hot && this.floodLevel < 1) { this.flood(Math.min(1, this.floodLevel + dt / 40)); if (this.floodLevel > 0.15) this.mirrorFog(true); }
+    const hotTap = this.taps ? this.taps.isHot('bathroom') : this.tapOn && this.hot;
+    if (hotTap && this.floodLevel < 1) { this.flood(Math.min(1, this.floodLevel + dt / 40)); if (this.floodLevel > 0.15) this.mirrorFog(true); }
   }
 }

@@ -1,6 +1,7 @@
 // His nest (docs/STORY.md): the floor of the wardrobe's tall section behind its right door (the rail half): a folded
-// blanket, water bottles, a key that does not fit your door, a returned letter, and polaroids of you asleep, taken from
-// where you stand; your hangers pushed to the end of the rail to make room. Above, a hatch in the wardrobe's roof into the dark (the cabinets over it and the void above the
+// blanket, water bottles, a brass key on a paper tag ("5B": the flat he was evicted from; nothing else says who he is),
+// and polaroids of you asleep, taken from where you stand; your hangers pushed to the end of the rail to make room (one
+// drops off the rail when the door swings open). Above, a hatch in the wardrobe's roof into the dark (the cabinets over it and the void above the
 // ceiling). Dust drifts down from it when it is open or he moves up there; once, a drop of water falls through the
 // torch beam. During the hunt he pulls all of it up after him.
 // The things are downloaded models (props.js: tools/props), with simple stand-ins if one is missing.
@@ -32,19 +33,21 @@ export class Nest {
       blanket: model('blanket', [9.49, F, -0.19], 4, () => box('nest blanket', [0.36, 0.07, 0.5], [9.49, F + 0.035, -0.18], mat([0.16, 0.16, 0.17], 0.08))),
       bottles: model('bottles', [9.5, F, 0.16], 35, () => cyl('nest bottle', 0.033, 0.22, [9.5, F + 0.11, 0.17], mat([0.75, 0.82, 0.86], 0.95, { opacity: 0.35 }))),
       key: model('old-key', [9.4, B, -0.38], 35, () => box('old key', [0.05, 0.003, 0.02], [9.43, B, -0.3], mat([0.6, 0.5, 0.3], 0.7, { metal: 1 }), [0, 35, 0])),
-      letter: model('letter', [9.52, B, -0.05], -78, () => box('returned letter', [0.16, 0.002, 0.11], [9.56, B, -0.05], mat([0.86, 0.83, 0.76], 0.15), [0, -12, 0])),
       polaroids: model('polaroids', [9.45, B, -0.24], 80, () => box('polaroids', [0.088, 0.008, 0.107], [9.4, B, -0.24], mat([0.93, 0.92, 0.89], 0.3), [0, 22, 0])),
     };
     // Your hangers, pushed along the rail (closets.js: y 1.72, x 9.49) to its far end.
     this.hangers = [-0.475, -0.452, -0.432, -0.405].map((z, i) => props?.make('hanger', { parent: this.root, at: [9.49, 1.733, z], euler: [0, 90 + [6, -4, 9, -7][i], 0], scale: 0.9, configure: (m) => configureMaterial?.(m) }));
     this.buildHatch(mat);
     this.buildDust();
+    // The drop of water (one, reused): built now, so its material is never new mid-game.
+    const dropMat = mat([0.7, 0.8, 0.85], 0.98, { opacity: 0.6 });
+    this.dropEntity = new Entity('drop'); this.dropEntity.addComponent('render', { type: 'sphere', material: dropMat, castShadows: false });
+    this.dropEntity.setLocalScale(0.006, 0.012, 0.006); this.dropEntity.enabled = false; this.root.addChild(this.dropEntity);
     // E on the things in it.
     const item = (prop, label, use) => interactions.add({ pos: prop.getPosition().clone().add(new Vec3(0, 0.03, 0)), size: 0.1,
       active: () => this.root.enabled && this.packed !== true && this.rightDoorOpen(), label: () => label, use });
     item(this.props.polaroids, 'Look at the polaroids', () => this.examinePolaroids());
-    item(this.props.key, 'Pick up the key', () => { this.story?.oldKey(); this.hud?.examine({ className: 'typed', html: '<h1>A key</h1>Brass, worn. A front-door key.<br><br>It doesn’t fit my door: the landlord changed the lock in the spring.' }); });
-    item(this.props.letter, 'Read the envelope', () => { this.story?.letter(); this.hud?.examine({ className: 'typed', html: '<h1>RETURN TO SENDER</h1>Mr D. Kessler<br>Flat 5C<br><br><i>Not known at this address.</i><br><br>Postmarked in April.' }); });
+    item(this.props.key, 'Pick up the key', () => { this.story?.oldKey(); this.hud?.examine({ className: 'typed', html: '<h1>A key</h1>Brass, worn. A front-door key on a paper tag, in pencil:<br><br><b style="font-size:2rem">5B</b>' }); });
     item(this.props.blanket, 'The blanket', () => { this.story?.nestSeen(); this.story?.say('It’s warm.'); });
     noProbes(this.root);
     this.reset();
@@ -91,11 +94,17 @@ export class Nest {
   // One drop of water through the torch beam (he is right there, still wet).
   drop() {
     this.bank?.play('water_drop', { at: [NEST.hatch.x, 0.2, NEST.hatch.z], gain: 0.7, delay: 0.9 });
-    const m = new StandardMaterial(); m.diffuse = new Color(0.7, 0.8, 0.85); m.gloss = 0.98; m.opacity = 0.6; m.blendType = BLEND_NORMAL; m.update();
-    const e = new Entity('drop'); e.addComponent('render', { type: 'sphere', material: m, castShadows: false });
-    e.setLocalScale(0.006, 0.012, 0.006); e.setPosition(NEST.hatch.x + 0.05, NEST.roof - 0.02, NEST.hatch.z);
-    this.root.addChild(e);
+    const e = this.dropEntity;
+    e.setPosition(NEST.hatch.x + 0.05, NEST.roof - 0.02, NEST.hatch.z); e.enabled = true;
     this.falling = { e, v: 0 };
+  }
+
+  // The hanger nearest the door drops off the rail as the door swings open, and lands on the nest's floor.
+  dropHanger() {
+    const h = this.hangers?.[3];
+    if (!h || this.fallingHanger || h.dropped) return;
+    h.dropped = true;
+    this.fallingHanger = { h, v: 0, spin: 0 };
   }
 
   hatch(open) {
@@ -116,14 +125,26 @@ export class Nest {
   }
 
   reset() { this.packed = false; for (const p of Object.values(this.props)) p.enabled = true; this.hatch(false); this.dustTimer = 0; this.dustEntity.particlesystem.stop(); }
-  restore(story) { this.reset(); this.hatch(story.has('silhouette')); if (story.has('hunt')) this.packUp(); }
+  restore(story) {
+    this.reset(); this.hatch(story.has('silhouette')); if (story.has('hunt')) this.packUp();
+    const h = this.hangers?.[3];
+    if (h && story.has('hanger')) { h.dropped = true; h.setPosition(9.52, NEST.floor + 0.015, -0.33); h.setEulerAngles(84, 120, 0); }
+  }
 
   update(dt) {
     if (this.dustTimer > 0) { this.dustTimer -= dt; if (this.dustTimer <= 0) this.dustEntity.particlesystem.stop(); }
     if (this.falling) {
       const f = this.falling; f.v += 9.8 * dt; const p = f.e.getPosition();
       f.e.setPosition(p.x, p.y - f.v * dt, p.z);
-      if (p.y < NEST.floor + 0.05) { f.e.destroy(); this.falling = null; }
+      if (p.y < NEST.floor + 0.05) { f.e.enabled = false; this.falling = null; }
+    }
+    if (this.fallingHanger) {
+      const f = this.fallingHanger, p = f.h.getPosition();
+      f.v += 9.8 * Math.min(dt, 0.05); f.spin += Math.min(dt, 0.05) * 260;
+      const y = Math.max(NEST.floor + 0.015, p.y - f.v * Math.min(dt, 0.05));
+      f.h.setPosition(p.x + 0.12 * Math.min(dt, 0.05), y, p.z + 0.25 * Math.min(dt, 0.05));
+      f.h.setEulerAngles(Math.min(84, f.spin), 90 + f.spin * 0.3, 0);
+      if (y <= NEST.floor + 0.015) this.fallingHanger = null;
     }
   }
 }

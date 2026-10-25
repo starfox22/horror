@@ -1,11 +1,13 @@
 # horror
 True horror game
 
-A first-person browser horror game in the spirit of P.T., built on PlayCanvas. Current state: **build 0.12 (no freezes, VSync, leak-free lighting, a downloaded first-person arm, the first scripted event), a walkable
-night-time apartment**: a first-person waking opening, an opening refrigerator with a lit interior, a glass water jug and a tumbler to drink from with a downloaded first-person arm, the first scripted event (a glass shatters in the bedroom after you drink), light switches in every area, lamps with their own switches (bedside, desk, arc lamp), a bathroom door and wardrobe that
-open, a laptop, computer and coffee machine to use, a flashlight to find (only its beam is seen), rain gathering and running
-down the windows, lightning and thunder, warm night lighting that fades softly into darkness (bounce light from probes
-around the flat, eye adaptation), post-processing and ambient sound.
+A first-person browser horror game in the spirit of P.T., built on PlayCanvas. Current state: **build 0.14, a whole night
+in one flat**: you wake at 03:07 in a storm; a notice on the fridge says the troublesome resident has finally been
+evicted; a glass shatters in your empty bedroom; the power dies; a masked man with your kitchen knife runs into your
+bedroom and up into the ceiling; you find where he has been living, and then he hunts you. Get out. Believable scares
+(a crow at the window, the pipes, the light under a locked door, his sprint, the phone buzzing on the nightstand), a
+death with a knife, blood and a fall to the floor, four endings, three difficulties, checkpoints, a journal of evidence,
+downloaded models and recordings throughout, lighting with probes and shadows on WebGPU or WebGL 2.
 
 Read `docs/HANDOFF.md` first if you are picking this up (state, owner's preferences, how things fit together). Claude Code sessions load `CLAUDE.md` automatically: it lists what to read, the working rules, commands and how to publish.
 For Claude's continuation after the owner-approved 0.11 promotion, read [CLAUDE_HANDOFF.md](docs/CLAUDE_HANDOFF.md); build 0.12 is described in [BUILD_012.md](docs/BUILD_012.md).
@@ -16,14 +18,15 @@ The latest pass adds [a 60 FPS Auto target, lighter graphics budgets, sparse wak
 
 ## Play
 
-- Production web build (build 0.12): https://starfox22.github.io/horror/?v=0.12
-- Codex review (0.11; a `main` deployment removes this path until the preview workflow is rerun): https://starfox22.github.io/horror/codex/?v=0.11-final
-- Claude builds (0.1-0.7, 0.12): https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9
+- Claude's latest build (0.14, the branch `claude/pensive-volta-et0etl`, published on every push): https://starfox22.github.io/horror/claude/
+- Production (`main`; build 0.13 until the owner promotes a newer one): https://starfox22.github.io/horror/
+- Codex review (`codex-review`): https://starfox22.github.io/horror/codex/
+- The claude.ai artifact (always the latest Claude build): https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9
 - Locally: `npm install && npm run dev`, open the printed URL. Click to enter.
 
-Controls: WASD or arrows move · mouse look · Shift walk faster · E use (switches, doors, refrigerator, lamps, laptop, computer, coffee machine) · F flashlight (once found)
-· B head bob on/off · G graphics · 1 / 2 / 3 quality (low / medium / high; it also drops automatically on slow GPUs) · Esc pause.
-URL hash options: `#webgl` (force WebGL 2 instead of WebGPU), `#stats` (fps, draw calls); for tests `#dark`, `#flash`.
+Controls: WASD or arrows move · mouse look · Shift run · C crouch · E use (hold E: the front door's lock, going back to
+sleep) · F torch (once found) · Q phone (once you have it; hold Q: silence it) · B head bob · G graphics · 1 / 2 / 3
+quality · Esc pause. Use headphones.
 
 Choose **Wake up** to begin in bed. The opening supports Space/Enter to skip and Esc/G to pause; resume continues the same sequence. Normal walking begins beside the bed. The bedside lamps, sofa arc lamp, extractor, bathroom mirror, the office computer and the laptop start on. Open the refrigerator with E, then press E again toward its glass to drink: the arm reaches in, drinks and puts the glass back. Shut the refrigerator afterwards and listen.
 

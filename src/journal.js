@@ -1,25 +1,27 @@
 // What the player has found (docs/STORY.md, Evidence): the pause menu's journal lists each piece with the thought it
 // came with, and which way it points (real / in my head / both). Found this run (saved with the checkpoint) and found
 // ever (kept in the browser for the main menu's count). A newly found piece shows a quiet note at the corner.
+// Build 0.14 (docs/STORY.md v3): the evicted man never left. The texts say what was seen, never who he is.
 export const EVIDENCE = [
-  { id: 'stuck', title: 'The wardrobe door', text: 'The right door of the wardrobe would not open. Stuck, I thought.', points: 'both' },
-  { id: 'phone-fridge', title: 'My phone, in the fridge', text: 'Ice cold. I have never put my phone in the fridge. Not awake.', points: 'both' },
-  { id: 'glass', title: 'A broken glass', text: 'A kitchen glass, smashed by my bed, in a spill of water with something pink in it. I did not bring a glass to bed.', points: 'both' },
-  { id: 'bathroom-locked', title: 'The bathroom door', text: 'Locked. It only locks from the inside. The tap was running, then it stopped.', points: 'real' },
-  { id: 'notice', title: 'Notice to residents', text: 'Noises reported in the ceiling voids of floors 4 to 6. Maintenance will inspect. Hot water is central: report leaks to the caretaker.', points: 'real' },
-  { id: 'pills', title: 'My prescription', text: 'Zolpidem 10 mg, one at night. May cause sleepwalking, complex sleep behaviours, and hallucinations.', points: 'head' },
-  { id: 'diary', title: 'My sleep diary', text: 'Woke on the sofa. Fridge open in the morning. The toilet seat up. I live alone. Dr Haas says film the nights. Camera came today.', points: 'both' },
-  { id: 'silhouette', title: 'The end of the corridor', text: 'Someone was standing by the front door. Then the torch flickered and nobody was.', points: 'both' },
-  { id: 'prints', title: 'Wet footprints', text: 'Bare footprints, my size, from the bedroom to the front door and back. I was never over there.', points: 'both' },
-  { id: 'mirror', title: 'The mirror', text: 'Fogged over, with one band wiped clear. Higher than my head.', points: 'real' },
-  { id: 'nest', title: 'The wardrobe floor', text: 'A blanket. Bottles. A torch that is not mine. Above it, a hatch in the wardrobe’s roof, open on the dark.', points: 'real' },
-  { id: 'polaroids', title: 'Polaroids', text: 'My bed, at night, with me asleep in it. Taken from inside the wardrobe.', points: 'real' },
-  { id: 'let-me-in', title: 'The oldest polaroid', text: 'On the back, in block capitals, dated in March: YOU LET ME IN.', points: 'both' },
-  { id: 'old-key', title: 'A key', text: 'A front-door key. It is not mine, and it does not fit my door: the lock was changed in the spring.', points: 'real' },
-  { id: 'letter', title: 'A returned letter', text: 'Addressed to D. Kessler at this flat. Not known at this address.', points: 'real' },
-  { id: 'clip-0047', title: 'Home Cam · 00:47', text: 'The wardrobe door opens a hand’s width. A hand. It closes.', points: 'real' },
-  { id: 'clip-0258', title: 'Home Cam · 02:58', text: 'The bed is empty. Someone stands at the foot of it, face white in the infrared. Is that me?', points: 'both' },
+  { id: 'stuck', title: 'The wardrobe door', text: 'The right door of the wardrobe would not open. It gave a centimetre, then stopped. Stuck, I thought.', points: 'both' },
+  { id: 'phone-dead', title: 'My phone', text: 'Dead on the nightstand. The charger was pulled out of the wall. I always plug it in.', points: 'both' },
+  { id: 'notice', title: 'Notice to residents', text: 'The resident who had been causing disturbances over the last month has finally been evicted. Finally.', points: 'real' },
   { id: 'key-bowl', title: 'The key bowl', text: 'Empty. My keys are always in it.', points: 'real' },
+  { id: 'knife', title: 'The knife block', text: 'One slot empty. The biggest one.', points: 'real' },
+  { id: 'glass', title: 'A broken glass', text: 'A glass, smashed by my bed, in a spill of water. I did not bring a glass to bed.', points: 'both' },
+  { id: 'blood', title: 'In the spill', text: 'The water was pink. One bare footprint in it, going towards the bathroom.', points: 'real' },
+  { id: 'bathroom-locked', title: 'The bathroom door', text: 'Locked. It only locks from the inside. The tap stopped when I tried the handle, and then the light under the door went out.', points: 'real' },
+  { id: 'silhouette', title: 'The end of the corridor', text: 'A man by my front door, at the edge of the torch. Black clothes, a white face. He ran at me, and into my bedroom.', points: 'real' },
+  { id: 'prints', title: 'Footprints', text: 'Wet, bare, a little pink. From the front door into my bedroom.', points: 'real' },
+  { id: 'mirror', title: 'The mirror', text: 'Fogged over, with one band wiped clear. Higher than my head.', points: 'real' },
+  { id: 'nest', title: 'The wardrobe floor', text: 'A blanket. Bottles. Above it, a hatch in the wardrobe’s roof, open on the dark.', points: 'real' },
+  { id: 'old-key', title: 'A key', text: 'A front-door key on a paper tag: 5B. Not mine.', points: 'real' },
+  { id: 'polaroids', title: 'Polaroids', text: 'My bed, at night, with me asleep in it. Taken from inside the wardrobe.', points: 'real' },
+  { id: 'let-me-in', title: 'The oldest polaroid', text: 'On the back, in block capitals: YOU LET ME IN.', points: 'both' },
+  { id: 'clip-0047', title: 'Home Cam · 00:47', text: 'The wardrobe door opens a hand’s width. A white face in the gap. It closes.', points: 'real' },
+  { id: 'clip-0258', title: 'Home Cam · 02:58', text: 'The bed is empty. Someone stands at the foot of it, face white in the infrared. Is that me?', points: 'both' },
+  { id: 'pills', title: 'My prescription', text: 'Zolpidem 10 mg, one at night. May cause sleepwalking, complex sleep behaviours, and hallucinations.', points: 'head' },
+  { id: 'diary', title: 'My sleep diary', text: 'Woke on the sofa. Fridge open in the morning. Things moved. Dr Haas says film the nights. Camera came today.', points: 'both' },
 ];
 const EVER_KEY = 'horror.evidence.v1';
 

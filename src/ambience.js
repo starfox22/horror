@@ -9,13 +9,28 @@ const WINDOW_SPOTS = [[-6.4, 1.5, 1.5], [-3.5, 1.6, -1.4], [-0.5, 1.6, -1.4], [4
 const FRIDGE = [1.55, 1.1, -0.66];
 const TAP = [-2.62, 0.95, -1.02];
 
+// The end of the master chain. Until 0.13 it was a DynamicsCompressor at its defaults (threshold -24 dB, 30 dB knee,
+// ratio 12, +3.7 dB make-up): it pressed every loud moment (the glass, the stings) down towards the rain. Now the mix
+// keeps its range: a fixed make-up gain keeps the quiet beds where that compressor left them, and a safety limiter
+// (attack 1 ms, the fastest a DynamicsCompressor goes, with its 6 ms look-ahead) only stops stacked loud sounds from
+// clipping. A DynamicsCompressor adds its own make-up gain, (1 / its gain at 0 dBFS)^0.6 (Web Audio spec), which would
+// lift its ceiling to -0.8 dBFS and let a glass shatter's first transient over 0 dBFS: the trim after it takes that out.
+export const MAKEUP_DB = 3.65;
+export const LIMITER = { threshold: -2, knee: 0, ratio: 20, attack: 0.001, release: 0.15 };
+export const limiterMakeupDb = ({ threshold, ratio } = LIMITER) => -0.6 * threshold * (1 - 1 / ratio);   // knee 0
+
 export class Ambience {
   constructor() {
     const ctx = this.ctx = new AudioContext();
-    this.master = ctx.createGain();
+    this.master = ctx.createGain();            // the master volume (settings); everything connects here
     this.master.gain.value = 0;
-    const comp = ctx.createDynamicsCompressor();
-    this.master.connect(comp).connect(ctx.destination);
+    this.makeup = ctx.createGain();
+    this.makeup.gain.value = 10 ** (MAKEUP_DB / 20);
+    const lim = this.limiter = ctx.createDynamicsCompressor();
+    for (const [k, v] of Object.entries(LIMITER)) lim[k].value = v;
+    this.trim = ctx.createGain();
+    this.trim.gain.value = 10 ** (-limiterMakeupDb() / 20);
+    this.master.connect(this.makeup).connect(lim).connect(this.trim).connect(ctx.destination);
     this.reverb = ctx.createConvolver();
     this.reverb.buffer = this.impulse(1.6, 2.8);
     const wet = ctx.createGain(); wet.gain.value = 0.35;

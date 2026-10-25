@@ -51,6 +51,19 @@ The owner explicitly requested promoting verified build 0.11 to `main` and handi
   creepy clothes, very scary (assets already downloaded may be kept for later). When done: publish directly to `main`,
   update the claude.ai artifact, write a hand-off, and summarise every change with screenshots. Details:
   [BUILD_013.md](BUILD_013.md), the design in [STORY.md](STORY.md).
+- Build 0.14 (Claude, on `claude/pensive-volta-et0etl`, owner request of 2026-10-25 after 0.13): a smaller notice on the
+  outside of the fridge door ("the resident who had been causing disturbances ... has finally been evicted"); the
+  fridge door never sticking on the player; the phone out of the fridge (nightstand or living-room table); the first
+  sighting must not vanish: he runs into the bedroom, believably; a knife and a creepier look; being caught: a jump
+  scare, blood and falling to the floor; loud scare sounds, the opening glass very loud anywhere; a crow hitting a
+  window when the player faces it, with crow sounds; taps that turn on and off; a Hollywood story agent (inspired by
+  Netflix's "Unhinged"); a bug and polish pass; scary but feasible; the goal is to escape. Mid-task: developer-menu
+  events play 3 s after resuming (never while paused) and its light controls are not a permanent override (switches
+  and the fuse box keep working). Story decision: the owner rejected the caretaker twist and a chained door as too
+  close to "Unhinged"; the story stays simple (the evicted man never left, no details: "let the player imagine the
+  rest"), with plenty of believable jump scares and tension before he shows up; then creative control was handed over
+  ("make the game AAA"), work stays on this branch, with a playable link online. Details: [BUILD_014.md](BUILD_014.md),
+  the design in [STORY.md](STORY.md) v3.
 - Show screenshots and links before big decisions; publish each prototype to a web link.
 - Keep everything documented so another AI can continue.
 

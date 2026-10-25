@@ -89,7 +89,8 @@ export class Flashlight {
     const rest = this.restBounds.center.clone();
     this.item = interactions.add({ pos: rest, size: 0.16, label: () => 'Take the flashlight', use: () => this.pickUp() });
     this.interactions = interactions;
-    window.addEventListener('keydown', (e) => { if (e.code === 'KeyF' && !e.repeat && this.held) this.toggle(); });
+    // canToggle (main.js): not while paused, reading, caught or in an ending.
+    window.addEventListener('keydown', (e) => { if (e.code === 'KeyF' && !e.repeat && this.held && (this.canToggle?.() ?? true)) this.toggle(); });
     app.on('update', (dt) => this.update(dt));
   }
 

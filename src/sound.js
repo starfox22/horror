@@ -1,9 +1,14 @@
 // Recorded sound for the game (public/assets/audio/sfx.json + sfx/*.mp3, built by tools/audio/build.mjs from CC0 / CC BY
-// recordings; credits in docs/CREDITS.md). Shares the Web Audio graph of ambience.js (context, listener, room reverb).
-//  - Buses: effects, ambience, music (drones and stings), each with its own volume (settings), all under the master.
+// recordings; credits in docs/CREDITS.md). Shares the Web Audio graph of ambience.js (context, listener, room reverb,
+// and the master chain that ends in a safety limiter).
+//  - Buses: effects, ambience, music (drones and stings), the scare path, each with its own volume (settings: the scare
+//    path follows "Music and stings"), all under the master. A bus's reverb send has the same volume, so each slider
+//    takes its sounds' echo with it.
 //  - One-shots placed in the flat reach the ear along open space: through the doorway on the way, never through a wall
 //    (navgrid.js heardFrom), as far away as the walk really is; heard round a corner they lose some top end and gain
-//    some room. `min` keeps story sounds audible wherever the player is.
+//    some room. `min` keeps story sounds audible wherever the player is (a floor on the distance roll-off).
+//  - Scares (bank.scare, music.sting, and the recordings in SCARES such as the glass) duck the beds: every loop dips
+//    for about a second, so the scare lands in a hole in the rain.
 //  - Loops (rain, room tone, the fridge, drones) are played by overlapping copies that cross-fade, so any recording
 //    loops without a seam or a codec gap.
 //  - Takes of many footsteps or creaks play one hit at a time (`segments`, picked at random).
@@ -12,23 +17,45 @@
 const LAZY = new Set(['elevator', 'sirens_far', 'radio_chatter', 'knock_police', 'door_smash', 'door_kick', 'drone_deep',
   'sting_braam', 'sting_scare', 'sting_riser', 'keys_unlock', 'toilet', 'phone_ring', 'phone_static', 'phone_dial', 'boom']);
 
+// Recordings that are scares wherever they are played from: the beds duck by `duck` dB for `hold` seconds under them.
+// `bright`: round a corner they keep most of their top end (a glass shatter must stay a glass shatter: its energy is
+// at 4-8 kHz, which the usual corner filter takes away).
+export const SCARES = { glass_break: { duck: 10, hold: 1.1, bright: true } };
+export const BUSES = ['sfx', 'amb', 'music', 'ui', 'scare'];
+
+// The corner filter for a sound heard round `distance` metres of corners: high-shelf cut (dB, at 2.5 kHz) and low-pass (Hz).
+export const corner = (distance, bright = false) => bright
+  ? { shelf: -Math.min(4, 1.5 + distance * 0.12), lowpass: Math.max(9000, 16000 - distance * 300) }
+  : { shelf: -Math.min(14, 4 + distance * 0.6), lowpass: Math.max(3200, 12000 - distance * 450) };
+
 export class SoundBank {
   // ambience: an Ambience (its ctx, master and reverb); nav: a NavGrid for routing through doorways (optional, later).
   constructor(ambience) {
     this.amb = ambience;
     const ctx = this.ctx = ambience.ctx;
-    this.buses = {};
-    for (const name of ['sfx', 'amb', 'music', 'ui']) {
-      const g = ctx.createGain(); g.connect(ambience.master); this.buses[name] = g;
+    // Per bus: its volume (dry, to the master) and its reverb send at the same volume; loops (the beds) reach both
+    // through the bus's bed gain and bed send, which a scare ducks.
+    this.buses = {}; this.sends = {}; this.beds = {}; this.bedSends = {};
+    for (const name of BUSES) {
+      const g = this.buses[name] = ctx.createGain(); g.connect(ambience.master);
+      const s = this.sends[name] = ctx.createGain(); s.connect(ambience.reverb);
+      (this.beds[name] = ctx.createGain()).connect(g);
+      (this.bedSends[name] = ctx.createGain()).connect(s);
     }
     this.manifest = {}; this.raw = new Map(); this.buffers = new Map(); this.decoding = new Map();
     this.nav = null;
     this.listener = { x: 0, y: 1.6, z: 0 };
     this.loops = new Set();
+    this.ducked = { until: 0, floor: 1 };
     this._timer = setInterval(() => this.tick(), 200);
   }
 
-  setVolume(bus, v) { const g = this.buses[bus]; if (g) g.gain.setTargetAtTime(v, this.ctx.currentTime, 0.05); }
+  // A bus's volume (settings). The scare path follows the music (the slider is "Music and stings").
+  setVolume(bus, v) {
+    for (const name of bus === 'music' ? ['music', 'scare'] : [bus]) {
+      for (const g of [this.buses[name], this.sends[name]]) g?.gain.setTargetAtTime(v, this.ctx.currentTime, 0.05);
+    }
+  }
 
   async load(base = './assets/audio/', progress = () => {}) {
     const url = (f) => new URL(`${base}${f}`, location.href);
@@ -70,16 +97,52 @@ export class SoundBank {
     if (!this.nav) return { x: p.x, y: p.y, z: p.z, distance: Math.hypot(p.x - l.x, p.z - l.z), direct: true };
     const h = this.nav.heardFrom(p, l);
     if (!Number.isFinite(h.distance)) return { x: p.x, y: p.y, z: p.z, distance: Math.hypot(p.x - l.x, p.z - l.z) * 1.5, direct: false };
-    return { x: h.x, y: p.y, z: h.z, distance: h.distance, direct: h.direct };
+    let { x, z } = h;
+    // heardFrom puts the sound on the listener's head when not even the way's first corner is in sight (a door jamb
+    // clips the line to it): it would play inside the head at full level from any distance (the living-room rain heard
+    // in the bedroom, the glass in the kitchen). Send it along the way's first leg instead, as far away as the way is.
+    if (h.distance > 0.3 && Math.hypot(x - l.x, z - l.z) < h.distance * 0.5) {
+      const q = this.nav.path(l.x, l.z, p.x, p.z)?.points[1] ?? [p.x, p.z];
+      let dx = q[0] - l.x, dz = q[1] - l.z, len = Math.hypot(dx, dz);
+      if (len < 1e-3) { dx = p.x - l.x; dz = p.z - l.z; len = Math.hypot(dx, dz) || 1; }
+      x = l.x + dx / len * h.distance; z = l.z + dz / len * h.distance;
+    }
+    return { x, y: p.y, z, distance: h.distance, direct: h.direct };
+  }
+
+  // The beds (every loop, and their echo) dip by `db` for `hold` seconds from `delay` s from now (reaching full depth
+  // in ~40 ms), then come back over about a second. A deeper, longer duck already running is left alone.
+  duck(db = 10, hold = 1, delay = 0) {
+    const t = this.ctx.currentTime + Math.max(0, delay), floor = 10 ** (-Math.abs(db) / 20), until = t + hold;
+    const d = this.ducked;
+    if (d.until >= until && d.floor <= floor && d.from <= t) return;
+    Object.assign(d, { from: t, until: Math.max(until, d.until > t ? d.until : 0), floor: d.until > t ? Math.min(floor, d.floor) : floor });
+    for (const g of [...Object.values(this.beds), ...Object.values(this.bedSends)]) {
+      const p = g.gain;
+      p.cancelScheduledValues(t);
+      p.setTargetAtTime(d.floor, t, 0.012);
+      p.setTargetAtTime(1, d.until, 0.3);
+    }
+  }
+
+  // A jump scare: `key` at full level with the beds ducked under it so it lands. A sting in the head (no opts.at) goes
+  // on the scare path (its own bus at the "Music and stings" volume) nearly dry; a scare placed in the flat (opts.at:
+  // a kick, a hanger, his boots) is an effect (the effects volume) with the room's echo. Neither is ever ducked.
+  // Options as play() (duck: dB, 10; hold: s, 1). Returns play()'s handle.
+  scare(key, opts = {}) {
+    return this.play(key, { gain: 1, bus: opts.at ? 'sfx' : 'scare', send: opts.at ? 0.25 : 0.12, duck: 10, hold: 1, ...opts });
   }
 
   // A one-shot. at: {x,y,z} | [x,y,z] | null (in the head). Options: gain, rate (number or [min,max]), segment (index or
-  // 'random'), bus, send (reverb), ref/rolloff (distance model), min (lowest gain once placed), delay (s), occlude.
+  // 'random'), bus, send (reverb), ref/rolloff (distance model), min (lowest gain once placed), delay (s), occlude,
+  // duck/hold (duck the beds by `duck` dB for `hold` s; SCARES sets them for its recordings).
   play(key, opts = {}) {
     if (!this.manifest[key]) return null;
     const buffer = this.buffers.get(key);
     if (!buffer) { this.decode(key).then(() => this.play(key, opts)).catch(() => {}); return null; }
-    const ctx = this.ctx, entry = this.manifest[key];
+    const ctx = this.ctx, entry = this.manifest[key], scare = SCARES[key];
+    const duck = opts.duck ?? scare?.duck;
+    if (duck) this.duck(duck, opts.hold ?? scare?.hold ?? 1, opts.delay || 0);
     const src = ctx.createBufferSource(); src.buffer = buffer;
     const rate = Array.isArray(opts.rate) ? opts.rate[0] + Math.random() * (opts.rate[1] - opts.rate[0]) : (opts.rate ?? 1);
     src.playbackRate.value = rate;
@@ -95,9 +158,10 @@ export class SoundBank {
     if (at) {
       const r = opts.occlude === false ? { ...at, distance: Math.hypot(at.x - this.listener.x, at.z - this.listener.z), direct: true } : this.route(at);
       if (!r.direct) {
-        // Round a corner: the top end drops (gently: a glass shatter must stay a glass shatter) and the room takes more.
-        const shelf = ctx.createBiquadFilter(); shelf.type = 'highshelf'; shelf.frequency.value = 2500; shelf.gain.value = -Math.min(14, 4 + r.distance * 0.6);
-        const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = Math.max(3200, 12000 - r.distance * 450); lp.Q.value = 0.5;
+        // Round a corner: the top end drops and the room takes more.
+        const c = corner(r.distance, scare?.bright);
+        const shelf = ctx.createBiquadFilter(); shelf.type = 'highshelf'; shelf.frequency.value = 2500; shelf.gain.value = c.shelf;
+        const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = c.lowpass; lp.Q.value = 0.5;
         node.connect(shelf); shelf.connect(lp); node = lp; extra = [shelf, lp];
         send = Math.min(1, send * 1.8 + 0.1);
       }
@@ -107,16 +171,17 @@ export class SoundBank {
       // The panner sees the straight-line distance to where we put it; put it as far as the path is long.
       if (pan.positionX) { pan.positionX.value = place.x; pan.positionY.value = place.y; pan.positionZ.value = place.z; } else pan.setPosition(place.x, place.y, place.z);
       if (opts.min) {
-        const d = Math.hypot(place.x - this.listener.x, place.z - this.listener.z);
-        const expected = (opts.ref ?? 1) / ((opts.ref ?? 1) + (opts.rolloff ?? 1) * Math.max(0, d - (opts.ref ?? 1)));
+        // The roll-off the panner will apply (its distance is 3-D: a glass on the floor is 1.5 m below the ear).
+        const l = this.listener, d = Math.hypot(place.x - l.x, place.y - l.y, place.z - l.z), ref = opts.ref ?? 1;
+        const expected = ref / (ref + (opts.rolloff ?? 1) * Math.max(0, d - ref));
         if (expected < opts.min) out.gain.value *= opts.min / expected;
       }
     }
     node.connect(out);
-    const bus = this.buses[opts.bus || 'sfx'];
+    const name = this.buses[opts.bus] ? opts.bus : 'sfx', bus = this.buses[name];
     const wet = ctx.createGain(); wet.gain.value = send;
     if (pan) { out.connect(pan); pan.connect(bus); } else out.connect(bus);
-    out.connect(wet); wet.connect(this.amb.reverb);
+    out.connect(wet); wet.connect(this.sends[name]);
     const t0 = ctx.currentTime + (opts.delay || 0);
     if (duration !== undefined) {
       // Short fade at the cut so a hit taken out of a take never clicks.
@@ -135,17 +200,18 @@ export class SoundBank {
     const ctx = this.ctx, handle = { key, opts, gain: ctx.createGain(), playing: true, sources: [], next: 0 };
     handle.gain.gain.value = 0;
     const at = Array.isArray(opts.at) ? { x: opts.at[0], y: opts.at[1], z: opts.at[2] } : opts.at;
-    let input = handle.gain;
+    // A bed: through its bus's bed gain and bed send, which a scare ducks.
+    const name = this.buses[opts.bus] ? opts.bus : 'amb', bed = this.beds[name];
     if (at) {
       handle.at = at;
       const shelf = ctx.createBiquadFilter(); shelf.type = 'highshelf'; shelf.frequency.value = 2500; shelf.gain.value = 0;
       const pan = ctx.createPanner();
       pan.panningModel = 'HRTF'; pan.distanceModel = 'inverse'; pan.refDistance = opts.ref ?? 1; pan.rolloffFactor = opts.rolloff ?? 1; pan.maxDistance = 50;
-      handle.gain.connect(shelf); shelf.connect(pan); pan.connect(this.buses[opts.bus || 'amb']);
+      handle.gain.connect(shelf); shelf.connect(pan); pan.connect(bed);
       handle.pan = pan; handle.shelf = shelf;
       this.place(handle);
-    } else handle.gain.connect(this.buses[opts.bus || 'amb']);
-    if (opts.send) { const wet = ctx.createGain(); wet.gain.value = opts.send; handle.gain.connect(wet); wet.connect(this.amb.reverb); handle.wet = wet; }
+    } else handle.gain.connect(bed);
+    if (opts.send) { const wet = ctx.createGain(); wet.gain.value = opts.send; handle.gain.connect(wet); wet.connect(this.bedSends[name]); handle.wet = wet; }
     handle.target = opts.gain ?? 1;
     handle.gain.gain.setTargetAtTime(handle.target, ctx.currentTime, (opts.fadeIn ?? 1) / 3);
     handle.setGain = (v, seconds = 0.5) => { handle.target = v; handle.gain.gain.setTargetAtTime(v, ctx.currentTime, Math.max(0.01, seconds / 3)); };
@@ -191,7 +257,7 @@ export class SoundBank {
     handle.route = r;
     const p = handle.pan;
     if (p.positionX) { p.positionX.value = r.x; p.positionY.value = r.y; p.positionZ.value = r.z; } else p.setPosition(r.x, r.y, r.z);
-    handle.shelf.gain.setTargetAtTime(r.direct ? 0 : -Math.min(14, 4 + r.distance * 0.6), this.ctx.currentTime, 0.3);
+    handle.shelf.gain.setTargetAtTime(r.direct ? 0 : corner(r.distance).shelf, this.ctx.currentTime, 0.3);
   }
 
   tick() {

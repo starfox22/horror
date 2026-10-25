@@ -5,7 +5,8 @@ import { NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
 import draco3d from 'draco3dgltf';
 import { Entity, Vec3 } from 'playcanvas';
-import { Fridge } from '../src/fridge.js';
+import { Fridge, DOOR_CLEAR } from '../src/fridge.js';
+import { WalkGrid, segmentDistance } from '../src/walkgrid.js';
 import { FRIDGE, fridgeLocal, fridgeWorld, classifyFridgeTriangle, fridgeDoorSegment } from '../src/fridge-geometry.js';
 import { makeWaterGeometry, JUG_WATER_LEVEL } from '../src/fridge-water.js';
 import { intersectTriangle } from '../src/switch-surfaces.js';
@@ -107,9 +108,26 @@ test('native toggle can reverse while moving and the interior light follows the 
   f.toggle();settle(f);assert.equal(f.angle,0);assert.equal(f.light.light.enabled,false);assert.equal(f.glow.emissiveIntensity,0);
   f.toggle();settle(f);assert.equal(f.angle,FRIDGE.opening);assert.equal(f.light.light.intensity,.24);assert.equal(f.recaptures,2);
 });
-test('a player blocks the swinging door and the next press reverses its requested direction', () => {
-  const f=fakeFridge();f.toggle();for(let i=0;i<20;i++)f.update(1/60);
-  const old=f.angle,s=fridgeDoorSegment(old);f.player.pos.set((s[0]+s[2])/2,0,(s[1]+s[3])/2);f.update(1/60);
-  assert.equal(f.angle,old);assert.equal(f.moving,false);assert.equal(f.blocked,true);assert.equal(f.openRequested,true);
-  f.player.pos.set(0,0,2);f.toggle();settle(f);assert.equal(f.angle,0);assert.equal(f.openRequested,false);
+// The swing against the player on the real walk grid (tools/check-doors.mjs covers every spot round every door).
+function walkingFridge(x, z) {
+  globalThis.atob ??= (b64) => Buffer.from(b64, 'base64').toString('binary');
+  const grid = new WalkGrid(JSON.parse(readFileSync(new URL('../public/assets/apartment/collision.json', import.meta.url), 'utf8')));
+  const f = fakeFridge(); f.grid = grid; f.player = { pos: new Vec3(x, 0, z), floor: grid.floorUnder(x, z, 0.22) };
+  f.blocker = grid.addBlocker(() => (f.angle > 0.5 ? fridgeDoorSegment(f.angle) : null));
+  return f;
+}
+test('a player standing in the swing is pushed out of its way, opening and shutting', () => {
+  const f=walkingFridge(1.55,0.05),start=f.player.pos.clone();
+  f.toggle();settle(f);assert.equal(f.angle,FRIDGE.opening);assert.equal(f.blocked,false);
+  assert.ok(f.player.pos.distance(start)>0.2,'the door moved the player');
+  assert.ok(segmentDistance(f.player.pos.x,f.player.pos.z,fridgeDoorSegment(f.angle))>=DOOR_CLEAR-0.002);
+  // Shutting on a player who stepped in front of the open cabinet.
+  f.player.pos.set(1.45,0,0.1);f.toggle();settle(f);assert.equal(f.angle,0);assert.equal(f.blocked,false);
+  assert.ok(f.grid.fits(f.player.pos.x,f.player.pos.z,0.22,f.player.floor),'left on walkable floor');
+});
+test('a player who cannot be moved stops the swinging door and the next press reverses its requested direction', () => {
+  const f=walkingFridge(1.55,0.05);f.grid.fitsGrid=()=>false;
+  f.toggle();settle(f);
+  assert.ok(f.angle>0&&f.angle<FRIDGE.opening);assert.equal(f.moving,false);assert.equal(f.blocked,true);assert.equal(f.openRequested,true);
+  f.toggle();settle(f);assert.equal(f.angle,0);assert.equal(f.openRequested,false);
 });

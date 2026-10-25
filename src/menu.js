@@ -9,10 +9,10 @@ export const DEFAULT_SETTINGS = {
   subtitleSize: 1, subtitleBack: false, reducedFlashes: false, brightness: 1, calibrated: false, difficulty: 'normal',
 };
 export const ENDINGS = [
-  { id: 'sweet-dreams', name: 'Sweet Dreams', hint: 'Some nights it is better not to get up.' },
+  { id: 'out', name: 'Out', hint: 'There is always a spare key.' },
+  { id: 'evicted', name: 'Evicted', hint: 'Tell them where. Tell them who.' },
   { id: 'locked', name: 'Locked From the Inside', hint: 'They came. They found nothing.' },
-  { id: 'out', name: 'Out', hint: 'Not every door opens from the inside.' },
-  { id: 'lodger', name: 'The Lodger', hint: 'Tell them where. Tell them who.' },
+  { id: 'sweet-dreams', name: 'Sweet Dreams', hint: 'Some nights it is better not to get up.' },
 ];
 const DIFFICULTIES = [
   { id: 'story', name: 'Story', text: 'For the story and the dread. He moves slowly, does not hear you walk, and cannot catch you running. The police come sooner.' },
@@ -136,8 +136,8 @@ export class Menu {
   }
 
   screen_chapters() {
-    this.heading('Chapters', 'Start the night from the beginning of an act. Your journal stays.');
-    ['I · Water', 'II · Dark', 'III · Steam', 'IV · The lodger'].forEach((name, i) => this.item(name, () => this.hooks.chapter(i + 1)));
+    this.heading('Chapters', 'Start the night from the beginning of an act, knowing what you knew then.');
+    ['I · Water', 'II · Dark', 'III · Steam', 'IV · Out'].forEach((name, i) => this.item(name, () => this.hooks.chapter(i + 1)));
     this.item('Back', () => this.back(), { cls: 'back' });
   }
 

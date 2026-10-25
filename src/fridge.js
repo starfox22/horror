@@ -7,10 +7,14 @@ import {
   LIGHTFALLOFF_INVERSESQUARED, SHADOWUPDATE_THISFRAME,
 } from 'playcanvas';
 import { refreshShadows } from './lighting.js';
-import { segmentDistance } from './walkgrid.js';
+import { swingInto } from './walkgrid.js';
 import { makeWaterGeometry } from './fridge-water.js';
 import { makeDrinkingWater, GLASS_FULL } from './drink-timeline.js';
 import { FRIDGE, classifyFridgeTriangle, fridgeDoorSegment, fridgeWorld } from './fridge-geometry.js';
+
+// The leaf against the player's body: how near its hinge line their centre may come (the body's 0.22 m and the door's
+// thickness), and how fast it may push them out of its way (walkgrid.js swingInto), metres a second and at most a frame.
+export const DOOR_CLEAR = 0.255, PUSH_SPEED = 1.8, PUSH_STEP = 0.05;
 
 function subset(device, source, indices) {
   // Compact every referenced vertex stream. The apartment's joined black
@@ -224,7 +228,7 @@ export class Fridge {
     if (this.drinkRunning) return;
     this.override?.([this.light]);
     this.openRequested = !this.openRequested; this.target = this.openRequested ? FRIDGE.opening : 0;
-    this.moving = true; this.blocked = false;
+    this.moving = true; this.blocked = false; this.touching = false; this.pushMemo = {};
     this.sounds?.fridgeDoor?.(this.openRequested, this.handle);
   }
 
@@ -234,10 +238,16 @@ export class Fridge {
     const old = this.angle;
     this.velocity += ((this.target - this.angle) * 35 - this.velocity * 11.5) * dt;
     this.angle = Math.max(0, Math.min(FRIDGE.opening, this.angle + this.velocity * dt));
+    // Swinging into the player, opening or shutting, the leaf pushes them out of its way (walkgrid.js swingInto) and
+    // slows while they cannot keep up; it stops against them only when they cannot be moved at all.
     const p = this.player?.pos;
-    if (p && segmentDistance(p.x, p.z, fridgeDoorSegment(this.angle)) < 0.255) {
-      this.angle = old; this.velocity = 0; this.moving = false; this.blocked = true;
-      this.sounds?.bump?.(this.handle);
+    if (p && this.grid && this.angle !== old) {
+      const r = swingInto(this.grid, p, fridgeDoorSegment, old, this.angle, { clear: DOOR_CLEAR, step: Math.min(PUSH_STEP, PUSH_SPEED * dt),
+        floor: this.player.floor ?? 0, except: this.blocker, target: this.target, memo: this.pushMemo ||= {} });
+      if (r.contact && !this.touching) this.sounds?.bump?.(this.handle);
+      this.touching = r.contact;
+      if (r.angle !== this.angle) { this.angle = r.angle; this.velocity = dt > 0 ? (r.angle - old) / dt : 0; }
+      if (r.stuck) { this.velocity = 0; this.moving = false; this.blocked = true; }
     }
     if (Math.abs(this.target - this.angle) < 0.05 && Math.abs(this.velocity) < 0.4) {
       this.angle = this.target; this.velocity = 0; this.moving = false;

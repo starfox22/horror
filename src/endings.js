@@ -1,10 +1,10 @@
-// The four endings (docs/STORY.md). Each fades the world out and plays as sound and captions over black (or the dark
+// The four endings (docs/STORY.md, build 0.14). Each fades the world out and plays as sound and captions over black (or the dark
 // flat), then the ending card (menu.js) with the night in numbers. Timings are seconds from the start of the ending.
 export const EPILOGUES = {
   'sweet-dreams': '',
   locked: 'They searched every room, the wardrobe and the ceiling above it. They found nothing they could write down.',
   out: 'You spent the rest of the night on the stairs, in the light that comes on when you move.',
-  lodger: 'Daniel Kessler, 41, lived here until March. Officers found bedding, food and 212 photographs in the service void above your wardrobe. He said he never broke in. He said you let him in. He said that whenever you woke, he put you back to bed.',
+  evicted: 'Officers found a man living in the service void above your wardrobe: a blanket, water, and hundreds of photographs. He had been evicted from the building. He never left.',
 };
 
 export class Endings {
@@ -66,7 +66,7 @@ export class Endings {
     ]);
   }
 
-  // The police at the door (Locked From the Inside or The Lodger).
+  // The police at the door (Locked From the Inside or Evicted).
   police(kind) {
     if (!this.begin(kind)) return;
     const b = this.bank, voice = (who, text) => this.hud.voice(who, text);
@@ -81,16 +81,16 @@ export class Endings {
       [10.4, () => { this.black(0.8); b?.play('radio_chatter', { gain: 0.4, delay: 0.8 }); b?.play('steps_boots', { segment: 'random', gain: 0.6, delay: 1 }); }],
       [12, () => voice('Officer', 'Police. Are you okay? Where is he?')],
     ];
-    const tail = kind === 'lodger' ? [
+    const tail = kind === 'evicted' ? [
       [15.5, () => voice('You', 'In the ceiling. Above the wardrobe.')],
       [18.5, () => { b?.play('wardrobe_creak', { segment: 2, gain: 0.8 }); b?.play('radio_chatter', { gain: 0.45, delay: 1.2 }); }],
       [21, () => voice('Officer', 'There’s a hatch up here. ...Torch.')],
       [24.5, () => { b?.play('door_kick', { gain: 0.9 }); b?.play('steps_boots', { segment: 'random', gain: 0.8, delay: 0.3 }); b?.play('creak_long', { gain: 0.9, delay: 0.5 }); }],
       [25.2, () => voice('Officer', 'Police! Come down. Now. Hands where I can see them.')],
-      [29.5, () => voice('Officer', '...Daniel Kessler?')],
-      [33.5, () => this.card('lodger')],
+      [29.5, () => voice('Officer', '...It’s him. From 5B.')],
+      [33.5, () => this.card('evicted')],
     ] : [
-      [15.5, () => voice('Officer', 'There’s nobody here. Front door was locked. Chain was on. From the inside.')],
+      [15.5, () => voice('Officer', 'There’s nobody here. Front door was locked. From the inside.')],
       [20.5, () => voice('Officer', 'Is this the clip? ...That’s you, isn’t it?')],
       [25, () => { voice('Officer', 'Nobody could fit up there.'); b?.play('water_drop', { gain: 0.3, delay: 1.5 }); }],
       [29.5, () => voice('Officer', 'Do you take anything to help you sleep?')],
@@ -106,7 +106,6 @@ export class Endings {
     this.schedule([
       [0, () => { b?.play('door_creak', { at: door, gain: 0.8 }); this.black(1.6); }],
       [1.2, () => { for (let i = 0; i < 14; i++) b?.play('steps_socks', { segment: 'random', gain: 0.5 * (1 - i / 16), delay: i * 0.33, rate: [1.05, 1.15], send: 0.9 }); }],
-      [7.5, () => this.hud.voice('', '')],
       [9, () => b?.play('latch_1', { gain: 0.25, send: 1 })],
       [9.6, () => b?.play('deadbolt', { gain: 0.3, send: 1, rate: 0.95 })],
       [13, () => this.card('out')],

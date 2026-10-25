@@ -93,7 +93,8 @@ test('wardrobe interaction handles follow their hinged door and interrupted clos
   assert.equal(items[0].pos, door.handlePoint, 'the registered target must retain the moving vector');
   assert.match(items[0].label(), /^Close/);
   closets.toggle(door);
-  // Stand on the door so it gets blocked while closing.
+  // A player in its way who cannot be moved stops it while closing (anyone else is pushed aside: check-doors.mjs).
+  closets.grid.fitsGrid = () => false;
   const segment = door.segment();
   closets.player.pos.set((segment[0] + segment[2]) / 2, 0, (segment[1] + segment[3]) / 2);
   closets.update(1 / 60);
@@ -105,15 +106,17 @@ test('wardrobe interaction handles follow their hinged door and interrupted clos
 
 test('bathroom door reverses when a closing swing is blocked', () => {
   input();
-  const scene = app(), part = new Entity('door leaf'), items = [];
+  const scene = app(), part = new Entity('door leaf'), items = [], walk = grid();
   scene.root.addChild(part);
   const player = { pos: new Vec3(12, 0, 4) };
   const doors = new Doors(scene, { findComponents: () => [{ entity: part, meshInstances: [{ material: { name: 'door.bathdoor' } }] }] },
-    { add: item => items.push(item) }, grid(), player, null);
+    { add: item => items.push(item) }, walk, player, null);
   const door = doors.doors[0];
   doors.toggle(door);
   for (let n = 0; n < 180; n++) doors.update(1 / 60);
   doors.toggle(door);
+  // A player in its way who cannot be moved (anyone else is pushed aside: check-doors.mjs).
+  walk.fitsGrid = () => false;
   const segment = door.segment();
   player.pos.set((segment[0] + segment[2]) / 2, 0, (segment[1] + segment[3]) / 2);
   doors.update(1 / 60);

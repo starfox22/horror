@@ -38,6 +38,7 @@ import { Power } from './power.js';
 import { Fusebox } from './fusebox.js';
 import { Story } from './story.js';
 import { World } from './world.js';
+import { Taps } from './taps.js';
 import { Nest } from './nest.js';
 import { Seccam } from './seccam.js';
 import { Phone } from './phone.js';
@@ -95,8 +96,9 @@ const showError = (error) => {
   if (menu) menu.root.hidden = true;
 };
 const failLoad = (error) => { showError(error); throw error; };
-window.addEventListener('error', (event) => showError(event.error || event.message));
-window.addEventListener('unhandledrejection', (event) => showError(event.reason));
+// Before the flat has loaded, an error is the end (the load screen says so); after, it is logged and the night goes on.
+window.addEventListener('error', (event) => (window.__state?.ready ? console.error(event.error || event.message) : showError(event.error || event.message)));
+window.addEventListener('unhandledrejection', (event) => (window.__state?.ready ? console.error(event.reason) : showError(event.reason)));
 $('retry').addEventListener('click', () => location.reload());
 
 // Decoders: wasm where the page allows compiling it, the asm.js fallbacks otherwise (some sandboxes block wasm).
@@ -140,10 +142,10 @@ menu = shot ? null : new Menu({
   quitToTitle: () => toTitle(),
   apply: (settings) => applySettings(settings),
   openGraphics: () => graphics?.open?.(),
-  hasSave: () => story?.hasSave() ? `${['', 'I · Water', 'II · Dark', 'III · Steam', 'IV · The lodger'][story.load().act]}` : '',
+  hasSave: () => story?.hasSave() ? `${['', 'I · Water', 'II · Dark', 'III · Steam', 'IV · Out'][story.load().act]}` : '',
   journal: () => journal?.entries() || [],
   everFound: () => journal?.ever || new Set(),
-  status: () => story ? `${['', 'I · Water', 'II · Dark', 'III · Steam', 'IV · The lodger'][story.act]} · ${journal?.count || 0} in the journal` : '',
+  status: () => story ? `${['', 'I · Water', 'II · Dark', 'III · Steam', 'IV · Out'][story.act]} · ${journal?.count || 0} in the journal` : '',
   checkpointName: () => story?.hasSave() ? ['', 'the start of the night', 'the dark', 'the light back on', 'the hunt'][story.load().act] : '',
   credits: creditsHtml(),
   sound: (kind) => bank?.play(kind === 'hover' ? 'latch_2' : 'breaker_1', { gain: kind === 'hover' ? 0.05 : 0.12, rate: kind === 'hover' ? 2.4 : 1.8, bus: 'ui' }),
@@ -267,7 +269,10 @@ const story = new Story(sys);
 const events = new Director({ app, ctx: { story, fallingGlass: () => fallingGlass.play() }, isPlaying });
 sys.events = events;
 const fusebox = new Fusebox({ app, interactions, power, bank, story, hud, props, configureMaterial: m => probes.assign(m, 'hall') });
-const world = new World({ app, sounds: ambience, bank, doors, closets, interactions, story, hud, glassGeometry: fridge.glassGeometry, props,
+// The kitchen and bathroom taps (taps.js): E turns each on or off; the story runs the bathroom's through world.tap().
+const taps = new Taps({ app, interactions, bank, camera, isVisible: cam => cam === playerCam, configureMaterial: (m, zone) => probes.assign(m, zone) });
+taps.isPlaying = isPlaying;
+const world = new World({ app, sounds: ambience, bank, doors, closets, interactions, story, hud, glassGeometry: fridge.glassGeometry, props, fridge, taps,
   configureMaterial: (m, name) => probes.assign(m, ['main', 'hall', 'bath', 'bed'].includes(name) ? name : /mirror|flood/.test(name) ? 'bath' : /print/.test(name) ? 'hall' : /notice|diary|tin/.test(name) ? 'main' : 'bed') });
 const nest = new Nest({ app, interactions, story, hud, bank, closets, props, configureMaterial: m => probes.assign(m, 'bed'),
   stills: { url: id => `./assets/clips/${id}.jpg` } });
@@ -276,10 +281,10 @@ const phone = new Phone({ app, camera, interactions, bank, story, hud, seccam, c
 phone.power = power;
 const hunt = new Hunt({ app, intruder, nav, walk: grid, player, camera, flashlight, bank, story, music, difficulty: () => story.difficulty });
 const fadeEl = Object.assign(document.createElement('div'), { id: 'fade' }); document.body.appendChild(fadeEl);
-const death = new Death({ app, camera, player, intruder, bank, music, veil: fadeEl, clock: { flash: () => {} } });
+const death = new Death({ app, camera, player, intruder, bank, music, veil: fadeEl, walk: grid });
 const endings = new Endings({ story, bank, music, hud, menu, fade: fadeEl, player, camera, clock: { label: () => nightClock().toTimeString().slice(0, 5) },
   stills: { show: async (id) => { const url = await seccam.still(id, 0); if (url) hud.examine({ className: 'photo', html: `<img src="${url}" alt="The camera, 03:14: the bed, and a man standing at its foot">` }); }, hide: () => hud.closeDoc() } });
-Object.assign(sys, { fusebox, world, nest, seccam, phone, hunt, death, endings, events, sounds: ambience });
+Object.assign(sys, { fusebox, world, nest, seccam, phone, hunt, death, endings, events, sounds: ambience, taps });
 frontDoor(apartment);
 fridge.onShutAfterDrink = () => events.signal('fridge-shut-after-drink');
 doors.onLocked = () => story.bathroomTried();
@@ -287,6 +292,7 @@ closets.stuck = (door) => story.wardrobeStuck(door);
 closets.opened = (door) => story.wardrobeOpened(door);
 phone.noise = (x, z, kind = 'phone') => { const p = player.pos; hunt.noise(x ?? p.x, z ?? p.z, kind); };
 player.onNoise = (x, z, kind) => hunt.noise(x, z, kind);
+taps.onNoise = (x, z, kind) => hunt.noise(x, z, kind);      // running water: a lure in the hunt (7 m)
 player.surfaceAt = (x, z) => world.surfaceAt(x, z);
 // The bathroom visit (Act III): stepping into it once the door stands open.
 story.on(flag => { if (flag === 'restored') music.swell(0.25, 6); });
@@ -302,20 +308,14 @@ power.onChange(event => {
     if (story.has('power-cut') && !story.has('restored') && power.rcd && power.main && power.live('lights2')) story.powerRestored();
   }
 });
-// The phone (props.js 'phone'): in the hand (phone.js), dead on the fridge's top shelf (found when the fridge is open:
-// story.js phoneFound), and lying on the kitchen worktop while it charges.
+// The phone (props.js 'phone'): in the hand (phone.js), and lying on the south nightstand (dead, its charger pulled out
+// of the wall, when the night begins; charging there once it is put back: story.js phoneTaken / phoneCharging).
 {
-  const phoneMaterial = m => probes.assign(m, 'main');
-  const held = props.make('phone', { name: 'phone model', configure: phoneMaterial, castShadows: false });
+  const held = props.make('phone', { name: 'phone model', configure: m => probes.assign(m, 'main'), castShadows: false });
   if (held) phone.setModel(held);
-  const e = props.make('phone', { parent: fridge.frame, at: [0.06, 1.7445, -0.06], euler: [-90, 18, 0], name: 'phone in the fridge', configure: phoneMaterial, castShadows: false });
-  phone.useScreen(e);
-  sys.fridgePhone = e;
-  interactions.add({ pos: e.getPosition().clone().add(new pc.Vec3(0, 0.03, 0)), size: 0.12, active: () => e.enabled && fridge.angle > 60,
-    label: () => 'Take the phone', use: () => { e.enabled = false; story.phoneFound(); } });
-  const charging = props.make('phone', { at: [phone.chargerAt.x, phone.chargerAt.y + 0.004, phone.chargerAt.z], euler: [-90, 160, 0], name: 'phone on charge', configure: phoneMaterial, castShadows: false });
+  const charging = props.make('phone', { at: [phone.chargerAt.x, phone.chargerAt.y + 0.004, phone.chargerAt.z], euler: [-90, 95, 0], name: 'phone on the nightstand', configure: m => probes.assign(m, 'bed'), castShadows: false });
   phone.useScreen(charging);
-  charging.enabled = false;
+  charging.enabled = phone.onCharger;
   phone.charger = on => { charging.enabled = on; };
 }
 // The bed: hold E to go back to sleep (Sweet Dreams), between the glass and the cut.
@@ -327,6 +327,10 @@ power.onChange(event => {
 let eDown = false;
 window.addEventListener('keydown', e => { if (e.code === 'KeyE') eDown = true; });
 window.addEventListener('keyup', e => { if (e.code === 'KeyE') eDown = false; });
+window.addEventListener('blur', () => { eDown = false; });
+sys.eHeld = () => eDown && isPlaying();                 // the front door's lock turns while E is held (story.js)
+flashlight.canToggle = () => isPlaying() && !death.busy && !endings.running;
+phone.blocked = () => !isPlaying() || death.busy || !!endings.running;
 app.on('update', dt => thought.update(isPlaying() ? dt : 0));
 // The bedside clock keeps the night's time from 03:07, and is back at 03:07 every time you wake from him (story.wake).
 let clockFrom = 0;
@@ -380,17 +384,20 @@ if (!shot || hash.has('warm')) {
       return () => fx.reset();
     },
     () => { rain.revealing = true; return () => { rain.revealing = false; }; },
+    () => taps.reveal(),                       // the taps' water (taps.js)
     // Build 0.13: the story's later things on view for the sweep (their shaders, and the intruder's light's shadows).
     // The phone held up with its video showing (phone.update keeps the holder only while it is raised).
     () => { phone.raised = true; phone.raiseK = 1; phone.video.enabled = true; return () => { phone.raised = false; phone.raiseK = 0; phone.video.enabled = false; phone.holder.enabled = false; }; },
     () => {
       const was = { shards: world.hasShards, flood: world.floodLevel, prints: world.printRoot.enabled, fog: world.fog.enabled, hatch: nest.hatchOpen, dryer: !!world.dryer?.enabled, charging: phone.onCharger };
       world.shards(true); world.flood(1); world.prints(true); world.mirrorFog(true); nest.hatch(true); nest.dustEntity.particlesystem.play();
+      if (nest.dropEntity) { nest.dropEntity.enabled = true; nest.dropEntity.setPosition(9.55, 1.6, -0.1); }
       world.dryerInBasin(true); phone.charger?.(true);
       intruder.show(true); intruder.setTorch(true); intruder.play('walk_slow_01', { blend: 0 });
       seccam.entity.camera.enabled = true;
       return () => {
         world.shards(was.shards); world.flood(was.flood); world.prints(was.prints); world.mirrorFog(was.fog); nest.hatch(was.hatch); nest.dustEntity.particlesystem.stop();
+        if (nest.dropEntity) nest.dropEntity.enabled = false;
         world.dryerInBasin(was.dryer); phone.charger?.(was.charging);
         intruder.setTorch(false); intruder.show(false); seccam.entity.camera.enabled = false; seccam.aimHome();
       };
@@ -417,6 +424,7 @@ app.on('update', (dt) => {
   if (death.busy || endings.running) { /* the camera is theirs */ }
   else if (wake && !wake.completed) wake.update();
   else if (drink.running) drink.update();
+  else if (hud.reading) { player.vel?.set?.(0, 0, 0); }   // reading a paper: the night (and you) stand still
   else player.update(dt);
   interactions.enabled = player.active && !drink.running && !phone.raised && !hud.reading && !death.busy;
   interactions.update();
@@ -425,7 +433,8 @@ app.on('update', (dt) => {
   bank.listen(camera.getPosition());
   const playing = isPlaying();
   if (playing && (!wake || wake.completed)) story.update(dt);
-  music.update(dt); endings.update(dt);
+  if (playing) music.update(dt);                           // paused: no heartbeats queued on a suspended context
+  endings.update(dt);
   nest.update(dt);
   hud.crouch(player.active && player.isCrouched);
   music.holding(player.active && player.isCrouched && player.vel.length() < 0.1 && hunt.active && hunt.stalker.state !== 'backstage' && Math.hypot(hunt.stalker.x - player.pos.x, hunt.stalker.z - player.pos.z) < 5);
@@ -480,24 +489,25 @@ const ACT_START = {
   2: { x: 10.4, z: 1.0, yaw: 95 }, 3: { x: 2.6, z: 3.75, yaw: 180 }, 4: { x: 4.6, z: 0.4, yaw: 20 },
 };
 const CHAPTER_FLAGS = {
-  2: ['phone', 'glass', 'shards-seen', 'bath-tried', 'bath-knocked', 'power-cut'],
-  3: ['phone', 'glass', 'shards-seen', 'bath-tried', 'bath-knocked', 'power-cut', 'torch', 'fusebox-opened', 'silhouette', 'prints', 'restored', 'bathroom-open'],
-  4: ['phone', 'glass', 'shards-seen', 'bath-tried', 'bath-knocked', 'power-cut', 'torch', 'fusebox-opened', 'silhouette', 'prints', 'restored', 'bathroom-open',
-    'bathroom-visited', 'tap-off', 'nest-seen', 'alerts', 'live', 'hunt'],
+  2: ['phone', 'charging', 'glass', 'shards-seen', 'bath-tried', 'bath-dark', 'bath-knocked', 'power-cut'],
+  3: ['phone', 'charging', 'glass', 'shards-seen', 'bath-tried', 'bath-dark', 'bath-knocked', 'power-cut', 'torch', 'latch', 'fusebox-opened', 'silhouette', 'prints', 'restored', 'bathroom-open'],
+  4: ['phone', 'charging', 'glass', 'shards-seen', 'bath-tried', 'bath-dark', 'bath-knocked', 'power-cut', 'torch', 'latch', 'fusebox-opened', 'silhouette', 'prints', 'restored', 'bathroom-open',
+    'bathroom-visited', 'tap-off', 'hanger', 'nest-seen', 'old-key', 'alerts', 'live', 'hunt'],
 };
+// What a chapter knows already (the true ending needs where and who: the nest, the notice and the tagged key).
+const CHAPTER_JOURNAL = { 2: ['notice', 'glass'], 3: ['notice', 'glass', 'silhouette'], 4: ['notice', 'glass', 'silhouette', 'nest', 'old-key'] };
 function chapterSave(act) {
   const flags = CHAPTER_FLAGS[act] || [];
-  const power = { main: act !== 4, rcd: act === 3, breakers: { lights1: true, lights2: true, kitchen: true, living: true, bed: true, bathroom: act !== 3, oven: true }, faults: act > 1 ? ['bathroom'] : [] };
+  const power = { main: act !== 4, rcd: act !== 2, breakers: { lights1: true, lights2: true, kitchen: true, living: true, bed: true, bathroom: act !== 3, oven: true }, faults: act > 1 ? ['bathroom'] : [] };
   if (act === 4) power.rcd = true, power.breakers.bathroom = false;
   if (act === 2) power.rcd = false;
   return { v: 1, act, flags, time: [0, 0, 110, 240, 420][act], deaths: 0, seed: Date.now() >>> 0, difficulty: menu?.settings.difficulty || 'normal', power,
-    journal: [], phone: { has: true, charge: act >= 4 ? 9 : 0, booted: act >= 4, onCharger: false, warm: act >= 4 ? 240 : 0, silenced: false, notifications: [] }, items: [] };
+    journal: CHAPTER_JOURNAL[act] || [], phone: { has: act >= 4, charge: act >= 4 ? 9 : 0, booted: act >= 4, onCharger: act < 4, pluggedIn: act >= 2, chargeTime: act >= 3 ? 120 : 0, silenced: false, notifications: [] }, items: [] };
 }
 
 // The world as a checkpoint left it, beyond what world.js rebuilds from the flags.
 function applyCheckpoint(save) {
   const f = new Set(save.flags);
-  if (f.has('phone')) sys.fridgePhone.enabled = false;
   if (f.has('glass')) { fridge.hasDrunk = true; fridge.setGlassWater(0.12, 0); }
   if (f.has('torch') && !flashlight.held) flashlight.pickUp();
   if (save.act >= 2) { rain.burst?.(save.act === 2 ? 30 : 0); }
@@ -520,9 +530,10 @@ function startNight({ difficulty, save, chapter } = {}) {
   journal.reset();
   if (save || chapter) {
     const data = save || chapterSave(chapter);
-    if (chapter) { const keep = journal.ever; data.difficulty = menu?.settings.difficulty || 'normal'; void keep; }
+    if (chapter) data.difficulty = menu?.settings.difficulty || 'normal';
     story.restore(data);
     applyCheckpoint(data);
+    story.save();                 // a chapter is a checkpoint too (restart and Hard's third catch come back here)
   } else {
     story.begin({ difficulty: difficulty || menu?.settings.difficulty || 'normal' });
   }
@@ -544,6 +555,7 @@ function applySettings(st) {
   document.body.classList.toggle('subtitle-back', !!v('subtitleBack'));
   if (rain) rain.reducedFlashes = v('reducedFlashes');
   if (flashlight) flashlight.reducedFlashes = v('reducedFlashes');
+  if (death) death.reducedFlashes = v('reducedFlashes');
   if (eyes) eyes.brightness = v('brightness');
   if (story && !nightStarted) story.difficulty = v('difficulty');
 }
@@ -561,7 +573,7 @@ if (menu) {
   } else menu.open('title');
 }
 window.__state.ready = true;
-window.__app = { app, player, frame, camera, flashlight, interactions, switches, rain, doors, devices, closets, fridge, drink, probes, devMenu, eyes, graphics, frameLimiter, sceneQuality, wake, events, thought, fallingGlass, intruder,
+window.__app = { app, player, frame, camera, flashlight, interactions, switches, rain, doors, devices, closets, fridge, taps, drink, probes, devMenu, eyes, graphics, frameLimiter, sceneQuality, wake, events, thought, fallingGlass, intruder,
   bank, music, power, fusebox, story, world, nest, seccam, phone, hunt, death, endings, hud, journal, menu, nav, items, props, startNight, chapterSave, applyCheckpoint, pc };
 
 // The artifact build (tools/make-artifact.mjs) ships the apartment as one GLB split into base64 text parts listed in
@@ -606,7 +618,7 @@ function frontDoor(root) {
   const box = parts[0].meshInstances[0].aabb.clone();
   for (const r of parts) for (const mi of r.meshInstances) box.add(mi.aabb);
   const c = box.center;
-  interactions.add({ pos: new pc.Vec3(c.x, 1.05, box.getMin().z), size: 0.45, label: () => 'Front door',
+  interactions.add({ pos: new pc.Vec3(c.x, 1.05, box.getMin().z), size: 0.45, label: () => story.doorLabel(),
     use: () => story.frontDoor() });
 }
 

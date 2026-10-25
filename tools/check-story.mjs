@@ -51,14 +51,15 @@ test('fallbacks keep the night moving: the cut comes by itself', () => {
 });
 
 test('Act II to IV: power back by the label, the nest, the hunt fallback', () => {
-  const { story, sys, run } = night();
+  const { story, sys, calls, run } = night();
   story.begin({ seed: 3 });
   story.glassBreaks(); story.powerCut('test');
   story.fuseboxOpened(); run(13);
   sys.power.setBreaker('bathroom', false); sys.power.setRcd(true);
   if (story.nuisance !== 'none') { sys.power.setBreaker(story.nuisance, false); sys.power.setRcd(true); }
-  story.powerRestored();
-  assert.ok(story.has('restored') && story.has('silhouette'), 'never turned round: he is there when the lights come back');
+  story.powerRestored(); run(5);
+  assert.ok(story.has('restored') && story.has('silhouette'), 'never turned round: he is heard running into the bedroom when the lights come back');
+  assert.ok(calls.includes('play.steps_boots') && calls.includes('play.door_slam'), 'his run and the wardrobe are heard');
   assert.equal(story.act, 3);
   story.nestSeen(); run(76);
   assert.ok(story.has('hunt'), 'the hunt starts without LIVE too');
@@ -66,23 +67,95 @@ test('Act II to IV: power back by the label, the nest, the hunt fallback', () =>
   assert.equal(sys.power.main, false, 'he broke the main switch');
 });
 
-test('the front door: not over a glass before the hunt; with the spare in the hunt it opens in 3 s', () => {
+test('the front door: not over a glass before he is seen; after, his keys; with the spare, E held turns the lock in 3 s', () => {
   const { story, sys, calls, said, run } = night();
   story.begin({ seed: 5 });
+  story.frontDoor();
+  assert.ok(said.includes('Locked. Good.'), 'before anything has happened, a locked door is good');
+  story.glassBreaks();
   story.frontDoor();
   assert.ok(said.includes('Out? Barefoot? Over a glass?'));
   assert.ok(calls.includes('sounds.lockedDoor'));
   story.keyBowl();
   assert.ok(story.has('key-bowl') && calls.includes('journal.key-bowl'));
-  story.huntStart('test');
+  story.set('silhouette'); story.huntStart('test');
   story.frontDoor();
-  assert.ok(said.some(t => /spare/i.test(t)), 'no key: where is the spare?');
+  assert.ok(said.includes('...My keys. He has my keys.'), 'after seeing him: he has the keys');
+  story.frontDoor();
+  assert.ok(said.some(t => /spare/i.test(t)), 'then: where is the spare?');
   sys.items.add('spare-key');
-  story.frontDoor(); run(1);
+  sys.player.pos = { x: 12.4, z: 3.9 };
+  let held = false; sys.eHeld = () => held;
+  story.frontDoor(); run(2);
+  assert.ok(!calls.includes('endings.play'), 'E not held: the lock does not turn');
+  held = true; run(1.2);
   assert.ok(!calls.includes('endings.play'), 'unlocking takes time');
-  assert.ok(calls.includes('hunt.noise'), 'and it is heard');
-  run(2.2);
+  assert.ok(calls.includes('hunt.noise'), 'and each click is heard');
+  held = false; run(3);
+  assert.ok(!calls.includes('endings.play'), 'letting go stops it');
+  assert.equal(story.unlock.clicks, 1, 'and keeps what was turned');
+  held = true; run(2.0);
   assert.ok(calls.includes('endings.play'), 'out');
+});
+
+test('trying the lock before the hunt brings him down from the hatch: a race', () => {
+  const { story, sys, calls, run } = night();
+  story.begin({ seed: 5 });
+  story.set('silhouette'); sys.items.add('spare-key');
+  sys.player.pos = { x: 12.4, z: 3.9 }; sys.eHeld = () => false;
+  story.frontDoor(); run(1);
+  assert.ok(story.has('hunt') && calls.includes('hunt.start'), 'the hunt starts from the hatch');
+});
+
+test('a caught player loses a half-turned lock and the night stands still meanwhile', () => {
+  const { story, sys, run } = night();
+  story.begin({ seed: 5 });
+  story.set('silhouette'); story.huntStart('test'); sys.items.add('spare-key');
+  sys.player.pos = { x: 12.4, z: 3.9 }; sys.eHeld = () => true;
+  story.frontDoor(); run(1.5);
+  sys.death = { play: () => {}, wakeUp: () => {} };        // a death that has not finished yet
+  story.caught();
+  const t = story.time; run(5);
+  assert.equal(story.unlock, null, 'the lock has to be started again');
+  assert.equal(story.time, t, 'no story time passes while he has you');
+});
+
+test('the phone: dead on the nightstand, its charger pulled; it boots once the power is back, after the quiet', () => {
+  const { story, said, calls, run } = night();
+  story.begin({ seed: 4 });
+  story.phoneTaken({ booted: false, pluggedIn: false });
+  assert.ok(said.includes('Dead.') && said.some(t => /charger/.test(t)) && calls.includes('journal.phone-dead'));
+  story.phoneCharging();
+  assert.ok(said.includes('I always plug it in.'));
+  assert.equal(story.phoneMayBoot(600), false, 'not before the power has come back');
+  story.glassBreaks(); story.powerCut('test'); story.powerRestored();
+  assert.equal(story.phoneMayBoot(600), false, 'not straight away');
+  run(36);
+  assert.equal(story.phoneMayBoot(10), false, 'not without minutes on the charger');
+  assert.equal(story.phoneMayBoot(31), true);
+});
+
+test('the man in the corridor: seen at the end of the torch, he runs at you and into the bedroom', () => {
+  const { story, sys, calls, said, run } = night();
+  story.begin({ seed: 6 });
+  story.glassBreaks(); story.powerCut('test');
+  const placed = [];
+  sys.intruder = { show: (on) => placed.push(on ? 'show' : 'hide'), place: (x, z) => placed.push([x, z]), play: () => {}, setTorch: () => {} };
+  sys.flashlight = { held: true, on: true, beam: { up: { x: -1, y: 0, z: 0 } } };     // a spot shines along -up: east
+  sys.player.pos = { x: 3.0, z: 3.6 };
+  story.fuseboxOpened(); run(0.2);
+  assert.ok(story.has('silhouette') && placed[0] === 'show', 'he is there at the edge of the light');
+  run(0.5);
+  assert.ok(!calls.includes('play.steps_boots'), 'he holds still first');
+  run(3);
+  assert.ok(calls.includes('play.steps_boots'), 'then runs, heavy');
+  const xs = placed.filter(Array.isArray).map(p => p[0]);
+  assert.ok(Math.min(...xs) > 10, 'towards you, but never past the bedroom doorway');
+  assert.ok(placed.includes('hide'), 'gone into the bedroom: not vanished in the open');
+  assert.ok(calls.includes('play.door_slam'), 'the wardrobe bangs');
+  run(6);
+  assert.ok(said.includes('...Someone’s in here.') && said.includes('He went into the bedroom.'));
+  assert.ok(calls.includes('world.prints') && calls.includes('nest.hatch'));
 });
 
 test('the run varies by seed: the spare key moves, the nuisance circuit changes', () => {

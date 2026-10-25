@@ -21,7 +21,8 @@ const AUTO_STEPS = [
 
 export function normalizeGraphicsSettings(value) {
   const source = value && typeof value === 'object' ? value : {};
-  const defaults = { preset: 'auto', ...qualityOptions(3), showFps: true, fpsLimit: DEFAULT_FRAME_LIMIT };
+  // The FPS counter is off for a fresh player (build 0.14, production); the graphics dialog and the developer menu show it.
+  const defaults = { preset: 'auto', ...qualityOptions(3), showFps: false, fpsLimit: DEFAULT_FRAME_LIMIT };
   const settings = { ...defaults };
   if (['auto', 'low', 'medium', 'high', 'custom'].includes(source.preset)) settings.preset = source.preset;
   if (SCALES.includes(source.resolutionScale)) settings.resolutionScale = source.resolutionScale;

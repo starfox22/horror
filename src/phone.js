@@ -1,15 +1,18 @@
-// The player's phone (docs/STORY.md): found ice cold and dead on the fridge's top shelf. It boots on a charger with
-// power (the kitchen worktop's, while the kitchen circuit is live), or by itself after four minutes warming in a
-// pocket, at 4 %. Booting, it buzzes with the camera alerts it missed. Q raises it (held low in the right hand, its
-// screen the only light it gives) and lowers it.
+// The player's phone (docs/STORY.md): it lies dead on the south nightstand, its charger pulled out of the wall. Taking it
+// shows it is dead; putting it back plugs the charger in, and it charges there while the bedroom's sockets have power.
+// A flat phone needs minutes on the charger before it can start: it boots in Act III, once the power is back (story.js
+// times the buzz after the quiet), and buzzes hard against the nightstand with the camera alerts it missed. Q raises it
+// (held low in the right hand, its screen the only light it gives) and lowers it.
 // Apps: the lock screen (time, battery, notifications), Home Cam (clips 00:47 and 02:58, LIVE: seccam.js), and the
 // emergency call: the dispatcher's lines, the player's whispered answers (what they can say depends on what they found),
-// a callback ring if they hang up (a 12 m noise unless the phone was silenced: hold Q).
+// a call-back if they hang up (a 12 m noise ringing, or a buzz during the hunt; silenced: hold Q).
 // Screen: a canvas (drawn when something changes) on the model's screen, the video on its own quad in front of it.
 import { Color, Entity, StandardMaterial, Texture, Vec2, Vec3, Quat, PIXELFORMAT_RGBA8, FILTER_LINEAR, ADDRESS_CLAMP_TO_EDGE, BLEND_NONE } from 'playcanvas';
 
 const W = 540, H = 1170;                   // screen canvas (iPhone-ish 19.5:9)
-const CHARGER = new Vec3(0.3, 0.835, -1.15);   // kitchen worktop, left of the fridge (main.js lays a phone there)
+// Where it lies: the south nightstand's top (0.57 m, measured), beside the alarm clock; its charger's socket behind it.
+export const NIGHTSTAND = new Vec3(13.605, 0.572, 1.80);
+const CHARGER = NIGHTSTAND;
 export const CLIPS = [
   { id: '0047', time: '00:47', title: 'Motion · Bedroom', evidence: 'clip-0047' },
   { id: '0258', time: '02:58', title: 'Motion · Bedroom', evidence: 'clip-0258' },
@@ -19,7 +22,9 @@ export class Phone {
   constructor({ app, camera, interactions, bank, story, hud, seccam, clock }) {
     Object.assign(this, { app, camera, interactions, bank, story, hud, seccam, clock });
     this.chargerAt = CHARGER;
-    this.has = false; this.charge = 0; this.booted = false; this.onCharger = false; this.warm = 0; this.silenced = false;
+    // has: carried; onCharger: lying on the nightstand; pluggedIn: its charger back in the wall (it was pulled out).
+    this.has = false; this.charge = 0; this.booted = false; this.onCharger = true; this.pluggedIn = false; this.silenced = false;
+    this.chargeTime = 0;
     this.raised = false; this.raiseK = 0; this.app_ = 'lock'; this.sel = 0; this.dirty = true;
     this.call = null; this.notifications = [];
     this.canvas = Object.assign(document.createElement('canvas'), { width: W, height: H });
@@ -32,15 +37,16 @@ export class Phone {
     this.takeItem = interactions.add({ pos: CHARGER, size: 0.18, active: () => this.onCharger,
       label: () => `Take the phone${this.booted ? ` · ${Math.floor(this.charge)} %` : ''}`, use: () => this.takeFromCharger() });
     this.qDown = 0;
+    // blocked (main.js): not while paused, reading, caught or in an ending.
     window.addEventListener('keydown', (e) => {
-      if (!document.pointerLockElement || e.repeat) return;
+      if (!document.pointerLockElement || e.repeat || this.blocked?.()) return;
       if (e.code === 'KeyQ') { this.qDown = performance.now(); }
       if (!this.raised) return;
       if (e.code === 'Enter') { e.preventDefault?.(); this.choose(this.sel); }
       if (e.code === 'Backspace') this.back();
     });
     window.addEventListener('keyup', (e) => {
-      if (e.code !== 'KeyQ' || !this.qDown || !document.pointerLockElement) return;
+      if (e.code !== 'KeyQ' || !this.qDown || !document.pointerLockElement || this.blocked?.()) { this.qDown = 0; return; }
       const held = performance.now() - this.qDown; this.qDown = 0;
       if (held > 700 && this.has) { this.silenced = !this.silenced; this.hud?.toast(this.silenced ? 'Phone silenced' : 'Phone sound on'); this.dirty = true; return; }
       this.toggle();
@@ -95,8 +101,8 @@ export class Phone {
   }
 
   // The downloaded phone (props.js 'phone') replaces the slab: its own screen mesh shows the screen canvas (the
-  // canvas fills the screen's UV rectangle). Copies of it lie dead on the fridge shelf and on the kitchen charger
-  // (main.js), their screens the same canvas.
+  // canvas fills the screen's UV rectangle). A copy of it lies on the nightstand while it is there (main.js), its screen
+  // the same canvas.
   setModel(entity) {
     this.body.enabled = false;
     this.holder.addChild(entity);
@@ -121,38 +127,50 @@ export class Phone {
   }
 
   // --- state ---------------------------------------------------------------------------------------------------
-  take() { this.has = true; this.charge = 0; this.booted = false; this.warm = 0; this.dirty = true; this.hud?.prompt('Q', 'Phone', 5); }
+  // Charging: on the nightstand, its charger back in the wall, and the bedroom's sockets live.
+  get charging() { return this.onCharger && this.pluggedIn && !!(this.power ? this.power.live('bed') : true); }
+
+  // Taken in hand (from the nightstand). The first time: dead, and its charger pulled out of the wall.
+  take() {
+    this.has = true; this.onCharger = false; this.dirty = true;
+    this.charger?.(false);
+    this.hud?.prompt('Q', 'Phone', 5);
+  }
 
   putOnCharger() {
-    this.onCharger = true; this.raised = false;
+    this.has = false; this.onCharger = true; this.raised = false;
     this.bank?.play('blanket', { at: CHARGER, gain: 0.3 });
+    if (!this.pluggedIn) {
+      this.pluggedIn = true;
+      this.bank?.play('latch_2', { at: [CHARGER.x + 0.35, 0.3, CHARGER.z], gain: 0.25, rate: 1.6 });
+      this.story?.phoneCharging?.();
+    }
     this.charger?.(true);
     this.dirty = true;
   }
 
   takeFromCharger() {
-    this.onCharger = false;
     this.bank?.play('blanket', { at: CHARGER, gain: 0.3 });
-    this.charger?.(false);
-    if (!this.booted) this.story?.say('Still dead.');
+    this.take();
+    this.story?.phoneTaken?.(this);
   }
 
-  // Booting: the logo, then the lock screen and the alerts it missed (story.js times it).
+  // Booting: the logo, then the lock screen and the alerts it missed (story.js times it: phoneMayBoot).
   boot() {
-    if (this.booted || !this.has) return;
-    if (!this.onCharger && this.warm < 240 && !this.story?.has('alerts-force')) { this.pendingBoot = true; return; }
+    if (this.booted) return;
     this.booted = true; this.charge = Math.max(this.charge, 4);
     this.notifications = CLIPS.map(c => ({ ...c, unread: true }));
     this.buzz(3);
     this.story?.set('alerts');
+    this.story?.phoneBooted?.();
     this.dirty = true;
   }
 
-  // n buzzes (a phone on a worktop buzzes loudly against it; in a pocket, softer). A noise for him if he is near.
+  // n buzzes (a phone on a wooden nightstand buzzes hard against it; in a pocket, softer). A noise for him if he is near.
   buzz(n = 1) {
     if (this.silenced) return;
     const at = this.onCharger ? CHARGER : null;
-    for (let i = 0; i < n; i++) this.bank?.play('phone_buzz', { at, gain: at ? 0.8 : 0.5, delay: i * 1.1, send: 0.2 });
+    for (let i = 0; i < n; i++) this.bank?.play('phone_buzz', { at, gain: at ? 1.0 : 0.5, delay: i * 1.1, send: 0.2, min: at ? 0.35 : 0 });
     this.noise?.(at ? at.x : null, at ? at.z : null);
   }
 
@@ -190,7 +208,7 @@ export class Phone {
     this.video.enabled = true;
     this.seccam?.playClip(c.id, this.videoMat);
     this.story?.sys.journal?.find(c.evidence);
-    if (c.id === '0258') this.story?.after(9, () => this.story.say('...Is that me?'));
+    if (c.id === '0258' && !this.saidIsThatMe) { this.saidIsThatMe = true; this.story?.after(9, () => this.story.say('...Is that me?')); }
   }
 
   openLive() {
@@ -212,8 +230,9 @@ export class Phone {
   firstChoices() {
     const s = this.story, choices = [{ text: '"There’s someone in my flat."', id: 'someone' }];
     if (s?.has('nest-seen')) choices.push({ text: '"He’s in the ceiling. Above my wardrobe."', id: 'where' });
-    if (s?.has('letter') && s?.has('old-key')) choices.push({ text: '"Daniel Kessler. He used to live here."', id: 'who' });
-    if (!s?.has('hunt')) choices.splice(0, 1, { text: '"A glass broke. I think someone’s here."', id: 'unsure' });
+    if (s?.sys.journal?.has('notice') && s?.has('old-key')) choices.push({ text: '"It’s the man they evicted. From 5B."', id: 'who' });
+    // Before the man has been seen, all there is to say is a broken glass.
+    if (!s?.has('silhouette') && !s?.has('hunt')) choices.splice(0, 1, { text: '"A glass broke. I think someone’s here."', id: 'unsure' });
     return choices;
   }
 
@@ -226,13 +245,20 @@ export class Phone {
 
   answer(choice) {
     const call = this.call, s = this.story;
+    // The dispatcher calling back: answering connects the call; what was said before still stands (story.js).
+    if (choice.id === 'answer') {
+      call.incoming = false; call.choices = null; call.sent = true; this.incoming = false; this.dirty = true;
+      const remaining = this.firstChoices().filter(c => c.id !== 'unsure' && !(c.id === 'where' && s?.told?.where) && !(c.id === 'who' && s?.told?.who));
+      s?.after(1.2, () => this.dispatcher('Emergency services, you called us. Are you safe? Officers are on their way. Stay quiet.', remaining.length ? remaining : null));
+      return;
+    }
     call.told ||= {};
     call.told[choice.id] = true;
     this.story?.sys.hud?.voice('You (whispering)', choice.text.replace(/"/g, ''));
     this.noise?.(null, null, 'crouch');
     call.choices = null; this.dirty = true;
     if (choice.id === 'unsure' && !s?.has('hunt')) {
-      s?.after(2.5, () => this.dispatcher('Is anyone hurt? ...If you think someone is in the property, leave if you can and call us back. Have you tried your building manager?'));
+      s?.after(2.5, () => this.dispatcher('Is anyone hurt? ...If you think someone is in the property, get out if you can, and call us back.'));
       s?.after(9, () => this.hangUp(true));
       return;
     }
@@ -260,7 +286,8 @@ export class Phone {
   ring() {
     if (this.call || this.story?.has('ended')) return;
     this.incoming = true; this.app_ = 'call'; this.call = { t: 0, line: 'Incoming call · Emergency services', choices: [{ text: 'Answer', id: 'answer' }], incoming: true };
-    if (!this.silenced) {
+    // During the hunt the phone is on vibrate: a ringtone then would be a death sentence nobody could have seen coming.
+    if (!this.silenced && !this.story?.has('hunt')) {
       for (let i = 0; i < 3; i++) this.bank?.play('phone_ring', { gain: 0.6, delay: i * 5.4, at: this.onCharger ? CHARGER : null });
       this.noise?.(null, null, 'phone');
     } else this.buzz(2);
@@ -270,15 +297,10 @@ export class Phone {
   // --- per frame ---------------------------------------------------------------------------------------------------
   update(dt) {
     dt = Math.min(dt, 0.1);
-    if (this.has && !this.booted && !this.onCharger) {
-      this.warm += dt;
-      if (this.warm >= 240 && this.pendingBoot !== false && this.story?.has('restored')) this.boot();
-    }
-    const chargingLive = this.onCharger && this.power?.live('kitchen');
-    if (chargingLive) {
-      this.chargeTime = (this.chargeTime || 0) + dt;
+    if (this.charging) {
+      this.chargeTime += dt;
       if (this.booted) this.charge = Math.min(100, this.charge + dt * 0.05);
-      else if (this.chargeTime > 25 && this.story?.has('restored') && (this.pendingBoot || this.story?.has('nest-seen'))) this.boot();
+      else if (this.story?.phoneMayBoot?.(this.chargeTime)) this.boot();
     }
     // Holding it: rises into the lower right of the view; lowered, out of sight.
     this.raiseK += ((this.raised ? 1 : 0) - this.raiseK) * (1 - Math.exp(-dt * 9));
@@ -290,7 +312,12 @@ export class Phone {
       this.holder.setLocalPosition(0.075 - 0.045 * watch, -0.13 + 0.035 * watch - (1 - k) * 0.18 + Math.sin(t * 1.3) * 0.002, -0.27 + 0.03 * watch);
       this.holder.setLocalEulerAngles(8 - 4 * watch + (1 - k) * 25, -6 + 4 * watch, Math.sin(t * 0.9) * 0.6);
     }
-    if (this.raised && (this.app_ === 'clip' || this.app_ === 'live' || this.app_ === 'call')) this.dirty = true;
+    // Screens that change by themselves (a clip's time, LIVE's status, a call's line) redraw a few times a second, not
+    // every frame: the canvas is a 540x1170 upload.
+    if (this.raised && (this.app_ === 'clip' || this.app_ === 'live' || this.app_ === 'call')) {
+      this.redrawT = (this.redrawT || 0) + dt;
+      if (this.redrawT > 0.2) { this.redrawT = 0; this.dirty = true; }
+    }
     if (this.dirty && this.holder.enabled) { this.draw(); this.dirty = false; }
   }
 
@@ -302,7 +329,7 @@ export class Phone {
     g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
     if (!this.booted) {
       // Dead: a black screen; on a live charger, the empty-battery glyph.
-      if (this.onCharger && this.power?.live('kitchen')) { g.strokeStyle = '#d22'; g.lineWidth = 6; g.strokeRect(190, 520, 140, 64); g.fillStyle = '#d22'; g.fillRect(200, 530, 12, 44); }
+      if (this.charging) { g.strokeStyle = '#d22'; g.lineWidth = 6; g.strokeRect(190, 520, 140, 64); g.fillStyle = '#d22'; g.fillRect(200, 530, 12, 44); }
       this.texture.setSource(this.canvas); return;
     }
     const grad = g.createLinearGradient(0, 0, 0, H); grad.addColorStop(0, '#0e1420'); grad.addColorStop(1, '#05070b');
@@ -354,7 +381,10 @@ export class Phone {
       g.fillStyle = label.startsWith('Emergency') ? '#ff6b6b' : '#e9edf3'; g.font = '500 25px "Helvetica Neue", Arial, sans-serif'; g.textAlign = 'center';
       g.fillText(label, W / 2, y + 47);
     });
-    if (opts.length) { g.fillStyle = '#7f8794'; g.font = '400 21px "Helvetica Neue", Arial, sans-serif'; g.fillText('wheel · click to choose · right click back', W / 2, H - 60); }
+    if (opts.length) {
+      g.fillStyle = '#8d95a2'; g.font = '400 21px "Helvetica Neue", Arial, sans-serif';
+      g.fillText(this.app_ === 'lock' ? 'wheel · click to choose · hold Q · silence' : 'wheel · click to choose · right click back', W / 2, H - 60);
+    }
   }
 
   wrap(g, text, x, y, width, lh) {
@@ -367,6 +397,6 @@ export class Phone {
     if (line) g.fillText(line, x, y);
   }
 
-  save() { return { has: this.has, charge: this.charge, booted: this.booted, onCharger: this.onCharger, warm: this.warm, silenced: this.silenced, notifications: this.notifications }; }
+  save() { return { has: this.has, charge: this.charge, booted: this.booted, onCharger: this.onCharger, pluggedIn: this.pluggedIn, chargeTime: this.chargeTime, silenced: this.silenced, notifications: this.notifications }; }
   load(s) { if (!s) return; Object.assign(this, s); this.raised = false; this.call = null; this.app_ = 'lock'; this.dirty = true; this.charger?.(this.onCharger); }
 }

@@ -1,23 +1,30 @@
 // Builds the game's recorded sounds (public/assets/audio/sfx/*.mp3 + sfx.json) from tools/audio/sounds.json: real
 // recordings (CC0 / CC BY) downloaded from the GitHub mirrors listed there, pinned by SHA-256 in sounds.lock.json.
-// Processing only: trim, mono for sounds placed in the flat (HRTF works on mono), peak-normalise, fades, and for takes of
-// many footsteps or creaks the onsets of each hit (sfx.json `segments`, so the game plays one at a time). No synthesis.
-// Usage: node tools/audio/build.mjs   (needs ffmpeg)
+// Processing only: trim, mono for sounds placed in the flat (HRTF works on mono), a high-pass where a recording carries
+// a DC offset (`highpass`, Hz: the offset would count in the peak and click at the start), peak-normalise, fades, and
+// for takes of many footsteps or creaks the onsets of each hit (sfx.json `segments`, so the game plays one at a time).
+// No synthesis.
+// Usage: node tools/audio/build.mjs [key ...]   (needs ffmpeg; with keys, only those are rebuilt and the rest of
+// sfx.json is kept as it is)
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const LIST = 'tools/audio/sounds.json', LOCK = 'tools/audio/sounds.lock.json';
+const LIST = 'tools/audio/sounds.json', LOCK = 'tools/audio/sounds.lock.json', MANIFEST = 'public/assets/audio/sfx.json';
 const SRC = 'assets-src/audio', OUT = 'public/assets/audio/sfx', RATE = 44100;
 mkdirSync(SRC, { recursive: true }); mkdirSync(OUT, { recursive: true });
 const list = JSON.parse(readFileSync(LIST, 'utf8'));
 const lock = existsSync(LOCK) ? JSON.parse(readFileSync(LOCK, 'utf8')) : {};
+const only = process.argv.slice(2);
+for (const key of only) if (!list[key]) throw new Error(`${key}: not in ${LIST}`);
+const built = only.length && existsSync(MANIFEST) ? JSON.parse(readFileSync(MANIFEST, 'utf8')) : {};
 const ff = (args) => execFileSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', ...args], { maxBuffer: 1 << 28 });
 
-// Raw float samples (interleaved) of a file after trim/downmix.
-function decode(file, { trim, mono }) {
-  const args = [...(trim ? ['-ss', String(trim[0]), '-t', String(trim[1])] : []), '-i', file, '-ac', mono ? '1' : '2', '-ar', String(RATE), '-f', 'f32le', '-'];
+// Raw float samples (interleaved) of a file after trim/high-pass/downmix.
+function decode(file, { trim, mono, highpass }) {
+  const args = [...(trim ? ['-ss', String(trim[0]), '-t', String(trim[1])] : []), '-i', file,
+    ...(highpass ? ['-af', `highpass=f=${highpass}:p=2`] : []), '-ac', mono ? '1' : '2', '-ar', String(RATE), '-f', 'f32le', '-'];
   const buf = execFileSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', ...args], { maxBuffer: 1 << 28 });
   return { data: new Float32Array(buf.buffer, buf.byteOffset, buf.length / 4), channels: mono ? 1 : 2 };
 }
@@ -47,6 +54,7 @@ function onsets({ data, channels }, count, max = 0.7) {
 
 const manifest = {};
 for (const [key, s] of Object.entries(list)) {
+  if (only.length && !only.includes(key)) { if (built[key]) manifest[key] = built[key]; continue; }
   // `local`: a recording already in the repository (e.g. the 0.12 glass break).
   const ext = ((s.local || s.mirror).match(/\.(\w+)$/) || [, 'bin'])[1].toLowerCase();
   const src = s.local || join(SRC, `${key}.${ext}`);
@@ -77,4 +85,4 @@ for (const [key, s] of Object.entries(list)) {
   console.log(key.padEnd(16), `${duration.toFixed(2)} s`, `gain ${(20 * Math.log10(gain)).toFixed(1)} dB`, entry.segments ? `${entry.segments.length} hits` : '');
 }
 writeFileSync(LOCK, JSON.stringify(lock, null, 1) + '\n');
-writeFileSync('public/assets/audio/sfx.json', JSON.stringify(manifest));
+writeFileSync(MANIFEST, JSON.stringify(manifest));

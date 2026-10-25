@@ -4,9 +4,13 @@
 // built-in wardrobe. The flashlight lies on the shelf behind the left tall door.
 import { Color, Entity, LIGHTFALLOFF_INVERSESQUARED, SHADOWUPDATE_THISFRAME, StandardMaterial, Vec3 } from 'playcanvas';
 import { refreshShadows } from './lighting.js';
-import { segmentDistance } from './walkgrid.js';
+import { swingInto } from './walkgrid.js';
 
 const FRONT = 9.725;              // x of the door fronts; the back panel is at 9.27
+// A leaf swinging into the player pushes them out of its way (walkgrid.js swingInto): how near its line their centre
+// may come, and how fast it may move them (m/s, and at most a frame).
+export const LEAF_CLEAR = 0.255;
+const PUSH_SPEED = 1.8, PUSH_STEP = 0.05;
 // id, hinge z, opening direction (+1 swings the free edge from +z towards +x), handle point, section
 const DOORS = [
   { id: 'left', hinge: -1.322, sign: 1, handle: [9.76, 1.26, -0.58], section: 'tall' },
@@ -31,6 +35,7 @@ export class Closets {
   constructor(app, apartment, interactions, sounds, grid) {
     this.app = app;
     this.sounds = sounds;
+    this.grid = grid;
     this.moving = [];
     const wood = apartment.findComponents('render').flatMap(r => r.meshInstances).find(mi => mi.material.name === 'Wood049@bed')?.material;
     this.buildInteriors(wood);
@@ -65,7 +70,7 @@ export class Closets {
         const a = d.sign * 100 * angle * Math.PI / 180, dir = Math.sign(d.handle[2] - d.hinge);
         return [FRONT, d.hinge, FRONT + Math.sin(a) * dir * door.width, d.hinge + Math.cos(a) * dir * door.width];
       };
-      grid?.addBlocker(() => (door.angle < 0.02 ? null : door.segment()));
+      door.blocker = grid?.addBlocker(() => (door.angle < 0.02 ? null : door.segment()));
       interactions.add({ pos: door.handlePoint, size: 0.16, label: () => `${door.openRequested ? 'Close' : 'Open'} the wardrobe`,
         use: () => this.toggle(door), active: () => true });
       return door;
@@ -115,6 +120,7 @@ export class Closets {
     door.openRequested = !door.openRequested;
     if (door.openRequested) this.opened?.(door);
     door.target = door.openRequested ? 1 : 0;
+    door.touching = false; door.pushMemo = {};
     this.sounds?.wardrobe(door.target === 1, [FRONT, 1.3, door.handlePoint.z]);
     if (!this.moving.includes(door)) this.moving.push(door);
   }
@@ -127,9 +133,17 @@ export class Closets {
       const old = d.angle;
       d.angle += (d.target - d.angle) * (1 - Math.exp(-6 * dt));
       if (Math.abs(d.target - d.angle) < 0.002) d.angle = d.target;
-      // A door swinging into the player stops against them.
+      // A door swinging into the player pushes them out of its way (slowing while they cannot keep up); it stops against
+      // them only if they cannot be moved at all (the next E then reverses it).
       const p = this.player?.pos;
-      if (p && segmentDistance(p.x, p.z, d.segment()) < 0.25) { d.angle = old; d.target = old; }
+      if (p && this.grid && d.angle !== old) {
+        const r = swingInto(this.grid, p, d.segment, old, d.angle, { clear: LEAF_CLEAR, step: Math.min(PUSH_STEP, PUSH_SPEED * dt),
+          floor: this.player.floor ?? 0, except: d.blocker, target: d.target, memo: d.pushMemo ||= {} });
+        if (r.contact && !d.touching) this.sounds?.bump?.(d.handlePoint);
+        d.touching = r.contact;
+        d.angle = r.angle;
+        if (r.stuck) d.target = d.angle;
+      }
       d.pivot.setEulerAngles(0, d.sign * 100 * d.angle, 0);
       d.pivot.getWorldTransform().transformPoint(d.handleLocal, d.handlePoint);
       refreshShadows(this.app, d.handlePoint, d.width * 0.6 + 0.3);
