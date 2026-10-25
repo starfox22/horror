@@ -15,7 +15,7 @@ export const STORY_EVENTS = [
     trigger: { signal: 'fridge-shut-after-drink', delay: 3 },
     run: ctx => (ctx.story ? ctx.story.glassBreaks() : ctx.fallingGlass()),
   },
-  { id: 'crow', label: 'The crow at the window', when: 'Once, before the hunt: standing near a window and looking at it, a crow slams into the glass (the developer menu: the window nearest the view).',
+  { id: 'crow', label: 'The crow at the window', when: 'Once, before the man has been seen: standing near a window and looking at it, a crow slams into the glass (the developer menu: the window nearest the view).',
     run: ctx => ctx.story.sys.crow?.strike({ force: true }) },
   { id: 'bathroom-locked', label: 'The locked bathroom', when: 'The player tries the bathroom door after the glass: locked; the tap stops; the light under the door goes out; knocking brings the bang.',
     run: ctx => { if (ctx.story.has('power-cut')) return; ctx.story.set('glass'); ctx.story.sys.world?.bathroomOccupied(true); ctx.story.bathroomTried(); } },

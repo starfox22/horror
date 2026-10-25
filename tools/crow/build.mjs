@@ -147,20 +147,30 @@ const duration = (a) => Math.max(...a.listChannels().map(c => { const t = c.getS
 // 0.1 m of his middle: what meets the pane), wings: for the rest (what could reach the window's frame, which stands
 // 2 cm proud of the glass); span: wingspan; below and above: his lowest and highest points; every one the worst over
 // the clip, sampled at 60 per second. contact: nose and wings at the moment he meets the glass (Hit at CONTACT s).
+// reach (Hit only): how far ahead his foremost point reaches with his body pitched nose-up by 0, 5, ... 180 degrees
+// (about his X axis, as src/crow.js flares him at the pane and tumbles him off it), the worst over the clip, rounded up
+// to the millimetre.
+export const REACH_STEP = 5;
 export function measure(doc) {
   const skinned = skinner(doc), out = {};
   for (const a of doc.getRoot().listAnimations()) {
     const T = duration(a), m = { front: 0, nose: 0, wings: 0, back: 0, span: 0, below: 0, above: 0 };
+    const pitched = a.getName() === 'Hit' ? Array.from({ length: 180 / REACH_STEP + 1 }, (_, i) => [Math.sin(i * REACH_STEP * Math.PI / 180), Math.cos(i * REACH_STEP * Math.PI / 180), 0]) : [];
     for (let t = 0; t <= T + 1e-6; t += 1 / 60) {
       const pts = skinned(a, Math.min(t, T)), b = boundsOf(pts);
       m.front = Math.max(m.front, -b.lo[2]); m.back = Math.max(m.back, b.hi[2]); m.span = Math.max(m.span, b.hi[0] - b.lo[0]);
       m.below = Math.max(m.below, -b.lo[1]); m.above = Math.max(m.above, b.hi[1]);
       for (const p of pts) { if (Math.abs(p[0]) < 0.1) m.nose = Math.max(m.nose, -p[2]); else m.wings = Math.max(m.wings, -p[2]); }
+      for (const r of pitched) for (const p of pts) r[2] = Math.max(r[2], -(p[1] * r[0] + p[2] * r[1]));
     }
+    if (pitched.length) m.reach = pitched.map(r => Math.ceil(r[2] * 1000 - 1e-9) / 1000);
     if (a.getName() === 'Hit') {
       const pts = skinned(a, CONTACT);
       m.contact = { nose: Math.max(...pts.filter(p => Math.abs(p[0]) < 0.1).map(p => -p[2])), wings: Math.max(...pts.filter(p => Math.abs(p[0]) >= 0.1).map(p => -p[2])) };
       m.contact = Object.fromEntries(Object.entries(m.contact).map(([k, v]) => [k, +v.toFixed(3)]));
+      // The tip of his beak then ([y, z]): what meets the glass first when he rears up.
+      const tip = pts.filter(p => Math.abs(p[0]) < 0.1).reduce((a, p) => (-p[2] > -a[2] ? p : a));
+      m.beak = [+tip[1].toFixed(4), +tip[2].toFixed(4)];
     }
     out[a.getName()] = Object.fromEntries(Object.entries(m).map(([k, v]) => [k, typeof v === 'number' ? +v.toFixed(3) : v]));
     out[a.getName()].duration = +T.toFixed(3);

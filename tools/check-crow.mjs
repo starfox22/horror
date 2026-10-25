@@ -1,9 +1,10 @@
 // The crow at the window (src/crow.js, docs/STORY.md beat 5) without a browser: when he comes (near a window, looking
-// at it for half a second, not running; once a night, before the hunt, never within 25 s of another scare or while one
-// is due), where (the pane the player looks at, at eye height), what he does (the thud on the scare path, the caw, his
-// wings below, the lightning, the thoughts; the developer menu's strike anywhere), and that no vertex of him ever
-// comes through the glass or onto the window frame: the built model (public/assets/props/crow.glb) skinned on the CPU
-// along whole strikes at every window.
+// at it for half a second, not running; once a night, before the man has been seen, never within 25 s of another scare
+// or while one is due), where (the light the player looks at, at eye height, never one behind a curtain or a blind),
+// what he does (the thud on the scare path, the caws, his wings below, the lightning, the thoughts; the developer menu's
+// strike anywhere), and that no vertex of him ever comes through the glass, or onto the bars and the wall around it:
+// the built model (public/assets/props/crow.glb) skinned on the CPU along whole strikes at every window, reared up as
+// he meets the glass.
 // node --test tools/check-crow.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -11,9 +12,9 @@ import { readFileSync } from 'node:fs';
 import { Mat4, Vec3 } from 'playcanvas';
 import { NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
-import { Crow, WINDOWS, RULES, CROW_FIT, lookedAt, nearestWindow, strikePoint, outside } from '../src/crow.js';
+import { Crow, WINDOWS, RULES, CROW_FIT, FLARE, reachAt, lookedAt, nearestWindow, strikePoint, outside, onGlass, seenLights } from '../src/crow.js';
 import { STORY_EVENTS } from '../src/story-events.js';
-import { skinner, measure, CONTACT } from './crow/build.mjs';
+import { skinner, measure, CONTACT, REACH_STEP } from './crow/build.mjs';
 
 const seeded = (seed = 7) => () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
 const win = (id) => WINDOWS.find(w => w.id === id);
@@ -70,19 +71,37 @@ test('the window being looked at: within 2.6 m, in its room, the view on its gla
   assert.equal(lookedAt(new Vec3(-3.4, 1.85, 1.5), new Vec3(-1, 0, 0)), null);
   // The kitchen tap is under the kitchen window: at the sink, looking down at it, is looking at the window.
   assert.equal(lookedAt(new Vec3(-2.6, 1.85, -0.55), new Vec3(0, -0.45, -0.89).normalize())?.window, win('kitchen'));
+  // Looking at the gathered curtain between the living room's windows, or the office's blind, is not looking out.
+  assert.equal(lookedAt(new Vec3(-5.4, 1.85, -0.3), new Vec3(-0.87, 0.5, 0).normalize()), null, 'the blind over the living room\'s first window');
+  assert.equal(lookedAt(new Vec3(5.6, 1.85, -0.2), new Vec3(0, 0.25, -0.97).normalize()), null, 'the blind');
+  assert.equal(lookedAt(new Vec3(-5.2, 1.85, 1.6), new Vec3(-1, 0, 0))?.window, win('living room'), 'over the sofa, at the clear glass');
 });
 
-test('he strikes the pane being looked at, at eye height within 0.2 m, clear of its frame', () => {
+test('he strikes the light nearest where the player looks, at eye height ±0.2 m, in its middle: never behind a curtain or a blind', () => {
   const r = seeded(3);
-  for (const w of WINDOWS) for (let i = 0; i < 40; i++) {
-    const along = w.span[0] + r() * (w.span[1] - w.span[0]), eyeY = 1.6 + r() * 0.35;
-    const p = strikePoint(w, along, eyeY, r);
-    const pane = w.along.find(([a0, a1]) => p.along >= a0 + 0.149 && p.along <= a1 - 0.149), row = w.rows.find(([y0, y1]) => p.y >= y0 + 0.119 && p.y <= y1 - 0.119);
-    assert.ok(pane && row, `${w.id}: (${p.along.toFixed(2)}, ${p.y.toFixed(2)}) on glass`);
-    // At eye height, unless a transom is there (then the nearest glass, within a few centimetres more).
-    assert.ok(Math.abs(p.y - eyeY) <= 0.2 + (w.rows.length > 1 ? 0.35 : 1e-9), `${w.id}: height ${p.y.toFixed(2)} for an eye at ${eyeY.toFixed(2)}`);
+  for (const w of WINDOWS) for (let i = 0; i < 60; i++) {
+    const along = w.span[0] + r() * (w.span[1] - w.span[0]), eyeY = 1.6 + r() * 0.35, jitter = r();
+    const p = strikePoint(w, along, eyeY, () => jitter), aim = eyeY + (jitter * 2 - 1) * 0.2;
+    const light = seenLights(w).find(([a0, a1, y0, y1]) => p.along >= a0 + 0.099 && p.along <= a1 - 0.099 && p.y >= y0 + 0.099 && p.y <= y1 - 0.099);
+    assert.ok(light && onGlass(w, p.along, p.y), `${w.id}: (${p.along.toFixed(2)}, ${p.y.toFixed(2)}) in the middle of a light that can be seen`);
+    // The nearest such point to where the view met the window, at eye height give or take 0.2 m.
+    const ideal = Math.min(...seenLights(w).map(([a0, a1, y0, y1]) => Math.hypot(along - clampTo(along, [a0 + 0.1, a1 - 0.1]), aim - clampTo(aim, [y0 + 0.1, y1 - 0.1]))));
+    assert.ok(Math.abs(Math.hypot(p.along - along, p.y - aim) - ideal) < 1e-9, `${w.id}: (${p.along.toFixed(2)}, ${p.y.toFixed(2)}) for a look at (${along.toFixed(2)}, ${aim.toFixed(2)})`);
   }
+  // Where the windows let him come at eye height: the living room's two clear lights by the sofa, the bedroom's middle.
+  for (const [w, along] of [[win('living room'), 1.6], [win('bedroom'), 11.5], [win('office'), 4.3]]) {
+    const p = strikePoint(w, along, 1.85, () => 0.5);
+    assert.ok(Math.abs(p.y - 1.85) < 0.06, `${w.id}: at eye height (${p.y.toFixed(2)})`);
+  }
+  // The kitchen's blind is down to 1.55 m: he dives for the glass under it, behind the tap.
+  assert.ok(strikePoint(win('kitchen'), -2.3, 1.85, () => 0.5).y < 1.3);
+  // The bars and the living room's wall columns are not glass.
+  assert.equal(onGlass(win('living room'), 0.2, 1.5), false);
+  assert.equal(onGlass(win('living room'), -0.32, 1.5), false);
+  assert.equal(onGlass(win('kitchen'), -1.75, 1.345), false);
+  assert.equal(onGlass(win('kitchen'), -1.75, 1.5), true);
 });
+const clampTo = (v, [a, b]) => Math.min(b, Math.max(a, v));
 
 test('he comes after half a second of looking, once a night, with the thud, the caw, his wings, the lightning, the thoughts', () => {
   const s = setup();
@@ -132,7 +151,13 @@ test('he does not come when the night is not ready for him', () => {
     'moving fast': s => { s.player.vel.set(2.1, 0, 0); },
     'busy (drinking, reading, the phone up)': s => { s.state.blocked = true; },
     'paused': s => { s.state.playing = false; },
+    'the man has been seen (a false scare comes before him)': s => { s.flags.add('silhouette'); },
+    'the man seen, the power back': s => { s.flags.add('silhouette'); s.flags.add('fusebox-opened'); s.flags.add('restored'); },
     'the cut is due': s => { s.story.timers.push({ id: 'cut', at: s.story.time + 4 }); },
+    'the glass is due (the fridge left open after the drink)': s => { s.story.timers.push({ id: 'drink-fallback', at: s.story.time + 12 }); },
+    'the glass is due (6:00, no drink)': s => { s.story.timers.push({ id: 'glass-late', at: s.story.time + 20 }); },
+    'the creaks upstairs are due': s => { s.story.timers.push({ id: 'upstairs', at: s.story.time + 9 }); },
+    'the front door handle is due': s => { s.story.timers.push({ id: 'handle', at: s.story.time + 20 }); },
     'a story event counting down': s => { s.story.sys.events.pending.push({ event: { id: 'falling-glass' }, left: 2 }); },
     'drunk, the fridge still open (the glass breaks when it shuts)': s => { s.story.sys.fridge.hasDrunk = true; },
     'the fuse box open, the figure due': s => { s.flags.add('fusebox-opened'); },
@@ -145,12 +170,17 @@ test('he does not come when the night is not ready for him', () => {
     assert.equal(s.crow.flight, null, name);
     assert.equal(s.scared(), 0, name);
   }
-  // A scary timer far off does not hold him back; the glass broken, a drink is no reason either.
+  // A scary timer far off does not hold him back (the glass at 6:00 is minutes away at the start); the glass broken, a
+  // drink is no reason either; nor is the fuse box, once the power is back and the man was never seen.
   const s = setup();
-  s.story.timers.push({ id: 'cut-fallback', at: s.story.time + 90 });
+  s.story.timers.push({ id: 'cut-fallback', at: s.story.time + 90 }, { id: 'glass-late', at: s.story.time + 300 }, { id: 'nudge-water', at: s.story.time + 2 });
   s.story.sys.fridge.hasDrunk = true; s.flags.add('glass');
   s.step(1);
   assert.ok(s.crow.flight);
+  const r = setup();
+  r.flags.add('fusebox-opened'); r.flags.add('restored');
+  r.step(1);
+  assert.ok(r.crow.flight, 'the power back without the man seen');
 });
 
 test('a glance is not a look: turning away resets it; walking (not running) is fine', () => {
@@ -209,21 +239,32 @@ test('CROW_FIT in src/crow.js is what the built model measures', () => {
   close(CROW_FIT.nose, m.Hit.contact.nose, 'nose'); close(CROW_FIT.wings, m.Hit.contact.wings, 'wings');
   close(CROW_FIT.front, m.Fast_Flying.front, 'front'); close(CROW_FIT.below, Math.max(m.Fast_Flying.below, m.Hit.below), 'below');
   close(CROW_FIT.above, m.Hit.above, 'above'); assert.equal(CROW_FIT.contact, CONTACT);
+  assert.equal(CROW_FIT.reach.length, 180 / REACH_STEP + 1, 'reach: every 5 degrees, 0 to 180');
+  m.Hit.reach.forEach((r, i) => assert.ok(CROW_FIT.reach[i] >= r && CROW_FIT.reach[i] - r < 0.004, `reach at ${i * REACH_STEP} degrees: ${CROW_FIT.reach[i]} in crow.js, ${r} measured`));
+  assert.equal(reachAt(FLARE), CROW_FIT.reach[FLARE / REACH_STEP]);
+  close(CROW_FIT.beak[0], m.Hit.beak[0], 'beak y'); close(CROW_FIT.beak[1], m.Hit.beak[1], 'beak z');
+  // Reared up as he meets the glass, the tip of his beak is the foremost of him (it marks the glass: the smear's place).
+  const up = FLARE * Math.PI / 180, tip = -(CROW_FIT.beak[0] * Math.sin(up) + CROW_FIT.beak[1] * Math.cos(up));
+  assert.ok(reachAt(FLARE) - tip < 0.003, `at ${FLARE} degrees his beak reaches ${tip.toFixed(3)} m, his foremost point ${reachAt(FLARE)}`);
   assert.ok(m.Fast_Flying.span > 0.85 && m.Fast_Flying.span < 0.95, 'a crow\'s wingspan');
   // The main.js wiring: built, in sys, drawn during the warm-up.
   const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
   assert.match(main, /Crow\.create\(/); assert.match(main, /sys\.crow = crow/); assert.match(main, /crow\.reveal\(\)/);
 });
 
-test('no vertex of him ever comes through the glass, and his wings never onto the frame, at any window', () => {
-  const M = new Mat4(), v = new Vec3();
+// Between the lights, inside the run of them (not one of the living room's wall columns, gaps of 10 cm or more): the bars.
+const overBars = (w, a, y) => a >= w.along[0][0] && a <= w.along.at(-1)[1] && y >= w.rows[0][0] && y <= w.rows.at(-1)[1]
+  && !w.along.slice(1).some(([a0], i) => a0 - w.along[i][1] >= 0.1 && a > w.along[i][1] && a < a0);
+
+test('no vertex of him ever comes through the glass, or onto the bars and the wall around it, at any window', (t) => {
+  const M = new Mat4(), v = new Vec3(), report = [];
   for (const w of WINDOWS) for (const [k, look] of [spot(w), spot(w, { yaw: 30, back: 1.6 }), spot(w, { yaw: -25, pitch: 12, back: 2 })].entries()) {
     const s = setup({ start: look });
     s.crow.random = seeded(11 + k);
     assert.ok(s.crow.strike({ force: true }));
-    const f = s.crow.flight, frameDepth = (f.w.frame - f.w.outer) * f.w.out;
+    const f = s.crow.flight, wallDepth = (f.w.wall - f.w.outer) * f.w.out, along = w.axis === 'x' ? 'z' : 'x';
     assert.equal(f.w, w, `${w.id} #${k}: he goes for the window looked at`);
-    let nearest = Infinity, wingNearest = Infinity, touched = false;
+    let nearest = Infinity, bars = Infinity, wall = Infinity;
     for (let i = 0; s.crow.flight && i < 400; i++) {
       s.step(1 / 60);
       if (!s.crow.flight || i % 2) continue;
@@ -236,15 +277,17 @@ test('no vertex of him ever comes through the glass, and his wings never onto th
         M.transformPoint(v.set(p[0], p[1], p[2]), v);
         const d = outside(w, v);
         nearest = Math.min(nearest, d);
-        if (Math.abs(p[0]) >= 0.1) wingNearest = Math.min(wingNearest, d);
-        if (d < 0.003) touched = true;
+        if (onGlass(w, v[along], v.y)) continue;
+        if (overBars(w, v[along], v.y)) bars = Math.min(bars, d); else wall = Math.min(wall, d);
       }
     }
     assert.ok(nearest >= -1e-6, `${w.id} #${k}: ${(nearest * 1000).toFixed(1)} mm outside the glass at the closest`);
-    assert.ok(!touched || nearest >= 0, `${w.id} #${k}`);
     assert.ok(nearest < 0.02, `${w.id} #${k}: he really meets it (${(nearest * 1000).toFixed(1)} mm)`);
-    assert.ok(wingNearest > frameDepth + 0.01, `${w.id} #${k}: wings ${(wingNearest * 100).toFixed(1)} cm out, the frame ${(frameDepth * 100).toFixed(1)}`);
+    assert.ok(bars > w.bars + 0.005, `${w.id} #${k}: over the bars ${(bars * 100).toFixed(1)} cm out, the bars ${(w.bars * 100).toFixed(1)}`);
+    assert.ok(wall > wallDepth + 0.005, `${w.id} #${k}: over the frame and the wall ${(wall * 100).toFixed(1)} cm out, the wall ${(wallDepth * 100).toFixed(1)}`);
+    report.push(`${w.id} #${k}: closest ${(nearest * 1000).toFixed(1)} mm from the glass, ${(bars * 100).toFixed(1)} cm over the bars, ${(wall * 100).toFixed(1)} cm over the wall`);
   }
+  t.diagnostic(report.join('; '));
 });
 
 test('the feathers stay outside, flutter down and are gone; one stays on the glass in the smear, washed away in 40 s', () => {
@@ -257,7 +300,7 @@ test('the feathers stay outside, flutter down and are gone; one stays on the gla
     s.step(1 / 60);
     for (const d of s.crow.debris) { lowest = Math.min(lowest, outside(w, d.p)); assert.ok(d.v.length() < 3, 'fluttering, not falling like a stone'); }
   }
-  assert.ok(lowest >= 0.0119, `the closest feather ${(lowest * 1000).toFixed(1)} mm from the glass`);
+  assert.ok(lowest >= 0.0549, `the closest feather ${(lowest * 1000).toFixed(1)} mm from the glass (clear of the bars and the wall)`);
   assert.equal(s.crow.debris.length, 0, 'all below the sill within 8 s');
   assert.ok(s.crow.smear && s.crow.smear.t > 7);
   s.step(33);

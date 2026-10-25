@@ -352,6 +352,7 @@ if (hash.has('dark')) {
 if (hash.has('allon')) switches.rooms.forEach(r => { if (!r.on) switches.toggle(r); });
 if (hash.has('flash')) flashlight.pickUp();
 rain = new Rain(app, apartment, ambience, lit);
+sys.rain = rain;                  // story.js: lightning comes often for 45 s after the cut (rain.burst), and stops at power-back
 // The crow at a window (crow.js; docs/STORY.md beat 5): once a night before the man is seen, by the player's camera only.
 const crow = await Crow.create({ app, camera, player, story, bank, rain, isPlaying, isVisible: cam => cam === playerCam,
   configureMaterial: (m, zone) => probes.assign(m, zone), blocked: () => drink.running || phone.raised || hud.reading || death.busy || !!endings.running });

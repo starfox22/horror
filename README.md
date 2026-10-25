@@ -74,7 +74,7 @@ node tools/shoot.mjs dist out name=x,z,yaw ...   # headless screenshots (softwar
 | `src/flashlight.js` | The flashlight (downloaded model on the shelf; in hand only the beam: cookie, shadows, bounce) |
 | `src/closets.js` | Bedroom wardrobe: doors on hinges (opened by him too), interior, LED; the flashlight's shelf |
 | `src/taps.js` | The kitchen and bathroom taps: E turns the water on and off (stream, pool, sound; a lure in the hunt) |
-| `src/crow.js` | The crow that slams into a window the player is facing (once a night, before the hunt) |
+| `src/crow.js` | The crow that slams into a window the player is facing (once a night, before the man has been seen) |
 | `src/doors.js` | Bathroom door (downloaded model): hinge, spring swing, collision (moving wall), pushes the player aside; he opens it too |
 | `src/devices.js` | Bedside reading lamps, laptop lid and screen, office computer, coffee machine with steam |
 | `src/probes.js` | Probes: per-room box-projected reflections; bounce light from 8 probes blended by position; captures spread over frames and cross-faded |

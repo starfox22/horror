@@ -414,6 +414,10 @@ Full list, measurements and before/after renders: [BUILD_012.md](BUILD_012.md). 
 - The flashlight follows the camera with a lag (a slerp): in staged shots snap `flashlight.rot` to the camera.
 - The phone's canvas is drawn only when it is dirty and either held or lying on the nightstand (that copy shares it).
 - Story fallbacks use `story.soonest()`: a later event must never push a fallback later (the cut, the hunt).
+- A black thing outside a lit window reads as nothing (the crow): show its broad side to the room. The window bars stand
+  2.2 cm out of the glass and the wall face 3.6-4.3 cm; transparent decals on a window must sort against the room's
+  single glass mesh. Headless captures that jump far ahead in time keep a trace of the previous frame (TAA): render
+  about 16 frames after a big jump.
 - A bone that a clip does not animate keeps whatever was last written to it: per-frame overrides (his fist, the knife
   arm) must be absolute, never relative to the previous frame.
 - Black cloth reads grey under the torch because of its specular reflection, not its colour: cut the specular per texel
