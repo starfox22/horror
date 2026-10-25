@@ -11,8 +11,8 @@
 // resumes (story-events.js Director.queue), never while paused, so they can be watched from their start.
 const CODE = 'developer';
 export const DEV_DELAY = 3;
-// Lights that are not the flat's own (the torch, the lightning, his phone light, the home camera's infrared lamp).
-const NOT_FLAT = new Set(['flashlight beam', 'flashlight bounce', 'moon', 'intruder phone light', 'security camera infrared']);
+// Lights that are not the flat's own (the torch, the lightning, the home camera's infrared lamp).
+const NOT_FLAT = new Set(['flashlight beam', 'flashlight bounce', 'moon', 'security camera infrared']);
 
 export class DevMenu {
   // sys: { app, flashlight, switches, devices, closets, fridge, rain, recapture, eyes, events, stats }

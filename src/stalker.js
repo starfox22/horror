@@ -1,14 +1,15 @@
 // The intruder's mind in the hunt (docs/STORY.md, Act IV). Pure JS on top of navgrid.js, so tools/check-stalker.mjs can
 // run thousands of simulated hunts in Node to tune it; hunt.js turns its decisions into the body (intruder.js): where he
-// is, which way he faces, how fast he moves, where his phone light points, the knife, and the sounds.
+// is, which way he faces, how fast he moves, where he is looking, the knife, and the sounds.
 //
 // States: off · scripted (story-events drives him) · patrol · alert · investigate · search · chase · kill · ambush
-// (light off, waiting, only his breathing gives him away; never in the corridor or by the front door) · backstage (up in
+// (standing still in the dark, waiting, only his breathing gives him away; never in the corridor or by the front door) · backstage (up in
 // the ceiling void) · drop (down through the wardrobe's hatch: legs first, the landing, getting up, a step out).
-// Seeing: a suspicion meter fills while the player is in his phone light, close in his side view, or anywhere in sight
-// with a torch on; it fills faster up close, slower crouched; at half he stops and turns his light on you (a warning
-// breath), full and he comes. Before he strikes he raises the knife into his light for SENSES.killWindup: out of his
-// sight or reach meanwhile, it comes down again. Hearing: noises carry a radius in path metres (through doorways, never
+// Seeing (he carries no light from build 0.15: eyes used to the dark): a suspicion meter fills while the player is in
+// his view cone (SENSES.coneRange, shorter for a still or crouched shape), close in his side view, or anywhere in sight
+// with a torch on; it fills faster up close, slower crouched; at half he stops and turns to you (a warning breath), full
+// and he comes. Before he strikes he raises the knife for SENSES.killWindup: out of his sight or reach meanwhile, it
+// comes down again. Hearing: noises carry a radius in path metres (through doorways, never
 // walls; through the bathroom door, which he opens when he gets to it).
 // The first encounter (TUTORIAL): he starts well away from the player, sweeps the open-plan room keeping his distance,
 // and notices only a torch kept on after the hint, or running; he may come to look, never chase.
@@ -24,7 +25,7 @@ export const DIFFICULTY = {
 };
 // kill: the reach he strikes from; killCancel: out of this reach (or out of his sight) the raised knife comes down again.
 export const SENSES = {
-  eye: 1.62, coneHalf: 35, coneRange: 9, sideHalf: 110, sideStand: 2, sideCrouch: 1, touch: 0.6, torchRange: 14,
+  eye: 1.62, coneHalf: 35, coneRange: 7, sideHalf: 110, sideStand: 2, sideCrouch: 1, touch: 0.6, torchRange: 14,
   alertAt: 0.5, decay: 0.3, kill: 1.1, killCancel: 1.4, killWindup: 0.45, loseAfter: 6, breath: 4,
 };
 // The first encounter: at most `seconds`. A torch counts once on for `torchHeld` s, and only from `hint` s (the thought
@@ -80,9 +81,9 @@ export class Stalker {
       return { id, x: nav.open(nav.index(...nav.cellOf(x, z))) ? x : cx, z: nav.open(nav.index(...nav.cellOf(x, z))) ? z : cz, room, dwell };
     });
     this.byId = new Map(this.nodes.map(n => [n.id, n]));
-    this.x = 0; this.z = 0; this.yaw = 0; this.torchYaw = 0; this.torchPitch = -12;
+    this.x = 0; this.z = 0; this.yaw = 0; this.lookYaw = 0;
     this.state = 'off'; this.time = 0; this.stateTime = 0;
-    this.torch = false;
+    this.looking = false;
     this.reset();
   }
 
@@ -114,12 +115,12 @@ export class Stalker {
   // Put him somewhere and start a state (patrol by default): a new life, nothing remembered.
   spawn(x, z, yaw = 0, state = 'patrol') {
     this.reset();
-    this.x = x; this.z = z; this.yaw = yaw; this.torchYaw = yaw;
+    this.x = x; this.z = z; this.yaw = yaw; this.lookYaw = yaw;
     this.state = 'off'; this.set(state);
-    this.torch = state !== 'backstage' && state !== 'drop';
+    this.looking = state !== 'backstage' && state !== 'drop';
   }
 
-  // The hunt starts (hunt.js start). from 'fusebox': his light comes on by the fuse box (`at`), or at the far end of the
+  // The hunt starts (hunt.js start). from 'fusebox': he starts by the fuse box (`at`), or at the far end of the
   // open-plan room when the fuse box is within TUTORIAL.spawn path metres of the player; `tutorial`: the first encounter.
   // from 'hatch': he heard the front door's lock: down through the wardrobe's hatch, then straight for the door.
   // player: { x, z }, where the player is now.
@@ -132,8 +133,8 @@ export class Stalker {
     }
     const [x, z] = this.startSpot(at, player);
     this.spawn(x, z, player ? angleTo(player.x, player.z, x, z) : -90, 'patrol');
-    this.dark = 1.2;                    // his phone light comes on a moment after the main switch goes
-    this.torch = false;
+    this.dark = 1.2;                    // he stands a moment by the box after the main switch goes, then moves
+    this.looking = false;
     this.grace = 3;
     if (tutorial) {
       this.tutorial = TUTORIAL.seconds; this.tutorialTime = 0; this.tutorialOut = !player || !inCorridor(player.x, player.z);
@@ -157,7 +158,7 @@ export class Stalker {
     return best;
   }
 
-  // After a catch (the player wakes on the sofa): he patrols from the bedroom door, in sight and with his light on, and
+  // After a catch (the player wakes on the sofa): he patrols from the bedroom door, in sight, and
   // cannot catch anyone for RESPAWN.grace s. If the player is within RESPAWN.from path metres of it (a checkpoint that
   // puts them there), he starts from the furthest place he patrols instead.
   respawn(player = null) {
@@ -178,9 +179,9 @@ export class Stalker {
   // player standing in the wardrobe), 'patrol' (back from the void).
   dropDown(then) {
     [this.x, this.z] = PLACES.hatch;
-    this.yaw = 90; this.torchYaw = 90; this.speed = 0; this.path = null;
+    this.yaw = 90; this.lookYaw = 90; this.speed = 0; this.path = null;
     this.set('drop');
-    this.torch = false; this.lift = DROP.height;
+    this.looking = false; this.lift = DROP.height;
     this.drop = { t: 0, then, landed: false };
     this.hooks.drop?.('start', then);
   }
@@ -204,7 +205,7 @@ export class Stalker {
     if (this.state === 'kill') { this.speed = 0; return; }
     if (this.state === 'backstage') { this.updateBackstage(dt, player); this.noiseQueue.length = 0; return; }
     if (this.state === 'drop') { this.updateDrop(dt, player); this.noiseQueue.length = 0; return; }
-    if (this.dark > 0) { this.dark -= dt; this.speed = 0; this.torch = this.dark <= 0; this.noiseQueue.length = 0; return; }
+    if (this.dark > 0) { this.dark -= dt; this.speed = 0; this.looking = this.dark <= 0; this.noiseQueue.length = 0; return; }
     this.perceive(dt, player);
     this.hear(player);
     this[`update_${this.state}`]?.(dt, player);
@@ -231,15 +232,15 @@ export class Stalker {
     const target = { x: p.x, y: p.crouched ? 0.85 : 1.3, z: p.z }, eye = { x: this.x, y: s.eye, z: this.z };
     if (!this.nav.sees(eye, target)) return null;
     const bearing = angleTo(this.x, this.z, p.x, p.z);
-    // A phone LED lights a person well only so far: further for someone standing or moving than for a still, crouched shape.
+    // In the dark he makes out a person only so far: further for someone standing or moving than for a still, crouched shape.
     const reach = s.coneRange * (p.crouched ? 0.45 : 1) * (p.moving === false ? 0.6 : 1);
-    const inCone = this.torch && d < reach && Math.abs(wrap(bearing - this.torchYaw)) < s.coneHalf;
+    const inCone = this.looking && d < reach && Math.abs(wrap(bearing - this.lookYaw)) < s.coneHalf;
     // Close in his side view; within arm's length (s.touch), whichever way he faces.
     const inSide = d < s.touch || (d < (p.crouched ? s.sideCrouch : s.sideStand) && Math.abs(wrap(bearing - this.yaw)) < s.sideHalf);
     const byTorch = p.torch && d < s.torchRange;
-    this.seenBy = inCone ? 'light' : inSide ? 'side' : byTorch ? 'torch' : null;
+    this.seenBy = inCone ? 'eyes' : inSide ? 'side' : byTorch ? 'torch' : null;
     if (this.tutorial > 0) {
-      // The first encounter: only a torch kept on (counted from the hint), or running, in his light or showing its own.
+      // The first encounter: only a torch kept on (counted from the hint), or running, in his view or showing its own.
       const torch = p.torch && (p.torchHeld ?? 0) > TUTORIAL.torchHeld && this.tutorialTime >= TUTORIAL.hint;
       return (torch || p.running) && (inCone || byTorch) ? d : null;
     }
@@ -256,13 +257,13 @@ export class Stalker {
       if (this.state === 'chase' || this.state === 'kill') rate = 99;
       const before = this.suspicion;
       // The first encounter, and the moment after he lands on someone in the wardrobe: never a chase. While he stands
-      // and breathes in (alert), nothing more: that is the player's moment to get out of his light.
+      // and breathes in (alert), nothing more: that is the player's moment to get out of his sight.
       const cap = this.tutorial > 0 || this.hold > 0 ? TUTORIAL.cap : 1;
       if (this.suspicion < cap && this.state !== 'alert') this.suspicion = Math.min(cap, this.suspicion + rate * dt);
       this.lastSeen = { x: p.x, z: p.z, vx: p.vx || 0, vz: p.vz || 0 };
       this.sinceSeen = 0;
       if (this.suspicion >= 1 && this.state !== 'chase') this.set('chase');
-      // Half way: he stops and turns his light to you (once, as it crosses; while he walks over it keeps filling). Not
+      // Half way: he stops and turns to you (once, as it crosses; while he walks over it keeps filling). Not
       // when he is already running at a noise he knows is you (the front door's lock).
       else if (before < SENSES.alertAt && this.suspicion >= SENSES.alertAt && !this.rush && ['patrol', 'search', 'investigate', 'ambush'].includes(this.state)) this.alert(p.x, p.z, 'sight');
       else if (this.state === 'investigate') this.target = { ...this.target, x: p.x, z: p.z, why: 'sight', kind: null };
@@ -294,7 +295,7 @@ export class Stalker {
     this.target = { x, z, why, kind };
     if (this.state === 'alert') return;
     this.set('alert');
-    this.torch = true;
+    this.looking = true;
     this.wait = why === 'sound' ? 0.5 : 0;       // a beat before he turns to a noise
     this.hooks.breath?.('alert');
   }
@@ -307,7 +308,7 @@ export class Stalker {
 
   // --- states ---------------------------------------------------------------------------------------------------
   update_patrol(dt, p) {
-    this.torch = true;
+    this.looking = true;
     if (this.wait > 0) { if (this.look) this.holdLook(dt); else this.sweepLight(dt); return; }
     if (this.climbing) { this.set('backstage'); return; }          // up through the wardrobe's hatch
     if (!this.path) {
@@ -329,20 +330,20 @@ export class Stalker {
   }
 
   update_alert(dt) {
-    this.speed = 0; this.torch = true;
+    this.speed = 0; this.looking = true;
     const t = this.target;
     if (this.wait > 0) return;
-    this.turnTowards(angleTo(this.x, this.z, t.x, t.z), 300, dt); this.torchYaw = this.yaw;
+    this.turnTowards(angleTo(this.x, this.z, t.x, t.z), 300, dt); this.lookYaw = this.yaw;
     if (this.stateTime > 1 + (t.why === 'sound' ? 0.5 : 0)) this.investigate(t.x, t.z, { why: t.why, kind: t.kind, rush: !!t.rush });
   }
 
   update_investigate(dt, p) {
-    this.torch = true;
+    this.looking = true;
     const t = this.target;
     if (this.tutorial > 0 && Math.hypot(p.x - this.x, p.z - this.z) < TUTORIAL.keep) {
-      // The first encounter: he comes to look, never nearer than TUTORIAL.keep; his light on you while he still sees you.
+      // The first encounter: he comes to look, never nearer than TUTORIAL.keep; turned to you while he still sees you.
       this.path = null; this.speed = 0;
-      if (this.seeing) { this.turnTowards(angleTo(this.x, this.z, p.x, p.z), 200, dt); this.torchYaw = this.yaw; }
+      if (this.seeing) { this.turnTowards(angleTo(this.x, this.z, p.x, p.z), 200, dt); this.lookYaw = this.yaw; }
       else this.set('search');
       return;
     }
@@ -356,9 +357,9 @@ export class Stalker {
   }
 
   update_search(dt) {
-    this.speed = 0; this.torch = true;
+    this.speed = 0; this.looking = true;
     if (!this.searchPlan) {
-      // Sometimes, having lost you, he puts his light out and waits: never in the corridor, near the front door or in the
+      // Sometimes, having lost you, he stands still in the dark and waits: never in the corridor, near the front door or in the
       // first encounter (the way out stays fair).
       if (this.lastSeen && this.canAmbush() && this.random() < 0.3) { this.set('ambush'); return; }
       // A look round where he is (short in the corridor: he never stops there for long), then the nearest rooms.
@@ -385,13 +386,13 @@ export class Stalker {
   }
 
   update_ambush(dt) {
-    this.speed = 0; this.torch = false;
+    this.speed = 0; this.looking = false;
     this.ambushFor ??= 8 + this.random() * 5;
-    if (this.stateTime > this.ambushFor) { this.torch = true; this.set('patrol'); }
+    if (this.stateTime > this.ambushFor) { this.looking = true; this.set('patrol'); }
   }
 
   update_chase(dt, p) {
-    this.torch = true;
+    this.looking = true;
     const seen = this.seeing, ls = this.lastSeen;
     // Where you are, or where you were heading when he last saw you.
     const target = seen ? { x: p.x, z: p.z } : ls ? { x: ls.x + ls.vx * 1.5, z: ls.z + ls.vz * 1.5 } : null;
@@ -402,12 +403,12 @@ export class Stalker {
       // No way there (behind a door held shut, say): where he last saw you; failing that, he searches from here.
       if (!this.goTo(target.x, target.z, this.tune.chase) && !(ls && this.goTo(ls.x, ls.z, this.tune.chase))) { this.lose(target); return; }
     }
-    // The strike: within reach and in sight, he raises the knife into his light for SENSES.killWindup; out of his sight or
+    // The strike: within reach and in sight, he raises the knife for SENSES.killWindup; out of his sight or
     // beyond SENSES.killCancel meanwhile, it comes down and he must close in again.
     const d = Math.hypot(p.x - this.x, p.z - this.z);
     if (this.grace <= 0 && seen && (d < SENSES.kill || (this.windup > 0 && d < SENSES.killCancel))) {
       this.windup += dt;
-      this.torchYaw = angleTo(this.x, this.z, p.x, p.z);
+      this.lookYaw = angleTo(this.x, this.z, p.x, p.z);
       if (this.windup >= SENSES.killWindup) { this.set('kill'); this.hooks.caught?.(); return; }
     } else this.windup = 0;
     if (this.sinceSeen > SENSES.loseAfter) this.lose(target);
@@ -423,18 +424,18 @@ export class Stalker {
     if (d.t < DROP.fall) { const k = d.t / DROP.fall; this.lift = DROP.height * (1 - k * k); return; }
     this.lift = 0;
     if (!d.landed) {
-      d.landed = true; this.torch = true;
+      d.landed = true; this.looking = true;
       this.hooks.drop?.('land', d.then);
       this.hooks.openWardrobe?.();
       if (d.then === 'trap') this.hold = WARDROBE.hold;
     }
     const rush = d.then === 'rush';
-    if (d.t < DROP.fall + this.riseTime(d.then)) { this.torchYaw = this.yaw; return; }
+    if (d.t < DROP.fall + this.riseTime(d.then)) { this.lookYaw = this.yaw; return; }
     const [ox, oz] = PLACES.hatchOut, dx = ox - this.x, dz = oz - this.z, dist = Math.hypot(dx, dz), v = rush ? DROP.rushOut : DROP.out;
     if (dist > 0.03) {
       const step = Math.min(dist, v * dt);
       this.x += dx / dist * step; this.z += dz / dist * step; this.speed = v;
-      this.yaw = this.torchYaw = angleTo(this.x, this.z, ox, oz);
+      this.yaw = this.lookYaw = angleTo(this.x, this.z, ox, oz);
       return;
     }
     const then = d.then;
@@ -452,7 +453,7 @@ export class Stalker {
   // Up in the void: invisible, creaks crossing the ceiling; then down through the wardrobe again: not while someone
   // stands right by it (up to 15 s more; standing in it is the wardrobe's own rule, below).
   updateBackstage(dt, p) {
-    this.speed = 0; this.torch = false;
+    this.speed = 0; this.looking = false;
     if (!this.backstageFor) {
       this.backstageFor = 25 + this.random() * 15; this.nextBackstage = false; this.closeLog = []; this.closeSum = 0;
       this.hooks.backstage?.(true);
@@ -560,7 +561,7 @@ export class Stalker {
     if (this.doorInWay(tx, tz, dt)) return;
     const want = angleTo(this.x, this.z, tx, tz), turn = Math.abs(wrap(want - this.yaw));
     this.turnTowards(want, this.state === 'chase' || this.rush ? 400 : 220, dt);
-    // Doorways into the corridor: he stops and lights it end to end before stepping in.
+    // Doorways into the corridor: he stops and looks down it end to end before stepping in.
     if (this.state === 'patrol' && !inCorridor(this.x, this.z) && inCorridor(tx, tz) && !this.lookedDown && Math.hypot(tx - this.x, tz - this.z) < 1.2) {
       this.lookedDown = true; this.wait = 2; this.look = { yaw: this.x > 7 ? -90 : 90, t: 0, sweep: 12 }; this.speed = 0; return;
     }
@@ -571,7 +572,7 @@ export class Stalker {
     const step = this.speed * dt, dx = tx - this.x, dz = tz - this.z, d = Math.hypot(dx, dz);
     if (d <= step || d < 0.05) { this.x = tx; this.z = tz; path.at++; }
     else { this.x += dx / d * step; this.z += dz / d * step; }
-    if (this.state !== 'search' && this.state !== 'ambush' && !this.windup) this.torchYaw = wrap(this.torchYaw + wrap(this.yaw - this.torchYaw) * Math.min(1, dt * 5));
+    if (this.state !== 'search' && this.state !== 'ambush' && !this.windup) this.lookYaw = wrap(this.lookYaw + wrap(this.yaw - this.lookYaw) * Math.min(1, dt * 5));
   }
 
   // A door of his in the way (the bathroom's, shut or ajar): he walks up to it, stops, opens it (hunt.js: the latch and a
@@ -596,16 +597,16 @@ export class Stalker {
   sweepLight(dt) {
     const s = this.sweep || (this.sweep = { base: this.yaw, t: 0 });
     s.t += dt;
-    this.torchYaw = wrap(s.base + Math.sin(s.t * 1.3) * 60);
+    this.lookYaw = wrap(s.base + Math.sin(s.t * 1.3) * 60);
     this.yaw = wrap(s.base + Math.sin(s.t * 1.3) * 25);
   }
 
-  // Holding his light one way (down the corridor from a doorway; into the wardrobe), with a slow small sweep.
+  // Looking one way (down the corridor from a doorway; into the wardrobe), with a slow small sweep.
   holdLook(dt) {
     const l = this.look;
     l.t += dt;
     this.turnTowards(l.yaw, 160, dt);
-    this.torchYaw = wrap(this.yaw + Math.sin(l.t * 1.1) * (l.sweep ?? 12));
+    this.lookYaw = wrap(this.yaw + Math.sin(l.t * 1.1) * (l.sweep ?? 12));
   }
 }
 

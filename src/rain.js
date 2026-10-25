@@ -249,6 +249,9 @@ export class Rain {
     if (seconds === 0) this.dark = false;
   }
 
+  // A flash now (death.js: the only light on him when the player has no torch).
+  strike() { this.flash.next = 0; }
+
   // Lightning every 25-70 s: two or three flickers of cold light from the sky, thunder a few seconds later.
   lightning(dt) {
     const f = this.flash;

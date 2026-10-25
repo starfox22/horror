@@ -36,7 +36,11 @@ test('Act I: the glass, the shards, the locked bathroom, the knock, the cut', ()
   assert.ok(story.has('glass'));
   story.bathroomTried(); run(1.2);
   assert.ok(said.includes('Locked.'));
+  sys.flashlight.held = true;               // the torch already in hand (the cut waits for it: next test)
   story.bathroomTried(); run(4.8);
+  assert.ok(!story.has('power-cut') && story.cutting && sys.power.live('lights1'), 'the knock: first the lights flicker, still on');
+  assert.ok(sys.power.surges.length === 1 && calls.includes('play.arc_zap'), 'a surge, with the short circuit crackling');
+  run(1.6);
   assert.ok(story.has('power-cut'), 'the knock is answered by the bang');
   assert.equal(story.act, 2);
   assert.equal(sys.power.live('lights1'), false, 'the flat is dark');
@@ -63,14 +67,38 @@ test('the knife rack: looking closely at the gap notices the missing knife; from
 test('fallbacks keep the night moving: the cut comes by itself', () => {
   const { story, run } = night();
   story.begin({ seed: 1 });
-  story.glassBreaks(); run(121);
-  assert.ok(story.has('power-cut'), 'two minutes after the glass, the cut happens anyway');
+  story.glassBreaks(); run(119);
+  assert.ok(!story.has('power-cut'), 'not before two minutes');
+  story.sys.flashlight.held = true; story.tookTorch(); run(4);
+  assert.ok(story.has('power-cut'), 'the torch in hand: the cut comes by itself');
+});
+
+test('build 0.15: the cut never comes before the player has the torch; taking it brings the cut', () => {
+  const { story, sys, calls, said, run } = night();
+  story.begin({ seed: 4 });
+  story.glassBreaks();
+  story.bathroomTried(); run(1.2); story.bathroomTried(); run(6);
+  assert.ok(!story.has('power-cut') && !story.cutting, 'the knock, no torch: no cut');
+  assert.ok(sys.power.live('lights1'), 'the lights stay on');
+  assert.ok(sys.power.surges.length >= 1 && calls.includes('play.arc_zap'), 'they stutter, with the buzz');
+  assert.ok(said.includes('Where’s my torch? ...The wardrobe.'), 'and the player thinks of the torch');
+  run(130);
+  assert.ok(!story.has('power-cut'), 'the fallbacks wait for it too');
+  const surges = sys.power.surges.length;
+  assert.ok(surges >= 6, `the lights keep stuttering every 12-20 s (${surges})`);
+  sys.flashlight.held = true; story.tookTorch();
+  assert.ok(story.has('torch'));
+  run(2.4);
+  assert.ok(story.cutting && !story.has('power-cut'), 'a moment after the torch is taken: the flicker');
+  run(1.6);
+  assert.ok(story.has('power-cut') && !sys.power.live('lights1'), 'then the bang and the dark');
+  assert.equal(said.filter(t => t === 'Where’s my torch? ...The wardrobe.').length, 1, 'the thought once');
 });
 
 test('Act II to IV: power back by the label, the nest, the hunt fallback', () => {
   const { story, sys, calls, run } = night();
   story.begin({ seed: 3 });
-  story.glassBreaks(); story.powerCut('test');
+  story.glassBreaks(); story.blackout('test');
   story.fuseboxOpened(); run(13);
   sys.power.setBreaker('bathroom', false); sys.power.setRcd(true);
   if (story.nuisance !== 'none') { sys.power.setBreaker(story.nuisance, false); sys.power.setRcd(true); }
@@ -145,7 +173,7 @@ test('the phone: dead on the nightstand, its charger pulled; it boots once the p
   story.phoneCharging();
   assert.ok(said.includes('I never unplug it.'));
   assert.equal(story.phoneMayBoot(600), false, 'not before the power has come back');
-  story.glassBreaks(); story.powerCut('test'); story.powerRestored();
+  story.glassBreaks(); story.blackout('test'); story.powerRestored();
   assert.equal(story.phoneMayBoot(600), false, 'not straight away');
   run(36);
   assert.equal(story.phoneMayBoot(10), false, 'not without minutes on the charger');
@@ -159,7 +187,7 @@ test('the phone: dead on the nightstand, its charger pulled; it boots once the p
 test('the man in the corridor: seen at the end of the torch, he runs at you and into the bedroom', () => {
   const { story, sys, calls, said, run } = night();
   story.begin({ seed: 6 });
-  story.glassBreaks(); story.powerCut('test');
+  story.glassBreaks(); story.blackout('test');
   const placed = [];
   sys.intruder = { show: (on) => placed.push(on ? 'show' : 'hide'), place: (x, z) => placed.push([x, z]), play: () => {}, setTorch: () => {} };
   sys.flashlight = { held: true, on: true, beam: { up: { x: -1, y: 0, z: 0 } } };     // a spot shines along -up: east
@@ -182,7 +210,7 @@ test('the man in the corridor: seen at the end of the torch, he runs at you and 
 test('the man in the corridor: never as the player steps out of the bedroom; down the hall, the latch, then the beam', () => {
   const { story, sys, calls, run } = night();
   story.begin({ seed: 6 });
-  story.glassBreaks(); story.powerCut('test'); story.set('torch');
+  story.glassBreaks(); story.blackout('test'); story.set('torch');
   const placed = [];
   sys.intruder = { show: (on) => placed.push(on ? 'show' : 'hide'), place: (x, z) => placed.push([x, z]), play: () => {}, setTorch: () => {} };
   sys.flashlight = { held: true, on: true, beam: { up: { x: -1, y: 0, z: 0 } } };
@@ -202,7 +230,7 @@ test('the man in the corridor: never as the player steps out of the bedroom; dow
 test('walking back east before turning round: he breaks for the bedroom ahead of the player, never through them', () => {
   const { story, sys, run } = night();
   story.begin({ seed: 6 });
-  story.glassBreaks(); story.powerCut('test'); story.set('torch');
+  story.glassBreaks(); story.blackout('test'); story.set('torch');
   const placed = [];
   sys.intruder = { show: () => {}, place: (x, z) => placed.push([x, z]), play: () => {}, setTorch: () => {} };
   sys.flashlight = { held: true, on: false, beam: { up: { x: 1, y: 0, z: 0 } } };
@@ -237,7 +265,7 @@ test('the wardrobe: stuck until he has been seen (rattling only before the glass
   story.begin({ seed: 3 });
   assert.equal(story.wardrobeStuck({ id: 'right' }), true);
   assert.ok(calls.includes('play.hangers'), 'before the glass: held from inside');
-  story.glassBreaks(); story.powerCut('test');
+  story.glassBreaks(); story.blackout('test');
   calls.length = 0;
   assert.equal(story.wardrobeStuck({ id: 'right' }), true, 'still stuck in the dark');
   assert.ok(!calls.includes('play.hangers'), 'but silent: he is in the bathroom');
@@ -263,7 +291,7 @@ test('the spare key can be searched for only once the player needs it badly: aft
 test('QA: an Act III checkpoint saved before he was heard running still gets his run (no stuck wardrobe, no locked bathroom)', () => {
   const a = night();
   a.story.begin({ seed: 8 });
-  a.story.glassBreaks(); a.story.powerCut('test');
+  a.story.glassBreaks(); a.story.blackout('test');
   a.story.powerRestored();                                  // saves at once; the unseen run comes 1.2 s later
   const saved = a.story.load();
   assert.ok(!saved.flags.includes('silhouette'));
@@ -311,7 +339,7 @@ test('QA: the fuse box opened before the cut plays none of the dark\'s beats', (
 test('final review: the sighting needs the torch in the corridor, and a clear line to him', () => {
   const { story, sys, run } = night();
   story.begin({ seed: 6 });
-  story.glassBreaks(); story.powerCut('test');
+  story.glassBreaks(); story.blackout('test');
   sys.intruder = { show: () => {}, place: () => {}, play: () => {}, setTorch: () => {} };
   sys.flashlight = { held: false, on: false, beam: { up: { x: -1, y: 0, z: 0 } } };
   for (const x of [0.5, 3, 5, 7.5, 8.8]) { sys.player.pos = { x, z: 3.6 }; run(0.3); }
@@ -353,7 +381,7 @@ test('final review: the mirror only from the bathroom, the hatch only with the w
 test('QA: a player walking on east never meets his run', () => {
   const { story, sys, run } = night();
   story.begin({ seed: 6 });
-  story.glassBreaks(); story.powerCut('test'); story.set('torch');
+  story.glassBreaks(); story.blackout('test'); story.set('torch');
   const placed = [];
   sys.intruder = { show: () => {}, place: (x, z) => placed.push([x, z, story.time]), play: () => {}, setTorch: () => {} };
   sys.flashlight = { held: true, on: false, beam: { up: { x: 1, y: 0, z: 0 } } };
@@ -375,7 +403,7 @@ test('the run varies by seed: the spare key moves, the nuisance circuit changes'
 test('checkpoints: a saved act restores its flags, power and items', () => {
   const { story, sys } = night();
   story.begin({ seed: 11 });
-  story.glassBreaks(); story.powerCut('test');
+  story.glassBreaks(); story.blackout('test');
   sys.items.add('spare-key');
   story.save();
   const saved = story.load();
@@ -396,4 +424,28 @@ test('caught: you wake (the clock goes back to 03:07) and he comes back', () => 
   assert.equal(story.deaths, 1);
   assert.ok(story.has('woke'));
   assert.ok(calls.includes('hunt.respawn'));
+});
+
+test('build 0.15: every developer-menu event plays from any point of the night, again and again', async () => {
+  const { STORY_EVENTS } = await import('../src/story-events.js');
+  const { story, sys, calls, said, run } = night();
+  // The systems the replays touch, as far as they need to answer.
+  sys.flashlight = { held: false, on: false, pickUp() { this.held = true; story.tookTorch(); } };
+  sys.phone = { booted: false, has: false, boot() { this.booted = true; calls.push('phone.boot'); }, openLive() { calls.push('phone.live'); }, charger() {}, save: () => ({}) };
+  sys.seccam = { runLive: () => calls.push('seccam.live'), cameraOnly() {} };
+  sys.crow = { strike: () => { calls.push('crow.strike'); return true; } };
+  sys.intruder = { show: (on) => calls.push(`man.${on}`), place() {}, play() {} };
+  story.begin({ seed: 5 });
+  const order = STORY_EVENTS.filter(e => !e.id.startsWith('end-'));
+  for (const events of [order, [...order].reverse(), order]) for (const e of events) {
+    const power = () => JSON.stringify(sys.power.snapshot()) + sys.power.surges.length;
+    const before = { calls: calls.length, said: said.length, flags: [...story.flags].join(), power: power() };
+    e.run({ story, fallingGlass: () => {} });
+    run(10);
+    story.dying = false;                  // the death stub calls back at once
+    const did = calls.length > before.calls || said.length > before.said || [...story.flags].join() !== before.flags || power() !== before.power;
+    assert.ok(did, `${e.id} did something`);
+  }
+  assert.ok(sys.flashlight.held, 'the cut gave the torch');
+  assert.ok(story.has('power-cut') || story.cutting || story.has('hunt'), 'the night is somewhere after the cut');
 });

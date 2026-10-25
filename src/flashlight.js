@@ -1,6 +1,6 @@
 // The flashlight: a Maglite-style torch ("Flash-Lite Flashlight", CC BY 4.0) lying on the shelf behind the bedroom
 // wardrobe's left door until picked up (E); then, as in P.T., the torch itself is never seen: only its beam, held in the
-// right hand below the eye, so its shadows shift as you look around. F toggles it.
+// right hand below the eye, so its shadows shift as you look around. It comes off the shelf switched off; F toggles it.
 // The beam: a shadow-casting spot with a reflector cookie (hot spot, corona ring, wide dim spill, faint lens flaws) that
 // scatters in the room haze; the hand trails the view, sways with each step and has a slight tremor; switching on
 // stutters for a moment; a weak, shadowed return from the first actual surface lifts the nearby room.
@@ -151,22 +151,36 @@ export class Flashlight {
     return tex;
   }
 
-  pickUp() {
+  // Taken from the shelf: in the hand, switched off (build 0.15, the owner: "it will not be automatically on, i will need
+  // to press F"); prompt (main.js) puts "F · Flashlight on" on screen until it is first switched on. on: lit at once
+  // (#flash, test captures).
+  pickUp({ on = false } = {}) {
+    if (this.held) return;
     this.held = true;
     this.interactions.remove(this.item);
     this.model.enabled = false;            // in hand it is out of view; only the beam shows
     this.rot.copy(this.camera.getRotation());
     this.sounds?.pickUp();
-    this.hud?.('F · Flashlight on / off');
-    this.toggle();
+    this.onPickUp?.();
+    if (on) this.toggle();
+    else this.prompt?.(true);
   }
 
   toggle() {
     this.on = !this.on;
+    if (this.on) this.prompt?.(false);
     this.sounds?.flashlightClick(this.on);
     this.flicker = this.on ? 0.22 : 0;
     this.surfaceTimer = 0;      // a fresh target on the first lit frame
     this.beam.light.enabled = this.bounce.light.enabled = this.on || this.power > 0;
+  }
+
+  // Held on whatever F last did (death.js: the hand clenches on it as he takes you; his mask in its light); released, it
+  // is as F left it.
+  grip(on) {
+    if (!this.held) return;
+    this.gripped = !!on;
+    if (on && !this.on) { this.flicker = 0; this.surfaceTimer = 0; }
   }
 
   // The cheap switch's contact: the beam stutters for `seconds` (story.js: the silhouette). Reduced flashes: a dip.
@@ -210,7 +224,7 @@ export class Flashlight {
     dt = Math.min(dt, 0.05);
     this.time += dt;
     // Power: snaps on with a short stutter (a cheap switch's contact), off at once.
-    if (this.on) {
+    if (this.on || this.gripped) {
       this.flicker = Math.max(0, this.flicker - dt);
       this.dip = Math.max(0, (this.dip || 0) - dt);
       const stutter = this.flicker > 0 && !this.reducedFlashes ? (Math.sin(this.time * 90) > 0.2 ? 0.35 : 1) : this.dip > 0 ? 0.25 : 1;

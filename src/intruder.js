@@ -3,16 +3,16 @@
 // knife from the flat's own set (public/assets/props/story/knife.glb, tools/props/). This file is his body: loading,
 // placing, animation playback with cross-fades, the knife in his right hand (an icepick grip: the fingers closed round
 // the handle, the blade out under the little finger, point down while the arm hangs; knifePose lifts it overhead and
-// brings it down), his phone torch (a cold LED spot in his left hand, shadowed like every light here). What he decides
-// to do lives in stalker.js and hunt.js; the scripted appearances in story.js, seccam.js and death.js.
-import { Asset, Color, Entity, Mat4, Quat, Vec3, LIGHTFALLOFF_INVERSESQUARED, SHADOWUPDATE_REALTIME } from 'playcanvas';
+// brings it down). He carries no light (build 0.15, the owner: "the attacker shouldn't have a flashlight"): he is seen
+// in the player's torch, the lightning or a lit room, and heard by his footsteps (hunt.js). What he decides to do lives in
+// stalker.js and hunt.js; the scripted appearances in story.js, seccam.js and death.js.
+import { Asset, Entity, Mat4, Quat, Vec3 } from 'playcanvas';
 import { glbFile } from './packed.js';
 import { frameRotation, solveElbow } from './arm-rig.js';
 
 const URL_GLB = './assets/props/intruder.glb', URL_KNIFE = './assets/props/story/knife.glb';
 // Clip -> metres per second of ground speed at playback speed 1 (measured from the stride; used to keep feet planted).
 export const STRIDE = { walk_slow_01: 0.92, walk_slow_02: 0.95, walk_neutral_01: 1.32, run_neutral_01: 3.1 };
-const PHONE = new Color(0.86, 0.92, 1.0);     // a phone's white LED, cold next to the flat's warm lamps
 
 // The grip, in the right hand bone's frame (Biped: +X wrist -> knuckles, +Y the palm's side, +Z the thumb's side). The
 // knife (knife.glb: the heel of the blade at its origin, point -Y, edge +X, the middle of the handle at +Y 0.06) lies
@@ -116,22 +116,11 @@ export class Intruder {
     this.cameraOnly = false;
     this.isPlayerCamera = isPlayerCamera;
     for (const mi of this.meshInstances) mi.isVisibleFunc = cam => this.seenBy(cam) && cam.frustum.containsAabb(mi.aabb);
-    // His phone torch, held low in the left hand and pointing ahead. It is a separate entity that follows the hand's
-    // position each frame and his heading (a hand's rotation in a walk cycle swings the beam wildly).
-    this.torch = new Entity('intruder phone light');
-    this.torch.addComponent('light', { type: 'spot', color: PHONE, intensity: 0, range: 11, innerConeAngle: 14, outerConeAngle: 36,
-      castShadows: true, shadowResolution: 512, shadowBias: 0.08, normalOffsetBias: 0.01, falloffMode: LIGHTFALLOFF_INVERSESQUARED,
-      shadowUpdateMode: SHADOWUPDATE_REALTIME, volumetricScattering: 0.6, enabled: false });
-    app.root.addChild(this.torch);
-    this.torchOn = false;
-    this.torchPitch = -14;           // degrees below his heading
     this.root.enabled = false;
     app.root.addChild(this.root);
     this.pos = new Vec3(); this.yaw = 0; this.clip = null; this.speed = 0;
     this.held = false;               // paused (main.js): his clip holds still (hold)
-    this.torchYaw = null;            // where his light points (stalker.js sweeps it); null: where he faces
     this.headPitch = 0;              // degrees added to the animated head (seccam.js: looking up into the lens)
-    this.torchUnder = false;         // his light held under his chin, up into the mask (death.js)
     this._q = new Quat(); this._v = new Vec3();
   }
 
@@ -144,7 +133,7 @@ export class Intruder {
     return this.cameraOnly ? cam.node?.name === 'security camera' : this.isPlayerCamera(cam);
   }
   // Hidden, he lets go of any pose (death.js and the hunt set them again when they need them).
-  show(on = true) { this.root.enabled = on; if (!on) { this.setTorch(false); this.knifePose(0, 0); } }
+  show(on = true) { this.root.enabled = on; if (!on) this.knifePose(0, 0); }
 
   // yaw: degrees; he faces (sin yaw, cos yaw) in x, z.
   place(x, z, yaw = this.yaw, y = 0.16) {
@@ -169,12 +158,6 @@ export class Intruder {
     this.held = !!on;
     const anim = this.body.anim;
     if (this.held) { this.heldSpeed = anim.speed; anim.speed = 0; } else anim.speed = this.heldSpeed ?? 1;
-  }
-
-  setTorch(on, intensity = 2.2) {
-    this.torchOn = on;
-    this.torch.light.enabled = on;
-    this.torch.light.intensity = on ? intensity : 0;
   }
 
   // The knife's arm, called every frame by its users (hunt.js: the kill's 0.45 s wind-up; death.js): raise 0..1 lifts it
@@ -288,8 +271,7 @@ export class Intruder {
     return { fore: foreLocal, hand: handLocal };
   }
 
-  // Keeps the knife posed, the fist closed, the torch in his hand aimed along his heading (pitch: degrees down), every
-  // frame after the animation.
+  // Keeps the knife posed and the fist closed, every frame after the animation.
   update() {
     if (!this.root.enabled) { this.posedThisFrame = false; return; }
     // A head turned on top of the animation (looking up into the camera's lens): Biped head bones nod about local Z.
@@ -299,21 +281,5 @@ export class Intruder {
       this.poseArm();
       this.posedThisFrame = true;
     }
-    if (!this.torchOn) return;
-    // Held under his chin (death.js: the grab): the light from below his face, up into the mask.
-    if (this.torchUnder) {
-      const f = this.head.getPosition(), fx = Math.sin(this.yaw * Math.PI / 180), fz = Math.cos(this.yaw * Math.PI / 180);
-      this.torch.setPosition(f.x + fx * 0.32, f.y - 0.42, f.z + fz * 0.32);
-      this.torch.lookAt(f.x + fx * 0.12, f.y + 0.02, f.z + fz * 0.12);
-      this.torch.rotateLocal(90, 0, 0);
-      return;
-    }
-    const p = this.leftHand ? this.leftHand.getPosition() : this.root.getPosition();
-    this.torch.setPosition(p.x, Math.max(0.9, p.y), p.z);
-    // The model faces +Z at yaw 0 (heading (sin yaw, cos yaw) in x, z); a spot shines along its local -Y, which
-    // rotateLocal(90) turns onto the entity's -Z, so the light's yaw is his + 180.
-    this.torch.setEulerAngles(0, (this.torchYaw ?? this.yaw) + 180, 0);
-    this.torch.rotateLocal(this.torchPitch, 0, 0);
-    this.torch.rotateLocal(90, 0, 0);
   }
 }

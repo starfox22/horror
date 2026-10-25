@@ -10,8 +10,8 @@
 // copy on the nightstand shows the same canvas: dark, except for a while after something wakes it (plugged in: the
 // empty-battery glyph; booting: its logo; an alert: the lock screen), like a real phone lying face up.
 import { Color, Entity, StandardMaterial, Texture, Vec2, Vec3, Quat, PIXELFORMAT_RGBA8, FILTER_LINEAR, ADDRESS_CLAMP_TO_EDGE, BLEND_NONE, BLEND_ADDITIVE } from 'playcanvas';
+import { W, H, VIDEO, drawScreen, makeWallpaper } from './phone-screen.js';
 
-const W = 540, H = 1170;                   // screen canvas (iPhone-ish 19.5:9)
 // Where it lies: the south nightstand's top (0.57 m, measured), beside the alarm clock; its charger's socket behind it.
 export const NIGHTSTAND = new Vec3(13.605, 0.572, 1.80);
 const CHARGER = NIGHTSTAND;
@@ -33,6 +33,10 @@ export class Phone {
     this.call = null; this.notifications = [];
     this.canvas = Object.assign(document.createElement('canvas'), { width: W, height: H });
     this.g = this.canvas.getContext('2d');
+    // The screen's look (phone-screen.js): its wallpaper, made once, and the clips' thumbnails (loaded with the clips).
+    this.wallpaper = makeWallpaper();
+    this.thumbs = {}; this.durations = {};
+    this.loadThumbs();
     this.texture = new Texture(app.graphicsDevice, { width: W, height: H, format: PIXELFORMAT_RGBA8, mipmaps: false,
       minFilter: FILTER_LINEAR, magFilter: FILTER_LINEAR, addressU: ADDRESS_CLAMP_TO_EDGE, addressV: ADDRESS_CLAMP_TO_EDGE, name: 'phone-screen' });
     this.buildHolder();
@@ -99,8 +103,7 @@ export class Phone {
     this.video = new Entity('phone video');
     this.video.addComponent('render', { type: 'plane', material: videoMat, castShadows: false, receiveShadows: false });
     this.video.setLocalEulerAngles(90, 0, 0);
-    this.video.setLocalScale(0.0664, 1, 0.0374);
-    this.video.setLocalPosition(0, 0.026, 0.0043);
+    this.fitVideo({ x0: -0.0332, x1: 0.0332, y0: -0.0719, y1: 0.0719, z: 0.0041 });
     this.video.enabled = false;
     this.holder.addChild(this.video);
     for (const e of [this.body, this.screen, this.video]) for (const mi of e.render.meshInstances) mi.isVisibleFunc = cam => cam === this.camera.camera.camera;
@@ -113,26 +116,41 @@ export class Phone {
     this.body.enabled = false;
     this.holder.addChild(entity);
     for (const r of entity.findComponents('render')) for (const mi of r.meshInstances) mi.isVisibleFunc = cam => cam === this.camera.camera.camera;
-    if (this.useScreen(entity)) this.screen.enabled = false;
-    this.video.setLocalScale(0.0626, 1, 0.0352);
-    this.video.setLocalPosition(0, 0.026, 0.0038);
+    const screen = this.useScreen(entity);
+    if (screen) { this.screen.enabled = false; this.fitVideo(this.screenRect(screen)); }
   }
 
-  // Puts the screen canvas on a phone model's own screen mesh (material 'Lock_Screen'); false if it has none. intensity:
+  // The video quad over phone-screen.js's VIDEO rectangle, on a screen whose canvas spans `r` (holder space: x0..x1 left
+  // to right, y1 at the top, z the glass).
+  fitVideo(r) {
+    const sx = (r.x1 - r.x0) / W, sy = (r.y1 - r.y0) / H;
+    this.video.setLocalPosition(r.x0 + (VIDEO.x + VIDEO.w / 2) * sx, r.y1 - (VIDEO.y + VIDEO.h / 2) * sy, r.z + 0.0002);
+    this.video.setLocalScale(VIDEO.w * sx, 1, VIDEO.h * sy);
+  }
+
+  // A mesh instance's bounds in the holder's space (the model's screen: where its canvas is).
+  screenRect(mi) {
+    const pos = [], n = mi.mesh.getPositions(pos), p = new Vec3(), min = new Vec3(Infinity, Infinity, Infinity), max = new Vec3(-Infinity, -Infinity, -Infinity);
+    const m = this.holder.getWorldTransform().clone().invert().mul(mi.node.getWorldTransform());
+    for (let i = 0; i < n * 3; i += 3) { m.transformPoint(p.set(pos[i], pos[i + 1], pos[i + 2]), p); min.min(p); max.max(p); }
+    return { x0: min.x, x1: max.x, y0: min.y, y1: max.y, z: max.z };
+  }
+
+  // Puts the screen canvas on a phone model's own screen mesh (material 'Lock_Screen'); returns it (null if none). intensity:
   // the copy lying on the nightstand glows brighter than the one held up to your face (its own material, same shader).
   useScreen(entity, { intensity = null } = {}) {
     const mi = entity.findComponents('render').flatMap(r => r.meshInstances).find(m => /^Lock_Screen/.test(m.material.name));
-    if (!mi) return false;
+    if (!mi) return null;
     if (!this.modelScreenMat) {
       const m = this.screenMat.clone();
       m.emissiveMapTiling = new Vec2(1 / 0.7894, 1 / 0.9804); m.emissiveMapOffset = new Vec2(-0.0792 / 0.7894, -0.0069 / 0.9804);
       m.update();
       this.modelScreenMat = m;
     }
-    if (intensity === null) { mi.material = this.modelScreenMat; return true; }
+    if (intensity === null) { mi.material = this.modelScreenMat; return mi; }
     const own = this.modelScreenMat.clone(); own.emissiveIntensity = intensity; own.update();
     mi.material = own;
-    return true;
+    return mi;
   }
 
   // --- state ---------------------------------------------------------------------------------------------------
@@ -220,7 +238,9 @@ export class Phone {
   options() {
     if (!this.booted) return [];
     if (this.app_ === 'lock') return [['Home Cam', () => { this.app_ = 'cam'; this.sel = 0; }], ['Emergency call', () => this.dial()]];
-    if (this.app_ === 'cam') return [...CLIPS.map(c => [`${c.time}  ${c.title}`, () => this.playClip(c)]), ['LIVE  Bedroom', () => this.openLive()]];
+    if (this.app_ === 'cam') return [...CLIPS.map(c => [`${c.time}  ${c.title}`, () => this.playClip(c),
+      { id: c.id, time: c.time, unread: !!this.notifications.find(n => n.id === c.id)?.unread, duration: this.durations[c.id] }]),
+    ['LIVE  Bedroom', () => this.openLive(), { live: true, id: '0258' }]];
     if (this.app_ === 'call' && this.call?.choices) return this.call.choices.map(c => [c.text, () => this.answer(c)]);
     if (this.app_ === 'call') return [['Hang up', () => this.hangUp()]];
     return [];
@@ -382,6 +402,7 @@ export class Phone {
       if (this.booting >= 3) this.boot({ now: true });
     }
     if (this.lit > 0 && (this.lit -= dt) <= 0) { this.lit = 0; this.dirty = true; }
+    if (this.call && !this.call.incoming) this.call.t = (this.call.t ?? 0) + dt;
     // Holding it: rises into the lower right of the view; lowered, out of sight.
     this.raiseK += ((this.raised ? 1 : 0) - this.raiseK) * (1 - Math.exp(-dt * 9));
     this.holder.enabled = this.raiseK > 0.02;
@@ -404,87 +425,45 @@ export class Phone {
   get glowing() { return this.raised && this.booted; }
 
   // --- the screen ----------------------------------------------------------------------------------------------
+  // The clips' thumbnails: a frame from the middle of each (the clip's own canvas is the video's, so a copy).
+  async loadThumbs() {
+    for (const c of CLIPS) {
+      const clip = await this.seccam?.loadClip?.(c.id).catch(() => null);
+      if (!clip?.img) continue;
+      const { w, h, cols, frames, fps } = clip.meta, frame = Math.floor(frames * 0.6);
+      const t = Object.assign(document.createElement('canvas'), { width: w, height: h });
+      t.getContext('2d').drawImage(clip.img, (frame % cols) * w, Math.floor(frame / cols) * h, w, h, 0, 0, w, h);
+      this.thumbs[c.id] = t; this.durations[c.id] = frames / fps;
+      this.dirty = true;
+    }
+  }
+
+  // What the screen shows now, for phone-screen.js.
+  screenState() {
+    const now = this.clock ? this.clock.now() : new Date();
+    let mode = this.app_;
+    if (this.onCharger && !this.holder.enabled && this.lit <= 0) mode = 'off';
+    else if (this.booting !== null) mode = 'boot';
+    else if (!this.booted) mode = 'dead';
+    const ago = (time) => {
+      const [h, m] = time.split(':').map(Number), mins = Math.max(1, Math.round((now.getHours() * 60 + now.getMinutes()) - (h * 60 + m)));
+      return mins >= 60 ? `${Math.floor(mins / 60)}h ago` : `${mins}m ago`;
+    };
+    const clip = this.seccam?.clip, call = this.call;
+    return {
+      mode, time: now, charge: Math.floor(this.charge), charging: this.charging, silenced: this.silenced, held: this.holder.enabled,
+      bars: 1 + (this.charge > 2 ? 1 : 0), boot: this.booting ?? 0, thumbs: this.thumbs,
+      notifications: this.notifications.map(n => ({ ...n, ago: ago(n.time) })),
+      options: this.holder.enabled ? this.options() : [], sel: this.sel,
+      clip: this.clip ? { ...this.clip, t: clip?.t ?? 0, duration: this.durations[this.clip.id] ?? (clip ? clip.c.meta.frames / clip.c.meta.fps : 4) } : null,
+      live: { status: this.seccam?.liveStatus?.() || '8 s delay' },
+      call: call ? { line: call.line, incoming: !!call.incoming, connected: !/^Calling/.test(call.line || ''), t: call.t ?? 0 } : null,
+    };
+  }
+
   draw() {
-    const g = this.g, now = this.clock ? this.clock.now() : new Date();
-    g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
-    // Lying on the nightstand with nothing to show: asleep (dark).
-    if (this.onCharger && !this.holder.enabled && this.lit <= 0) { this.texture.setSource(this.canvas); return; }
-    if (this.booting !== null) {
-      // Its maker's mark: a plain ring and a line of dots (no brand).
-      g.strokeStyle = '#e9edf3'; g.lineWidth = 10; g.beginPath(); g.arc(W / 2, H / 2 - 40, 70, 0, Math.PI * 2); g.stroke();
-      g.fillStyle = '#e9edf3';
-      for (let i = 0; i < 3; i++) { g.globalAlpha = (Math.floor(this.booting * 3) % 3) === i ? 1 : 0.3; g.beginPath(); g.arc(W / 2 - 30 + i * 30, H / 2 + 110, 7, 0, Math.PI * 2); g.fill(); }
-      g.globalAlpha = 1;
-      this.texture.setSource(this.canvas); return;
-    }
-    if (!this.booted) {
-      // Dead: a black screen; on a live charger, the empty-battery glyph.
-      if (this.charging) { g.strokeStyle = '#d22'; g.lineWidth = 6; g.strokeRect(190, 520, 140, 64); g.fillStyle = '#d22'; g.fillRect(200, 530, 12, 44); }
-      this.texture.setSource(this.canvas); return;
-    }
-    const grad = g.createLinearGradient(0, 0, 0, H); grad.addColorStop(0, '#0e1420'); grad.addColorStop(1, '#05070b');
-    g.fillStyle = grad; g.fillRect(0, 0, W, H);
-    g.fillStyle = '#e9edf3';
-    g.font = '600 26px "Helvetica Neue", Arial, sans-serif'; g.textAlign = 'left';
-    g.fillText(`${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`, 40, 56);
-    g.textAlign = 'right'; g.fillText(`${Math.floor(this.charge)}%${this.silenced ? '  🔕' : ''}`, W - 40, 56);
-    g.textAlign = 'center';
-    if (this.app_ === 'lock') {
-      g.font = '200 150px "Helvetica Neue", Arial, sans-serif';
-      g.fillText(`${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`, W / 2, 300);
-      g.font = '400 28px "Helvetica Neue", Arial, sans-serif'; g.fillStyle = '#b8c0cc';
-      g.fillText(`${['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getDay()]} ${now.getDate()} ${['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][now.getMonth()]}`, W / 2, 350);
-      let y = 430;
-      for (const n of this.notifications.filter(x => x.unread)) {
-        this.card(g, 30, y, W - 60, 110);
-        g.textAlign = 'left'; g.fillStyle = '#e9edf3'; g.font = '600 26px "Helvetica Neue", Arial, sans-serif'; g.fillText('HOME CAM', 60, y + 42);
-        g.font = '400 26px "Helvetica Neue", Arial, sans-serif'; g.fillStyle = '#cfd5de'; g.fillText(`Motion detected · Bedroom · ${n.time}`, 60, y + 82);
-        y += 126;
-      }
-      if (this.holder.enabled) this.menu(g, 860);          // lying on the nightstand: the alerts only
-    } else if (this.app_ === 'cam' || this.app_ === 'clip' || this.app_ === 'live') {
-      g.font = '600 34px "Helvetica Neue", Arial, sans-serif'; g.fillText('Home Cam', W / 2, 120);
-      g.fillStyle = '#000'; g.fillRect(0, 160, W, 304);
-      if (this.app_ === 'live') { g.fillStyle = '#e33'; g.font = '700 22px "Helvetica Neue", Arial, sans-serif'; g.textAlign = 'left'; g.fillText(`● LIVE · ${this.seccam?.liveStatus?.() || '8 s delay'}`, 24, 492); }
-      else if (this.app_ === 'clip') { g.fillStyle = '#cfd5de'; g.font = '400 22px "Helvetica Neue", Arial, sans-serif'; g.textAlign = 'left'; g.fillText(`${this.clip.time} · Bedroom · motion`, 24, 492); }
-      g.textAlign = 'center';
-      if (this.app_ === 'cam') this.menu(g, 540);
-      else { g.fillStyle = '#7f8794'; g.font = '400 22px "Helvetica Neue", Arial, sans-serif'; g.fillText('right click · back', W / 2, H - 60); }
-    } else if (this.app_ === 'call') {
-      g.font = '300 44px "Helvetica Neue", Arial, sans-serif'; g.fillText(this.call?.incoming ? 'Emergency services' : '112', W / 2, 200);
-      g.font = '400 26px "Helvetica Neue", Arial, sans-serif'; g.fillStyle = '#9aa3af';
-      g.fillText(this.call?.incoming ? 'incoming call…' : 'Emergency call', W / 2, 250);
-      g.fillStyle = '#e9edf3'; this.wrap(g, this.call?.line || '', W / 2, 380, W - 90, 38);
-      this.menu(g, 700);
-    }
+    drawScreen(this.g, this.screenState(), this.wallpaper);
     this.texture.setSource(this.canvas);
-  }
-
-  card(g, x, y, w, h) { g.fillStyle = 'rgba(255,255,255,0.10)'; g.beginPath(); g.roundRect?.(x, y, w, h, 22); g.fill(); }
-
-  menu(g, y0) {
-    const opts = this.options();
-    opts.forEach(([label], i) => {
-      const y = y0 + i * 92;
-      g.fillStyle = i === this.sel ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.08)';
-      g.beginPath(); g.roundRect?.(40, y, W - 80, 74, 18); g.fill();
-      g.fillStyle = label.startsWith('Emergency') ? '#ff6b6b' : '#e9edf3'; g.font = '500 25px "Helvetica Neue", Arial, sans-serif'; g.textAlign = 'center';
-      g.fillText(label, W / 2, y + 47);
-    });
-    if (opts.length) {
-      g.fillStyle = '#8d95a2'; g.font = '400 21px "Helvetica Neue", Arial, sans-serif';
-      g.fillText(this.app_ === 'lock' ? 'wheel · click to choose · hold Q · silence' : 'wheel · click to choose · right click back', W / 2, H - 60);
-    }
-  }
-
-  wrap(g, text, x, y, width, lh) {
-    const words = text.split(' '); let line = '';
-    g.font = '400 30px "Helvetica Neue", Arial, sans-serif';
-    for (const w of words) {
-      const t = line ? `${line} ${w}` : w;
-      if (g.measureText(t).width > width) { g.fillText(line, x, y); y += lh; line = w; } else line = t;
-    }
-    if (line) g.fillText(line, x, y);
   }
 
   save() { return { has: this.has, charge: this.charge, booted: this.booted, onCharger: this.onCharger, pluggedIn: this.pluggedIn, chargeTime: this.chargeTime, silenced: this.silenced, notifications: this.notifications }; }

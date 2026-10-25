@@ -29,6 +29,14 @@ export class Hud {
     this.promptTimer = setTimeout(() => { this.promptEl.classList.add('out'); setTimeout(() => { this.promptEl.hidden = true; }, 900); }, seconds * 1000);
   }
 
+  // Takes a prompt off the screen now (its key has been used).
+  hidePrompt() {
+    if (this.promptEl.hidden) return;
+    clearTimeout(this.promptTimer);
+    this.promptEl.classList.add('out');
+    this.promptTimer = setTimeout(() => { this.promptEl.hidden = true; }, 900);
+  }
+
   toast(text, seconds = 2.5) {
     this.toastEl.textContent = text; this.toastEl.hidden = false; this.toastEl.classList.remove('out');
     clearTimeout(this.toastTimer);

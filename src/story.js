@@ -34,6 +34,20 @@ const WARDROBE = [9.6, -0.1];       // the wardrobe's right half (the nest, the 
 const CEILING_WEST = [[9.6, 2.72, 1.2], [8.6, 2.72, 3.2], [6.8, 2.72, 3.5], [5.0, 2.72, 3.5]];
 // Minimum seconds of play between two big scripted scares (docs/STORY.md: breathing room).
 const SCARE_GAP = 25;
+// The cut (build 0.15, the owner: "first the lights in the apartment will flicker, and there will be a repeating short
+// circuit sound, tzzz tzzz, lights will come back and forth for like a second until they go out"): every light in the
+// flat stutters, [seconds, level] (power.js surge), a buzz in each dip, then the bang and the dark. WARN_SURGE: the
+// short flicker while the cut waits for the player to have the torch (waitForTorch).
+export const CUT_SURGE = [[0.07, 0.12], [0.11, 1], [0.09, 0.04], [0.13, 0.9], [0.06, 0.2], [0.08, 1], [0.13, 0.06], [0.09, 0.75],
+  [0.07, 0.1], [0.15, 1], [0.1, 0.03], [0.06, 0.55], [0.12, 0.02], [0.08, 0.8]];
+export const WARN_SURGE = [[0.06, 0.15], [0.1, 1], [0.12, 0.05], [0.07, 0.85], [0.05, 0.2], [0.2, 1]];
+// The buzz's windows for a surge: one per dip (a level under half), in seconds from its start.
+export const surgeDips = (pattern) => {
+  const out = []; let t = 0;
+  for (const [d, level] of pattern) { if (level < 0.5) out.push([t, d + 0.02]); t += d; }
+  return out;
+};
+const FAULT = [7.0, 1.2, 1.2];      // where the short is: the bathroom's wall, by the basin
 
 export class Story {
   constructor(sys) {
@@ -169,7 +183,7 @@ export class Story {
     this.difficulty = difficulty;
     this.newRun(seed);
     this.act = 1;
-    this.unlock = null; this.sighting = null; this.dying = false; this.lastScare = -Infinity;
+    this.unlock = null; this.sighting = null; this.dying = false; this.lastScare = -Infinity; this.cutting = false; this.cutWaiting = null;
     const power = this.sys.power;
     if (power) { power.load({ main: true, rcd: true, breakers: Object.fromEntries(Object.keys(power.breakers).map(c => [c, true])), faults: [] }); power.mainBroken = false; }
     this.sys.world?.reset(this);
@@ -343,12 +357,37 @@ export class Story {
     }
   }
 
-  // The bang and the dark (the RCD trips the flat). cause: 'bathroom' (knocked), 'timeout'.
+  // The cut (the RCD trips the flat). cause: 'bathroom' (knocked), 'timeout', 'dev'. Never before the player has the
+  // torch (build 0.15, the owner: "the power will not actually go off unless i already have the torch"): until then the
+  // lights only stutter now and then (waitForTorch), and the cut comes a moment after the torch is taken (tookTorch).
+  // Then: the flat's lights flicker for about a second with a short circuit's buzz in every dip (CUT_SURGE), then the
+  // bang and the dark.
   powerCut(cause) {
+    if (this.has('power-cut') || this.cutting) return;
+    const fl = this.sys.flashlight;
+    if (fl && !fl.held) { this.waitForTorch(cause); return; }
+    this.cutting = true; this.cutWaiting = null;
+    this.cancel('cut-fallback'); this.cancel('cut'); this.cancel('brownout');
+    const power = this.sys.power, length = power?.surge ? power.surge(CUT_SURGE) : 0;
+    this.shortCircuit(CUT_SURGE, 1);
+    this.after(length, () => this.blackout(cause), 'blackout');
+  }
+
+  // The lights stutter with the short's buzz (a surge): overhead, and crackling at the fault. strength 0..1.
+  shortCircuit(pattern, strength = 1) {
+    const dips = surgeDips(pattern), bank = this.sys.bank;
+    bank?.buzz?.(dips, { gain: 0.55 * strength, send: 0.3 });
+    bank?.buzz?.(dips, { gain: 0.9 * strength, at: FAULT, send: 0.4 });
+    dips.forEach(([t], i) => { if (i % 2 === 0) this.sfx('arc_zap', { at: FAULT, gain: 0.7 * strength, rate: [0.85, 1.15], delay: t, send: 0.35, min: 0.15 }); });
+    this.caption('[The lights buzz and flicker]');
+  }
+
+  // The bang and the dark, at the end of the flicker.
+  blackout(cause) {
+    this.cutting = false;
     if (this.has('power-cut')) return;
     this.set('power-cut');
-    this.cancel('cut-fallback'); this.cancel('cut');
-    const at = [7.0, 1.2, 1.2];
+    const at = FAULT;
     this.sfx('arc_crackle', { at, gain: 1, send: 0.4, min: 0.3 });
     this.sfx('arc_discharge', { at, gain: 1, delay: 0.12, send: 0.5, min: 0.35 });
     this.sfx('boom', { gain: 0.6, delay: 0.1, bus: 'scare' });
@@ -367,6 +406,32 @@ export class Story {
     this.say('No. No, no, no.', { delay: 1.6, hold: 1.8 });
     this.armDark();
     this.sys.music?.sting('low');
+  }
+
+  // The cut is due but the player has no torch: the flat's lights stutter with the buzz every 12-20 s, and the player
+  // thinks of the torch (once); taking it brings the cut (tookTorch).
+  waitForTorch(cause) {
+    if (this.cutWaiting) return;
+    this.cutWaiting = cause;
+    this.cancel('cut-fallback'); this.cancel('cut');
+    this.brownout();
+  }
+
+  brownout() {
+    if (!this.cutWaiting || this.has('power-cut') || this.has('ended')) return;
+    this.sys.power?.surge?.(WARN_SURGE);
+    this.shortCircuit(WARN_SURGE, 0.6);
+    if (this.set('torch-nudge')) { this.say('...The lights.', { delay: 1 }); this.say('Where’s my torch? ...The wardrobe.', { gap: 0.8 }); }
+    this.after(12 + this.random() * 8, () => this.brownout(), 'brownout');
+  }
+
+  // The torch taken from the wardrobe's shelf (flashlight.js pickUp): a cut that was waiting for it comes now.
+  tookTorch() {
+    this.set('torch');
+    if (!this.cutWaiting || this.has('power-cut')) return;
+    this.cancel('brownout');
+    const cause = this.cutWaiting;
+    this.after(2.2, () => this.powerCut(cause), 'cut');
   }
 
   // Act II's nudges (the cut, or a checkpoint in the dark): the torch, then the fuse box.
@@ -458,7 +523,6 @@ export class Story {
     this.sighting = { t: 0, seen, now, leg: 0, stride: 0, hidden: false, gone: false, lit: 0 };
     if (man) {
       man.show(true); man.place(SPRINT[0][0], SPRINT[0][1], -90); man.play('idle_breathe_01', { blend: 0 });
-      man.setTorch(false);
       man.headPitch = 6;                                         // looking down the corridor, at you
     }
     if (seen) { this.sys.journal?.find('silhouette'); this.scared(); }
@@ -608,19 +672,19 @@ export class Story {
     this.sfx('breaker_big', { segment: 0, at: [FUSEBOX[0], 1.7, 4.4], gain: 0.9, min: 0.12 });
     this.sys.power.setMain(false, FUSEBOX);
     this.sys.power.mainBroken = true;
-    // The lock heard from above (cause 'door'): he drops out of the hatch and comes at once. Otherwise his light comes on
-    // at the fuse box for the survivable first sweep.
+    // The lock heard from above (cause 'door'): he drops out of the hatch and comes at once. Otherwise he moves off from
+    // the fuse box for the survivable first sweep: no light of his own, only his steps.
     const door = cause === 'door';
     this.sys.hunt?.start({ tutorial: !door, from: door ? 'hatch' : 'fusebox' });
     this.packNest();                          // he takes the nest up into the void during the hunt (out of view)
     this.save();
     if (door) { this.after(1.2, () => this.say('...He heard it.', { hold: 1.4 })); return; }
-    this.after(2.5, () => this.say(this.seesHim() ? 'His light.' : 'He’s back.'));
+    this.after(2.5, () => this.say(this.seesHim() ? 'There. ...By the fuse box.' : 'He’s back. ...Listen.'));
     this.after(5.5, () => { this.say(this.sys.flashlight?.on ? 'Torch off. Get down.' : 'Get down. Stay quiet.'); this.sys.hud?.prompt('C', 'Crouch', 6); });
     this.after(28, () => this.say(this.sys.items?.has('spare-key') ? 'The door. Now.' : 'Get out. ...The spare key.'));
   }
 
-  // Is he (his light) in the player's line of sight now?
+  // Is he in the player's line of sight now?
   seesHim() {
     const s = this.sys.hunt?.stalker, eye = this.sys.camera.getPosition();
     return !!s && !!this.sys.nav?.sees?.({ x: eye.x, y: eye.y, z: eye.z }, { x: s.x, y: 1.4, z: s.z });
@@ -755,6 +819,138 @@ export class Story {
   sleptAgain() { if (!this.has('ended')) this.sys.endings?.play('sweet-dreams'); }
   canSleep() { return this.has('glass') && !this.has('power-cut'); }
 
+  // --- the developer menu's replays (story-events.js) -----------------------------------------------------------
+  // Each scripted event, played from wherever the night is (the owner: "make sure all the events in developer menu
+  // actually work"): what it needs is put in place first (the torch, the power, the hunt stopped), and its once-only
+  // flags are cleared so it plays again. They are tools for watching a beat, not part of a night: the story carries on
+  // from whatever they leave.
+
+  // The hunt stopped without an ending: he is gone (hidden), the music down, Act IV's flag cleared.
+  devStopHunt() {
+    const hunt = this.sys.hunt;
+    if (hunt?.active) { hunt.active = false; hunt.stalker?.set?.('off'); hunt.knife?.(0); hunt.music?.hunt?.(false); }
+    this.sys.intruder?.show?.(false);
+    this.flags.delete('hunt');
+    this.cancel('hunt-fallback'); this.cancel('hunt-call'); this.cancel('hunt-door');
+    if (this.act === 4) this.act = this.has('restored') ? 3 : this.has('power-cut') ? 2 : 1;
+  }
+
+  // Every circuit live at once (no stutter, no sound), the faults and the broken main forgotten.
+  devPowerOn() {
+    const power = this.sys.power;
+    if (!power) return;
+    power.mainBroken = false;
+    power.load({ main: true, rcd: true, breakers: Object.fromEntries(Object.keys(power.breakers).map(c => [c, true])), faults: [] });
+  }
+
+  devGlass() {
+    if (!this.has('glass')) { this.glassBreaks(); return; }
+    // Again: the sound, the shards and the thought; the night's state stays as it is.
+    this.sfx('glass_break', { at: GLASS_SPOT, gain: 1.6, ref: 3.5, rolloff: 1, min: 0.6, send: 0.35 });
+    this.caption('[Glass shatters, in the bedroom]');
+    this.sys.world?.shards(true);
+    this.say('...What was that?', { delay: 1.4, hold: 2.2 });
+  }
+
+  // The first try of the locked door, from any point: locked again with the tap running and the light on behind it;
+  // after the cut it is unlocked again 8 s later (the night's bathroom stays open then).
+  devBathroom() {
+    for (const f of ['bath-tried', 'bath-knocked', 'bath-dark']) this.flags.delete(f);
+    this.set('glass');
+    this.sys.world?.bathroomOccupied(true);
+    const was = this.has('power-cut');
+    this.flags.delete('power-cut');
+    this.bathroomTried();
+    if (was) {
+      this.set('power-cut');
+      this.cancel('cut');
+      this.after(0.9, () => this.sys.world?.tap(false), 'dev-tap');
+      this.after(8, () => { if (this.has('bathroom-open') || this.has('silhouette')) this.sys.world?.bathroomOccupied(false); }, 'dev-bath');
+    }
+  }
+
+  // The cut, from any point: the torch given (switched off) if the player has none, the hunt stopped, the flat live
+  // again for a moment, then the flicker and the dark.
+  devPowerCut() {
+    const fl = this.sys.flashlight;
+    if (fl && !fl.held) fl.pickUp();
+    this.devStopHunt();
+    this.cutting = false; this.cutWaiting = null;
+    this.cancel('blackout'); this.cancel('brownout'); this.cancel('cut');
+    if (this.has('power-cut')) {
+      for (const f of ['power-cut', 'restored', 'fusebox-opened']) this.flags.delete(f);
+      this.devPowerOn();
+      this.after(0.8, () => this.powerCut('dev'), 'cut');
+      return;
+    }
+    this.powerCut('dev');
+  }
+
+  // The man in the corridor: by the front door, then his run into the bedroom.
+  devSighting() {
+    this.devStopHunt();
+    this.flags.delete('silhouette'); this.sighting = null;
+    const right = this.sys.closets?.doors?.find(d => d.id === 'right');
+    if (right && right.angle > 0.05) { right.target = 0; right.openRequested = false; if (this.sys.closets.moving && !this.sys.closets.moving.includes(right)) this.sys.closets.moving.push(right); }
+    this.startSighting({ seen: true });
+  }
+
+  // The power back, from any point: a flat that is live goes dark for a second first, so the restore can be seen.
+  devPowerBack() {
+    const power = this.sys.power;
+    if (!power) return;
+    power.mainBroken = false;
+    const live = Object.keys(power.breakers).every(c => power.live(c));
+    const restore = () => {
+      power.breakers.bathroom = false;
+      if (this.nuisance !== 'none') power.breakers[this.nuisance] = false;
+      power.setMain(true); power.setRcd(true);
+    };
+    if (live) { power.setRcd(false); this.after(1.2, restore, 'dev-power'); } else restore();
+  }
+
+  // The tap turned off, and the ceiling: the tap runs again first, then goes off with the creaks towards the wardrobe.
+  devTapOff() {
+    this.flags.delete('tap-off');
+    this.sys.world?.tap(true, { hot: this.has('power-cut') });
+    this.after(1.5, () => {
+      this.set('tap-off');
+      this.sys.world?.tap(false);
+      const path = [[8.2, 2.7, 0.6], [8.9, 2.7, 0.3], [9.5, 2.7, 0.0]];
+      path.forEach((at, i) => this.after(1.6 + i * 0.9, () => this.sfx(i === 2 ? 'creak_long' : 'creak_3', { at, gain: 0.7, send: 0.5, occlude: false })));
+    }, 'dev-tap');
+  }
+
+  // The nest: the wardrobe's right door swung open, a hanger drops, then his things (back in place if the hunt took them).
+  devNest() {
+    this.devStopHunt();
+    const nest = this.sys.nest;
+    if (nest?.packed) { nest.packed = false; for (const p of Object.values(nest.props || {})) p.enabled = true; }
+    nest?.hatch?.(true);
+    this.set('silhouette');
+    this.flags.delete('hanger'); this.flags.delete('nest-seen');
+    const right = this.sys.closets?.doors?.find(d => d.id === 'right');
+    if (right && right.angle < 0.6) this.sys.closets.open?.(right);
+    this.wardrobeOpened({ id: 'right' });
+  }
+
+  // LIVE: the phone in the hand on the camera's feed (booted if it was not), and the scene on it from its start.
+  devLive() {
+    this.devStopHunt();
+    const ph = this.sys.phone, cam = this.sys.seccam;
+    this.flags.delete('live');
+    if (cam) { cam.scene = null; cam.cameraOnly?.(false); }
+    if (ph) {
+      if (!ph.booted) ph.boot({ now: true });
+      if (!ph.has) { ph.has = true; ph.onCharger = false; ph.charger?.(false); }
+      ph.call = null; ph.raised = true; ph.openLive?.();
+      ph.dirty = true;
+    }
+    cam?.runLive();
+  }
+
+  devHunt() { this.devStopHunt(); this.huntStart('dev'); }
+
   // --- checkpoints -------------------------------------------------------------------------------------------------
   save() {
     const police = this.timers.find(t => t.id === 'police');
@@ -773,7 +969,7 @@ export class Story {
     if (!data) return this.begin();
     this.flags = new Set(data.flags); this.time = data.time || 0; this.deaths = data.deaths || 0;
     this.difficulty = data.difficulty || 'normal'; this.newRun(data.seed); this.act = data.act;
-    this.timers.length = 0;
+    this.timers.length = 0; this.cutting = false; this.cutWaiting = null;
     this.sys.power?.load(data.power);
     this.sys.journal?.load(data.journal);
     this.sys.phone?.load(data.phone);

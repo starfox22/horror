@@ -1,8 +1,9 @@
 // Act IV (docs/STORY.md): the intruder's mind (stalker.js) driving his body (intruder.js). Each frame: what the player
 // is doing goes in (where, crouched, running, torch and for how long, moving, standing in the wardrobe), his decisions
-// come out as a place on the floor, a heading, a walk or run matched to his speed (so his feet do not slide), his phone
-// light, the knife raised into it before a strike, his footsteps (heard the way round, through doorways: sound.js), his
-// breathing when he is close, creaks crossing the ceiling while he is up in the void, his drop through the wardrobe's
+// come out as a place on the floor, a heading, a walk or run matched to his speed (so his feet do not slide), the knife
+// raised before a strike, his footsteps (STEPS: heavy bare feet on the boards, a board giving under him now and then;
+// heard the way round, through doorways: sound.js; he carries no light, so they are how he is found), his breathing
+// when he is close, creaks crossing the ceiling while he is up in the void, his drop through the wardrobe's
 // hatch, the bathroom door he opens on his way and a tap left running that he turns off.
 import { Stalker, rng, TUTORIAL, DROP } from './stalker.js';
 import { FUSEBOX } from './story.js';
@@ -13,6 +14,10 @@ const STRIDE = { walk_slow_01: 0.92, walk_neutral_01: 1.32, run_neutral_01: 3.1 
 // the wardrobe 6 m (doors.js, closets.js), glass underfoot 5, each click of the front door's lock 6, the phone ringing 12.
 // The player's own steps ('crouch', 'walk', 'run') and 'loud' depend on the difficulty (stalker.js DIFFICULTY.hear).
 const NOISE = { glass: 5, unlock: 6, door: 6, wardrobe: 6, tap: 7, phone: 12, buzz: 4, search: 2.5 };
+// His footsteps: a step every `walkStride` / `runStride` metres; gains (the recording peaks near full scale) and the
+// distance roll-off (sound.js: ref, rolloff); within `near` metres of the player at least `min` of full level whatever
+// the distance does (walls and corners still filter it); a board creaks under one step in `1 / creak`.
+export const STEPS = { walkStride: 0.72, runStride: 1.05, walkGain: 1.1, runGain: 1.5, ref: 2, rolloff: 1, near: 9, min: 0.22, creak: 0.18, creakGain: 0.35 };
 // Where he comes down (the wardrobe's hatch: dust, the rail's hangers, the landing).
 const HATCH = [9.55, 2.2, -0.12];
 
@@ -42,7 +47,7 @@ export class Hunt {
 
   sys(name) { return this.systems[name] ?? this.story?.sys?.[name] ?? null; }
 
-  // The hunt begins (story.js huntStart). from 'fusebox': his light comes on by the fuse box, or at the far end of the
+  // The hunt begins (story.js huntStart). from 'fusebox': he moves off from the fuse box, or from the far end of the
   // open-plan room when the player is near it; `tutorial`: the first encounter (stalker.js TUTORIAL). from 'hatch': the
   // player began turning the front door's lock: he comes down through the wardrobe's hatch and makes for the door, no
   // tutorial (a race the player wins by holding E: story.js updateUnlock).
@@ -80,7 +85,6 @@ export class Hunt {
     this.active = false;
     this.stalker.set('off');
     this.knife(0);
-    this.intruder.setTorch(false);
     this.intruder.show(false);
     this.bank?.play('creak_long', { at: [9.6, 2.72, -0.1], gain: 0.5, occlude: false });
     this.music?.hunt(false);
@@ -133,10 +137,6 @@ export class Hunt {
     if (!man.visible) man.show(true);
     const floor = this.walk.floorAt(s.x, s.z) ?? 0.16;
     man.place(s.x, s.z, s.yaw, floor + (s.lift || 0));
-    man.torchYaw = s.torchYaw;
-    // The knife comes up into his light (the light lifts to it), else down the way he goes; level when he stops to look.
-    man.torchPitch = s.knife > 0 ? -4 : s.state === 'search' || s.state === 'alert' ? -8 : -14;
-    if (s.torch !== man.torchOn) man.setTorch(s.torch);
     this.knife(s.knife);
     const v = s.speed, d = s.drop;
     // Down through the hatch: crouched as he drops, then the crouch's rise (its 1.0-2.2 s) over by the time he is up.
@@ -164,7 +164,7 @@ export class Hunt {
     if (use) man.play(use, use === name ? opts : { speed: 1 });
   }
 
-  // How far the knife is raised into his light (0..1): each frame of the windup before a strike, 0 otherwise.
+  // How far the knife is raised (0..1): each frame of the windup before a strike, 0 otherwise.
   knife(k) {
     const man = this.intruder;
     if (man.raiseKnife) man.raiseKnife(k);
@@ -174,14 +174,12 @@ export class Hunt {
   sounds(dt) {
     const s = this.stalker;
     if (s.state === 'backstage' || s.state === 'off' || !this.bank) return;
-    // A footstep every stride's length of ground covered: bare feet on wood (his prints are bare), heavier running.
+    // A footstep every stride's length of ground covered (STEPS).
     this.stepDist += s.speed * dt;
-    const stride = s.speed > 2.1 ? 1.05 : 0.72;
-    if (this.stepDist > stride) {
+    const running = s.speed > 2.1;
+    if (this.stepDist > (running ? STEPS.runStride : STEPS.walkStride)) {
       this.stepDist = 0;
-      const running = s.speed > 2.1;
-      this.bank.play('step_floor', { at: [s.x, 0.2, s.z], gain: running ? 0.85 : 0.5,
-        rate: running ? [0.85, 0.95] : [0.88, 1.0], ref: 1.2, rolloff: 1.1, send: 0.3 });
+      this.step(s.x, s.z, running);
     }
     // Breathing when he is close (within 5 m), louder in a chase or an ambush.
     this.breathTimer -= dt;
@@ -195,6 +193,16 @@ export class Hunt {
     this.music?.danger(Math.max(0, 1 - Math.hypot(s.x - p.x, s.z - p.z) / 9), s.state);
   }
 
+  // One of his footfalls at (x, z): heavy bare feet on the boards (the recording slowed: a big man's weight), louder
+  // running; within STEPS.near metres of the player never quieter than STEPS.min, so a player who listens hears him
+  // coming through the rain; now and then a board gives under him.
+  step(x, z, running = false) {
+    const p = this.player.pos, near = Math.hypot(x - p.x, z - p.z) < STEPS.near;
+    this.bank?.play('step_floor', { at: [x, 0.2, z], gain: running ? STEPS.runGain : STEPS.walkGain, rate: running ? [0.78, 0.88] : [0.72, 0.82],
+      ref: STEPS.ref, rolloff: STEPS.rolloff, send: 0.3, min: near ? STEPS.min : 0 });
+    if (this.rand() < STEPS.creak) this.bank?.play(this.rand() < 0.5 ? 'creak_2' : 'creak_3', { at: [x, 0.2, z], gain: STEPS.creakGain, rate: [0.9, 1.05], ref: STEPS.ref, rolloff: STEPS.rolloff, send: 0.35, delay: 0.05 });
+  }
+
   breath(key, gain) {
     const s = this.stalker;
     this.bank?.play(key, { at: [s.x, 1.6, s.z], gain, ref: 0.6, rolloff: 1.6, send: 0.2 });
@@ -202,7 +210,6 @@ export class Hunt {
 
   onState(now, prev) {
     if (now === 'chase') this.music?.sting('chase');
-    if (now === 'ambush') this.intruder.setTorch(false);
   }
 
   // Up into the void through the wardrobe (coming down is the drop, below).

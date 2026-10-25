@@ -52,7 +52,7 @@ const hash = process.argv[3] || '#webgl&q=3';
   await act('switch bedroom', () => { const s = window.__app.switches; s.toggle(s.rooms.find(r => r.id === 'bedroom')); }, 30);
   await act('lightning', () => { window.__app.rain.flash.next = 0; }, 8);
   await act('lightning 2', () => { window.__app.rain.flash.next = 0; }, 8);
-  await act('flashlight', () => window.__app.flashlight.pickUp(), 6);
+  await act('flashlight', () => window.__app.flashlight.pickUp({ on: true }), 6);
   await act('fridge open', () => window.__app.fridge.toggle(), 40);
   console.log('errors', errors.slice(0, 10));
   await browser.close();

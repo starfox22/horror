@@ -282,7 +282,7 @@ const phone = new Phone({ app, camera, interactions, bank, story, hud, seccam, c
 phone.power = power;
 const hunt = new Hunt({ app, intruder, nav, walk: grid, player, camera, flashlight, bank, story, music, difficulty: () => story.difficulty });
 const fadeEl = Object.assign(document.createElement('div'), { id: 'fade' }); document.body.appendChild(fadeEl);
-const death = new Death({ app, camera, player, intruder, bank, music, veil: fadeEl, walk: grid });
+const death = new Death({ app, camera, player, intruder, bank, music, veil: fadeEl, walk: grid, flashlight });
 const endings = new Endings({ story, bank, music, hud, menu, fade: fadeEl, player, camera, clock: { label: () => nightClock().toTimeString().slice(0, 5) },
   stills: { show: async (id) => { const url = await seccam.still(id, 0); if (url) hud.examine({ className: 'photo', html: `<img src="${url}" alt="The camera, 03:14: the bed, and a man standing at its foot">` }); }, hide: () => hud.closeDoc() } });
 Object.assign(sys, { fusebox, world, nest, seccam, phone, hunt, death, endings, events, sounds: ambience, taps });
@@ -350,9 +350,12 @@ if (hash.has('dark')) {
   devices.lamps.forEach(l => { if (l.on) devices.toggleLamp(l); });
 }
 if (hash.has('allon')) switches.rooms.forEach(r => { if (!r.on) switches.toggle(r); });
-if (hash.has('flash')) flashlight.pickUp();
+// Picked up switched off: "F · Flashlight on" stays on screen until it is first switched on (flashlight.js pickUp).
+flashlight.prompt = on => (on ? hud.prompt('F', 'Flashlight on', 600) : hud.hidePrompt());
+flashlight.onPickUp = () => story.tookTorch();
+if (hash.has('flash')) flashlight.pickUp({ on: true });
 rain = new Rain(app, apartment, ambience, lit);
-sys.rain = rain;                  // story.js: lightning comes often for 45 s after the cut (rain.burst), and stops at power-back
+sys.rain = rain; death.rain = rain;                  // story.js: lightning comes often for 45 s after the cut (rain.burst), and stops at power-back
 // The crow at a window (crow.js; docs/STORY.md beat 5): once a night before the man is seen, by the player's camera only.
 const crow = await Crow.create({ app, camera, player, story, bank, rain, isPlaying, isVisible: cam => cam === playerCam,
   configureMaterial: (m, zone) => probes.assign(m, zone), blocked: () => drink.running || phone.raised || hud.reading || death.busy || !!endings.running });
@@ -383,7 +386,7 @@ if (!shot || hash.has('warm')) {
     lit.moon.light.shadowUpdateMode = SHADOWUPDATE_THISFRAME; status('Preparing the rooms…', 0.92 + 0.08 * f);
     // The hatch's dust plays for the first half, then stops: a stopped emitter's update is its own shader (WebGPU).
     if (f > 0.5 && !nest.dustStoppedForWarmUp) { nest.dustStoppedForWarmUp = true; nest.dustEntity.particlesystem.stop(); }
-    // The intruder two metres in front of each view, so every angle of him (and his light's shadow) is built.
+    // The intruder two metres in front of each view, so every angle of him (and his shadow in the torch) is built.
     const c = camera.getPosition(), fw = camera.forward;
     intruder.place(c.x + fw.x * 2, c.z + fw.z * 2, Math.atan2(-fw.x, -fw.z) * 180 / Math.PI, Math.max(0.16, c.y - 1.5));
     // The torch, on for the sweep (flashlight.js warm), aims at his head: his whole body and mask go into its shadow.
@@ -415,7 +418,7 @@ if (!shot || hash.has('warm')) {
       return () => { world.warming = false; if (at) glow.setPosition(at); world.doorGlowLevel = -1; world.updateDoorGlow(); };
     },
     () => crow.reveal(),                       // the crow, his feathers and the smear on the glass (crow.js)
-    // Build 0.13: the story's later things on view for the sweep (their shaders, and the intruder's light's shadows).
+    // Build 0.13: the story's later things on view for the sweep (their shaders).
     // The phone held up with its video showing (phone.update keeps the holder only while it is raised).
     () => { phone.raised = true; phone.raiseK = 1; phone.video.enabled = true; return () => { phone.raised = false; phone.raiseK = 0; phone.video.enabled = false; phone.holder.enabled = false; }; },
     () => {
@@ -423,13 +426,13 @@ if (!shot || hash.has('warm')) {
       world.shards(true); world.flood(1); world.prints(true); world.mirrorFog(true); nest.hatch(true); nest.dustEntity.particlesystem.play();
       if (nest.dropEntity) { nest.dropEntity.enabled = true; nest.dropEntity.setPosition(9.55, 1.6, -0.1); }
       world.dryerInBasin(true); phone.charger?.(true);
-      intruder.show(true); intruder.setTorch(true); intruder.play('walk_slow_01', { blend: 0 });
+      intruder.show(true); intruder.play('walk_slow_01', { blend: 0 });
       seccam.entity.camera.enabled = true;
       return () => {
         world.shards(was.shards); world.flood(was.flood); world.prints(was.prints); world.mirrorFog(was.fog); nest.hatch(was.hatch); nest.dustEntity.particlesystem.stop();
         if (nest.dropEntity) nest.dropEntity.enabled = false;
         world.dryerInBasin(was.dryer); phone.charger?.(was.charging);
-        intruder.setTorch(false); intruder.show(false); seccam.entity.camera.enabled = false; seccam.aimHome();
+        intruder.show(false); seccam.entity.camera.enabled = false; seccam.aimHome();
       };
     },
     // Every shadowed lamp that starts off, on at zero for the sweep: its shadow is drawn (and its shadow shaders built)

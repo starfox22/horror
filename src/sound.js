@@ -212,6 +212,54 @@ export class SoundBank {
 
   // A seamless bed: overlapping copies cross-faded every (length - xfade) seconds. Returns a handle:
   // { setGain(v, seconds), setPosition(p), stop(fade), playing }.
+  // A short circuit's buzz ("tzzz"): mains hum harmonics and crackle through a hard clip, gated on for each window
+  // [start, length] (seconds from now; start-ordered), its level jittering like an arcing contact. at: where (the
+  // flat's lights overhead: null, in the head); gain; send (reverb).
+  buzz(windows, { gain = 0.5, at = null, send = 0.25, bus = 'sfx' } = {}) {
+    const ctx = this.ctx;
+    if (!ctx?.createOscillator || !windows.length) return null;
+    const t0 = ctx.currentTime + 0.02, end = t0 + Math.max(...windows.map(([s, l]) => s + l)) + 0.1;
+    const hum = ctx.createOscillator(); hum.type = 'sawtooth'; hum.frequency.value = 100;
+    const edge = ctx.createOscillator(); edge.type = 'square'; edge.frequency.value = 150.4;
+    const edgeGain = ctx.createGain(); edgeGain.gain.value = 0.35;
+    const clip = ctx.createWaveShaper(), curve = new Float32Array(1024);
+    for (let i = 0; i < curve.length; i++) curve[i] = Math.tanh(((i / (curve.length - 1)) * 2 - 1) * 9);
+    clip.curve = curve;
+    const tone = ctx.createBiquadFilter(); tone.type = 'bandpass'; tone.frequency.value = 2100; tone.Q.value = 0.6;
+    const noise = ctx.createBufferSource(), nb = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * 0.5), ctx.sampleRate), nd = nb.getChannelData(0);
+    for (let i = 0; i < nd.length; i++) nd[i] = (Math.random() * 2 - 1) * (Math.random() < 0.02 ? 1 : 0.25);   // crackle: sparse clicks in a hiss
+    noise.buffer = nb; noise.loop = true;
+    const hiss = ctx.createBiquadFilter(); hiss.type = 'highpass'; hiss.frequency.value = 2500;
+    const hissGain = ctx.createGain(); hissGain.gain.value = 0.5;
+    const gate = ctx.createGain(); gate.gain.value = 0;
+    hum.connect(clip); edge.connect(edgeGain); edgeGain.connect(clip); clip.connect(tone); tone.connect(gate);
+    noise.connect(hiss); hiss.connect(hissGain); hissGain.connect(gate);
+    const g = gate.gain;
+    g.setValueAtTime(0, t0);
+    for (const [s, l] of windows) {
+      const a = t0 + s, b = a + l;
+      g.setValueAtTime(0, a); g.linearRampToValueAtTime(1, a + 0.008);
+      for (let t = a + 0.02; t < b - 0.02; t += 0.018) g.setValueAtTime(0.45 + Math.random() * 0.55, t);   // the arc sputters
+      g.setValueAtTime(g.value, Math.max(a + 0.01, b - 0.012)); g.linearRampToValueAtTime(0, b);
+    }
+    const out = ctx.createGain(); out.gain.value = gain;
+    gate.connect(out);
+    const name = this.buses[bus] ? bus : 'sfx';
+    let pan = null;
+    if (at) {
+      const p = Array.isArray(at) ? { x: at[0], y: at[1], z: at[2] } : at;
+      pan = ctx.createPanner(); pan.panningModel = 'HRTF'; pan.distanceModel = 'inverse'; pan.refDistance = 2; pan.rolloffFactor = 1;
+      if (pan.positionX) { pan.positionX.value = p.x; pan.positionY.value = p.y; pan.positionZ.value = p.z; } else pan.setPosition(p.x, p.y, p.z);
+      out.connect(pan); pan.connect(this.buses[name]);
+    } else out.connect(this.buses[name]);
+    const wet = ctx.createGain(); wet.gain.value = send; out.connect(wet); wet.connect(this.sends[name]);
+    for (const src of [hum, edge, noise]) { src.start(t0); src.stop(end); }
+    const handle = { stop: (fade = 0.05) => { const t = ctx.currentTime; out.gain.cancelScheduledValues(t); out.gain.setTargetAtTime(0, t, fade / 3); } };
+    this.playing.add(handle);
+    noise.onended = () => { this.playing.delete(handle); for (const n of [hum, edge, edgeGain, clip, tone, noise, hiss, hissGain, gate, out, wet, pan]) n?.disconnect(); };
+    return handle;
+  }
+
   loop(key, opts = {}) {
     if (!this.manifest[key]) return null;
     const ctx = this.ctx, handle = { key, opts, gain: ctx.createGain(), playing: true, sources: [], next: 0 };

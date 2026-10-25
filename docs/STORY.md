@@ -20,8 +20,8 @@ reintroduce them.
    The man is not seen until the player has been in the dark for a while (about six minutes into a first night).
 4. **Escape is the goal.** Once he has been seen, the night has one aim: get out of the flat. The keys are gone from the
    bowl; the spare is somewhere in the flat (the sleep diary says where); he hunts you while you look.
-5. **Fair.** Every danger is telegraphed (his light reaches a room before he does, his breathing within a few metres, his
-   steps through doorways). Being caught is a jump scare, never a mystery. Checkpoints at every act.
+5. **Fair.** Every danger is telegraphed (his heavy bare footsteps through the doorways, a board giving under him, his
+   breathing within a few metres; from build 0.15 he carries no light). Being caught is a jump scare, never a mystery. Checkpoints at every act.
 6. **Silence is a tool.** No music under exploration; drones only after something has happened; the first sighting has
    no sting until he is gone.
 
@@ -99,10 +99,16 @@ of them 3 s after the game resumes).
    door, and a tap runs behind it.
 8. **Locked.** E on the bathroom handle: it gives, the latch doesn't. *"Locked."* Behind the door the tap stops. Then the
    line of light under the door goes out. E again: you knock. *"...Hello?"* Two seconds of nothing. Then a crackle and a
-   **bang** from inside (the light under the door is his: if the player switched the bathroom's lights off, he switched
-   them on), and the flat goes out in a cascade from the bathroom outwards (lights, the fridge's hum, the
-   screens). Rain and thunder are all that is left. *"No. No, no, no."*
-   - Fallbacks: 25 s after the shards are seen, or 120 s after the glass, the cut happens wherever the player is.
+   short circuit (the light under the door is his: if the player switched the bathroom's lights off, he switched them
+   on): every light in the flat flickers for about a second, back and forth, with an electric *tzzz* in each dip (build
+   0.15: `story.js` CUT_SURGE, `sound.js` buzz), then the **bang**, and the flat goes out in a cascade from the bathroom
+   outwards (lights, the fridge's hum, the screens). Rain and thunder are all that is left. *"No. No, no, no."*
+   - **Never before the torch** (build 0.15, the owner: the flat went pitch black with no way to find it): until the
+     player has taken the torch from the wardrobe, the cut waits; instead the flat's lights stutter with the buzz every
+     12-20 s, *"...The lights."* *"Where's my torch? ...The wardrobe."* (once), and the cut comes 2 s after the torch is
+     taken. The torch comes off the shelf switched off, with *F · Flashlight on* on screen until it is first used.
+   - Fallbacks: 25 s after the shards are seen, or 120 s after the glass, the cut happens wherever the player is (once
+     the torch is in hand).
    - Sweet Dreams (secret ending) can be chosen between the glass and this cut: hold E on the bed.
 9. **Light.** Lightning every 6-10 s for 45 s after the cut, then every 20-35 s. 4 s after the cut: *"The torch. Left
    side of the wardrobe."* Halfway down the corridor with the torch (x < 8), behind the player the bathroom's latch
@@ -181,20 +187,24 @@ The power is out again and stays out: the main switch is snapped off. He hunts t
   noise), cross the flat to the front door, **hold E for 3 s** to turn the stiff lock (three loud clicks, each a 6 m
   noise; letting go keeps the progress), and leave.
 - **First encounter (scripted, survivable, the tutorial).** He starts at least 8 m of path from the player (the fuse
-  box; else the far end of the open-plan room, the office desk, mid-corridor, the bedroom door); his phone light comes
-  on 1.2 s after the main switch goes. For up to 25 s he sweeps the open-plan room, keeping 5 m from the player. Until
+  box; else the far end of the open-plan room, the office desk, mid-corridor, the bedroom door); he moves off 1.2 s
+  after the main switch goes. For up to 25 s he sweeps the open-plan room, keeping 5 m from the player. Until
   the player enters the corridor or comes within 4 m of him, he notices only a torch held on for more than 1.5 s (from
   6 s in), or running, and never more than to stop and look; whatever ends it, no chase starts before 7.5 s, and the
-  wardrobe never drops him on anyone during it (or any respawn's grace). Thoughts: *"His light."* (if he is in sight;
-  otherwise *"He's back."*) then *"Torch off. Get down."* (with the torch on; otherwise *"Get down. Stay quiet."*) and
+  wardrobe never drops him on anyone during it (or any respawn's grace). Thoughts: *"There. ...By the fuse box."* (if he is in
+  sight; otherwise *"He's back. ...Listen."*) then *"Torch off. Get down."* (with the torch on; otherwise *"Get down. Stay quiet."*) and
   the prompt *C · crouch*; then *"Get out. ...The spare key."*
-- **Him.** Black clothes, the white mask, your kitchen knife in his right hand and his phone's cold LED in his left.
-  He walks between the rooms, stops and sweeps his light, goes to noises. His light reaches a room before he does; in a
-  doorway he waits 2 s shining it down the corridor; he never stops in the corridor. Within 5 m you hear his breathing.
-- **Seeing you** (stalker.js): suspicion fills while you are in his light (35° half-angle, 9 m), close in his side view
-  (2 m standing, 1 m crouched) or anywhere in sight with your torch on (14 m); crouched fills slower, running or torch
-  faster. At half he stops, turns his light to you and breathes in: you have a moment. Full: he comes, and before he
-  strikes he raises the knife into his light (0.45 s): there is always a last chance to see it coming.
+- **Him.** Black clothes, the white mask, your kitchen knife in his right hand, and no light (build 0.15, the owner:
+  "the attacker shouldn't have a flashlight but we should hear his steps when he is near"): he is seen in your torch,
+  in the lightning, or not at all. He walks between the rooms, stops and looks about, goes to noises. His footsteps
+  (heavy bare feet, a board creaking under one step in five or so) carry through the doorways and are never quieter
+  than about a fifth of full level within 9 m (`hunt.js` STEPS); in a doorway he waits 2 s looking down the corridor;
+  he never stops in the corridor. Within 5 m you hear his breathing.
+- **Seeing you** (stalker.js): suspicion fills while you are in his view (35° half-angle, 7 m in the dark; less for a
+  still or crouched shape), close in his side view (2 m standing, 1 m crouched) or anywhere in sight with your torch on
+  (14 m); crouched fills slower, running or torch faster. At half he stops, turns to you and breathes in: you have a
+  moment. Full: he comes, and before he strikes he raises the knife (0.45 s): there is always a last chance to see it
+  coming.
 - **Hearing you** (path metres): crouched 0.5, walking 2.5, running 8, doors and the wardrobe 6, glass underfoot 5, the
   phone ringing 12, the front-door lock 6 per click.
 - **Lures.** A running tap (kitchen or bathroom; water needs no power) is a 7 m noise: he walks over, turns it off,
@@ -212,7 +222,8 @@ The power is out again and stays out: the main switch is snapped off. He hunts t
   wardrobe."* (found the nest); *"It's the man they evicted. From 5B."* (read the notice and found the tagged key).
   *"Officers are on their way. Stay on the line if you can."* They arrive in 60 / 100 / 110 s (Story / Normal / Hard).
   A dispatcher's call-back during the hunt buzzes rather than rings.
-- **Caught.** The view is wrenched round to him; his light comes up under the mask; the knife comes down. A full-level
+- **Caught.** The view is wrenched round to him; your own torch (gripped on; without one, a lightning flash) on the
+  mask; the knife comes down. A full-level
   sting, the camera kicks, blood hits the lens, and the player falls: the view drops to the floor and rolls, and he
   stands over you, looking down. Black, and silence. Then you wake, gasping, at 03:07: **on the sofa** (as the diary
   says you have before). *"...A dream?"* (first), *"Again."* (second), *"Wake up. Wake up."* (third). The shards are

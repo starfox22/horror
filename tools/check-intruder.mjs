@@ -76,14 +76,10 @@ test('knifePose: up by his head pointing forward and down, then a stab forward a
   assert.ok(knife(m).tip.distance(once) < 1e-5, 'posing twice in a frame changes nothing');
 });
 
-test('his phone light rides in his left hand; cameraOnly shows him to the home camera alone', () => {
+test('he carries no light (build 0.15); cameraOnly shows him to the home camera alone', () => {
   const m = man();
-  const torch = new GraphNode('intruder phone light');
-  Object.assign(m, { torch, torchOn: true, torchUnder: false, torchYaw: null, torchPitch: -14, headPitch: 0, fingers: [], knife: m.knife });
-  m.pose('walk_slow_01', 0.3);
-  m.update();
-  const hand = m.leftHand.getPosition();
-  assert.ok(torch.getPosition().distance(new Vec3(hand.x, Math.max(0.9, hand.y), hand.z)) < 1e-6, 'the light is at his left hand');
+  assert.equal(m.setTorch, undefined, 'no phone light any more');
+  assert.equal(m.torch, undefined);
   const player = { node: { name: 'camera' } }, homeCam = { node: { name: 'security camera' } }, probe = { node: { name: 'probe-main' } };
   // Shadow cameras: the player's torch beam's (flashlight.js tags them) and any other light's.
   const torchShadow = { node: { name: 'pcShadowCamera' }, torchShadow: true }, lampShadow = { node: { name: 'pcShadowCamera' } };

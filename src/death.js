@@ -1,13 +1,14 @@
 // Caught (docs/STORY.md Act IV). Contact to black in under three seconds:
-//   0.00  the view is wrenched round to him in a tenth of a second; his phone light comes up under the white mask; a
+//   0.00  the view is wrenched round to him in a tenth of a second; the player's own torch (gripped on: flashlight.js
+//         grip; without one, a lightning flash) on the white mask; a
 //         full-level sting with every bed ducked under it (sound.js scare path)
-//   0.12  the knife goes up into his light (intruder.knifePose)
+//   0.12  the knife goes up (intruder.knifePose)
 //   0.45  it comes down: the camera kicks, a red flash (a fade instead with reduced flashes), blood on the lens: the
 //         downloaded spray (blood.webp) thrown from the side the knife came from, heavy splats with spikes and
 //         droplets painted where it hit, drips that run down while you lie there
 //   0.60  the fall: the view drops to the floor and tilts, turning up to his face; a body's thud and a bounce; colour
 //         drains, two heartbeats
-//   1.30  on the floor: he stands over you and looks down, his light under the mask. Still. One breath
+//   1.30  on the floor: he stands over you and looks down, the fallen torch's light on the mask. Still. One breath
 //   2.30  black, and silence
 // Then you wake on the sofa, gasping (story.js wake: "...A dream?"). Repeat deaths are shorter: the floor holds for
 // 0.4 s, the wake takes 1.4 s; any key skips the wake once it has begun. Everything on screen is page overlays and a
@@ -21,8 +22,8 @@ const WAKE_TO = { pos: [-5.12, 1.86, 2.0], rot: [-3, -90, 0] };
 const BLOOD_URL = './assets/fx/blood.webp';
 
 export class Death {
-  constructor({ app, camera, player, intruder, bank, music, veil, walk = null, doc = document }) {
-    Object.assign(this, { app, camera, player, intruder, bank, music, veil, walk, doc });
+  constructor({ app, camera, player, intruder, bank, music, veil, walk = null, flashlight = null, rain = null, doc = document }) {
+    Object.assign(this, { app, camera, player, intruder, bank, music, veil, walk, flashlight, rain, doc });
     this.running = null;
     this.count = 0;
     this.reducedFlashes = false;
@@ -55,10 +56,10 @@ export class Death {
     const d = Math.max(0.55, Math.min(0.72, toHim.length()));
     toHim.normalize();
     const yaw = Math.atan2(-toHim.x, -toHim.z) * 180 / Math.PI;
-    // Face to face, his light under his chin: the white mask lit from below is the first thing you see.
+    // Face to face, in the player's own torch (he carries no light): the white mask is the first thing you see.
     man.show(true);
     man.place(eye.x + toHim.x * d, eye.z + toHim.z * d, Math.atan2(-toHim.x, -toHim.z) * 180 / Math.PI, man.pos.y);
-    man.torchYaw = null; man.torchPitch = 8; man.torchUnder = true; man.setTorch(true, 1.4);
+    if (this.flashlight?.held) this.flashlight.grip(true); else this.rain?.strike?.();
     man.headPitch = 12;
     man.play('idle_breathe_01', { blend: 0.05 });
     // Where you fall: backwards, away from him, if the floor there is free; straight down otherwise.
@@ -86,7 +87,7 @@ export class Death {
   // The wake on the sofa: eyes opening, sitting up, standing beside it (3.2 s; 1.4 s after the first). done() standing.
   wakeUp(done) {
     const man = this.intruder;
-    man.torchUnder = false; man.headPitch = 0; man.knifePose?.(0, 0); man.show(false); man.setTorch(false);
+    man.headPitch = 0; man.knifePose?.(0, 0); man.show(false); this.flashlight?.grip(false);
     const repeat = this.count > 1;
     this.running = { t: 0, wake: true, wakeEnd: repeat ? 1.4 : 3.2, done };
     this.blood.style.opacity = '0'; this.dark.style.opacity = '0'; this.flash.style.opacity = '0';
@@ -181,7 +182,7 @@ export class Death {
     const cam = this.camera, p = this.player, man = this.intruder;
     if (r.grab) {
       const ease = (k) => 1 - (1 - Math.min(1, Math.max(0, k))) ** 3;
-      // 0-0.12: snap round to him; the knife up into his light until 0.45; down in 0.12 s.
+      // 0-0.12: snap round to him; the knife up until 0.45; down in 0.12 s.
       if (r.t < 0.6) {
         const e = ease(r.t / 0.12);
         p.yaw = r.from.yaw + wrap(r.yaw - r.from.yaw) * e; p.pitch = r.from.pitch + (r.grabPitch - r.from.pitch) * e;

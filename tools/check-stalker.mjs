@@ -137,7 +137,7 @@ class Caution {
     const { s, p } = this.body;
     if (this.fleeing) return false;
     const bearing = Math.atan2(p.x - s.x, p.z - s.z) * 180 / Math.PI;
-    return s.torch && Math.abs(((bearing - s.torchYaw + 540) % 360) - 180) < 50 && Math.hypot(s.x - p.x, s.z - p.z) < 7 && s.state !== 'chase';
+    return s.looking && Math.abs(((bearing - s.lookYaw + 540) % 360) - 180) < 50 && Math.hypot(s.x - p.x, s.z - p.z) < 7 && s.state !== 'chase';
   }
 }
 
@@ -376,7 +376,7 @@ test('after a catch he patrols from the bedroom door, in sight, and cannot catch
   s.respawn({ x: SOFA[0], z: SOFA[1] });
   assert.deepEqual([s.x, s.z], PLACES.respawn, 'at the bedroom door');
   assert.equal(s.state, 'patrol', 'patrolling (not up in the void)');
-  assert.equal(s.torch, true, 'his light on');
+  assert.equal(s.looking, true, 'looking about');
   assert.equal(s.grace, RESPAWN.grace);
   assert.equal(s.windup, 0); assert.equal(s.suspicion, 0); assert.equal(s.lastSeen, null); assert.equal(s.nextBackstage, false);
   // The player walks straight into him with the torch on: no catch for 8 s.

@@ -90,10 +90,16 @@ test('picking up hides the complete model and removes the shelf target', () => {
   Object.assign(torch, { model: placed.root, item: {}, interactions: { remove(item) { removed = item; } },
     rot: new Quat(), camera: { getRotation: () => new Quat() }, beam: { light: {} }, bounce: { light: {} },
     on: false, power: 0 });
+  const prompts = [];
+  torch.prompt = on => prompts.push(on);
   torch.pickUp();
   assert.equal(torch.held, true);
   assert.equal(torch.model.enabled, false);
   assert.equal(removed, torch.item);
   assert.equal(torch.model.children.length, 2, 'both visible pieces share the hidden root');
+  assert.equal(torch.on, false, 'it comes off the shelf switched off (build 0.15)');
+  assert.deepEqual(prompts, [true], 'with the F prompt on screen');
+  torch.toggle();
   assert.equal(torch.on, true);
+  assert.deepEqual(prompts, [true, false], 'switched on: the prompt goes');
 });

@@ -233,19 +233,30 @@ fn hash(p: vec2f) -> f32 { return fract(sin(dot(p, vec2f(12.9898, 78.233)) + uni
     if (this.scene) this.updateScene(dt);
   }
 
+  // His steps while he walks on the feed: really in the bedroom, so heard (through the doorway, softly) by a player
+  // watching from the corridor (hunt.js steps, quieter: he is not hunting yet).
+  footfall(v, man) {
+    const s = this.scene;
+    s.walked = (s.walked || 0) + v;
+    if (s.walked < 0.72) return;
+    s.walked = 0;
+    this.bank?.play('step_floor', { at: [man.pos.x, 0.2, man.pos.z], gain: 0.8, rate: [0.72, 0.82], ref: 2, rolloff: 1, send: 0.3 });
+  }
+
   // He comes down, steps out, crosses to the lens, looks up into it, and leaves the frame.
   updateScene(dt) {
     const s = this.scene, man = this.intruder;
     s.t += dt;
     const at = (t, fn) => { if (s.t >= t && !s[`done${t}`]) { s[`done${t}`] = true; fn(); } };
     at(0.5, () => { this.nest?.dust(3); this.bank?.play('creak_long', { at: [9.6, 2.7, -0.1], gain: 0.4, occlude: false }); });
-    at(2.6, () => { this.cameraOnly(true); man.show(true); man.setTorch(false); man.place(9.5, -0.12, 90, 0.17); man.play('crouch_idle', { blend: 0 }); });
+    at(2.6, () => { this.cameraOnly(true); man.show(true); man.place(9.5, -0.12, 90, 0.17); man.play('crouch_idle', { blend: 0 }); });
     at(3.4, () => man.play('crouch_out', { blend: 0.2 }));
     at(6.4, () => { s.path = LIVE_WALK; s.leg = 0; man.play('walk_slow_01', { blend: 0.4 }); });
     if (s.path && s.leg < s.path.length) {
       const [tx, tz] = s.path[s.leg], dx = tx - man.pos.x, dz = tz - man.pos.z, d = Math.hypot(dx, dz), v = 0.9 * dt;
       const yaw = Math.atan2(dx, dz) * 180 / Math.PI;
       if (d < v) { s.leg++; } else man.place(man.pos.x + dx / d * v, man.pos.z + dz / d * v, yaw, 0.17);
+      this.footfall(v, man);
       if (s.leg === s.path.length) { s.pathDone = s.t; man.play('idle_breathe_01', { blend: 0.5 }); }
     }
     if (s.pathDone && !s.leaving) {
@@ -258,6 +269,7 @@ fn hash(p: vec2f) -> f32 { return fract(sin(dot(p, vec2f(12.9898, 78.233)) + uni
     if (s.path2 && s.leg2 < s.path2.length) {
       const [tx, tz] = s.path2[s.leg2], dx = tx - man.pos.x, dz = tz - man.pos.z, d = Math.hypot(dx, dz), v = 0.8 * dt;
       if (d < v) s.leg2++; else man.place(man.pos.x + dx / d * v, man.pos.z + dz / d * v, Math.atan2(dx, dz) * 180 / Math.PI, 0.17);
+      this.footfall(v, man);
       // Out of the frame beneath the lens: the feed is lost, and the power dies (story.js huntStart).
       if (s.leg2 === s.path2.length) {
         this.endScene();

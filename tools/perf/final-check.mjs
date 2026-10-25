@@ -47,7 +47,7 @@ const [url, mode = 'webgl'] = process.argv.slice(2);
     await step('falling glass', async () => { s.events.run('falling-glass'); });
     await step('lightning', async () => { s.rain.flash.next = 0; }, 10);
     await step('kitchen switch', async () => { s.switches.toggle(s.switches.rooms.find(r => r.id === 'kitchen')); }, 40);
-    await step('flashlight', async () => { s.flashlight.pickUp(); }, 8);
+    await step('flashlight', async () => { s.flashlight.pickUp({ on: true }); }, 8);
     await step('coffee', async () => { s.devices.brew(s.devices.coffee); }, 20);
     await step('taps', async () => { s.taps?.toggle('kitchen'); s.taps?.toggle('bathroom'); await frames(4); s.taps?.toggle('kitchen'); s.taps?.toggle('bathroom'); }, 8);
     // Build 0.13: the night. Story time is stepped by hand (software rendering runs at about a frame a second).

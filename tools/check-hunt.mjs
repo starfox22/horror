@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { WalkGrid } from '../src/walkgrid.js';
 import { NavGrid } from '../src/navgrid.js';
-import { Hunt } from '../src/hunt.js';
+import { Hunt, STEPS } from '../src/hunt.js';
 import { TUTORIAL, PLACES, RESPAWN, SENSES, DROP, WARDROBE } from '../src/stalker.js';
 import { Seccam, CAM, LIVE_WALK, LIVE_EXIT } from '../src/seccam.js';
 
@@ -19,13 +19,12 @@ const DT = 1 / 30;
 // His body as hunt.js and seccam.js drive it (intruder.js), recording what is asked of it.
 function body() {
   return {
-    pos: { x: 0, y: 0, z: 0, set(x, y, z) { this.x = x; this.y = y; this.z = z; } }, yaw: 0, visible: false, torchOn: false, torchYaw: 0, torchPitch: 0,
+    pos: { x: 0, y: 0, z: 0, set(x, y, z) { this.x = x; this.y = y; this.z = z; } }, yaw: 0, visible: false,
     headPitch: 0, cameraOnly: false, clip: null, knives: [], shown: [],
     clips: Object.fromEntries(['walk_slow_01', 'walk_neutral_01', 'run_neutral_01', 'idle_breathe_01', 'idle_look_around_01', 'crouch_idle', 'crouch_out', 'try_door_inwards'].map(n => [n, {}])),
-    show(on = true) { this.visible = on; this.shown.push(on); if (!on) this.torchOn = false; },
+    show(on = true) { this.visible = on; this.shown.push(on); },
     place(x, z, yaw = this.yaw, y = 0.16) { this.pos.set(x, y, z); this.yaw = yaw; },
     play(name) { if (!this.clips[name]) throw new Error(`no clip ${name}`); this.clip = name; },
-    setTorch(on) { this.torchOn = on; },
     raiseKnife(k) { this.knives.push(k); },
   };
 }
@@ -66,7 +65,7 @@ test('noises carry as far as STORY says: doors and the wardrobe 6 m, a running t
   assert.deepEqual(heard, [['door', 6], ['wardrobe', 6], ['tap', 7], ['unlock', 6], ['glass', 5], ['phone', 12], ['crouch', 0.5], ['walk', 2.5], ['run', 8], ['loud', 6]]);
 });
 
-test('from the fuse box: he starts 8 m of path away, dark for a moment, then his light; a torch counts only from the hint', () => {
+test('from the fuse box: he starts 8 m of path away, still for a moment, then moves (no light of his own); a torch counts only from the hint', () => {
   for (const at of [[10.45, 3.4], [4.6, 0.6], [0.5, 0.15], [-4, 2.5]]) {
     const n = night({ at });
     n.flashlight.on = true;
@@ -74,9 +73,10 @@ test('from the fuse box: he starts 8 m of path away, dark for a moment, then his
     assert.ok(n.nav.pathDistance(at[0], at[1], n.s.x, n.s.z, { through: true }) >= TUTORIAL.spawn - 1e-6, `from ${at}`);
     n.run(0.5);
     assert.equal(n.man.visible, true, 'his body is there');
-    assert.equal(n.man.torchOn, false, 'in the dark at first');
+    assert.equal(n.s.looking, false, 'standing by the box at first');
     n.run(1.2);
-    assert.equal(n.man.torchOn, true, 'then his phone light');
+    assert.equal(n.s.looking, true, 'then looking for the player');
+    assert.equal(n.man.setTorch, undefined, 'he carries no light (build 0.15)');
     n.run(TUTORIAL.hint - 1.7 - 0.1);
     assert.equal(n.hunt.torchHeld, 0, 'the torch has not counted before the hint');
     n.run(0.5);
@@ -104,7 +104,7 @@ test('after a catch: he patrols from the bedroom door, in sight, 8 s before he c
   const n = night({ at: [-5.12, 2.0] });
   n.hunt.respawn();
   n.run(DT);
-  assert.equal(n.man.visible, true); assert.equal(n.man.torchOn, true);
+  assert.equal(n.man.visible, true); assert.equal(n.s.looking, true);
   assert.ok(Math.hypot(n.man.pos.x - PLACES.respawn[0], n.man.pos.z - PLACES.respawn[1]) < 0.2, 'at the bedroom door');
   assert.ok(Math.abs(n.s.grace - (RESPAWN.grace - DT)) < 1e-6);
   // story.restore() respawns before the checkpoint puts the player in place (main.js applyCheckpoint).
@@ -267,4 +267,18 @@ test('LIVE: a hunt that starts during the scene (a call, the front door) ends it
   assert.equal(cam.scene, null); assert.equal(man.cameraOnly, false); assert.equal(man.visible, false);
   assert.equal(cam.liveRunning, false);
   assert.equal(cam.entity.camera.enabled, false);
+});
+
+test('build 0.15: his footsteps are heard when he is near (no light of his own gives him away)', () => {
+  const n = night({ at: [8.0, 3.55] });
+  n.hunt.start({ tutorial: false, from: 'fusebox' });
+  n.run(12);
+  const steps = n.played.filter(p => p.key === 'step_floor');
+  assert.ok(steps.length >= 6, `a footfall every stride (${steps.length})`);
+  for (const p of steps) {
+    const d = Math.hypot(p.at[0] - n.player.pos.x, p.at[2] - n.player.pos.z);
+    assert.ok(p.gain >= STEPS.walkGain, 'heavy bare feet, at least the walk level');
+    if (d < STEPS.near) assert.equal(p.min, STEPS.min, `within ${STEPS.near} m never quieter than ${STEPS.min} (${d.toFixed(1)} m)`);
+  }
+  assert.ok(steps.every(p => p.rate[1] < 0.9), 'slowed: a big man\'s weight');
 });

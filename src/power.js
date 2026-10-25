@@ -3,8 +3,10 @@
 // whenever a faulty (wet) circuit is switched on with it up: the bathroom always once the basin has flooded, and on
 // some runs a nuisance circuit with a cause the player could have seen (fusebox.js, story.js).
 // What the player sees: a cut goes out in a cascade from where it happened (a stutter, then dark, a few hundredths of a
-// second later per metre); a restore stutters on, off and on. Systems ask k(circuit, position) for the level (0..1) of
-// a light at a position; while anything is changing, power re-applies them every frame.
+// second later per metre); a restore stutters on, off and on; a surge (build 0.15: before the cut, a short circuit
+// building) makes every live light stutter together for a moment without changing what is live. Systems ask
+// k(circuit, position) for the level (0..1) of a light at a position; while anything is changing, power re-applies them
+// every frame.
 export const CIRCUITS = [
   { id: 'lights1', label: 'LIGHTS 1', note: 'living · kitchen · office' },
   { id: 'lights2', label: 'LIGHTS 2', note: 'hall · bedroom' },
@@ -25,6 +27,8 @@ export class Power {
     this.time = 0;
     // A transition: { at, from: [x, z], off (going out) or on (coming back), circuits it affects }.
     this.transitions = [];
+    // Surges: { at, pattern: [[seconds, level], ...] } (surge()).
+    this.surges = [];
     app?.on?.('update', dt => this.update(dt));
   }
 
@@ -32,7 +36,27 @@ export class Power {
   onChange(fn) { this.listeners.add(fn); return () => this.listeners.delete(fn); }
 
   // Level of a light on circuit c at position p ({x, z} or Vec3), with the cut/restore animation.
-  k(c, p) {
+  k(c, p) { return this.level(c, p) * this.surgeLevel(); }
+
+  // Every live light's level under the surges playing now (1: none).
+  surgeLevel() {
+    let k = 1;
+    for (const s of this.surges) {
+      let t = this.time - s.at;
+      for (const [length, level] of s.pattern) { if (t < length) { k *= level; break; } t -= length; }
+    }
+    return k;
+  }
+
+  // The lights stutter together: pattern [[seconds, level], ...], in order from now. Returns its length in seconds.
+  surge(pattern) {
+    const length = pattern.reduce((sum, [d]) => sum + d, 0);
+    this.surges.push({ at: this.time, pattern, length });
+    for (const fn of this.listeners) fn({ cause: 'surge', off: [], on: [] });
+    return length;
+  }
+
+  level(c, p) {
     const target = this.live(c) ? 1 : 0;
     const t = this.transitions.find(tr => tr.circuits.includes(c));
     if (!t) return target;
@@ -49,7 +73,7 @@ export class Power {
     return 0;
   }
 
-  get changing() { return this.transitions.length > 0; }
+  get changing() { return this.transitions.length > 0 || this.surges.length > 0; }
 
   // What is live now vs. a snapshot of before; starts the animation for the circuits that changed.
   apply(before, from, cause) {
@@ -105,17 +129,18 @@ export class Power {
 
   update(dt) {
     this.time += Math.min(dt, 0.1);
-    if (!this.transitions.length) return;
+    if (!this.changing) return;
     for (const fn of this.listeners) fn(null);        // re-apply levels this frame
     this.transitions = this.transitions.filter(t => this.time - t.at < 1.2);
-    if (!this.transitions.length) for (const fn of this.listeners) fn({ settled: true });
+    this.surges = this.surges.filter(s => this.time - s.at < s.length);
+    if (!this.changing) for (const fn of this.listeners) fn({ settled: true });
   }
 
   save() { return { main: this.main, rcd: this.rcd, breakers: { ...this.breakers }, faults: [...this.faults] }; }
   load(s) {
     if (!s) return;
     this.main = s.main; this.rcd = s.rcd; Object.assign(this.breakers, s.breakers); this.faults = new Set(s.faults);
-    this.transitions = [];
+    this.transitions = []; this.surges = [];
     for (const fn of this.listeners) fn({ settled: true, loaded: true });
   }
 }

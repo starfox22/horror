@@ -6,25 +6,24 @@ import assert from 'node:assert/strict';
 import { Phone } from '../src/phone.js';
 
 function phone({ live = true } = {}) {
+  // What the screen was asked to show each time it was drawn (phone-screen.js draws it: tools/phone/preview.mjs).
   const drawn = [];
-  const g = new Proxy({ createLinearGradient: () => ({ addColorStop() {} }), measureText: () => ({ width: 10 }) },
-    { get: (t, k) => (k in t ? t[k] : (...a) => drawn.push([k, ...a])), set: (t, k, v) => { t[k] = v; return true; } });
   const p = Object.create(Phone.prototype);
   const played = [];
   Object.assign(p, {
-    g, canvas: {}, texture: { setSource: () => drawn.push(['upload']) },
     holder: { enabled: false }, video: { enabled: false }, bank: { play: (k) => played.push(k) },
     story: { set() {}, phoneBooted() {}, phoneCharging() {}, phoneMayBoot: () => false, has: () => false },
     power: { live: () => live }, clock: { now: () => new Date(2026, 9, 25, 3, 21) },
     has: false, charge: 0, booted: false, onCharger: true, pluggedIn: false, silenced: false, chargeTime: 0,
     booting: null, lit: 0, raised: false, raiseK: 0, app_: 'lock', sel: 0, dirty: true, call: null, notifications: [],
-    charger() {}, noise() {}, hud: { prompt() {} },
+    thumbs: {}, durations: {}, charger() {}, noise() {}, hud: { prompt() {} },
   });
+  p.draw = function () { drawn.push(this.screenState()); };
   const step = (seconds) => { for (let t = 0; t < seconds; t += 0.05) p.update(0.05); };
   return { p, drawn, played, step };
 }
-const glyph = (drawn) => drawn.some(([k]) => k === 'strokeRect');
-const ring = (drawn) => drawn.some(([k]) => k === 'arc');
+const glyph = (drawn) => drawn.some(s => s.mode === 'dead' && s.charging);
+const ring = (drawn) => drawn.some(s => s.mode === 'boot');
 
 test('on the nightstand: dark; plugged in, the empty-battery glyph lights for a while, then it sleeps', () => {
   const { p, drawn, step } = phone();
@@ -34,7 +33,7 @@ test('on the nightstand: dark; plugged in, the empty-battery glyph lights for a 
   drawn.length = 0; step(0.1);
   assert.ok(glyph(drawn), 'plugged in: the battery glyph');
   drawn.length = 0; step(6);
-  assert.ok(drawn.some(([k]) => k === 'upload') && !glyph(drawn), 'and dark again');
+  assert.ok(drawn.length && drawn.at(-1).mode === 'off', 'and dark again');
 });
 
 test('booting: the logo silently for 3 s, then the alerts with the buzz; the screen stays lit a while, then sleeps', () => {
@@ -49,7 +48,8 @@ test('booting: the logo silently for 3 s, then the alerts with the buzz; the scr
   assert.ok(p.notifications.length === 2 && p.lit > 15, 'the alerts, lit');
   drawn.length = 0; step(21);
   assert.equal(p.lit, 0, 'asleep again');
-  assert.ok(!drawn.some(([k]) => k === 'fillText'), 'nothing drawn but black');
+  assert.ok(drawn.at(-1).mode === 'off', 'nothing drawn but black');
+  assert.deepEqual(p.screenState().notifications.map(n => n.ago), ['2h ago', '23m ago'], 'the alerts say how long ago');
 });
 
 test('put down, it locks (no Home Cam on the nightstand)', () => {
