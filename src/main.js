@@ -293,6 +293,7 @@ closets.opened = (door) => story.wardrobeOpened(door);
 phone.noise = (x, z, kind = 'phone') => { const p = player.pos; hunt.noise(x ?? p.x, z ?? p.z, kind); };
 player.onNoise = (x, z, kind) => hunt.noise(x, z, kind);
 taps.onNoise = (x, z, kind) => hunt.noise(x, z, kind);      // running water: a lure in the hunt (7 m)
+taps.on((id, on, { by } = {}) => { if (!on && by === 'player') story.tapClosed(id); });   // the pipes knock (story.js)
 player.surfaceAt = (x, z) => world.surfaceAt(x, z);
 // The bathroom visit (Act III): stepping into it once the door stands open.
 story.on(flag => { if (flag === 'restored') music.swell(0.25, 6); });
