@@ -172,6 +172,22 @@ export class Flashlight {
   // The cheap switch's contact: the beam stutters for `seconds` (story.js: the silhouette). Reduced flashes: a dip.
   stutter(seconds = 0.35) { if (this.on) this.flicker = this.reducedFlashes ? 0 : seconds; if (this.reducedFlashes) this.dip = seconds; }
 
+  // The intruder is drawn into this beam's shadow and no other (intruder.js seenBy): it is re-rendered every frame, so no
+  // ghost of him can stay in it, as it would in a lamp's cached map. The engine makes the shadow camera on the beam's
+  // first shadow render; it is marked from then on.
+  tagShadow() { for (const rd of this.beam.light.light._renderData || []) rd.shadowCamera.torchShadow = true; }
+
+  // The shader warm-up (main.js): the beam on at nothing, from the warm-up camera, so its shadow pass draws him (and
+  // builds that pass's shaders) before play.
+  warm() {
+    this.beam.setPosition(this.camera.getPosition());
+    this.beam.setRotation(this.camera.getRotation());
+    this.beam.rotateLocal(90, 0, 0);
+    this.beam.light.intensity = 0;
+    this.beam.light.enabled = true;
+    this.tagShadow();
+  }
+
   // Beam size (developer menu): the cone's outer angle in degrees; the cookie's pattern scales with it.
   setSize(deg) {
     this.size = deg;
@@ -186,6 +202,7 @@ export class Flashlight {
   }
 
   update(dt) {
+    if (this.warming) { this.warm(); return; }
     if (!this.held) return;
     dt = Math.min(dt, 0.05);
     this.time += dt;
@@ -199,6 +216,7 @@ export class Flashlight {
     const lit = this.power > 0.001 && !this.suspended;
     this.beam.light.enabled = this.bounce.light.enabled = lit;
     if (!lit) return;
+    this.tagShadow();
 
     // The hand lags the view a little (heavier feel), with a faint tremor and the step's sway.
     const target = this.camera.getRotation();

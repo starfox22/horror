@@ -398,6 +398,10 @@ if (!shot || hash.has('warm')) {
     },
     () => { rain.revealing = true; return () => { rain.revealing = false; }; },
     () => taps.reveal(),                       // the taps' water (taps.js)
+    () => {                                    // the torch's shadow, with him in it (flashlight.js warm, intruder.js)
+      flashlight.warming = true;
+      return () => { flashlight.warming = false; flashlight.beam.light.enabled = flashlight.on && flashlight.held; };
+    },
     () => {                                    // the light under the bathroom door (world.js)
       const glow = world.doorGlow, at = glow?.getPosition().clone();
       world.warming = true; world.doorGlowLevel = -1; world.updateDoorGlow();
