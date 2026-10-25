@@ -197,7 +197,23 @@ directly: `place()` would move a camera standing on furniture to the nearest fre
 ### No shaders or shadow bursts in play
 
 `tools/perf/final-check.mjs`, after the warm-up. The steps are Act I's interactions plus the night's: the cut, the fuse
-box, the levers, the figure, the phone, LIVE, the hunt and the grab. Results are below.
+box, the levers, the figure, the phone, LIVE, the hunt and the grab.
+
+| | Shaders built in play | Most shadow faces in a frame |
+| --- | --- | --- |
+| WebGL 2 | 0 in all 16 steps | 3 (coffee 9, as in 0.12) |
+| WebGPU | 0 in all 16 steps | 3 (coffee 9, as in 0.12) |
+
+The check now names the material and the mesh behind any build. The first runs found two, both fixed:
+- **The spilt water.** It was first drawn by a probe capture after the glass broke. The story's things in `world.js`
+  and `nest.js` are now left out of probe captures (`noProbes`).
+- **The phone's video plane, at LIVE.** It got its first texture only then, and the warm-up never drew it, because the
+  phone hides itself unless raised. It now always has a texture, and the warm-up raises the phone.
+
+The warm-up also turns the home camera to look at him, so its own variants of his shaders are built too.
+
+On WebGPU the hatch's dust also needed a stopped-emitter update shader in the first frames after loading. The warm-up
+now stops the dust halfway through its sweep, so that shader is built there.
 
 ## 8. Captures (`build-013/`)
 

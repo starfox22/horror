@@ -75,21 +75,26 @@ Read [REVIEW_11.md](REVIEW_11.md) and [DRINK_ASSETS.md](DRINK_ASSETS.md). Auto n
 
 ## Published builds
 
-- Production 0.12 (Claude) is on `main` since 2026-10-24 at the owner's request: https://starfox22.github.io/horror/?v=0.12 (the Pages workflow deploys `main`; a main deployment removes the `/codex/` review path until the preview workflow is rerun, see PREVIEW_DEPLOYMENT.md). Also on the claude.ai artifact.
+- Production 0.13 (Claude) is on `main` since 2026-10-25 at the owner's request ("publish directly to main"):
+  https://starfox22.github.io/horror/?v=0.13 (the Pages workflow deploys `main`), and on the claude.ai artifact
+  https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9 (same URL; the apartment parts were unchanged and not re-sent; new:
+  the recordings `assets/audio/sfx/`, fonts, the intruder and story props as `.glb.b64.txt`, the clips, `sight.json`).
+- Production 0.12 (Claude) was on `main` since 2026-10-24 at the owner's request: https://starfox22.github.io/horror/?v=0.12 (the Pages workflow deploys `main`; a main deployment removes the `/codex/` review path until the preview workflow is rerun, see PREVIEW_DEPLOYMENT.md). Also on the claude.ai artifact.
 - Production 0.11 was on `main`: https://starfox22.github.io/horror/?v=0.11. Deployed source `73f66df26830f888c3c17869543f6df25a9ec844`, [Pages run 40111353532](https://github.com/starfox22/horror/actions/runs/40111353532), succeeded and native production WebGPU drinking passed. Later handoff-only commits do not change this gameplay. The review URL was restored by run `40109659758`, attempt 2; build-info records the promoted main source plus review source `259e12e6ade8d6ad97fcd6af81be4d2e95e453a4`.
 
 `/codex/` serves the latest review. The `?v=` query refreshes cached HTML; it does not preserve older builds. Historical entries below record their deployment commits and captures.
 - Current Codex review 0.11: https://starfox22.github.io/horror/codex/?v=0.11-final from `259e12e6ade8d6ad97fcd6af81be4d2e95e453a4`; deployment `40109659758` passed and live build-info matches. Auto targets 60, sparse waking lights and downloaded-hand drinking are documented in REVIEW_11.md. All 90 regressions, local WebGL/WebGPU and hosted native drinking checks pass.
 - Codex review 0.10: https://starfox22.github.io/horror/codex/?v=0.10 from `7c8af57a2a0e2962483f51fd538184418a7b7410`; deployment `40103998454` passed and live build-info matches. First waking sequence, refrigerator, FPS limit, grain and physically occluded lighting are documented in REVIEW_10.md.
 - Codex review 0.9: https://starfox22.github.io/horror/codex/?v=0.9 from `f39809820f6f3416f5330bb0fb4a7fae6efffc91`; deployment `40098710673` passed. Graphics/FPS, fixtures, lighting defaults and coffee changes are documented in REVIEW_09.md.
-- Builds 0.1-0.7 and 0.12 (2026-10-22/24): claude.ai artifact https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9
+- Builds 0.1-0.7, 0.12 and 0.13 (2026-10-22/25): claude.ai artifact https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9
   (always the latest Claude build; private to the owner unless shared from its Share menu). Build 0.12 was also merged
   into `main` at the owner's request, so the production Pages site serves it.
 - Codex review build 0.8: https://starfox22.github.io/horror/codex/ is published from `codex-review` commit `f6ae1f49d48478c08e0d88329480265a02e177fb`; deployment run `40094343463` succeeded. At that deployment the original main build was served at https://starfox22.github.io/horror/. The owner enabled Pages and selected no deployment-branch restriction. See the deployment guide before publishing later reviews.
 
 To republish the artifact: `npm run build && node tools/make-artifact.mjs`, then the Artifact tool with
 `file_path: dist-artifact/index.html`, `root: dist-artifact`, `url` above, and `files` from the JSON list the script prints.
-The host serves no .bin/.ktx2 files, so make-artifact packs the model into one GLB split into ~14 MB base64 text parts
+make-artifact keeps `collision.json` and `sight.json` beside the parts and packs every `.glb` under `assets/props/`
+(subfolders too: `story/`). The host serves no .bin/.ktx2 files, so make-artifact packs the model into one GLB split into ~14 MB base64 text parts
 (`assets/apartment/apartment-N.txt` + `apartment.json`); main.js reassembles it in memory. Limits: 15 MB per file,
 64 MB per publish call (so: call 1 = small files + parts 0-2, call 2 = parts 3-6, both to the same url),
 256 MB per version.

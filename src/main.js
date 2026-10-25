@@ -363,6 +363,8 @@ if (!shot || hash.has('warm')) {
   // everything in the flat are built too.
   await warmUp({ app, camera, progress: f => {
     lit.moon.light.shadowUpdateMode = SHADOWUPDATE_THISFRAME; status('Preparing the rooms…', 0.92 + 0.08 * f);
+    // The hatch's dust plays for the first half, then stops: a stopped emitter's update is its own shader (WebGPU).
+    if (f > 0.5 && !nest.dustStoppedForWarmUp) { nest.dustStoppedForWarmUp = true; nest.dustEntity.particlesystem.stop(); }
     // The intruder two metres in front of each view, so every angle of him (and his light's shadow) is built.
     const c = camera.getPosition(), fw = camera.forward;
     intruder.place(c.x + fw.x * 2, c.z + fw.z * 2, Math.atan2(-fw.x, -fw.z) * 180 / Math.PI, Math.max(0.16, c.y - 1.5));
