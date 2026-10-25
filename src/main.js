@@ -274,7 +274,7 @@ const fusebox = new Fusebox({ app, interactions, power, bank, story, hud, props,
 const taps = new Taps({ app, interactions, bank, camera, isVisible: cam => cam === playerCam, configureMaterial: (m, zone) => probes.assign(m, zone) });
 taps.isPlaying = isPlaying;
 const world = new World({ app, sounds: ambience, bank, doors, closets, interactions, story, hud, glassGeometry: fridge.glassGeometry, props, fridge, taps,
-  configureMaterial: (m, name) => probes.assign(m, ['main', 'hall', 'bath', 'bed'].includes(name) ? name : /mirror|flood/.test(name) ? 'bath' : /print/.test(name) ? 'hall' : /notice|diary|tin/.test(name) ? 'main' : 'bed') });
+  configureMaterial: (m, name) => probes.assign(m, ['main', 'hall', 'bath', 'bed'].includes(name) ? name : /mirror|flood/.test(name) ? 'bath' : /print/.test(name) ? 'hall' : /notice|diary|tin|knife/.test(name) ? 'main' : 'bed') });
 const nest = new Nest({ app, interactions, story, hud, bank, closets, props, configureMaterial: m => probes.assign(m, 'bed'),
   stills: { url: id => `./assets/clips/${id}.jpg` } });
 const seccam = new Seccam({ app, camera, intruder, closets, nest, story, bank, props, configureMaterial: m => probes.assign(m, 'bed') });

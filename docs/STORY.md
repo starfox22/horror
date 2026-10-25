@@ -50,7 +50,7 @@ tagged 5B, polaroids of you asleep) · the hatch · the camera clips · him on L
   is at its east end (x 12.9), the **fuse box** at its west end (x 2.3), the office opening at x 3.75-5.6. It is the only
   link between the two halves of the flat: the tension lives there.
 - **Open-plan room** x -6.5..6.3: kitchen on the north wall (fridge x 1.55 with the notice on its door, the sink and
-  its tap under the kitchen window, the knife block on the worktop, the coffee machine and coffee shelf), dining table,
+  its tap under the kitchen window, the knife rack over the worktop, the coffee machine and coffee shelf), dining table,
   living room at the west end (sofa, laptop, arc lamp, a floor-to-ceiling window wall), office at the east end (desk,
   iMac, the sleep diary).
 
@@ -72,8 +72,9 @@ of them 3 s after the game resumes).
    it.)
 4. **The kitchen.** On the outside of the fridge door, held by a magnet, a small printed notice: *"NOTICE TO RESIDENTS.
    The resident who had been causing disturbances over the last month has finally been evicted. Thank you for your
-   patience."* Reading it: *"Finally."* The key bowl beside the fridge is empty (*"...My keys?"*). The knife block on
-   the worktop has one empty slot, the biggest; only a player who looks closely notices (*"The big one's gone."*).
+   patience."* Reading it: *"Finally."* The key bowl beside the fridge is empty (*"...My keys?"*). The knife rack on
+   the wall over the worktop has one gap, where the biggest hangs; only a player who looks closely notices (*"The big
+   one's gone."*).
    Both taps turn on and off.
 5. **The crow** (believable false scare; once per night, any time before the hunt, never within 25 s of another
    scare). The player stands within 2.6 m of a window, looking at it, not running. A crow, flushed from the roof by the
@@ -151,9 +152,11 @@ The power is out again and stays out: the main switch is snapped off. He hunts t
   cushion · in the plant pot by the sofa); each place can also be searched without the diary. Take it (1.5 s, a 2.5 m
   noise), cross the flat to the front door, **hold E for 3 s** to turn the stiff lock (three loud clicks, each a 6 m
   noise; letting go keeps the progress), and leave.
-- **First encounter (scripted, survivable, the tutorial).** His phone light comes on near the fuse box. He walks the
-  open-plan room once, sweeping it. Until the player enters the corridor or comes within 4 m of him, he notices only a
-  torch held on for more than 1.5 s, or running. Thoughts: *"His light."* then *"Torch off. Get down."* and the prompt
+- **First encounter (scripted, survivable, the tutorial).** He starts at least 8 m of path from the player (the fuse
+  box; else the far end of the open-plan room, the office desk, mid-corridor, the bedroom door); his phone light comes
+  on 1.2 s after the main switch goes. For up to 25 s he sweeps the open-plan room, keeping 5 m from the player. Until
+  the player enters the corridor or comes within 4 m of him, he notices only a torch held on for more than 1.5 s (from
+  6 s in), or running, and never more than to stop and look; whatever ends it, no chase starts before 7.5 s. Thoughts: *"His light."* then *"Torch off. Get down."* and the prompt
   *C · crouch*; then *"Get out. ...The spare key."*
 - **Him.** Black clothes, the white mask, your kitchen knife in his right hand and his phone's cold LED in his left.
   He walks between the rooms, stops and sweeps his light, goes to noises. His light reaches a room before he does; in a
@@ -164,13 +167,16 @@ The power is out again and stays out: the main switch is snapped off. He hunts t
   strikes he raises the knife into his light (0.45 s): there is always a last chance to see it coming.
 - **Hearing you** (path metres): crouched 0.5, walking 2.5, running 8, doors and the wardrobe 6, glass underfoot 5, the
   phone ringing 12, the front-door lock 6 per click.
-- **Lures.** A running tap (kitchen or bathroom; water needs no power) is a 10 m noise: he walks over, turns it off,
+- **Lures.** A running tap (kitchen or bathroom; water needs no power) is a 7 m noise: he walks over, turns it off,
   sweeps, searches nearby. Set it, then leave by another way.
 - **The chase.** He runs (2.6 m/s on Normal; you run 2.4) to where he last saw you, plus where you were heading. Six
   seconds without seeing you: he searches, then goes back to walking. He never ambushes in the corridor or within 4 m of
   the front door. Walls, wardrobes and the fridge always hide you; low furniture hides you crouched.
-- **The wardrobe** is his door, not your hiding place: stand in its right half during the hunt and dust falls at 1 s;
-  at 4 s he drops out of the hatch onto you.
+- **The wardrobe** is his door, not your hiding place: stand in its right half (or pressed into its open doorway)
+  during the hunt and dust falls at 1 s; at 4 s he drops through the hatch into the wardrobe with a heavy thump, gets
+  up, steps out and breathes in (your moment), then comes at a run. A player who runs at the thump gets away.
+- **The race.** Starting on the front door's lock before the hunt brings him down the same way: he lands in the
+  wardrobe and runs for the front door; holding E for its 3 s wins by about a second.
 - **Police.** The phone (if booted): an emergency call. *"Emergency. What's the address?"* Then what the player chooses
   to whisper depends on what they found: *"There's someone in my flat."* always; *"He's in the ceiling. Above my
   wardrobe."* (found the nest); *"It's the man they evicted. From 5B."* (read the notice and found the tagged key).
@@ -181,7 +187,8 @@ The power is out again and stays out: the main switch is snapped off. He hunts t
   stands over you, looking down. Black, and silence. Then you wake, gasping, at 03:07: **on the sofa** (as the diary
   says you have before). *"...A dream?"* (first), *"Again."* (second), *"Wake up. Wake up."* (third). The shards are
   still by the bed; you keep everything you carried and found, and a police call already made. He is patrolling from the
-  bedroom door, with 8 s before he can catch anyone. On Hard, the third catch restarts Act IV.
+  bedroom door, with 8 s before he can catch anyone (or from his furthest patrol point, if the checkpoint puts you
+  within 8 m of the door). On Hard, the third catch restarts Act IV.
 
 ## Endings
 
@@ -198,8 +205,8 @@ supports (someone was here / it was in my head).
 
 ## Evidence (the journal)
 
-Each with the thought you had: the stuck wardrobe · the dead phone · the notice · the empty key bowl · the empty knife
-slot · the broken glass · the blood in the spill · the locked bathroom · the man in the corridor · the prints · the wiped
+Each with the thought you had: the stuck wardrobe · the dead phone · the notice · the empty key bowl · the gap on the knife
+rack · the broken glass · the blood in the spill · the locked bathroom · the man in the corridor · the prints · the wiped
 mirror · the nest · the key tagged 5B · the polaroids (and the back of the oldest) · clips 00:47 and 02:58 · the
 prescription (zolpidem: "may cause sleepwalking, complex sleep behaviours and hallucinations") · the sleep diary.
 

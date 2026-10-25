@@ -7,7 +7,7 @@ export const EVIDENCE = [
   { id: 'phone-dead', title: 'My phone', text: 'Dead on the nightstand. The charger was pulled out of the wall. I always plug it in.', points: 'both' },
   { id: 'notice', title: 'Notice to residents', text: 'The resident who had been causing disturbances over the last month has finally been evicted. Finally.', points: 'real' },
   { id: 'key-bowl', title: 'The key bowl', text: 'Empty. My keys are always in it.', points: 'real' },
-  { id: 'knife', title: 'The knife block', text: 'One slot empty. The biggest one.', points: 'real' },
+  { id: 'knife', title: 'The knives', text: 'One missing from the rack. The biggest one.', points: 'real' },
   { id: 'glass', title: 'A broken glass', text: 'A glass, smashed by my bed, in a spill of water. I did not bring a glass to bed.', points: 'both' },
   { id: 'blood', title: 'In the spill', text: 'The water was pink. One bare footprint in it, going towards the bathroom.', points: 'real' },
   { id: 'bathroom-locked', title: 'The bathroom door', text: 'Locked. It only locks from the inside. The tap stopped when I tried the handle, and then the light under the door went out.', points: 'real' },

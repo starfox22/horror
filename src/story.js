@@ -104,9 +104,10 @@ export class Story {
     };
     // The shards by the bed.
     if (this.has('glass') && !this.has('shards-seen') && looking(GLASS_SPOT[0], 0.2, GLASS_SPOT[2], 0.9, 2.8)) this.shardsSeen();
-    // The knife block's empty slot, for whoever looks closely (world.js knows where the block is).
+    // The knife rack's gap, for whoever looks closely (world.js knows where it is: the wall behind the worktop, about
+    // 1.3 m from the eye of someone standing at the worktop).
     const kb = this.sys.world?.knifeBlockAt;
-    if (kb && !this.has('knife-seen') && looking(kb[0], kb[1], kb[2], 0.985, 1.25)) {
+    if (kb && !this.has('knife-seen') && looking(kb[0], kb[1], kb[2], 0.985, 1.7)) {
       this.set('knife-seen'); this.say('...The big one’s gone.', { delay: 0.4 }); this.sys.journal?.find('knife');
     }
     // After the cut, leaving the bedroom with the torch: behind you the bathroom's latch clicks. He is out of there (the

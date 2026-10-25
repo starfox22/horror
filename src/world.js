@@ -31,6 +31,11 @@ export const BATH = { basin: [6.71, 0.93, 1.245], tap: [6.52, 1.08, 1.245], mirr
 // under the sofa's west seat cushion, in the green vase on the coffee table (top 0.69). All in the west half (build 0.14).
 const PILLS = [13.6, 0.572, -1.0], DIARY = [3.95, 0.862, -1.05], TIN = [-4.9, 0.832, -1.15], KEY_BOWL = [1.05, 0.835, -0.82];
 const CLOCK = { at: [13.62, 0.572, 1.53], yaw: -121 };
+// The kitchen's knives (props 'knives': the flat's own set, tools/props/build.mjs) on a magnetic rack on the patterned
+// wall right of the window (measured: the wall at z -1.376, the panel x -0.33..0.16, the worktop 0.835 below): paring,
+// utility, a gap where the chef's knife hangs (he has it: intruder.js), slicing, bread. story.js watches the gap.
+const KNIVES = { x: -0.085, y: 1.40, wall: -1.376, length: 0.40, depth: 0.016, height: 0.038, spacing: 0.07,
+  order: ['paring', 'utility', null, 'slicing', 'bread'] };
 export const SPARE_SPOTS = [
   { id: 'tin', at: [TIN[0], TIN[1] + 0.09, TIN[2]], size: 0.1 },
   { id: 'sofa', at: [-5.75, 0.66, 2.6], size: 0.4 },
@@ -72,6 +77,7 @@ export class World {
     this.buildPapers();
     this.buildSpareKey();
     this.buildThings();
+    this.buildKnives();
     this.shards(false); this.flood(0); this.prints(false); this.mirrorFog(false);
     noProbes(this.root);
     app.on('update', dt => this.update(dt));
@@ -268,20 +274,30 @@ export class World {
   // the door's foot (the gap under a door; the real light inside is shadowed by the leaf). It goes when the light goes
   // (story.js bathroomLightOut), when the power goes, or as the door opens.
   buildDoorGlow() {
-    const c = paper(16, 64, (g, w, h) => {
-      const grad = g.createLinearGradient(0, 0, 0, h);
-      grad.addColorStop(0, 'rgba(255,255,255,1)'); grad.addColorStop(0.35, 'rgba(255,255,255,0.45)'); grad.addColorStop(1, 'rgba(255,255,255,0)');
-      g.fillStyle = grad; g.fillRect(0, 0, w, h);
+    // Light through the gap under the leaf: a bright line at the gap, fading out over the floor within half a metre,
+    // spreading a little and softening at its ends as it goes (canvas top = the door's side; u along the door).
+    const c = paper(64, 64, (g, w, h) => {
+      const img = g.createImageData(w, h);
+      const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        const v = (y + 0.5) / h, u = (x + 0.5) / w, m = 0.05 + 0.16 * v;
+        const k = ((1 - v) ** 2 * Math.exp(-3 * v) + 0.7 * Math.exp(-40 * v)) * smooth(0, m, u) * smooth(0, m, 1 - u);
+        const i = (y * w + x) * 4, b = Math.round(255 * Math.min(1, k));
+        img.data[i] = img.data[i + 1] = img.data[i + 2] = b; img.data[i + 3] = 255;
+      }
+      g.putImageData(img, 0, 0);
     });
+    // Additive: the emissive map is the light (an additive blend ignores opacity).
     const mat = this.material('light under the bathroom door', m => {
-      m.diffuse = Color.BLACK; m.emissive = new Color(1, 0.84, 0.64); m.emissiveIntensity = 0; m.useLighting = false;
-      m.opacityMap = this.texture(c, 'door-glow'); m.opacityMapChannel = 'a'; m.blendType = BLEND_ADDITIVE; m.depthWrite = false;
+      m.diffuse = Color.BLACK; m.emissive = new Color(1, 0.84, 0.64); m.emissiveMap = this.texture(c, 'door-glow'); m.emissiveIntensity = 0;
+      m.useLighting = false; m.blendType = BLEND_ADDITIVE; m.depthWrite = false;
     });
     this.doorGlowMat = mat;
     this.doorGlow = new Entity('light under the bathroom door');
     this.doorGlow.addComponent('render', { type: 'plane', material: mat, castShadows: false, receiveShadows: false });
-    // The leaf's foot on the bedroom side (wall x 9.256), the opening z 0.39-1.25; the gradient runs out into the room.
-    this.doorGlow.setPosition(9.32, 0.1695, 0.82); this.doorGlow.setEulerAngles(0, 90, 0); this.doorGlow.setLocalScale(0.8, 1, 0.12);
+    // The leaf's foot on the bedroom side (wall x 9.256), the opening z 0.39-1.25; the plane's local -z (its texture's
+    // top) at the door, 0.45 m out into the room.
+    this.doorGlow.setPosition(9.256 + 0.225, 0.1695, 0.82); this.doorGlow.setEulerAngles(0, 90, 0); this.doorGlow.setLocalScale(0.84, 1, 0.45);
     this.root.addChild(this.doorGlow);
     this.doorGlowLevel = -1;
   }
@@ -483,6 +499,23 @@ export class World {
     this.setClock(3 * 3600 + 7 * 60);
     this.dryer = make('dryer', BATH.dryer.at, 0, 'bath', { euler: BATH.dryer.euler });
     if (this.dryer) this.dryer.enabled = false;
+  }
+
+  // The magnetic rack and the set on it, one knife missing: the gap is where story.js looks (knifeBlockAt).
+  buildKnives() {
+    const k = KNIVES, face = k.wall + k.depth;
+    const steel = this.material('knife rack steel', m => { m.diffuse = new Color(0.62, 0.63, 0.64); m.metalness = 1; m.gloss = 0.58; });
+    const rack = new Entity('knife rack');
+    rack.addComponent('render', { type: 'box', material: steel });
+    rack.setLocalPosition(k.x, k.y, k.wall + k.depth / 2);
+    rack.setLocalScale(k.length, k.height, k.depth);
+    this.root.addChild(rack);
+    // Each knife hangs by the heel of its blade (its origin) just above the rack's top edge, the blade flat on the
+    // magnet's face, the handle standing clear above the rack.
+    const set = this.props?.make('knives', { parent: this.root, name: 'knives', at: [k.x, k.y + k.height / 2 + 0.002, face + 0.0011],
+      configure: (m) => this.configureMaterial?.(m, 'main') });
+    if (set) k.order.forEach((id, i) => { if (id) set.findByName(id)?.setLocalPosition((i - (k.order.length - 1) / 2) * k.spacing, 0, 0); });
+    this.knifeBlockAt = [k.x, k.y - 0.04, face];
   }
 
   // The alarm clock's hands at `seconds` past midnight (the story's night starts at 03:07:00 and keeps time with play).

@@ -6,7 +6,7 @@ import { Asset } from 'playcanvas';
 import { glbFile } from './packed.js';
 
 export const PROP_IDS = ['fusebox', 'phone', 'pills', 'diary', 'tin', 'keys', 'old-key', 'bottles', 'blanket', 'clock', 'letter',
-  'polaroids', 'bowl', 'dryer', 'hanger', 'camera'];
+  'polaroids', 'bowl', 'dryer', 'hanger', 'camera', 'knives'];
 
 export class Props {
   static async load(app, ids = PROP_IDS) {

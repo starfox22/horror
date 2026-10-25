@@ -72,24 +72,28 @@ node tools/shoot.mjs dist out name=x,z,yaw ...   # headless screenshots (softwar
 | `src/ambience.js` | Synthesised sound: rain, room tone, fridge, tap, footsteps, switches, thunder |
 | `src/interact.js`, `src/switches.js` | Look-and-press-E interaction; light switches per area |
 | `src/flashlight.js` | The flashlight (downloaded model on the shelf; in hand only the beam: cookie, shadows, bounce) |
-| `src/closets.js` | Bedroom wardrobe: doors on hinges, interior, LED; the flashlight's shelf |
-| `src/doors.js` | Bathroom door (downloaded model): hinge, spring swing, collision (moving wall), stops against the player |
+| `src/closets.js` | Bedroom wardrobe: doors on hinges (opened by him too), interior, LED; the flashlight's shelf |
+| `src/taps.js` | The kitchen and bathroom taps: E turns the water on and off (stream, pool, sound; a lure in the hunt) |
+| `src/crow.js` | The crow that slams into a window the player is facing (once a night, before the hunt) |
+| `src/doors.js` | Bathroom door (downloaded model): hinge, spring swing, collision (moving wall), pushes the player aside; he opens it too |
 | `src/devices.js` | Bedside reading lamps, laptop lid and screen, office computer, coffee machine with steam |
 | `src/probes.js` | Probes: per-room box-projected reflections; bounce light from 8 probes blended by position; captures spread over frames and cross-faded |
-| `src/devmenu.js` | Developer options (type "developer"): flashlight beam size, every light on/off, test actions |
+| `src/devmenu.js` | Developer options (type "developer"): flashlight beam size, lights (through the flat's own switches), story events played 3 s after resuming |
 | `src/rain.js` | Rain on the glass (dark outside), rain outside seen in lightning, thunder |
 | `src/story.js` | The story (docs/STORY.md): flags, play-time timers, the beats and their fallbacks, checkpoints, run variations |
 | `src/power.js`, `src/fusebox.js` | The flat's electricity (main, RCD, seven circuits; cuts cascade) and the downloaded consumer unit with its own levers |
 | `src/world.js`, `src/nest.js` | What the night leaves in the flat (shards, the bathroom, prints, papers, the spare key, bowl, clock) and his nest and hatch |
 | `src/intruder.js`, `src/stalker.js`, `src/hunt.js` | The masked man: body, animation and phone torch; his senses and states; the hunt (Act IV) |
 | `src/navgrid.js`, `src/zones.js` | Walking (A* on a 20 cm grid), seeing (baked height field `sight.json`), hearing through doorways; rooms and areas |
-| `src/phone.js`, `src/seccam.js` | The phone (found dead in the fridge, Home Cam clips and LIVE, the emergency call) and the camera's infrared view |
-| `src/death.js`, `src/endings.js` | Being caught and waking at 03:07 again; the four endings |
+| `src/phone.js`, `src/seccam.js` | The phone (dead on the nightstand, its charger pulled; Home Cam clips and LIVE, the emergency call) and the camera's infrared view |
+| `src/death.js`, `src/endings.js` | Being caught (the knife, blood on the lens, the fall to the floor) and waking on the sofa; the four endings |
 | `src/menu.js`, `src/hud.js`, `src/journal.js`, `src/credits.js` | Title, new night, chapters, journal and endings, settings, credits, pause; prompts, captions and documents; evidence |
 | `src/sound.js`, `src/music.js` | Recorded sounds (doorway-routed, occluded, reverberant) and the score and stings |
 | `src/props.js` | The story's downloaded props, placed with per-room materials |
 | `tools/intruder/`, `tools/props/`, `tools/audio/` | Reproducible downloads and builds of the intruder (and his mask), the story's props, the recordings |
 | `tools/bake-clips.mjs`, `tools/surfaces.mjs` | Bakes the camera clips and the polaroid photo from the game; measures the flat's surfaces for placing things |
+| `tools/crow/` | Reproducible download and build of the crow (and the blood smear it leaves) |
+| `tools/perf/` | Browser checks: no shader builds in play (`final-check.mjs`), hitches, leaks; `scene-shots.mjs` captures story moments for the build docs |
 | `assets/props/` | Downloaded models: merged into the apartment by the pipeline (door, flashlight) or converted by `tools/extract-props.mjs` (jug, glass); credits in docs/CREDITS.md |
 | `public/assets/props/`, `public/assets/audio/`, `public/assets/clips/` | Runtime models (arm, intruder, `story/*.glb`), recordings (`sfx/*.mp3` + `sfx.json`), baked camera clips |
 | `tools/arm/` | Reproduces the first-person arm from the Rocketbox avatar (see its README) |

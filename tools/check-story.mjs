@@ -43,6 +43,23 @@ test('Act I: the glass, the shards, the locked bathroom, the knock, the cut', ()
   assert.ok(sys.power.faults.has('bathroom'));
 });
 
+test('the knife rack: looking closely at the gap notices the missing knife; from across the kitchen, nothing', () => {
+  const { story, sys, calls, said, run } = night();
+  story.begin({ seed: 2 });
+  const gap = [-0.085, 1.36, -1.36];
+  sys.world = new Proxy({ knifeBlockAt: gap }, { get: (t, k) => (k in t ? t[k] : k === 'then' ? undefined : () => {}) });
+  const look = (eye) => {
+    const d = gap.map((v, i) => v - eye[i]), n = Math.hypot(...d);
+    sys.camera.getPosition = () => ({ x: eye[0], y: eye[1], z: eye[2] });
+    sys.camera.forward = { x: d[0] / n, y: d[1] / n, z: d[2] / n };
+    run(0.6);
+  };
+  look([-0.1, 1.6, 2.2]);
+  assert.ok(!story.has('knife-seen'), 'from across the room the gap is not noticed');
+  look([-0.2, 1.6, -0.1]);
+  assert.ok(story.has('knife-seen') && said.includes('...The big one’s gone.') && calls.includes('journal.knife'), 'standing at the worktop, looking at it');
+});
+
 test('fallbacks keep the night moving: the cut comes by itself', () => {
   const { story, run } = night();
   story.begin({ seed: 1 });

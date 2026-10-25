@@ -9,8 +9,12 @@ import { Death, WAKE_TO } from '../src/death.js';
 function scene({ reducedFlashes = false } = {}) {
   const handlers = [];
   const els = [];
+  const drawn = [];
+  // A 2D context that records what is painted (the blood canvas).
+  const ctx = () => new Proxy({ createRadialGradient: () => ({ addColorStop() {} }) },
+    { get: (t, k) => (k in t ? t[k] : (...a) => drawn.push(k)), set: (t, k, v) => { t[k] = v; return true; } });
   const doc = {
-    createElement: () => { const e = { id: '', style: { cssText: '' } }; els.push(e); return e; },
+    createElement: (tag) => { const e = { id: '', tag, style: { cssText: '' } }; if (tag === 'canvas') e.getContext = ctx; els.push(e); return e; },
     body: { appendChild() {} },
     defaultView: { addEventListener() {} },
   };
@@ -33,7 +37,7 @@ function scene({ reducedFlashes = false } = {}) {
   const death = new Death({ app, camera, player, intruder, bank, music: { stopAll() {} }, veil, walk, doc });
   death.reducedFlashes = reducedFlashes;
   const step = (seconds, dt = 1 / 60) => { for (let t = 0; t < seconds; t += dt) handlers.forEach(fn => fn(dt)); };
-  return { death, step, played, poses, veil, camPos, camRot, intruder, player, els };
+  return { death, step, played, poses, veil, camPos, camRot, intruder, player, els, drawn };
 }
 
 test('caught: the knife goes up, comes down, blood, the fall, black in under three seconds', () => {
@@ -48,8 +52,19 @@ test('caught: the knife goes up, comes down, blood, the fall, black in under thr
   const blood = s.els.find(e => e.id === 'death-blood');
   assert.equal(blood.style.opacity, '0.92', 'blood on the lens');
   assert.ok(s.camPos.y < 0.5, `the view is on the floor (${s.camPos.y.toFixed(2)} m)`);
-  assert.ok(Math.abs(s.camRot[2]) > 60, 'rolled onto one side');
+  assert.ok(Math.abs(s.camRot[2]) > 18, 'tilted onto one side');
+  assert.ok(s.camRot[0] > 30, `looking up at him from the floor (pitch ${s.camRot[0].toFixed(0)})`);
+  assert.ok(s.drawn.filter(k => k === 'fill').length > 20, 'splats painted on the lens');
+  assert.ok(s.drawn.includes('fillRect'), 'and drips running from them');
   assert.equal(s.veil.style.opacity, '1', 'black');
+});
+
+test('a knife already raised by the hunt\'s windup stays up until it comes down', () => {
+  const s = scene();
+  s.intruder.raise = 1;
+  s.death.play(() => {});
+  s.step(0.4);
+  assert.ok(s.poses.length && s.poses.every(([r]) => r === 1), 'never lowered and raised again');
 });
 
 test('reduced flashes: no red flash, the blood fades in', () => {

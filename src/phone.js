@@ -6,7 +6,9 @@
 // Apps: the lock screen (time, battery, notifications), Home Cam (clips 00:47 and 02:58, LIVE: seccam.js), and the
 // emergency call: the dispatcher's lines, the player's whispered answers (what they can say depends on what they found),
 // a call-back if they hang up (a 12 m noise ringing, or a buzz during the hunt; silenced: hold Q).
-// Screen: a canvas (drawn when something changes) on the model's screen, the video on its own quad in front of it.
+// Screen: a canvas (drawn when something changes) on the model's screen, the video on its own quad in front of it. The
+// copy on the nightstand shows the same canvas: dark, except for a while after something wakes it (plugged in: the
+// empty-battery glyph; booting: its logo; an alert: the lock screen), like a real phone lying face up.
 import { Color, Entity, StandardMaterial, Texture, Vec2, Vec3, Quat, PIXELFORMAT_RGBA8, FILTER_LINEAR, ADDRESS_CLAMP_TO_EDGE, BLEND_NONE } from 'playcanvas';
 
 const W = 540, H = 1170;                   // screen canvas (iPhone-ish 19.5:9)
@@ -25,6 +27,8 @@ export class Phone {
     // has: carried; onCharger: lying on the nightstand; pluggedIn: its charger back in the wall (it was pulled out).
     this.has = false; this.charge = 0; this.booted = false; this.onCharger = true; this.pluggedIn = false; this.silenced = false;
     this.chargeTime = 0;
+    this.booting = null;              // seconds into the boot (its logo), until the lock screen comes up
+    this.lit = 0;                     // lying on the nightstand: seconds its screen stays lit (a buzz, the charger, the boot)
     this.raised = false; this.raiseK = 0; this.app_ = 'lock'; this.sel = 0; this.dirty = true;
     this.call = null; this.notifications = [];
     this.canvas = Object.assign(document.createElement('canvas'), { width: W, height: H });
@@ -139,6 +143,8 @@ export class Phone {
 
   putOnCharger() {
     this.has = false; this.onCharger = true; this.raised = false;
+    if (this.app_ === 'clip' || this.app_ === 'live') this.seccam?.stopLive?.();
+    if (!this.call) { this.app_ = 'lock'; this.video.enabled = false; }      // put down, it locks
     this.bank?.play('blanket', { at: CHARGER, gain: 0.3 });
     if (!this.pluggedIn) {
       this.pluggedIn = true;
@@ -146,8 +152,11 @@ export class Phone {
       this.story?.phoneCharging?.();
     }
     this.charger?.(true);
-    this.dirty = true;
+    this.wake(this.booted ? 8 : 5);
   }
+
+  // Lights the screen of the phone lying on the nightstand for `seconds` (it is redrawn now, and dark again after).
+  wake(seconds) { this.lit = Math.max(this.lit, seconds); this.dirty = true; }
 
   takeFromCharger() {
     this.bank?.play('blanket', { at: CHARGER, gain: 0.3 });
@@ -155,11 +164,15 @@ export class Phone {
     this.story?.phoneTaken?.(this);
   }
 
-  // Booting: the logo, then the lock screen and the alerts it missed (story.js times it: phoneMayBoot).
-  boot() {
+  // Booting (story.js times it: phoneMayBoot): its logo lights the nightstand silently for 3 s, then the lock screen
+  // and the alerts it missed, buzzing hard against the wood. now: no logo (a checkpoint, the developer menu's tests).
+  boot({ now = false } = {}) {
     if (this.booted) return;
+    if (!now && this.booting === null) { this.booting = 0; this.wake(4); this.dirty = true; return; }
+    this.booting = null;
     this.booted = true; this.charge = Math.max(this.charge, 4);
     this.notifications = CLIPS.map(c => ({ ...c, unread: true }));
+    this.wake(20);
     this.buzz(3);
     this.story?.set('alerts');
     this.story?.phoneBooted?.();
@@ -170,6 +183,7 @@ export class Phone {
   buzz(n = 1) {
     if (this.silenced) return;
     const at = this.onCharger ? CHARGER : null;
+    if (at) this.wake(12);
     for (let i = 0; i < n; i++) this.bank?.play('phone_buzz', { at, gain: at ? 1.0 : 0.5, delay: i * 1.1, send: 0.2, min: at ? 0.35 : 0 });
     this.noise?.(at ? at.x : null, at ? at.z : null);
   }
@@ -291,6 +305,7 @@ export class Phone {
       for (let i = 0; i < 3; i++) this.bank?.play('phone_ring', { gain: 0.6, delay: i * 5.4, at: this.onCharger ? CHARGER : null });
       this.noise?.(null, null, 'phone');
     } else this.buzz(2);
+    if (this.onCharger) this.wake(16);
     this.dirty = true;
   }
 
@@ -300,8 +315,14 @@ export class Phone {
     if (this.charging) {
       this.chargeTime += dt;
       if (this.booted) this.charge = Math.min(100, this.charge + dt * 0.05);
-      else if (this.story?.phoneMayBoot?.(this.chargeTime)) this.boot();
+      else if (this.booting === null && this.story?.phoneMayBoot?.(this.chargeTime)) this.boot();
     }
+    if (this.booting !== null) {
+      this.booting += dt;
+      if (Math.floor(this.booting * 3) !== this.bootStep) { this.bootStep = Math.floor(this.booting * 3); this.dirty = true; }   // the dots
+      if (this.booting >= 3) this.boot({ now: true });
+    }
+    if (this.lit > 0 && (this.lit -= dt) <= 0) { this.lit = 0; this.dirty = true; }
     // Holding it: rises into the lower right of the view; lowered, out of sight.
     this.raiseK += ((this.raised ? 1 : 0) - this.raiseK) * (1 - Math.exp(-dt * 9));
     this.holder.enabled = this.raiseK > 0.02;
@@ -318,7 +339,7 @@ export class Phone {
       this.redrawT = (this.redrawT || 0) + dt;
       if (this.redrawT > 0.2) { this.redrawT = 0; this.dirty = true; }
     }
-    if (this.dirty && this.holder.enabled) { this.draw(); this.dirty = false; }
+    if (this.dirty && (this.holder.enabled || this.onCharger)) { this.draw(); this.dirty = false; }
   }
 
   get glowing() { return this.raised && this.booted; }
@@ -327,6 +348,16 @@ export class Phone {
   draw() {
     const g = this.g, now = this.clock ? this.clock.now() : new Date();
     g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+    // Lying on the nightstand with nothing to show: asleep (dark).
+    if (this.onCharger && !this.holder.enabled && this.lit <= 0) { this.texture.setSource(this.canvas); return; }
+    if (this.booting !== null) {
+      // Its maker's mark: a plain ring and a line of dots (no brand).
+      g.strokeStyle = '#e9edf3'; g.lineWidth = 10; g.beginPath(); g.arc(W / 2, H / 2 - 40, 70, 0, Math.PI * 2); g.stroke();
+      g.fillStyle = '#e9edf3';
+      for (let i = 0; i < 3; i++) { g.globalAlpha = (Math.floor(this.booting * 3) % 3) === i ? 1 : 0.3; g.beginPath(); g.arc(W / 2 - 30 + i * 30, H / 2 + 110, 7, 0, Math.PI * 2); g.fill(); }
+      g.globalAlpha = 1;
+      this.texture.setSource(this.canvas); return;
+    }
     if (!this.booted) {
       // Dead: a black screen; on a live charger, the empty-battery glyph.
       if (this.charging) { g.strokeStyle = '#d22'; g.lineWidth = 6; g.strokeRect(190, 520, 140, 64); g.fillStyle = '#d22'; g.fillRect(200, 530, 12, 44); }
@@ -351,7 +382,7 @@ export class Phone {
         g.font = '400 26px "Helvetica Neue", Arial, sans-serif'; g.fillStyle = '#cfd5de'; g.fillText(`Motion detected · Bedroom · ${n.time}`, 60, y + 82);
         y += 126;
       }
-      this.menu(g, 860);
+      if (this.holder.enabled) this.menu(g, 860);          // lying on the nightstand: the alerts only
     } else if (this.app_ === 'cam' || this.app_ === 'clip' || this.app_ === 'live') {
       g.font = '600 34px "Helvetica Neue", Arial, sans-serif'; g.fillText('Home Cam', W / 2, 120);
       g.fillStyle = '#000'; g.fillRect(0, 160, W, 304);
@@ -398,5 +429,5 @@ export class Phone {
   }
 
   save() { return { has: this.has, charge: this.charge, booted: this.booted, onCharger: this.onCharger, pluggedIn: this.pluggedIn, chargeTime: this.chargeTime, silenced: this.silenced, notifications: this.notifications }; }
-  load(s) { if (!s) return; Object.assign(this, s); this.raised = false; this.call = null; this.app_ = 'lock'; this.dirty = true; this.charger?.(this.onCharger); }
+  load(s) { if (!s) return; Object.assign(this, s); this.booting = null; this.lit = 0; this.raised = false; this.call = null; this.app_ = 'lock'; this.dirty = true; this.charger?.(this.onCharger); }
 }

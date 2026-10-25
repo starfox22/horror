@@ -2,9 +2,12 @@
 //   0.00  the view is wrenched round to him in a tenth of a second; his phone light comes up under the white mask; a
 //         full-level sting with every bed ducked under it (sound.js scare path)
 //   0.12  the knife goes up into his light (intruder.knifePose)
-//   0.45  it comes down: the camera kicks, a red flash (a fade instead with reduced flashes), blood on the lens
-//   0.60  the fall: the view drops to the floor and rolls; a body's thud and a bounce; colour drains, two heartbeats
-//   1.30  on the floor, sideways: he steps over you and looks down. Still. One breath
+//   0.45  it comes down: the camera kicks, a red flash (a fade instead with reduced flashes), blood on the lens: the
+//         downloaded spray (blood.webp) thrown from the side the knife came from, heavy splats with spikes and
+//         droplets painted where it hit, drips that run down while you lie there
+//   0.60  the fall: the view drops to the floor and tilts, turning up to his face; a body's thud and a bounce; colour
+//         drains, two heartbeats
+//   1.30  on the floor: he stands over you and looks down, his light under the mask. Still. One breath
 //   2.30  black, and silence
 // Then you wake on the sofa, gasping (story.js wake: "...A dream?"). Repeat deaths are shorter: the floor holds for
 // 0.4 s, the wake takes 1.4 s; any key skips the wake once it has begun. Everything on screen is page overlays and a
@@ -19,16 +22,16 @@ const BLOOD_URL = './assets/fx/blood.webp';
 
 export class Death {
   constructor({ app, camera, player, intruder, bank, music, veil, walk = null, doc = document }) {
-    Object.assign(this, { app, camera, player, intruder, bank, music, veil, walk });
+    Object.assign(this, { app, camera, player, intruder, bank, music, veil, walk, doc });
     this.running = null;
     this.count = 0;
     this.reducedFlashes = false;
     // Overlays over the canvas, under the black veil (style.css #fade is z-index 12).
-    const layer = (id, css) => { const e = doc.createElement('div'); e.id = id; e.style.cssText = `position:fixed;inset:0;pointer-events:none;opacity:0;${css}`; doc.body.appendChild(e); return e; };
+    const layer = (id, css, tag = 'div') => { const e = doc.createElement(tag); e.id = id; e.style.cssText = `position:fixed;inset:0;pointer-events:none;opacity:0;${css}`; doc.body.appendChild(e); return e; };
     this.flash = layer('death-flash', 'z-index:11;background:#7a0000;mix-blend-mode:multiply;');
-    this.blood = layer('death-blood', `z-index:11;background:url(${BLOOD_URL}) center/cover no-repeat;` +
-      '-webkit-mask-image:radial-gradient(ellipse at 50% 46%, transparent 18%, #000 72%);mask-image:radial-gradient(ellipse at 50% 46%, transparent 18%, #000 72%);');
     this.dark = layer('death-dark', 'z-index:11;background:radial-gradient(ellipse at 50% 50%, transparent 30%, #000 100%);');
+    // Blood on the lens: a canvas painted at the stab (paintBlood), over the darkening so it stays red.
+    this.blood = layer('death-blood', 'z-index:11;width:100%;height:100%;', 'canvas');
     if (typeof Image !== 'undefined') { this.bloodImage = new Image(); this.bloodImage.src = BLOOD_URL; }   // decoded before it is needed
     this.canvas = app.graphicsDevice?.canvas ?? null;
     app.on('update', dt => this.update(dt));
@@ -55,7 +58,7 @@ export class Death {
     // Face to face, his light under his chin: the white mask lit from below is the first thing you see.
     man.show(true);
     man.place(eye.x + toHim.x * d, eye.z + toHim.z * d, Math.atan2(-toHim.x, -toHim.z) * 180 / Math.PI, man.pos.y);
-    man.torchYaw = null; man.torchPitch = 8; man.torchUnder = true; man.setTorch(true, 3.2);
+    man.torchYaw = null; man.torchPitch = 8; man.torchUnder = true; man.setTorch(true, 1.4);
     man.headPitch = 12;
     man.play('idle_breathe_01', { blend: 0.05 });
     // Where you fall: backwards, away from him, if the floor there is free; straight down otherwise.
@@ -63,10 +66,16 @@ export class Death {
     const free = !this.walk || this.walk.fits?.(back.x, back.z, 0.12, this.walk.floorUnder?.(back.x, back.z, 0.12) ?? 0.17);
     const floor = this.walk?.floorUnder?.(eye.x, eye.z, 0.12) ?? Math.max(0.16, eye.y - 1.62);
     const repeat = this.count > 1;
+    // Where the view looks: up (or down) into the mask as he takes you; from the floor, up at his face (he stays where
+    // he stood; you fell away from him).
+    const face = man.pos.y + 1.6, fallTo = free ? back : eye.clone(), lie = floor + 0.2;
+    const grabPitch = Math.min(35, Math.max(-12, Math.atan2(face - eye.y, d) * 180 / Math.PI));
+    const lookUp = Math.min(62, Math.atan2(face - lie, Math.hypot(man.pos.x - fallTo.x, man.pos.z - fallTo.z)) * 180 / Math.PI - 6);
     this.running = {
-      t: 0, grab: true, done, repeat, eye, toHim, yaw, from: { yaw: p.yaw, pitch: p.pitch },
-      fallTo: free ? back : eye.clone(), floor, roll: (Math.random() < 0.5 ? -1 : 1) * (68 + Math.random() * 10),
+      t: 0, grab: true, done, repeat, eye, toHim, yaw, from: { yaw: p.yaw, pitch: p.pitch }, grabPitch, lookUp,
+      fallTo, floor, roll: (Math.random() < 0.5 ? -1 : 1) * (22 + Math.random() * 10), drips: [],
       floorHold: repeat ? 0.4 : 1.0, cues: new Set(),
+      raised: man.raise ?? 0,              // the hunt's windup may have the knife up already: it stays up
     };
     this.scare(['sting_scare', 'sting_braam', 'sting_riser'][(this.count - 1) % 3] || 'sting_scare', { gain: 1 });
     this.bank?.play('his_breath_2', { gain: 1, bus: 'sfx' });
@@ -86,6 +95,85 @@ export class Death {
     this.bank?.play('blanket', { gain: 0.5, delay: 0.45 });
   }
 
+  // Blood on the lens, painted once per death: the downloaded spray (blood.webp, CC0) coloured deep red and thrown from
+  // the side the knife came from, two or three heavy splats where it hit (a lumpy body, spikes, droplets thrown
+  // further, a wet highlight), and the drips that will run from them (runDrips).
+  paintBlood(r) {
+    const c = this.blood, g = c.getContext?.('2d');
+    if (!g) return;
+    const view = this.canvas?.getBoundingClientRect?.() ?? { width: 1280, height: 720 };
+    const k = Math.min(globalThis.devicePixelRatio || 1, 1.5);
+    const w = c.width = Math.max(320, Math.round(view.width * k)), h = c.height = Math.max(180, Math.round(view.height * k));
+    const rnd = (a, b) => a + Math.random() * (b - a), side = Math.random() < 0.5 ? -1 : 1;
+    const hit = { x: w * (0.5 + side * rnd(0.18, 0.32)), y: h * rnd(0.3, 0.55) };
+    g.clearRect(0, 0, w, h);
+    // The spray: the image's speckle in blood red, strongest where it hit, gone by the far side.
+    if (this.bloodImage?.complete && this.bloodImage.naturalWidth) {
+      const s = Object.assign(this.doc.createElement('canvas'), { width: w, height: h }), q = s.getContext('2d');
+      q.drawImage(this.bloodImage, 0, 0, w, h);
+      q.globalCompositeOperation = 'source-in'; q.fillStyle = '#a10808'; q.fillRect(0, 0, w, h);
+      q.globalCompositeOperation = 'destination-in';
+      const fade = q.createRadialGradient(hit.x, hit.y, 0, hit.x, hit.y, Math.max(w, h) * 0.75);
+      fade.addColorStop(0, 'rgba(0,0,0,1)'); fade.addColorStop(0.45, 'rgba(0,0,0,0.7)'); fade.addColorStop(1, 'rgba(0,0,0,0)');
+      q.fillStyle = fade; q.fillRect(0, 0, w, h);
+      g.drawImage(s, 0, 0);
+    }
+    const unit = Math.min(w, h);
+    const splat = (x, y, rad) => {
+      g.save(); g.translate(x, y);
+      const body = g.createRadialGradient(-rad * 0.2, -rad * 0.25, rad * 0.1, 0, 0, rad * 1.1);
+      body.addColorStop(0, 'rgba(120,6,6,0.96)'); body.addColorStop(1, 'rgba(62,0,0,0.97)');
+      g.fillStyle = body;
+      // A lumpy body: a closed curve through points at random radii.
+      const n = 22, pts = [];
+      for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2, rr = rad * rnd(0.72, 1.12); pts.push([Math.cos(a) * rr, Math.sin(a) * rr]); }
+      g.beginPath();
+      g.moveTo((pts[0][0] + pts[n - 1][0]) / 2, (pts[0][1] + pts[n - 1][1]) / 2);
+      for (let i = 0; i < n; i++) { const a = pts[i], b = pts[(i + 1) % n]; g.quadraticCurveTo(a[0], a[1], (a[0] + b[0]) / 2, (a[1] + b[1]) / 2); }
+      g.fill();
+      // Spikes thrown out of it, each ending in a drop; droplets further out.
+      for (let i = 0, m = Math.round(rnd(7, 13)); i < m; i++) {
+        const a = rnd(0, Math.PI * 2), len = rad * rnd(1.25, 2.4), wid = rad * rnd(0.08, 0.2);
+        g.beginPath();
+        g.moveTo(Math.cos(a + Math.PI / 2) * wid, Math.sin(a + Math.PI / 2) * wid);
+        g.lineTo(Math.cos(a) * len, Math.sin(a) * len);
+        g.lineTo(Math.cos(a - Math.PI / 2) * wid, Math.sin(a - Math.PI / 2) * wid);
+        g.fill();
+        g.beginPath(); g.arc(Math.cos(a) * len, Math.sin(a) * len, rad * rnd(0.04, 0.1), 0, Math.PI * 2); g.fill();
+      }
+      for (let i = 0, m = Math.round(rnd(14, 26)); i < m; i++) {
+        const a = rnd(0, Math.PI * 2), dist = rad * rnd(1.3, 3.6);
+        g.beginPath(); g.arc(Math.cos(a) * dist, Math.sin(a) * dist, rad * rnd(0.02, 0.09), 0, Math.PI * 2); g.fill();
+      }
+      // Wet: a faint highlight along its upper edge.
+      g.strokeStyle = 'rgba(255,190,190,0.22)'; g.lineWidth = Math.max(1.5, rad * 0.05);
+      g.beginPath(); g.arc(-rad * 0.12, -rad * 0.12, rad * 0.62, Math.PI * 1.05, Math.PI * 1.45); g.stroke();
+      g.restore();
+      for (let i = 0, m = Math.round(rnd(1, 3)); i < m; i++) {
+        r.drips.push({ x: x + rad * rnd(-0.6, 0.6), y: y + rad * rnd(0.45, 0.8), w: rad * rnd(0.07, 0.14), len: 0,
+          max: h * rnd(0.12, 0.42), speed: h * rnd(0.05, 0.16), delay: rnd(0, 0.5) });
+      }
+    };
+    splat(hit.x, hit.y, unit * rnd(0.09, 0.13));
+    splat(hit.x + side * unit * rnd(0.1, 0.22), hit.y + unit * rnd(-0.18, 0.12), unit * rnd(0.04, 0.07));
+    if (Math.random() < 0.7) splat(hit.x - side * unit * rnd(0.05, 0.16), hit.y + unit * rnd(0.1, 0.25), unit * rnd(0.03, 0.05));
+  }
+
+  // The drips run down the lens while you lie there (slowing as they go, a bead at the end).
+  runDrips(r, dt) {
+    const g = this.blood.getContext?.('2d');
+    if (!g || !r.drips.length) return;
+    g.fillStyle = 'rgba(78,0,0,0.95)';
+    for (const d of r.drips) {
+      if ((d.delay -= dt) > 0 || d.len >= d.max) continue;
+      const from = d.len;
+      d.len = Math.min(d.max, d.len + d.speed * Math.min(dt, 0.05) * (1 - d.len / d.max * 0.7));
+      const tip = Math.max(0.4, 1 - d.len / d.max);
+      g.fillRect(d.x - d.w * (0.3 + 0.2 * tip), d.y + from, d.w * (0.6 + 0.4 * tip), d.len - from + 1);
+      g.beginPath(); g.arc(d.x, d.y + d.len, d.w * 0.62, 0, Math.PI * 2); g.fill();
+    }
+  }
+
   update(dt) {
     const r = this.running;
     if (!r) return;
@@ -96,17 +184,17 @@ export class Death {
       // 0-0.12: snap round to him; the knife up into his light until 0.45; down in 0.12 s.
       if (r.t < 0.6) {
         const e = ease(r.t / 0.12);
-        p.yaw = r.from.yaw + wrap(r.yaw - r.from.yaw) * e; p.pitch = r.from.pitch + (6 - r.from.pitch) * e;
+        p.yaw = r.from.yaw + wrap(r.yaw - r.from.yaw) * e; p.pitch = r.from.pitch + (r.grabPitch - r.from.pitch) * e;
         p.apply?.(0);
-        man.knifePose?.(Math.min(1, Math.max(0, (r.t - 0.12) / 0.33)), Math.min(1, Math.max(0, (r.t - 0.45) / 0.12)));
+        man.knifePose?.(Math.max(r.raised, Math.min(1, Math.max(0, (r.t - 0.12) / 0.33))), Math.min(1, Math.max(0, (r.t - 0.45) / 0.12)));
       }
       this.cue(r, 'stab', 0.47, () => {
         this.bank?.play(this.key('knife_stab', 'door_kick'), { gain: 1, rate: this.bank?.has?.('knife_stab') ? 1 : 1.7 });
         this.bank?.play('gasp', { gain: 0.8, rate: 0.82, delay: 0.05 });
         if (this.reducedFlashes) { this.blood.style.transition = 'opacity .35s'; }
         else { this.flash.style.transition = 'none'; this.flash.style.opacity = '0.6'; setTimeout(() => { this.flash.style.transition = 'opacity .25s'; this.flash.style.opacity = '0'; }, 70); this.blood.style.transition = 'opacity .06s'; }
+        this.paintBlood(r);
         this.blood.style.opacity = '0.92';
-        this.blood.style.transform = this.count % 2 ? 'scaleX(-1)' : '';
       });
       // The fall: from the eye down to the floor, accelerating, rolling onto one side, the view turning up to him.
       if (r.t >= 0.45) {
@@ -116,7 +204,7 @@ export class Death {
         const x = r.eye.x + (r.fallTo.x - r.eye.x) * fall - r.toHim.x * kick * 0.04;
         const z = r.eye.z + (r.fallTo.z - r.eye.z) * fall - r.toHim.z * kick * 0.04;
         const y = r.eye.y + (r.floor + 0.2 - r.eye.y) * fall + bounce;
-        const pitch = 6 - kick * 8 + fall * 30, roll = r.roll * Math.min(1, Math.max(0, (r.t - 0.62) / 0.6)) ** 1.5;
+        const pitch = r.grabPitch - kick * 8 + fall * (r.lookUp - r.grabPitch), roll = r.roll * Math.min(1, Math.max(0, (r.t - 0.62) / 0.6)) ** 1.5;
         cam.setPosition(x, y, z);
         cam.setEulerAngles(pitch, r.yaw + fall * 8, roll);
         if (this.canvas) this.canvas.style.filter = `saturate(${(1 - 0.7 * fall).toFixed(3)}) brightness(${(1 - 0.25 * fall).toFixed(3)})`;
@@ -128,13 +216,12 @@ export class Death {
         this.bank?.play('heartbeat', { gain: 0.7, delay: 1.25 });
         this.bank?.play('tinnitus', { gain: 0.18 });
       });
-      // On the floor: he steps over you and looks down.
+      // On the floor: he stands over you and looks down. The blood runs.
       this.cue(r, 'over', 1.3, () => {
-        const over = 0.42;
-        man.place(r.fallTo.x + r.toHim.x * over, r.fallTo.z + r.toHim.z * over, man.yaw, man.pos.y);
         man.headPitch = 34; man.knifePose?.(0.25, 0);
         this.bank?.play('his_breath_1', { gain: 0.8 });
       });
+      if (r.t > 0.6) this.runDrips(r, dt);
       const black = 1.3 + r.floorHold;
       this.cue(r, 'black', black, () => { this.veil.style.transition = 'opacity .4s'; this.veil.style.opacity = '1'; this.music?.stopAll?.(0.4); this.bank?.silence?.(0.4); });
       if (r.t > black + 0.95) {
