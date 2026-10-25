@@ -30,6 +30,9 @@ const [url, mode = 'webgl'] = process.argv.slice(2);
       P.getShaderVariant = function (params) { const before = dev.shaders.length, sh = orig.call(this, params); if (dev.shaders.length > before) built.push(`${this.name}|pass ${params?.pass}|${params?.cameraShaderParams?.toneMapping ?? ''}`); return sh; };
       P.getShaderVariant.__wrapped = true;
     }
+    // ... and on which mesh (its node's name).
+    const MI = s.pc.MeshInstance.prototype, gsi = MI.getShaderInstance;
+    if (gsi) MI.getShaderInstance = function (...a) { const before = dev.shaders.length, r = gsi.apply(this, a); if (dev.shaders.length > before) built.push(`  on ${this.node?.name} (${this.node?.parent?.name})`); return r; };
     const step = async (name, fn, n = 6) => {
       const before = dev.shaders.length; faces = 0; maxFaces = 0;
       await fn(); await frames(n);

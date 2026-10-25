@@ -198,3 +198,17 @@ directly: `place()` would move a camera standing on furniture to the nearest fre
 
 `tools/perf/final-check.mjs`, after the warm-up. The steps are Act I's interactions plus the night's: the cut, the fuse
 box, the levers, the figure, the phone, LIVE, the hunt and the grab. Results are below.
+
+## 8. Captures (`build-013/`)
+
+| File | What it shows |
+| --- | --- |
+| `stray-light-webgpu.png` | Every light off on WebGPU, living room and bedroom: 0.12 (left, the probes stuck with their start-up light) and 0.13 (right, dark). |
+| `intruder-mask.jpg`, `intruder-corridor.jpg` | The intruder: the white mask fitted to the hood, and in the corridor. |
+| `props.jpg` | Every downloaded story prop as built (previews). |
+| `fusebox-closed.jpg`, `fusebox-open.jpg`, `act2-fusebox-torch.jpg` | The consumer unit on the corridor wall: closed; open with its levers and the handwritten label; by torchlight in the cut. |
+| `pills.jpg`, `clock.jpg`, `basin-dryer.jpg`, `nest.jpg`, `hatch.jpg` | Staging renders: the pill bottle on the nightstand, the alarm clock, the dryer in the basin, the nest, the hatch above it. |
+| `camera-clips.jpg`, `still-0314.jpg`, `polaroid.jpg` | The baked camera recordings (00:47 top, 02:58 bottom), the 03:14 still, the polaroid photo. |
+| `menu-*.jpg` | Title, "How do you sleep?", settings, journal and endings. |
+| `act1-shards.jpg`, `act2-silhouette.jpg`, `act3-bathroom.jpg`, `act3-nest.jpg`, `ending-lodger.jpg` | The headless play-through: the bedside by the shards, the figure at the end of the corridor, the bathroom by torchlight, the nest, the ending card. |
+| `hunt-corridor.jpg`, `hunt-living.jpg`, `doorway.jpg`, `phone-live.jpg`, `grab.jpg` | The scares: him coming down the dark corridor; his phone light in the living room; the mask in the bedroom doorway; LIVE on the phone; the grab (his light under his chin). |

@@ -379,8 +379,8 @@ if (!shot || hash.has('warm')) {
     },
     () => { rain.revealing = true; return () => { rain.revealing = false; }; },
     // Build 0.13: the story's later things on view for the sweep (their shaders, and the intruder's light's shadows).
-    revealInFront(phone.holder, new pc.Vec3(0.05, -0.1, -0.35)),
-    () => { const was = phone.video.enabled; phone.video.enabled = true; return () => { phone.video.enabled = was; }; },
+    // The phone held up with its video showing (phone.update keeps the holder only while it is raised).
+    () => { phone.raised = true; phone.raiseK = 1; phone.video.enabled = true; return () => { phone.raised = false; phone.raiseK = 0; phone.video.enabled = false; phone.holder.enabled = false; }; },
     () => {
       const was = { shards: world.hasShards, flood: world.floodLevel, prints: world.printRoot.enabled, fog: world.fog.enabled, hatch: nest.hatchOpen, dryer: !!world.dryer?.enabled, charging: phone.onCharger };
       world.shards(true); world.flood(1); world.prints(true); world.mirrorFog(true); nest.hatch(true); nest.dustEntity.particlesystem.play();

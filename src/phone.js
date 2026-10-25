@@ -78,7 +78,11 @@ export class Phone {
     this.holder.addChild(this.screen);
     // The video (a clip frame or the live camera) on its own quad over the screen's video area.
     const videoMat = new StandardMaterial();
-    videoMat.diffuse = Color.BLACK; videoMat.emissive = Color.WHITE; videoMat.useLighting = false; videoMat.update();
+    // It always has a texture (the camera's infrared target until a clip or LIVE sets its own): a map added later would
+    // be a new shader variant, built mid-game.
+    videoMat.diffuse = Color.BLACK; videoMat.emissive = Color.WHITE; videoMat.useLighting = false;
+    if (this.seccam?.ir) videoMat.emissiveMap = this.seccam.ir;
+    videoMat.update();
     this.videoMat = videoMat;
     this.video = new Entity('phone video');
     this.video.addComponent('render', { type: 'plane', material: videoMat, castShadows: false, receiveShadows: false });
