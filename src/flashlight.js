@@ -177,13 +177,16 @@ export class Flashlight {
   // first shadow render; it is marked from then on.
   tagShadow() { for (const rd of this.beam.light.light?._renderData || []) rd.shadowCamera.torchShadow = true; }
 
-  // The shader warm-up (main.js): the beam on at nothing, from the warm-up camera, so its shadow pass draws him (and
-  // builds that pass's shaders) before play.
+  // The shader warm-up (main.js): the beam on (faintly, behind the loading screen) from the warm-up camera, so its
+  // shadow pass draws him (and builds that pass's shaders) before play. Not at zero: clustered lighting leaves a light of
+  // intensity 0 out, and its shadow is never drawn.
+  // warmTarget (main.js): his head, where the warm-up has put him; the beam aims at it so all of him is in its shadow.
   warm() {
     this.beam.setPosition(this.camera.getPosition());
-    this.beam.setRotation(this.camera.getRotation());
+    if (this.warmTarget) this.beam.lookAt(this.warmTarget);
+    else this.beam.setRotation(this.camera.getRotation());
     this.beam.rotateLocal(90, 0, 0);
-    this.beam.light.intensity = 0;
+    this.beam.light.intensity = 0.01;
     this.beam.light.enabled = true;
     this.tagShadow();
   }

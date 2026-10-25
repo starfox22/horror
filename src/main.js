@@ -386,6 +386,8 @@ if (!shot || hash.has('warm')) {
     // The intruder two metres in front of each view, so every angle of him (and his light's shadow) is built.
     const c = camera.getPosition(), fw = camera.forward;
     intruder.place(c.x + fw.x * 2, c.z + fw.z * 2, Math.atan2(-fw.x, -fw.z) * 180 / Math.PI, Math.max(0.16, c.y - 1.5));
+    // The torch, on for the sweep (flashlight.js warm), aims at his head: his whole body and mask go into its shadow.
+    (flashlight.warmTarget ||= new pc.Vec3()).set(intruder.pos.x, intruder.pos.y + 1.45, intruder.pos.z);
     // The home camera looks at him too (its own tone mapping makes its own shader variants: LIVE shows him).
     seccam.entity.lookAt(intruder.pos.x, intruder.pos.y + 1.2, intruder.pos.z);
     // The light under the bathroom door and the phone's on the nightstand, a step ahead of each view (put back after).
