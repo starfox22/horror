@@ -179,14 +179,10 @@ export class World {
     if (hot) this.hot = true;
   }
 
-  // The player at the bathroom tap (taps.js): turning off the hot water the story left running is the story's beat
-  // (story.tapOff: in the new quiet, something heavy shifts in the ceiling).
+  // The bathroom tap as the player leaves it (taps.js). Turning off the hot water the story left running is the story's
+  // beat: main.js hands every tap the player shuts to story.tapClosed (the pipes; story.tapOff).
   watchTaps() {
-    this.taps?.on((id, on, { by, wasHot }) => {
-      if (id !== 'bathroom') return;
-      this.tapOn = on;
-      if (!on && by === 'player' && wasHot) this.story?.tapOff();
-    });
+    this.taps?.on((id, on) => { if (id === 'bathroom') this.tapOn = on; });
   }
 
   buildFlood() {

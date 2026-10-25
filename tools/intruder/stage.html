@@ -1,0 +1,105 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Intruder stage</title>
+<style>html,body{margin:0;background:#000;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{ "imports": { "playcanvas": "/pc/playcanvas.mjs" } }</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script type="module">
+// tools/intruder/preview.mjs (--sheet) drives this page: the game's own src/intruder.js (his body, the knife in his
+// hand, his fingers, his poses, his phone light) in a dim room at night, lit as in the flat (a 2700 K downlight and a
+// lamp's spill, warm reflections) or only by a torch held at the camera (as the player meets him in the dark).
+import * as pc from 'playcanvas';
+import { Intruder } from '/src/intruder.js';
+
+const q = new URLSearchParams(location.search), W = Number(q.get('w') || 480), H = Number(q.get('h') || 640);
+const canvas = document.getElementById('c');
+const app = new pc.Application(canvas, { graphicsDeviceOptions: { antialias: true, alpha: false } });
+app.setCanvasFillMode(pc.FILLMODE_NONE);
+app.setCanvasResolution(pc.RESOLUTION_FIXED, W, H);
+app.scene.ambientLight = new pc.Color(0.004, 0.0035, 0.003);
+app.scene.lighting.shadowsEnabled = true;
+app.scene.lighting.shadowType = pc.SHADOW_PCF3_32F;
+app.start();
+
+// Warm, dim reflections (a room at night lit by one lamp): a tiny cube map made into an environment atlas.
+const face = (r, g, b) => { const d = new Uint8Array(16 * 16 * 4); for (let i = 0; i < 256; i++) d.set([r, g, b, 255], i * 4); return d; };
+const room = [face(22, 19, 15), face(20, 17, 14), face(44, 38, 31), face(5, 4, 3), face(17, 15, 12), face(24, 21, 17)];
+const cube = new pc.Texture(app.graphicsDevice, { cubemap: true, width: 16, height: 16, format: pc.PIXELFORMAT_RGBA8, mipmaps: false, levels: [room] });
+const envAtlas = pc.EnvLighting.generateAtlas(cube);
+app.scene.envAtlas = envAtlas;
+app.scene.skyboxIntensity = 1;
+
+const camera = new pc.Entity('camera');
+camera.addComponent('camera', { clearColor: new pc.Color(0, 0, 0), fov: 34, nearClip: 0.02, farClip: 40 });
+camera.camera.toneMapping = pc.TONEMAP_NEUTRAL;
+camera.camera.gammaCorrection = pc.GAMMA_SRGB;
+app.root.addChild(camera);
+
+// The room: an oak floor, a warm off-white wall behind him and one to his right.
+const mat = (rgb, roughness) => { const m = new pc.StandardMaterial(); m.diffuse = new pc.Color(...rgb); m.gloss = 1 - roughness; m.useMetalness = true; m.metalness = 0; m.update(); return m; };
+const plane = (name, material, pos, euler, scale) => {
+  const e = new pc.Entity(name); e.addComponent('render', { type: 'plane', material, castShadows: false, receiveShadows: true });
+  e.setPosition(...pos); e.setEulerAngles(...euler); e.setLocalScale(...scale); app.root.addChild(e); return e;
+};
+plane('floor', mat([0.075, 0.045, 0.026], 0.55), [0, 0, 0], [0, 0, 0], [9, 1, 9]);
+plane('back wall', mat([0.42, 0.39, 0.35], 0.9), [0, 1.4, -1.6], [90, 0, 0], [9, 1, 2.8]);
+plane('side wall', mat([0.42, 0.39, 0.35], 0.9), [2.2, 1.4, 0], [0, 0, 90], [2.8, 1, 9]);
+
+// Lights, as the flat's (lighting.js). 'warm': a ceiling downlight in front of him (shadowed) and a table lamp's spill.
+// 'torch': only a torch at the camera (the player's: warm-white LED, 27 degree cone) and his own phone light.
+const DOWN = new pc.Color(1, 0.9, 0.8), WARM = new pc.Color(1, 0.8, 0.6);
+const light = (name, data, pos, target) => {
+  const e = new pc.Entity(name); e.addComponent('light', { falloffMode: pc.LIGHTFALLOFF_INVERSESQUARED, ...data });
+  e.setPosition(...pos); if (target) { e.lookAt(new pc.Vec3(...target)); e.rotateLocal(90, 0, 0); }
+  app.root.addChild(e); return e;
+};
+const down = light('downlight', { type: 'spot', color: DOWN, intensity: 0.92, range: 7, innerConeAngle: 12, outerConeAngle: 64,
+  castShadows: true, shadowResolution: 1024, shadowBias: 0.05, normalOffsetBias: 0.02 }, [0.55, 2.6, 1.15], [0, 0.9, 0]);
+const lamp = light('lamp', { type: 'omni', color: WARM, intensity: 0.22, range: 5, castShadows: false }, [-1.5, 1.05, 1.1]);
+const torch = light('torch', { type: 'spot', color: new pc.Color(1, 0.94, 0.84), intensity: 8, range: 18, innerConeAngle: 7.5, outerConeAngle: 27,
+  castShadows: true, shadowResolution: 1024, shadowBias: 0.05, normalOffsetBias: 0.02 }, [0, 1.6, 4], [0, 1.2, 0]);
+window.lighting = (mode) => {
+  const warm = mode !== 'torch';
+  down.light.intensity = warm ? 0.92 : 0; lamp.light.intensity = warm ? 0.22 : 0; torch.light.intensity = warm ? 0 : 8;
+  app.scene.skyboxIntensity = warm ? 1 : 0.15;
+};
+
+window.frames = (n) => new Promise(r => { let i = 0; const f = () => (++i >= n ? r() : requestAnimationFrame(f)); requestAnimationFrame(f); });
+let man;
+window.boot = async () => {
+  man = await Intruder.create({ app, sounds: null, isPlayerCamera: () => true });
+  app.on('update', () => man.update());
+  man.show(true); man.place(0, 0, 0, 0);
+  window.man = man;
+  return { clips: Object.keys(man.clips), knife: !!man.knife, api: ['knifePose', 'raiseKnife', 'cameraOnly'].filter(k => k in man) };
+};
+// A clip frozen at `time` seconds, the knife pose, his phone light.
+window.pose = async ({ clip = 'idle_breathe_01', time = 0, raise = 0, strike = 0, phone = false, yaw = 0, headPitch = 0 } = {}) => {
+  man.place(0, 0, yaw, 0);
+  man.play(clip, { blend: 0, speed: 0 });
+  await window.frames(2);
+  man.body.anim.baseLayer.activeStateCurrentTime = time;
+  man.headPitch = headPitch;
+  man.knifePose?.(raise, strike);
+  man.setTorch(phone, 2.2);
+  await window.frames(3);
+};
+// The camera: yaw/pitch degrees around a point (a bone's position, or [x, y, z]), at distance d, field of view fov.
+window.view = ({ at = [0, 0.95, 0], bone, offset = [0, 0, 0], yaw = 0, pitch = 0, d = 3.6, fov = 34, torchAt } = {}) => {
+  const p = bone ? man.bones.get(bone)?.getPosition().clone() ?? new pc.Vec3(...at) : new pc.Vec3(...at);
+  p.add(new pc.Vec3(...offset));
+  const y = yaw * Math.PI / 180, t = pitch * Math.PI / 180;
+  camera.camera.fov = fov;
+  camera.setPosition(p.x + d * Math.cos(t) * Math.sin(y), p.y + d * Math.sin(t), p.z + d * Math.cos(t) * Math.cos(y));
+  camera.lookAt(p);
+  // The player's torch: held at the camera, a little low and to the right, aimed at what the camera looks at.
+  const c = camera.getPosition(), r = camera.right;
+  torch.setPosition(c.x + r.x * 0.18, c.y - 0.2, c.z + r.z * 0.18);
+  torch.lookAt(torchAt ? new pc.Vec3(...torchAt) : p); torch.rotateLocal(90, 0, 0);
+};
+window.ready = true;
+</script>
+</body>
+</html>
