@@ -88,9 +88,10 @@ Read [REVIEW_11.md](REVIEW_11.md) and [DRINK_ASSETS.md](DRINK_ASSETS.md). Auto n
 
 ## Published builds
 
-- Build 0.14 (Claude), 2026-10-25, from `claude/pensive-volta-et0etl` at `26b739e`: the preview
+- Build 0.14 (Claude), 2026-10-25, from `claude/pensive-volta-et0etl` at `46d0265`: the preview
   https://starfox22.github.io/horror/claude/ (`pages-claude.yml`, every push to the branch) and the claude.ai artifact
-  https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9 (version 16; the apartment parts, `apartment.json`,
+  https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9 (version 17: only the bundle changed from version 16, `26b739e`,
+  which lacked the pause hold and the touch-screen note; for 0.14 the apartment parts, `apartment.json`,
   `collision.json`, `sight.json` and `lib/` were unchanged since 0.13 and not re-sent; new: the crow, his knife and
   the kitchen's knives, the porcelain-masked intruder, the blood, the re-baked clips, the new recordings; the old
   `index-*.js` / `.css` removed). `main` still serves 0.13: promote 0.14 only when the owner asks.
