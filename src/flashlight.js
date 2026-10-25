@@ -129,6 +129,8 @@ export class Flashlight {
   cookie() {
     const N = 512, c = document.createElement('canvas'); c.width = c.height = N;
     const g = c.getContext('2d'), img = g.createImageData(N, N);
+    let seed = 0x9e3779b9;
+    const noise = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };   // 0..1, fixed per run
     for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
       const x = (i + 0.5) / N * 2 - 1, y = (j + 0.5) / N * 2 - 1, r = Math.hypot(x, y);
       if (r >= 1) { const k = (j * N + i) * 4; img.data[k] = img.data[k + 1] = img.data[k + 2] = 0; img.data[k + 3] = 255; continue; }
@@ -140,8 +142,11 @@ export class Flashlight {
       v *= 1 - 0.07 * Math.exp(-((x + 0.3) ** 2 + (y - 0.22) ** 2) * 60);
       v *= (1 - r * r) ** 1.5;                                     // and everything fades out smoothly to the cone's edge
       const t = Math.min(1, v), k = (j * N + i) * 4;
-      // Slightly warmer at the rim of the spot, cooler in the middle (LED behind a reflector).
-      img.data[k] = 255 * Math.min(1, t * (1.0 + 0.04 * r)); img.data[k + 1] = 255 * t; img.data[k + 2] = 255 * Math.min(1, t * (1.02 - 0.08 * r));
+      // Slightly warmer at the rim of the spot, cooler in the middle (LED behind a reflector). Dithered (build 0.15): the
+      // dim spill falls off over a few levels of an 8-bit texture, and undithered those steps showed as rings, stretched
+      // into arcs across a floor seen at a slant.
+      const dither = (n) => Math.min(255, Math.max(0, Math.floor(n * 255 + noise())));
+      img.data[k] = dither(Math.min(1, t * (1.0 + 0.04 * r))); img.data[k + 1] = dither(t); img.data[k + 2] = dither(Math.min(1, t * (1.02 - 0.08 * r)));
       img.data[k + 3] = 255;
     }
     g.putImageData(img, 0, 0);
@@ -172,6 +177,7 @@ export class Flashlight {
     this.sounds?.flashlightClick(this.on);
     this.flicker = this.on ? 0.22 : 0;
     this.surfaceTimer = 0;      // a fresh target on the first lit frame
+    this.bounceAt = this.bounceFacing = null;   // and the bounce starts there, not gliding from where it last was
     this.beam.light.enabled = this.bounce.light.enabled = this.on || this.power > 0;
   }
 
@@ -267,8 +273,14 @@ export class Flashlight {
     if (hit) {
       // Recess the virtual reflector a few cm into the room side of the hit,
       // and aim its one shadow map into that surface's outward hemisphere.
-      this.bounce.setPosition(hit.pos.clone().add(hit.normal.clone().mulScalar(0.035)));
-      this.bounce.setRotation(new Quat().setFromDirections(Vec3.DOWN, hit.normal));
+      // Eased towards the new point and facing (build 0.15): the trace runs at 10 Hz, and a light that jumped there each
+      // time made its shadows hop across the floor.
+      const to = hit.pos.clone().add(hit.normal.clone().mulScalar(0.035)), facing = new Quat().setFromDirections(Vec3.DOWN, hit.normal);
+      const k = this.bounceAt ? 1 - Math.exp(-14 * dt) : 1;
+      this.bounceAt = (this.bounceAt || to.clone()).lerp(this.bounceAt || to, to, k);
+      this.bounceFacing = (this.bounceFacing || facing.clone()).slerp(this.bounceFacing || facing, facing, k);
+      this.bounce.setPosition(this.bounceAt);
+      this.bounce.setRotation(this.bounceFacing);
       const incidence = Math.max(0, -dir.dot(hit.normal));
       const albedo = hit.meshInstance.material.diffuse;
       const reflectance = albedo ? Math.min(1, (albedo.r + albedo.g + albedo.b) / 3) : 0.6;
