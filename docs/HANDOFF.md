@@ -88,6 +88,12 @@ Read [REVIEW_11.md](REVIEW_11.md) and [DRINK_ASSETS.md](DRINK_ASSETS.md). Auto n
 
 ## Published builds
 
+- Build 0.14 (Claude), 2026-10-25, from `claude/pensive-volta-et0etl` at `26b739e`: the preview
+  https://starfox22.github.io/horror/claude/ (`pages-claude.yml`, every push to the branch) and the claude.ai artifact
+  https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9 (version 16; the apartment parts, `apartment.json`,
+  `collision.json`, `sight.json` and `lib/` were unchanged since 0.13 and not re-sent; new: the crow, his knife and
+  the kitchen's knives, the porcelain-masked intruder, the blood, the re-baked clips, the new recordings; the old
+  `index-*.js` / `.css` removed). `main` still serves 0.13: promote 0.14 only when the owner asks.
 - Production 0.13 (Claude) is on `main` since 2026-10-25 at the owner's request ("publish directly to main"):
   https://starfox22.github.io/horror/?v=0.13 (the Pages workflow deploys `main`), and on the claude.ai artifact
   https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9 (same URL; the apartment parts were unchanged and not re-sent; new:
@@ -99,7 +105,7 @@ Read [REVIEW_11.md](REVIEW_11.md) and [DRINK_ASSETS.md](DRINK_ASSETS.md). Auto n
 - Current Codex review 0.11: https://starfox22.github.io/horror/codex/?v=0.11-final from `259e12e6ade8d6ad97fcd6af81be4d2e95e453a4`; deployment `40109659758` passed and live build-info matches. Auto targets 60, sparse waking lights and downloaded-hand drinking are documented in REVIEW_11.md. All 90 regressions, local WebGL/WebGPU and hosted native drinking checks pass.
 - Codex review 0.10: https://starfox22.github.io/horror/codex/?v=0.10 from `7c8af57a2a0e2962483f51fd538184418a7b7410`; deployment `40103998454` passed and live build-info matches. First waking sequence, refrigerator, FPS limit, grain and physically occluded lighting are documented in REVIEW_10.md.
 - Codex review 0.9: https://starfox22.github.io/horror/codex/?v=0.9 from `f39809820f6f3416f5330bb0fb4a7fae6efffc91`; deployment `40098710673` passed. Graphics/FPS, fixtures, lighting defaults and coffee changes are documented in REVIEW_09.md.
-- Builds 0.1-0.7, 0.12 and 0.13 (2026-10-22/25): claude.ai artifact https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9
+- Builds 0.1-0.7 and 0.12-0.14 (2026-10-22/25): claude.ai artifact https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9
   (always the latest Claude build; private to the owner unless shared from its Share menu). Build 0.12 was also merged
   into `main` at the owner's request, so the production Pages site serves it.
 - Codex review build 0.8: https://starfox22.github.io/horror/codex/ is published from `codex-review` commit `f6ae1f49d48478c08e0d88329480265a02e177fb`; deployment run `40094343463` succeeded. At that deployment the original main build was served at https://starfox22.github.io/horror/. The owner enabled Pages and selected no deployment-branch restriction. See the deployment guide before publishing later reviews.
