@@ -199,7 +199,9 @@ export class Story {
       if (f && !f.openRequested && f.angle < 1) return;           // shut: the fridge's own signal has it
       const at = f?.handle ?? { x: FRIDGE_AT[0], z: FRIDGE_AT[1] };
       const far = Math.hypot(this.pos.x - at.x, this.pos.z - at.z) > 2;
-      if ((far && this.time - t0 >= 12) || this.time - t0 >= 25) this.signal('fridge-shut-after-drink');
+      // Heard, not seen: never while the player is in the bedroom or the bathroom (it would lock them in there).
+      const zone = zoneAt(this.pos.x, this.pos.z), away = zone !== 'bed' && zone !== 'bath';
+      if (away && ((far && this.time - t0 >= 12) || this.time - t0 >= 25)) this.signal('fridge-shut-after-drink');
       else this.after(1, check, 'drink-fallback');
     };
     this.after(12, check, 'drink-fallback');
@@ -278,6 +280,8 @@ export class Story {
   // Story event 'falling-glass': 3 s after the fridge shuts after drinking.
   glassBreaks() {
     if (this.has('glass')) return;
+    // Never with the player in the bathroom: its door is about to be locked from inside (wait until they are out).
+    if (zoneAt(this.pos.x, this.pos.z) === 'bath') { this.after(1, () => this.glassBreaks(), 'glass-wait'); return; }
     this.set('glass');
     const ear = this.sys.camera.getPosition();
     const near = zoneAt(ear.x, ear.z) === 'bed';
@@ -312,7 +316,7 @@ export class Story {
       this.say('Locked.', { delay: 0.3 });
       this.sys.journal?.find('bathroom-locked');
       // Behind the door the tap stops; then the line of light under the door goes out (a switch, faintly, inside).
-      this.after(0.9, () => this.sys.world?.tap(false));
+      this.after(0.9, () => { if (!this.has('power-cut')) this.sys.world?.tap(false); });
       this.after(2.6, () => this.bathroomLightOut());
       return;
     }
@@ -392,7 +396,7 @@ export class Story {
   // The right door, once he has gone up through it: a hanger drops off the rail and clatters as it swings (the nest's
   // small scare), then the nest.
   wardrobeOpened(door) {
-    if (door.id === 'right' && this.has('silhouette') && !this.has('nest-seen')) {
+    if (door.id === 'right' && this.has('silhouette') && !this.has('nest-seen') && this.sys.nest?.packed !== true) {
       if (this.set('hanger')) {
         this.after(0.35, () => { this.sys.nest?.dropHanger?.(); this.scare('hangers', { at: [9.5, 1.6, -0.1], gain: 1.0, send: 0.35, min: 0.3 }); this.sys.nest?.dust(3); });
         this.scared();
@@ -403,7 +407,7 @@ export class Story {
 
   // --- Act II: the fuse box and the silhouette ------------------------------------------------------------------------
   fuseboxOpened() {
-    if (this.has('fusebox-opened')) return;
+    if (this.has('fusebox-opened') || !this.has('power-cut') || this.has('restored')) return;   // its beats are the dark's
     this.set('fusebox-opened');
     this.signal('fusebox-opened');
     this.after(4, () => this.creakEast(), 'creak1');
@@ -436,17 +440,18 @@ export class Story {
     const lit = fl?.held && fl.on, east = aim.x / l;
     // Walking back east towards him (west of the bedroom doorway): he breaks for the bedroom now, seen if the torch is
     // on him. East of the doorway nothing starts (his run would cross the player); he is heard at power-back instead.
-    if (p.x > 8.5) { if (p.x < 9.4) this.startSighting({ seen: !!lit && east > 0.7 }); return; }
-    if (lit && east > 0.93 && p.x < 8.2) this.startSighting({ seen: true });  // at least ~4.2 m from where he stands
+    if (p.x > 7) { if (p.x < 9.4) this.startSighting({ seen: !!lit && east > 0.7, now: true }); return; }
+    if (lit && east > 0.93) this.startSighting({ seen: true });  // at least ~5 m from where he stands
   }
 
   // seen: the torch is on him (the beat as designed); false: the player never turned round, he is heard running into
   // the bedroom instead. He is there either way (a lit corridor shows him); `seen` chooses the thoughts and the journal.
-  startSighting({ seen = true } = {}) {
+  // now: he breaks at once (the player is coming his way).
+  startSighting({ seen = true, now = false } = {}) {
     if (this.sighting || this.has('silhouette')) return;
     const man = this.sys.intruder;
     this.set('silhouette');
-    this.sighting = { t: 0, seen, leg: 0, stride: 0, hidden: false, gone: false, lit: 0 };
+    this.sighting = { t: 0, seen, now, leg: 0, stride: 0, hidden: false, gone: false, lit: 0 };
     if (man) {
       man.show(true); man.place(SPRINT[0][0], SPRINT[0][1], -90); man.play('idle_breathe_01', { blend: 0 });
       man.setTorch(false);
@@ -462,7 +467,8 @@ export class Story {
     if (!g.running) {
       const fl = this.sys.flashlight, dir = fl?.beam?.up;
       if (fl?.held && fl.on && dir && -dir.x / (Math.hypot(dir.x, dir.z) || 1) > 0.9) g.lit += Math.min(dt, 0.1);
-      if (g.seen ? g.t < 1.2 || (g.lit < 1 && g.t < 2.5) : g.t < 1) return;
+      const coming = this.pos.x > 8;                               // the player walks on towards him: he goes now
+      if (!g.now && !coming && (g.seen ? g.t < 1.2 || (g.lit < 1 && g.t < 2.5) : g.t < 1)) return;
       g.running = true; g.at = [...SPRINT[0]]; g.leg = 1;
       if (man) { man.headPitch = 0; man.play('run_neutral_01', { blend: 0.12, speed: SPRINT_SPEED / 3.1 }); }
       // Bare, wet feet (the bathroom's water: his prints): the first slap through the scare path, a heavy breath.
@@ -643,8 +649,15 @@ export class Story {
       const police = this.timers.find(t => t.id === 'police');
       if (police) police.at = Math.max(police.at, this.time + 30);
       this.say(lines[Math.min(this.deaths, 3) - 1], { delay: 0.6 });
-      if (this.difficulty === 'hard' && this.deaths >= 3) { this.restore(this.load()); return; }
-      this.sys.hunt?.respawn();
+      const save = this.difficulty === 'hard' && this.deaths >= 3 ? this.load() : null;
+      if (save) {
+        // Back to the hunt's checkpoint; the deaths stand, and you wake at 03:07 (the clocks).
+        const deaths = this.deaths;
+        this.restore(save); this.deaths = deaths;
+        this.flags.delete('woke'); this.set('woke');
+        return;
+      }
+      if (this.has('hunt')) this.sys.hunt?.respawn();
     });
   }
 
@@ -712,7 +725,7 @@ export class Story {
 
   // The spare key's hiding places can be searched once the player needs it badly enough: after his nest, or in the
   // hunt (before that, a first night would end at the door minutes after he is first seen).
-  spareSearchable() { return this.has('nest-seen') || this.has('hunt'); }
+  spareSearchable() { return this.has('hunt') || (this.has('nest-seen') && this.has('restored')); }
 
   // What the front door's prompt says.
   doorLabel() {
@@ -731,8 +744,10 @@ export class Story {
 
   // --- checkpoints -------------------------------------------------------------------------------------------------
   save() {
+    const police = this.timers.find(t => t.id === 'police');
     const data = { v: 1, act: this.act, flags: [...this.flags], time: this.time, deaths: this.deaths, seed: this.seed, difficulty: this.difficulty,
-      power: this.sys.power?.save(), journal: this.sys.journal?.save(), phone: this.sys.phone?.save(), items: this.sys.items?.save() };
+      power: this.sys.power?.save(), journal: this.sys.journal?.save(), phone: this.sys.phone?.save(), items: this.sys.items?.save(),
+      police: police ? Math.max(1, police.at - this.time) : null, told: this.told ?? null };
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch { /* private mode */ }
     return data;
   }
@@ -750,7 +765,11 @@ export class Story {
     this.sys.journal?.load(data.journal);
     this.sys.phone?.load(data.phone);
     this.sys.items?.load(data.items);
+    this.told = data.told ?? null;
+    if (data.police) this.after(data.police, () => this.policeArrive(), 'police');
     this.sys.world?.restore(this);
+    // Saved in the second before he was heard running at power-back (Act III): he runs now.
+    if (this.has('restored') && !this.has('silhouette')) this.after(1.2, () => this.startSighting({ seen: false }));
     if (this.act < 4) this.scheduleNightSounds();
     if (this.act === 1) this.armWater();
     if (this.act === 2) this.armDark();

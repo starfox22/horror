@@ -105,7 +105,7 @@ fn hash(p: vec2f) -> f32 { return fract(sin(dot(p, vec2f(12.9898, 78.233)) + uni
     this.clips = {};
     this.live = null; this.clip = null; this.frameSkip = 0; this.scene = null;
     app.on('postrender', () => this.blit());
-    app.on('update', dt => this.update(dt));
+    app.on('update', dt => this.update(this.paused?.() ? 0 : dt));   // paused (main.js): it waits
     // A hunt that begins while the scene plays (an emergency call, the front door, a fallback) ends the scene first.
     story?.on?.(flag => { if (flag === 'hunt') this.endScene(); });
   }
@@ -120,6 +120,7 @@ fn hash(p: vec2f) -> f32 { return fract(sin(dot(p, vec2f(12.9898, 78.233)) + uni
 
   // The scene stops where it is: gone from the feed, the feed lost, the man the hunt's from now on.
   endScene() {
+    if (this.live) { this.live.dead = true; this.entity.camera.enabled = false; }   // the hunt cuts the feed
     if (!this.scene) return;
     this.scene = null;
     this.cameraOnly(false);
@@ -193,7 +194,11 @@ fn hash(p: vec2f) -> f32 { return fract(sin(dot(p, vec2f(12.9898, 78.233)) + uni
     if (this.story?.has('live') || this.story?.has('hunt')) return;
     this.story?.liveWatched();
     const right = this.closets?.doors.find(d => d.id === 'right');
-    if (right && right.angle < 0.6) { right.angle = 0.9; right.target = 0.9; right.openRequested = true; right.pivot.setEulerAngles(0, right.sign * 100 * 0.9, 0); }
+    if (right && right.angle < 0.6) {
+      // Opened from inside as he comes down (closets.open moves its handle, LED and shadows with it).
+      if (this.closets.open) this.closets.open(right);
+      else { right.angle = 0.9; right.target = 0.9; right.openRequested = true; right.pivot.setEulerAngles(0, right.sign * 100 * 0.9, 0); }
+    }
     this.scene = { t: 0, step: 0 };
   }
 

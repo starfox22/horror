@@ -50,7 +50,8 @@ export class Phone {
       if (e.code === 'Backspace') this.back();
     });
     window.addEventListener('keyup', (e) => {
-      if (e.code !== 'KeyQ' || !this.qDown || !document.pointerLockElement || this.blocked?.()) { this.qDown = 0; return; }
+      if (e.code !== 'KeyQ') return;
+      if (!this.qDown || !document.pointerLockElement || this.blocked?.()) { this.qDown = 0; return; }
       const held = performance.now() - this.qDown; this.qDown = 0;
       if (held > 700 && this.has) { this.silenced = !this.silenced; this.hud?.toast(this.silenced ? 'Phone silenced' : 'Phone sound on'); this.dirty = true; return; }
       this.toggle();
@@ -62,7 +63,7 @@ export class Phone {
       if (e.button === 0) this.choose(this.sel);
       if (e.button === 2) this.back();
     });
-    app.on('update', dt => this.update(dt));
+    app.on('update', dt => this.update(this.paused?.() ? 0 : dt));   // paused (main.js): it waits
   }
 
   // --- the object in the hand ----------------------------------------------------------------------------------
@@ -185,7 +186,7 @@ export class Phone {
     const at = this.onCharger ? CHARGER : null;
     if (at) this.wake(12);
     for (let i = 0; i < n; i++) this.bank?.play('phone_buzz', { at, gain: at ? 1.0 : 0.5, delay: i * 1.1, send: 0.2, min: at ? 0.35 : 0 });
-    this.noise?.(at ? at.x : null, at ? at.z : null);
+    this.noise?.(at ? at.x : null, at ? at.z : null, 'buzz');      // a buzz carries 4 m, a ringtone 12
   }
 
   toggle() {

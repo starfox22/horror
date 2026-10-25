@@ -18,7 +18,7 @@ export const STORY_EVENTS = [
   { id: 'crow', label: 'The crow at the window', when: 'Once, before the hunt: standing near a window and looking at it, a crow slams into the glass (the developer menu: the window nearest the view).',
     run: ctx => ctx.story.sys.crow?.strike({ force: true }) },
   { id: 'bathroom-locked', label: 'The locked bathroom', when: 'The player tries the bathroom door after the glass: locked; the tap stops; the light under the door goes out; knocking brings the bang.',
-    run: ctx => { ctx.story.set('glass'); ctx.story.sys.world?.bathroomOccupied(true); ctx.story.bathroomTried(); } },
+    run: ctx => { if (ctx.story.has('power-cut')) return; ctx.story.set('glass'); ctx.story.sys.world?.bathroomOccupied(true); ctx.story.bathroomTried(); } },
   { id: 'power-cut', label: 'The bang (power cut)', when: 'Two seconds of silence after the player knocks on the bathroom door (or 120 s after the glass).',
     run: ctx => ctx.story.powerCut('dev') },
   { id: 'silhouette', label: 'The man in the corridor', when: 'While the fuse box is open, the torch aimed down the corridor: a man by the front door runs at the player and into the bedroom.',

@@ -125,8 +125,11 @@ of them 3 s after the game resumes).
     round the wardrobe's right door as he pulls it open, and in. It bangs shut behind him and springs ajar. A thump in
     the ceiling. Creaks crossing above the corridor. No music until the thump. *"...Someone's in here."* *"He's in my
     bedroom."* He is never seen vanishing: he is hidden only out of the player's sight or inside the wardrobe.
-    - Walking back east before turning round (between x 8.5 and the bedroom doorway): he breaks for the bedroom at once,
-      ahead of the player. East of the doorway nothing starts (his run would cross the player).
+    - Walking back east before turning round (between x 7 and the bedroom doorway): he breaks for the bedroom at once,
+      ahead of the player; a held sighting also breaks early if the player comes on past x 8. East of the doorway
+      nothing starts (his run would cross the player).
+    - The fuse box's beats (the creaks, the handle, the hints) belong to the dark: opening it before the cut does
+      nothing.
     - If the player never turns: when the power comes back, he is heard (and, in the lit corridor, can be seen) running
       from the front door into the bedroom, the wardrobe, the thump overhead. *"...Someone's in here."* *"In my
       bedroom."*
@@ -170,7 +173,7 @@ The power is out again and stays out: the main switch is snapped off. He hunts t
 - **The goal.** Get out. The front door needs a key and yours are gone. The **sleep diary** on the office desk says
   where the spare is (one place per run, all in the west half: the red tin on the coffee shelf · taped under the sofa
   cushion · in the green vase on the coffee table); each place can also be searched without the diary, but only once
-  the player needs the spare badly enough: after the nest, or in the hunt (earlier, a first night would end at the
+  the player needs the spare badly enough: after the nest with the power back, or in the hunt (earlier, a first night would end at the
   door minutes after he is first seen; before that the front door only says *"He has my keys."*). Take it (1.5 s, a 2.5 m
   noise), cross the flat to the front door, **hold E for 3 s** to turn the stiff lock (three loud clicks, each a 6 m
   noise; letting go keeps the progress), and leave.

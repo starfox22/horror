@@ -249,13 +249,78 @@ test('the wardrobe: stuck until he has been seen (rattling only before the glass
   assert.ok(story.has('nest-seen'));
 });
 
-test('the spare key can be searched for only once the player needs it badly: after the nest, or in the hunt', () => {
+test('the spare key can be searched for only once the player needs it badly: after the nest with the power back, or in the hunt', () => {
   const { story } = night();
   story.begin({ seed: 3 });
   story.set('silhouette');
   assert.equal(story.spareSearchable(), false);
   story.set('nest-seen');
+  assert.equal(story.spareSearchable(), false, 'not in the dark of Act II (no escape that skips Act III)');
+  story.set('restored');
   assert.equal(story.spareSearchable(), true);
+});
+
+test('QA: an Act III checkpoint saved before he was heard running still gets his run (no stuck wardrobe, no locked bathroom)', () => {
+  const a = night();
+  a.story.begin({ seed: 8 });
+  a.story.glassBreaks(); a.story.powerCut('test');
+  a.story.powerRestored();                                  // saves at once; the unseen run comes 1.2 s later
+  const saved = a.story.load();
+  assert.ok(!saved.flags.includes('silhouette'));
+  const b = night();
+  b.story.restore(saved); b.run(6);
+  assert.ok(b.story.has('silhouette') && b.story.has('prints'), 'he is heard running on the restored night');
+  assert.equal(b.story.wardrobeStuck({ id: 'right' }), false);
+});
+
+test('QA: never locked inside the bathroom: the glass waits until the player is out of it', () => {
+  const { story, sys, run } = night();
+  story.begin({ seed: 2 });
+  sys.player.pos = { x: 7.6, z: 1.0 };                       // in the bathroom
+  story.glassBreaks(); run(3);
+  assert.ok(!story.has('glass'), 'not while they are in there');
+  sys.player.pos = { x: 4, z: 3.6 }; run(1.5);
+  assert.ok(story.has('glass'), 'then, once they are out');
+  const b = night();
+  b.story.begin({ seed: 2 });
+  b.sys.fridge = { openRequested: true, angle: 100, handle: { x: 1.9, z: -0.6 } };
+  b.sys.player.pos = { x: 7.6, z: 1.0 };
+  b.story.drank(); b.run(40);
+  assert.ok(!b.calls.includes('events.signal'), 'the open-fridge fallback waits too');
+});
+
+test('QA: a police call survives a checkpoint (the timer and what they were told)', () => {
+  const a = night();
+  a.story.begin({ seed: 9 });
+  a.story.set('silhouette'); a.story.huntStart('test');
+  a.story.policeCalled({ where: true, who: true }); a.run(10);
+  const saved = a.story.save();
+  const b = night();
+  b.story.restore(saved); b.run(120);
+  assert.ok(b.calls.includes('endings.police'), 'they still come');
+  assert.ok(b.story.told?.where && b.story.told?.who, 'and know where and who');
+});
+
+test('QA: the fuse box opened before the cut plays none of the dark\'s beats', () => {
+  const { story, calls, run } = night();
+  story.begin({ seed: 2 });
+  story.fuseboxOpened(); run(30);
+  assert.ok(!story.has('fusebox-opened') && !calls.includes('play.door_rattle'));
+});
+
+test('QA: a player walking on east never meets his run', () => {
+  const { story, sys, run } = night();
+  story.begin({ seed: 6 });
+  story.glassBreaks(); story.powerCut('test'); story.set('torch');
+  const placed = [];
+  sys.intruder = { show: () => {}, place: (x, z) => placed.push([x, z, story.time]), play: () => {}, setTorch: () => {} };
+  sys.flashlight = { held: true, on: false, beam: { up: { x: 1, y: 0, z: 0 } } };
+  sys.player.pos = { x: 5, z: 3.6 }; run(0.3);
+  const path = [];
+  for (let t = 0; t < 4; t += 0.05) { sys.player.pos = { x: Math.min(10.4, 5 + 1.4 * t), z: 3.6 }; path.push([sys.player.pos.x, story.time]); run(0.05); }
+  assert.ok(story.has('silhouette'));
+  const near = placed.map(([x, z, t]) => { const p = path.reduce((a, b) => (Math.abs(b[1] - t) < Math.abs(a[1] - t) ? b : a)); return Math.hypot(x - p[0], z - 3.6); });
+  assert.ok(Math.min(...near) > 0.8, `closest ${Math.min(...near).toFixed(2)} m`);
 });
 
 test('the run varies by seed: the spare key moves, the nuisance circuit changes', () => {

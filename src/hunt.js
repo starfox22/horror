@@ -12,7 +12,7 @@ const STRIDE = { walk_slow_01: 0.92, walk_neutral_01: 1.32, run_neutral_01: 3.1 
 // Noises with a fixed reach (path metres). A tap left running (taps.js) carries 7 m: running water is a lure. Doors and
 // the wardrobe 6 m (doors.js, closets.js), glass underfoot 5, each click of the front door's lock 6, the phone ringing 12.
 // The player's own steps ('crouch', 'walk', 'run') and 'loud' depend on the difficulty (stalker.js DIFFICULTY.hear).
-const NOISE = { glass: 5, unlock: 6, door: 6, wardrobe: 6, tap: 7, phone: 12 };
+const NOISE = { glass: 5, unlock: 6, door: 6, wardrobe: 6, tap: 7, phone: 12, buzz: 4, search: 2.5 };
 // Where he comes down (the wardrobe's hatch: dust, the rail's hangers, the landing).
 const HATCH = [9.55, 2.2, -0.12];
 

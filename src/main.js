@@ -335,9 +335,11 @@ window.addEventListener('blur', () => { eDown = false; });
 sys.eHeld = () => eDown && isPlaying();                 // the front door's lock turns while E is held (story.js)
 flashlight.canToggle = () => isPlaying() && !death.busy && !endings.running;
 phone.blocked = () => !isPlaying() || death.busy || !!endings.running;
+// Behind the pause menu nothing moves on: the phone's boot, the LIVE scene, a death and its wake wait.
+phone.paused = seccam.paused = death.paused = () => !isPlaying();
 app.on('update', dt => thought.update(isPlaying() ? dt : 0));
 // Journal toasts wait for a quiet moment: 5 s after a scare, no thought on screen.
-journal.ready = () => story.time - story.lastScare >= 5 && !thought.line && !thought.queue.length;
+journal.ready = () => story.time - story.lastScare >= 5 && !thought.line && !thought.queue.length && !hud.reading;
 app.on('update', dt => journal.update(isPlaying() ? dt : 0));
 // The bedside clock keeps the night's time from 03:07, and is back at 03:07 every time you wake from him (story.wake).
 let clockFrom = 0;
@@ -536,6 +538,7 @@ function applyCheckpoint(save) {
   if (f.has('torch') && !flashlight.held) flashlight.pickUp();
   if (save.act >= 2) { rain.burst?.(save.act === 2 ? 30 : 0); }
   if (f.has('power-cut')) power.faults.add('bathroom');
+  if (f.has('silhouette') && !f.has('nest-seen') && !f.has('hunt')) closets.swing('right', 18);   // ajar since he went in
   if (save.act === 4) power.mainBroken = true;
   wake?.skip?.(); if (wake) { wake.started = true; wake.completed = true; wake.running = false; }
   const at = ACT_START[save.act];

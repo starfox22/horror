@@ -49,6 +49,7 @@ export class Journal {
 
   // Toasts take their turn: one at a time, never on top of a scare or a thought (seconds of play).
   update(dt) {
+    if (!(dt > 0)) return;                              // paused, reading: they wait
     this.wait = Math.max(0, this.wait - dt);
     if (!this.pending.length || this.wait > 0 || this.ready?.() === false) return;
     this.hud?.toast(this.pending.shift(), 2.2);

@@ -478,12 +478,24 @@ export class World {
     for (const spot of SPARE_SPOTS) {
       // Searchable once the player needs the spare badly enough (story.js spareSearchable: after his nest, or the hunt).
       this.interactions.add({ pos: new Vec3(...spot.at), size: spot.size, label: () => where[spot.id][0],
-        active: () => !this.story?.sys.items?.has('spare-key') && (this.story?.spareSearchable?.() ?? true),
-        use: () => {
-          if (this.story?.spareKey?.id === spot.id) this.takeKey(spot);
-          else { this.bank?.play(spot.id === 'tin' ? 'latch_2' : 'blanket', { at: spot.at, gain: 0.3, rate: 1.2 }); this.story?.say(where[spot.id][1]); }
-        } });
+        active: () => !this.searching && !this.story?.sys.items?.has('spare-key') && (this.story?.spareSearchable?.() ?? true),
+        use: () => this.search(spot, where[spot.id][1]) });
     }
+  }
+
+  // Searching a hiding place takes a moment (1.5 s of play, a 2.5 m noise for him in the hunt); walking away stops it.
+  search(spot, nothing) {
+    const s = this.story;
+    this.searching = spot;
+    this.bank?.play(spot.id === 'tin' ? 'latch_2' : 'blanket', { at: spot.at, gain: 0.3, rate: 1.2 });
+    s?.sys.hunt?.noise?.(spot.at[0], spot.at[2], 'search');
+    const done = () => {
+      this.searching = null;
+      const p = s?.pos;
+      if (p && Math.hypot(p.x - spot.at[0], p.z - spot.at[2]) > 1.6) return;
+      if (s?.spareKey?.id === spot.id) this.takeKey(spot); else s?.say(nothing);
+    };
+    if (s?.after) s.after(1.5, done, 'search'); else done();
   }
 
   placeKey() { if (this.keyEntity) this.keyEntity.enabled = false; }
@@ -545,6 +557,7 @@ export class World {
     this.hot = false;
     if (this.bathDoor) { this.bathDoor.locked = false; }
     this.placeKey();
+    this.searching = null;
     this.dryerInBasin(false);
     this.story?.sys.nest?.reset();
   }
@@ -553,8 +566,10 @@ export class World {
     const f = (x) => story.has(x);
     this.reset(story);
     this.shards(f('glass'));
-    if (f('glass') && !f('silhouette')) this.bathroomOccupied(true);
-    if (f('silhouette')) { this.bathroomOccupied(false); this.prints(true); }
+    const open = f('silhouette') || f('bathroom-open');
+    if (f('glass') && !open) this.bathroomOccupied(true);
+    if (open) this.bathroomOccupied(false);
+    if (f('silhouette')) this.prints(true);
     if (f('power-cut') && !f('tap-off')) this.tap(true, { hot: true, quiet: true });
     if (f('power-cut')) { this.flood(1); this.mirrorFog(true); this.dryerInBasin(true); this.taps?.fill('bathroom', true); }
     this.story?.sys.nest?.restore(story);

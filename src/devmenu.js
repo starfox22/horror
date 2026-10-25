@@ -39,7 +39,7 @@ export class DevMenu {
   // True while the code is being typed and `key` would continue it (the E in "developer" must not use things).
   typing(key) {
     if (!this.typed || performance.now() - (this.lastKey || 0) > 600) return false;
-    for (let n = Math.min(this.typed.length, CODE.length - 1); n > 0; n--) {
+    for (let n = Math.min(this.typed.length, CODE.length - 1); n >= 3; n--) {
       if (CODE.startsWith(this.typed.slice(-n) + key)) return true;
     }
     return false;

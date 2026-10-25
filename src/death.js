@@ -34,7 +34,7 @@ export class Death {
     this.blood = layer('death-blood', 'z-index:11;width:100%;height:100%;', 'canvas');
     if (typeof Image !== 'undefined') { this.bloodImage = new Image(); this.bloodImage.src = BLOOD_URL; }   // decoded before it is needed
     this.canvas = app.graphicsDevice?.canvas ?? null;
-    app.on('update', dt => this.update(dt));
+    app.on('update', dt => this.update(this.paused?.() ? 0 : dt));   // paused (main.js): it waits
     doc.defaultView?.addEventListener?.('keydown', (e) => {
       const r = this.running;
       if (r?.wake && r.t > 0.5 && !e.repeat) r.t = Math.max(r.t, r.wakeEnd - 0.35);
