@@ -59,24 +59,27 @@ test('startup has only bedside and arc lamps plus the awake laptop and computer;
 
   const menu = Object.create(DevMenu.prototype);
   menu.sys = { app, switches: { rooms: [] }, devices };
-  menu.entries = menu.collect(); menu.refresh = () => {};
+  menu.entries = menu.collect(); menu.el = { hidden: true }; menu.refresh = () => {};
   const snapshot = () => menu.entries.map(entry => ({
     lights: entry.lights.map(({ e }) => [e.light.enabled, e.light.intensity]),
     glows: entry.glows.map(({ mat }) => mat.emissiveIntensity),
   }));
   const defaults = snapshot();
-  for (const force of [false, true]) {
-    menu.entries.forEach(entry => entry.force = force);
-    menu.changed(); clearTimeout(menu.timer);
+  for (const on of [false, true]) {
+    menu.all(on); clearTimeout(menu.timer);
     menu.reset(); clearTimeout(menu.timer);
-    assert.deepEqual(snapshot(), defaults, 'Back to switches restores the exact sparse startup lighting');
+    assert.deepEqual(snapshot(), defaults, 'Undo restores the exact sparse startup lighting');
   }
-  devices.override = lights => menu.handBack(lights);
-  devices.toggleLamp(desk); devices.update(0.2);
-  assert.equal(desk.on, true); assert.equal(desk.level, 1);
-  assert.ok(desk.lights[0].light.enabled && desk.mat.emissiveIntensity > 0, 'an initially off lamp still works on its first native press');
+  // Nothing is held: after "All on" from the panel, the lamp's own switch turns it off at the first press, and back on.
+  menu.all(true); clearTimeout(menu.timer);
+  assert.equal(desk.on, true); assert.ok(desk.lights[0].light.enabled, 'All on works the lamp itself');
   devices.toggleLamp(desk); devices.update(0.2);
   assert.equal(desk.on, false); assert.equal(desk.level, 0);
+  assert.ok(!desk.lights[0].light.enabled && desk.mat.emissiveIntensity === 0, 'the first native press flips what you see');
+  menu.update(0.6);
+  assert.ok(!desk.lights[0].light.enabled, 'and the panel does not put it back');
+  devices.toggleLamp(desk); devices.update(0.2);
+  assert.equal(desk.on, true); assert.equal(desk.level, 1);
 });
 
 test('authored switch retains detailed geometry and outward normals without scaled rocker parents', () => {

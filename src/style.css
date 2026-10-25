@@ -114,6 +114,8 @@ h1 { margin: 0; font: 300 2.6rem/1.1 Georgia, "Times New Roman", serif; letter-s
 .wake-dialogue.thought { position: fixed; z-index: 7; pointer-events: none; }
 .wake-dialogue.thought[hidden] { display: none; }
 #dev .note { margin: 4px 0 8px; color: #8a867c; font-size: .72rem; }
+#dev .queue { margin: 4px 0 10px; padding: 6px 8px; border-left: 2px solid #c9b48a; color: #d8d4ca; font-size: .74rem; }
+#dev button.queued { border-color: #c9b48a; color: #f0e2c0; background: #2a2620; }
 #dev ol { margin: 0; padding-left: 1.4em; }
 #dev ol li { margin: 0 0 8px; }
 #dev ol li small { display: block; margin-top: 3px; color: #6d6a62; font-size: .7rem; line-height: 1.35; }

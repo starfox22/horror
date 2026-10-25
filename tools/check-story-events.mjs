@@ -42,6 +42,44 @@ test('a long frame cannot skip through an event delay; manual runs do not use up
   assert.deepEqual(director.log.map(e => e.how), ['manual', 'story']);
 });
 
+test('a developer pick plays 3 s of play after the game resumes, never while paused, one at a time', () => {
+  const app = fakeApp(), played = [], flashes = [];
+  let playing = false;                                  // picked in the pause menu
+  const director = new Director({ app, ctx: { fallingGlass: () => played.push(1) }, isPlaying: () => playing });
+  let notified = 0; director.onQueue = () => notified++;
+  assert.equal(director.queue('no-such-event'), null);
+  assert.ok(director.queue('falling-glass', 3));
+  assert.equal(director.queued.event.id, 'falling-glass');
+  for (let i = 0; i < 600; i++) app.step(1 / 60);
+  assert.equal(played.length, 0, 'nothing plays while paused, however long');
+  playing = true;
+  for (let i = 0; i < 170; i++) app.step(1 / 60);
+  assert.equal(played.length, 0, 'not before 3 s of play');
+  playing = false;
+  for (let i = 0; i < 300; i++) app.step(1 / 60);
+  assert.equal(played.length, 0, 'pausing again stops the count');
+  playing = true;
+  for (let i = 0; i < 12; i++) app.step(1 / 60);
+  assert.equal(played.length, 1, 'plays once 3 s of play have passed');
+  assert.equal(director.queued, null);
+  assert.equal(director.lastManual.id, 'falling-glass');
+  assert.deepEqual(director.log.map(e => e.how), ['manual']);
+  // A developer run does not use up the story run.
+  director.signal('fridge-shut-after-drink');
+  for (let i = 0; i < 200; i++) app.step(1 / 60);
+  assert.equal(played.length, 2);
+  // Any action (the lightning strike); a new pick replaces the one waiting; cancelling plays nothing.
+  director.queue('falling-glass');
+  director.queue({ id: 'dev-lightning', label: 'Lightning strike', run: () => flashes.push(1) });
+  for (let i = 0; i < 200; i++) app.step(1 / 60);
+  assert.equal(played.length, 2, 'the replaced pick never plays');
+  assert.equal(flashes.length, 1);
+  director.queue('falling-glass'); director.cancelQueued();
+  for (let i = 0; i < 200; i++) app.step(1 / 60);
+  assert.equal(played.length, 2, 'a cancelled pick never plays');
+  assert.ok(notified >= 5, 'the menu hears about every change');
+});
+
 test('the thought line waits for its delay, fades in, holds and fades out', () => {
   const el = { style: {}, setAttribute() {}, hidden: true, textContent: '' };
   const doc = { createElement: () => el, body: { appendChild() {} } };

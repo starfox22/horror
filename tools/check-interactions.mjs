@@ -166,7 +166,7 @@ test('closing a laptop during its wake animation cannot relight the closed scree
   assert.equal(captures, 1, 'the completed sleep fade refreshes bounce lighting');
 });
 
-test('developer light overrides include device emission and preserve native animation state', () => {
+test('developer light controls work the devices themselves and hold nothing afterwards', () => {
   const devices = Object.create(Devices.prototype);
   devices.app = app(); devices.tasks = []; devices.lamps = [];
   for (const name of ['laptop glow', 'iMac glow']) {
@@ -196,24 +196,23 @@ test('developer light overrides include device emission and preserve native anim
   const levels = () => glows.map(({ mat }) => mat.emissiveIntensity);
   const originalLevels = levels();
   menu.update(0);
-  assert.deepEqual(levels(), originalLevels, 'ordinary device emission is unchanged without an override');
+  assert.deepEqual(levels(), originalLevels, 'the panel changes nothing by being there');
 
-  menu.entries.forEach(entry => entry.force = false);
-  menu.changed(); clearTimeout(menu.timer);
+  menu.all(false); clearTimeout(menu.timer);
   assert.ok(levels().every(level => level === 0), 'all-off must darken screens, keyboard and coffee panel');
   assert.ok(menu.entries.every(entry => entry.lights.every(({ e }) => !e.light.enabled)));
+  assert.equal(devices.laptop.power, 0, 'all-off sets the laptop itself (its own state), as a press would');
 
-  // Native fades still advance underneath the override, but cannot relight a surface.
+  // Nothing is held: the devices' own changes show at once, every frame after.
   devices.laptop.setPower(0.6); devices.computer.set(0.7); devices.coffee.glow(0.4);
-  menu.update(0);
-  assert.ok(levels().every(level => level === 0), 'in-flight animations must not leak emission into a dark capture');
-  menu.entries.forEach(entry => entry.force = true);
-  menu.changed(); clearTimeout(menu.timer);
+  menu.update(0); menu.update(0.6);
+  assert.deepEqual(levels(), [0.55 * 0.6, 0.6 * 0.6, 0.5 * 0.7, 0.5 * 0.7, 1.4 * 0.4], 'native changes after the panel are not overridden');
+  menu.all(true); clearTimeout(menu.timer);
   assert.deepEqual(levels(), glows.map(glow => glow.base));
   menu.reset(); clearTimeout(menu.timer);
-  assert.deepEqual(levels(), [0.55 * 0.6, 0.6 * 0.6, 0.5 * 0.7, 0.5 * 0.7, 1.4 * 0.4]);
-  assert.equal(devices.laptop.power, 0.6, 'override reset restores the current wake/sleep level, not a guessed on/off state');
-  assert.equal(devices.coffee.level, 0.4);
+  assert.deepEqual(levels(), originalLevels, 'Undo returns every device to its state before the first change from the panel');
+  assert.equal(devices.laptop.power, 1);
+  assert.equal(devices.coffee.level, 0);
 });
 
 test('developer code accepts deliberate typing without a frame-rate-dependent deadline', async () => {
@@ -241,7 +240,7 @@ test('developer code accepts deliberate typing without a frame-rate-dependent de
   }
 });
 
-test('returning to switches restores independent fixtures without a room owner', () => {
+test('Undo returns lights with no control of their own to their state before the panel changed them', () => {
   const scene = app();
   const fixtures = [
     { name: 'closet light', light: { enabled: true, intensity: 0.25 } },
@@ -251,7 +250,7 @@ test('returning to switches restores independent fixtures without a room owner',
   const menu = Object.create(DevMenu.prototype);
   menu.sys = { app: scene, switches: { rooms: [] }, devices: { lamps: [] } };
   menu.entries = menu.collect(); menu.el = { hidden: true }; menu.refresh = () => {};
-  for (const entry of menu.entries) entry.force = false;
+  menu.all(false); clearTimeout(menu.timer);
   menu.update(0);
   assert.ok(fixtures.every(fixture => !fixture.light.enabled));
   menu.reset(); clearTimeout(menu.timer);
@@ -260,7 +259,7 @@ test('returning to switches restores independent fixtures without a room owner',
   ], 'unowned lights must return to their original enabled state and brightness');
 });
 
-test('developer overrides return refrigerator light and diffuser to the current door state', () => {
+test('the refrigerator lamp set from the panel is set once: the door takes it back', () => {
   const scene = app();
   const light = { name: 'refrigerator interior', light: { enabled: false, intensity: 0 } };
   const glow = { emissiveIntensity: 0, update() {} };
@@ -273,12 +272,11 @@ test('developer overrides return refrigerator light and diffuser to the current 
   assert.equal(menu.entries.length, 1, 'the fridge must have one owner rather than a startup snapshot');
   const entry = menu.entries[0];
   fridge.open = true; fridge.applyLighting();
-  entry.force = false; menu.update(0);
+  menu.set(entry, false); menu.update(0);
   assert.equal(light.light.enabled, false); assert.equal(glow.emissiveIntensity, 0);
-  menu.reset(); clearTimeout(menu.timer);
+  fridge.applyLighting();                                  // the door moves: its own logic again, nothing held
   assert.equal(light.light.enabled, true); assert.equal(light.light.intensity, 0.3); assert.equal(glow.emissiveIntensity, 2);
-  entry.force = true; menu.update(0);
-  assert.equal(menu.handBack([light]), true);
+  menu.set(entry, false);
   fridge.open = false; menu.reset(); clearTimeout(menu.timer);
-  assert.equal(light.light.enabled, false); assert.equal(glow.emissiveIntensity, 0);
+  assert.equal(light.light.enabled, false); assert.equal(glow.emissiveIntensity, 0, 'Undo leaves it to the door: shut, dark');
 });

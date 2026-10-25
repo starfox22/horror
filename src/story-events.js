@@ -46,7 +46,8 @@ export const STORY_EVENTS = [
 ];
 
 // Runs the story events: waits for their signals, counts their delay in play time, and runs each once. Manual runs (the
-// developer menu) play an event straight away and do not count as its story run.
+// developer menu, the console) do not count as an event's story run: run() plays one now; queue() plays one a few
+// seconds of play later (the developer menu: never while paused, so it can be watched from its start).
 export class Director {
   // ctx: what events act on; isPlaying(): whether play time is passing (pointer locked, tab visible).
   constructor({ app, ctx, isPlaying = () => true, events = STORY_EVENTS }) {
@@ -54,6 +55,9 @@ export class Director {
     this.fired = new Set();
     this.pending = [];
     this.log = [];
+    this.queued = null;          // the developer menu's waiting run: { event, left, manual: true }
+    this.lastManual = null;      // the last event it played
+    this.onQueue = null;         // called when the waiting run changes (queued, played, cancelled)
     this._update = dt => this.update(dt);
     app?.on?.('update', this._update);
   }
@@ -63,7 +67,7 @@ export class Director {
   // A system reports that something happened ('fridge-shut-after-drink', ...).
   signal(name) {
     for (const event of this.events) {
-      if (event.trigger?.signal !== name || this.fired.has(event.id) || this.pending.some(p => p.event === event)) continue;
+      if (event.trigger?.signal !== name || this.fired.has(event.id) || this.pending.some(p => p.event === event && !p.manual)) continue;
       this.pending.push({ event, left: event.trigger.delay ?? 0 });
     }
   }
@@ -76,12 +80,19 @@ export class Director {
       p.left -= step;
       if (p.left > 1e-6) continue;
       this.pending.splice(this.pending.indexOf(p), 1);
+      if (p.manual) {
+        if (this.queued === p) this.queued = null;
+        this.lastManual = p.event;
+        this.play(p.event, 'manual');
+        this.onQueue?.();
+        continue;
+      }
       this.fired.add(p.event.id);
       this.play(p.event, 'story');
     }
   }
 
-  // Play an event now (developer menu, console). Returns false for an unknown id.
+  // Play an event now (console, tests). Returns false for an unknown id.
   run(id) {
     const event = this.get(id);
     if (!event) return false;
@@ -89,12 +100,33 @@ export class Director {
     return true;
   }
 
+  // The developer menu: play an event (an id, or any { id, label, run(ctx) } action) once `delay` seconds of play have
+  // passed, counted only while the game is being played (so a pick made in the pause menu starts counting on resume).
+  // One at a time: a new pick replaces the one waiting. Returns the waiting run, or null for an unknown id.
+  queue(action, delay = 3) {
+    const event = typeof action === 'string' ? this.get(action) : action;
+    if (!event) return null;
+    this.cancelQueued(false);
+    this.queued = { event, left: delay, manual: true };
+    this.pending.push(this.queued);
+    this.onQueue?.();
+    return this.queued;
+  }
+
+  cancelQueued(notify = true) {
+    if (!this.queued) return;
+    const i = this.pending.indexOf(this.queued);
+    if (i >= 0) this.pending.splice(i, 1);
+    this.queued = null;
+    if (notify) this.onQueue?.();
+  }
+
   play(event, how) {
     this.log.push({ id: event.id, how, at: performance.now() });
     try { event.run(this.ctx); } catch (error) { console.error(`Event ${event.id} failed`, error); }
   }
 
-  reset() { this.fired.clear(); this.pending.length = 0; }
+  reset() { this.fired.clear(); this.pending.length = 0; this.queued = null; this.onQueue?.(); }
 
   destroy() { this.app?.off?.('update', this._update); }
 }

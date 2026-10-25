@@ -35,12 +35,21 @@ const [url, mode = 'webgl'] = process.argv.slice(2);
     for (let i = 0; i < 40; i++) s.thought.update(1 / 30);
     out.thought = { text: s.thought.el.textContent, visible: s.thought.visible };
     out.soundLoaded = !!s.fallingGlass.buffer;
-    // The developer menu: mode on, the Events list, click the first event.
+    // The developer menu: mode on, the Events list, pick the first event: it waits for 3 s of play after resuming.
     s.devMenu.setMode(true);
     const buttons = [...document.querySelectorAll('#dev-event-list button')].map(b => b.textContent);
     document.querySelector('#dev-events-open').click();
+    const logged = s.events.log.length;
+    s.events.isPlaying = () => false;           // paused: the pick waits
     document.querySelector('#dev-event-list button').click();
-    out.menu = { buttons, open: !document.getElementById('dev-events').hidden, log: s.events.log.map(e => e.how + ':' + e.id) };
+    for (let i = 0; i < 400; i++) s.events.update(1 / 60);
+    out.menu = { buttons, open: !document.getElementById('dev-events').hidden, queued: s.events.queued?.event.id ?? null,
+      playedWhilePaused: s.events.log.length - logged, line: document.getElementById('dev-queue').textContent };
+    s.events.isPlaying = () => true;            // resumed: 3 s of play
+    for (let i = 0; i < 175; i++) s.events.update(1 / 60);
+    out.menu.before3s = s.events.log.length - logged;
+    for (let i = 0; i < 10; i++) s.events.update(1 / 60);
+    out.menu.after3s = s.events.log.slice(logged).map(e => e.how + ':' + e.id);
     await frames(2);
     return out;
   });
