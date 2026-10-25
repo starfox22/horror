@@ -70,6 +70,9 @@ second and takes minutes to load the flat: run long checks in the background and
   systems by hand (see BUILD_013.md, Verification).
 - `tools/perf/hitch.mjs`, `leak.mjs`, `drink-shots.mjs`, `event-check.mjs`: see `tools/perf/README.md`.
 - `tools/shoot.mjs dist <out> name=x,z,yaw[,pitch] ...`: screenshots at chosen spots (`#shot` skips the intro).
+- `tools/perf/scene-shots.mjs dist <out> <scenes.mjs>`: staged story moments (the death mid-stab, his run, the phone
+  booting) from one page load; each scene is a function run in the page with `window.__app` (see its header). Run one
+  browser job at a time: with several, the warm-up alone takes 30-45 minutes.
 - URL hash options for tests: `#webgl`, `#q=1|2|3`, `#shot=x,z,yaw,pitch`, `#warm` (warm-up even with `#shot`),
   `#dark`, `#allon`, `#flash`, `#stats`. `window.__app` exposes every system (`drink.apply(t)`, `events.run(id)`, ...).
 - Never `pkill -f` a pattern that appears in your own shell command line (it kills that shell): use `[x]yz` patterns

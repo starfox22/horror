@@ -23,8 +23,9 @@ const FRONT_DOOR = [12.88, 1.05, 4.36];
 const BATH_DOOR = [9.15, 1.0, 0.8];
 // The first sighting: where he stands (by the front door), the way he runs (at the player, then into the bedroom and
 // into the wardrobe's right half, round its door as it swings open), and where he is out of sight. Measured on the walk
-// grid: the corridor's middle, the bedroom doorway (x 10.0-10.9); the right door's leaf, open, reaches (10.46, 0.41).
-const SPRINT = [[12.35, 3.55], [11.2, 3.45], [10.5, 3.05], [10.45, 2.45], [10.3, 1.7], [10.75, 0.6], [10.6, -0.05], [9.5, -0.1]];
+// grid: the corridor's middle, the bedroom doorway (x 10.0-10.9); the right door's leaf, open, reaches (10.51, 0.36):
+// his path clears it by 0.28 m, and the walk grid is free all the way to the wardrobe's front.
+const SPRINT = [[12.35, 3.55], [11.2, 3.45], [10.5, 3.05], [10.45, 2.45], [10.3, 1.7], [10.85, 0.6], [10.7, -0.1], [9.5, -0.1]];
 const SPRINT_SPEED = 3.6;
 const SPRINT_OPEN = 3;              // reaching this point he pulls the wardrobe's right door open (it swings in 0.7 s)
 const FRIDGE_AT = [1.9, -0.6];      // the refrigerator's door, roughly (the drink's fallback measures from it)

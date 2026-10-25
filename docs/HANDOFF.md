@@ -134,6 +134,17 @@ make-artifact keeps `collision.json` and `sight.json` beside the parts and packs
   adaptation (`EyeAdaptation`). High/Medium/Low (keys 1-3); Auto targets 60 FPS through effect, shadow and resolution budgets (`scene-quality.js`, `graphics-settings.js`). The limiter defaults to 60; Unlimited is manual.
 - **Sound**: Web Audio ambience/fixture feedback (`src/ambience.js`) includes rain, droplets, room tone, fridge, tap and footsteps with HRTF/reverb. Drinking (`src/drink-sequence.js`) uses downloaded CC0 gulp/exhale recordings, synchronized with the paused animation clock. See DRINK_ASSETS.md for attribution and provenance.
 
+## Build 0.14 changes (where they live)
+Full list, the director's review and verification: [BUILD_014.md](BUILD_014.md); the design: [STORY.md](STORY.md) v3. In
+short: the notice on the fridge door (`world.js`), doors that push the player instead of sticking (`walkgrid.js
+swingInto`, `fridge.js`, `doors.js`, `closets.js`), the taps (`taps.js`), the phone on the nightstand with a screen that
+lights (`phone.js`), the man's run into the bedroom and the wardrobe (`story.js` sighting), the knife rack's gap
+(`world.js buildKnives`), his knife and porcelain mask (`intruder.js`, `tools/intruder/`, `tools/props/`), the crow
+(`crow.js`, `tools/crow/`), the death with the knife, blood and the fall (`death.js`), loud never-clipped scares
+(`sound.js`), a fairer hunt (`stalker.js`, `hunt.js`, `navgrid.js`), the developer menu's delayed events and non-
+permanent light controls (`devmenu.js`, `story-events.js`), sound captions (`hud.js`, Settings), staged captures
+(`tools/perf/scene-shots.mjs`).
+
 ## Build 0.13 changes (where they live)
 Full list and verification: [BUILD_013.md](BUILD_013.md); the design (truth, beats, triggers, fallbacks, endings,
 evidence, replay): [STORY.md](STORY.md). In short:
@@ -387,6 +398,23 @@ Full list, measurements and before/after renders: [BUILD_012.md](BUILD_012.md). 
   `props.json` `materials` overrides fix the material in the build.
 - The polaroid photo is baked from the game (`tools/bake-clips.mjs`), then printed into the polaroids' texture
   (`node tools/props/build.mjs polaroids`): bake first, then rebuild that prop.
+- Build 0.14: `sight.json` keeps only the tallest point of each cell, so door heads made every doorway opaque to his
+  eyes: `navgrid.sees()` ignores walkable cells (collision guarantees nothing between 0.25 and 1.9 m stands in them).
+- The walk grid bakes the wardrobe doors shut: a player can never stand inside it; `hunt.inWardrobe` counts standing
+  pressed into the open right half's doorway.
+- His meshes refuse shadow cameras (`intruder.js seenBy`): a cached lamp shadow re-rendered while he stood there would
+  keep a ghost of him. Only a realtime light may draw him into its shadow.
+- A texture transform that becomes the identity is a different shader (the taps' stream is tiled (1, 2) so its scroll
+  never hits it); an opacity of exactly 0 or 1 is too (the ripples never go below 0.004). Force a transparent mesh's
+  order with `meshInstance.calculateSortDistance`.
+- An additive blend (BLEND_ADDITIVE) ignores opacity: put a glow's gradient in the emissive map (the light under the
+  bathroom door), or use BLEND_ADDITIVEALPHA.
+- The flashlight follows the camera with a lag (a slerp): in staged shots snap `flashlight.rot` to the camera.
+- The phone's canvas is drawn only when it is dirty and either held or lying on the nightstand (that copy shares it).
+- Story fallbacks use `story.soonest()`: a later event must never push a fallback later (the cut, the hunt).
+- `tools/perf/scene-shots.mjs` loads the build once for many staged shots; freeze a sequence by stepping it by hand and
+  then replacing the instance's `update` (`death.update = () => {}`). With several headless browsers running, the
+  warm-up alone takes 30-45 minutes: run one browser job at a time.
 - `app.stats` frame counters and `_shaderStats` are only filled in the engine's profiler build: to count shadow renders
   and new shaders, wrap `app.renderer.shadowRenderer.renderFace` and watch `graphicsDevice.shaders.length`
   (`tools/perf/hitch.mjs` does, see its README).

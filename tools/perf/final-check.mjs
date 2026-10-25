@@ -53,7 +53,8 @@ const [url, mode = 'webgl'] = process.argv.slice(2);
     // Build 0.13: the night. Story time is stepped by hand (software rendering runs at about a frame a second).
     const tick = async (seconds) => { for (let t = 0; t < seconds; t += 0.05) { s.story.update(0.05); s.power.update(0.05); s.seccam.update(0.05); s.fusebox.update(0.05); s.phone.update(0.05); } await frames(1); };
     s.player.update = () => {};
-    await step('bathroom light out', async () => { s.story.glassBreaks(); s.world.bathroomOccupied(true); s.story.bathroomTried(); await tick(3.2); }, 10);
+    await step('light under the door', async () => { s.story.glassBreaks(); s.world.bathroomOccupied(true); s.camera.setPosition(10.9, 1.6, 0.82); s.camera.lookAt(new s.pc.Vec3(9.3, 0.2, 0.82)); await tick(0.2); }, 8);
+    await step('bathroom light out', async () => { s.story.bathroomTried(); await tick(3.2); }, 10);
     await step('power cut', async () => { s.story.powerCut('test'); await tick(2); }, 10);
     await step('fuse box', async () => { s.camera.setPosition(2.4, 1.6, 3.95); s.camera.lookAt(new s.pc.Vec3(2.33, 1.6, 4.3)); s.fusebox.toggleCover(); await tick(1.5); }, 6);
     await step('levers', async () => { for (const id of ['bathroom', 'kitchen', 'rcd']) s.fusebox.flip(s.fusebox.switches.find(x => x.id === id)); await tick(2); }, 10);

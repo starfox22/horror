@@ -350,7 +350,7 @@ if (hash.has('dark')) {
 if (hash.has('allon')) switches.rooms.forEach(r => { if (!r.on) switches.toggle(r); });
 if (hash.has('flash')) flashlight.pickUp();
 rain = new Rain(app, apartment, ambience, lit);
-// The crow at a window (crow.js; docs/STORY.md beat 5): once a night before the hunt, seen by the player's camera only.
+// The crow at a window (crow.js; docs/STORY.md beat 5): once a night before the man is seen, by the player's camera only.
 const crow = await Crow.create({ app, camera, player, story, bank, rain, isPlaying, isVisible: cam => cam === playerCam,
   configureMaterial: (m, zone) => probes.assign(m, zone), blocked: () => drink.running || phone.raised || hud.reading || death.busy || !!endings.running });
 sys.crow = crow;
@@ -385,6 +385,8 @@ if (!shot || hash.has('warm')) {
     intruder.place(c.x + fw.x * 2, c.z + fw.z * 2, Math.atan2(-fw.x, -fw.z) * 180 / Math.PI, Math.max(0.16, c.y - 1.5));
     // The home camera looks at him too (its own tone mapping makes its own shader variants: LIVE shows him).
     seccam.entity.lookAt(intruder.pos.x, intruder.pos.y + 1.2, intruder.pos.z);
+    // The light under the bathroom door, on the floor a step ahead of each view (it is put back afterwards).
+    world.doorGlow?.setPosition(c.x + fw.x * 1.4, Math.max(0.17, c.y - 1.3), c.z + fw.z * 1.4);
   }, reveal: [
     revealInFront(drink.handCarrier),
     () => {
@@ -396,6 +398,11 @@ if (!shot || hash.has('warm')) {
     },
     () => { rain.revealing = true; return () => { rain.revealing = false; }; },
     () => taps.reveal(),                       // the taps' water (taps.js)
+    () => {                                    // the light under the bathroom door (world.js)
+      const glow = world.doorGlow, at = glow?.getPosition().clone();
+      world.warming = true; world.doorGlowLevel = -1; world.updateDoorGlow();
+      return () => { world.warming = false; if (at) glow.setPosition(at); world.doorGlowLevel = -1; world.updateDoorGlow(); };
+    },
     () => crow.reveal(),                       // the crow, his feathers and the smear on the glass (crow.js)
     // Build 0.13: the story's later things on view for the sweep (their shaders, and the intruder's light's shadows).
     // The phone held up with its video showing (phone.update keeps the holder only while it is raised).
