@@ -462,6 +462,7 @@ app.on('update', (dt) => {
   ambience.listen(camera.getPosition(), fwd, up);
   bank.listen(camera.getPosition());
   const playing = isPlaying();
+  intruder.hold(!!menu?.isOpen || hud.reading);           // paused: he stands still with the rest of the night
   if (playing && (!wake || wake.completed)) story.update(dt);
   if (playing) music.update(dt);                           // paused: no heartbeats queued on a suspended context
   endings.update(dt);

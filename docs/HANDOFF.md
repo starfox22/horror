@@ -149,7 +149,8 @@ lights (`phone.js`), the man's run into the bedroom and the wardrobe (`story.js`
 (`crow.js`, `tools/crow/`), the death with the knife, blood and the fall (`death.js`), loud never-clipped scares
 (`sound.js`), a fairer hunt (`stalker.js`, `hunt.js`, `navgrid.js`), the developer menu's delayed events and non-
 permanent light controls (`devmenu.js`, `story-events.js`), sound captions (`hud.js`, Settings), staged captures
-(`tools/perf/scene-shots.mjs`).
+(`tools/perf/scene-shots.mjs`), his clip held while a menu or a paper is open (`intruder.js hold`, `main.js`), a note
+on the title for touch screens alone (`menu.js`).
 
 ## Build 0.13 changes (where they live)
 Full list and verification: [BUILD_013.md](BUILD_013.md); the design (truth, beats, triggers, fallbacks, endings,
@@ -410,6 +411,8 @@ Full list, measurements and before/after renders: [BUILD_012.md](BUILD_012.md). 
   eyes: `navgrid.sees()` ignores walkable cells (collision guarantees nothing between 0.25 and 1.9 m stands in them).
 - The walk grid bakes the wardrobe doors shut: a player can never stand inside it; `hunt.inWardrobe` counts standing
   pressed into the open right half's doorway.
+- Animate him only through `intruder.play()`: it respects `hold()` (main.js holds his clip while a menu or a paper is
+  open). Writing `body.anim.speed` directly would run his clip behind the pause menu again.
 - His meshes refuse shadow cameras (`intruder.js seenBy`): a cached lamp shadow re-rendered while he stood there would
   keep a ghost of him. Only a realtime light may draw him into its shadow.
 - A texture transform that becomes the identity is a different shader (the taps' stream is tiled (1, 2) so its scroll

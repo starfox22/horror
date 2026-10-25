@@ -136,6 +136,9 @@ h1 { margin: 0; font: 300 2.6rem/1.1 Georgia, "Times New Roman", serif; letter-s
 #menu .menu-time { margin: .9rem 0 0; font: 300 1rem/1 'Helvetica Neue', Arial, sans-serif; letter-spacing: .5em; color: #b33a32; opacity: .85;
   animation: menuClock 2s steps(1) infinite; }
 @keyframes menuClock { 50% { opacity: .35; } }
+#menu .menu-note { margin: 1.6rem 0 0; max-width: 24rem; padding-left: .8rem; border-left: 2px solid #b33a32;
+  font: 400 .95rem/1.45 'Helvetica Neue', Arial, sans-serif; color: #e2d9c8; }
+#menu .menu-note[hidden] { display: none; }
 #menu .menu-panel { grid-column: 1; grid-row: 1; align-self: end; display: grid; gap: .25rem; padding: 0 0 7vh 6vw; max-height: 72vh; overflow-y: auto;
   scrollbar-width: thin; }
 #menu[data-screen="ending"] .menu-panel, #menu[data-screen="records"] .menu-panel, #menu[data-screen="journal"] .menu-panel,

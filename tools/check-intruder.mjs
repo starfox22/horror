@@ -2,7 +2,8 @@
 // by its own clips): the knife hangs point down in his fist through his walks, run and idles; knifePose lifts it by his
 // head pointing forward and down and stabs it forward and down without the blade ever turning up on the way; his
 // phone light rides in his left hand; cameraOnly keeps his body out of every view but the home camera's; the porcelain
-// mask stays clear of his face and hood (tools/intruder/fit-check.mjs runs every clip). node --test tools/check-intruder.mjs
+// mask stays clear of his face and hood (tools/intruder/fit-check.mjs runs every clip); paused, his clip holds.
+// node --test tools/check-intruder.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { NodeIO } from '@gltf-transform/core';
@@ -91,6 +92,22 @@ test('his phone light rides in his left hand; cameraOnly shows him to the home c
   assert.deepEqual([m.seenBy(player), m.seenBy(homeCam), m.seenBy(probe), m.seenBy(torchShadow), m.seenBy(lampShadow)], [true, true, false, true, false]);
   m.cameraOnly = true;
   assert.deepEqual([m.seenBy(player), m.seenBy(homeCam), m.seenBy(probe), m.seenBy(torchShadow), m.seenBy(lampShadow)], [false, true, false, false, false]);
+});
+
+test('paused, his clip holds still; a clip asked for meanwhile plays at its speed once resumed', () => {
+  const transitions = [];
+  const m = Object.create(Intruder.prototype);
+  Object.assign(m, { clips: { walk_slow_01: {}, run_neutral_01: {} }, clip: 'walk_slow_01', held: false,
+    body: { anim: { speed: 0.9, baseLayer: { transition: (name) => transitions.push(name) } } } });
+  m.hold(true);
+  assert.equal(m.body.anim.speed, 0, 'held: no time passes in his clip');
+  m.hold(true);
+  m.play('run_neutral_01', { speed: 1.3 });
+  assert.deepEqual([m.body.anim.speed, transitions], [0, ['run_neutral_01']], 'a new clip waits, held');
+  m.hold(false);
+  assert.equal(m.body.anim.speed, 1.3, 'resumed at the speed asked for');
+  m.hold(true); m.hold(false);
+  assert.equal(m.body.anim.speed, 1.3, 'and again');
 });
 
 test('the mask stays clear of his face and hood', () => {

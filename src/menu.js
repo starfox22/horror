@@ -34,10 +34,13 @@ export class Menu {
     this.root.id = 'menu';
     this.root.innerHTML = `
       <div class="menu-veil"></div>
-      <div class="menu-title"><h1>The Apartment</h1><p class="menu-time">03:07</p></div>
+      <div class="menu-title"><h1>The Apartment</h1><p class="menu-time">03:07</p>
+        <p class="menu-note" hidden>Played with a keyboard and a mouse. On a touch screen alone you cannot walk or look around: open it on a computer.</p></div>
       <nav class="menu-panel" aria-label="Menu"></nav>
       <div class="menu-foot"><span class="menu-build"></span><span class="menu-loading"><span class="menu-bar"><i></i></span><em>Loading…</em></span></div>`;
     document.body.appendChild(this.root);
+    // A touch screen alone (a phone, a tablet without a mouse) has no keys and no pointer lock: said under the title.
+    this.root.querySelector('.menu-note').hidden = globalThis.matchMedia?.('(any-pointer: fine)').matches !== false;
     this.panel = this.root.querySelector('.menu-panel');
     this.root.addEventListener('keydown', (e) => this.key(e));
     this.state = 'loading';

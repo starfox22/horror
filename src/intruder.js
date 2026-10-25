@@ -128,6 +128,7 @@ export class Intruder {
     this.root.enabled = false;
     app.root.addChild(this.root);
     this.pos = new Vec3(); this.yaw = 0; this.clip = null; this.speed = 0;
+    this.held = false;               // paused (main.js): his clip holds still (hold)
     this.torchYaw = null;            // where his light points (stalker.js sweeps it); null: where he faces
     this.headPitch = 0;              // degrees added to the animated head (seccam.js: looking up into the lens)
     this.torchUnder = false;         // his light held under his chin, up into the mask (death.js)
@@ -157,8 +158,17 @@ export class Intruder {
     const anim = this.body.anim;
     if (this.clip !== name) anim.baseLayer.transition(name, blend);
     this.clip = name;
-    anim.speed = speed;
+    if (this.held) this.heldSpeed = speed; else anim.speed = speed;
     void loop;
+  }
+
+  // Paused (main.js: the pause menu or a paper open): his clip and any cross-fade hold where they are, as everything
+  // that moves him (story.js, hunt.js, seccam.js, death.js) stands still too; released, the speed play() set returns.
+  hold(on) {
+    if (!!on === this.held || !this.body?.anim) return;
+    this.held = !!on;
+    const anim = this.body.anim;
+    if (this.held) { this.heldSpeed = anim.speed; anim.speed = 0; } else anim.speed = this.heldSpeed ?? 1;
   }
 
   setTorch(on, intensity = 2.2) {

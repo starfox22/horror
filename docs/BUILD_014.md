@@ -134,3 +134,14 @@ corridor's whole length keeps a clear line to him for the sighting) and gave the
 it found (the breathing caption went quiet after a respawn) and two notes (the hatch seen from beside the open leaf;
 the drop's caption heard from anywhere) were fixed before publishing. The last final-check run on the final build: 24
 steps, no shader built, on WebGL; WebGPU clean at `ffdf7b8` (later changes are colours, CSS and positions only).
+
+## After publishing: the pause and touch screens
+
+Two things the reviews had left as nice-to-haves, fixed after the first 0.14 publish:
+
+| Was | Where | Now |
+| --- | --- | --- |
+| He kept walking (or running) in place behind the pause menu or a paper: everything that moves him stops there (the story, the hunt, LIVE and the death wait), but his clip did not. | `intruder.js` (`hold`), `main.js` | While a menu (pause, its pages, the developer menu's pause) or a paper is open, his clip and any cross-fade hold where they are; a clip asked for meanwhile starts at its own speed on resuming. `tools/check-intruder.mjs` covers it; in the browser his left hand moved 0 m over 8 frames with the title or the pause menu open or a paper up, and 0.53 m once closed (walking, then running at the speed asked for). |
+| On a phone or a tablet without a mouse nothing said the night cannot be played there (no keys, no pointer lock). | `menu.js`, `style.css` | A note under the title when no fine pointer exists: "Played with a keyboard and a mouse. On a touch screen alone you cannot walk or look around: open it on a computer." Desktops (and laptops with touch screens) never see it. Captures: [title-touch.jpg](build-014/title-touch.jpg), [title-desktop.jpg](build-014/title-desktop.jpg). |
+
+209/209 regressions after both.
