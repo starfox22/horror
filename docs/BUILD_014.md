@@ -112,3 +112,19 @@ of the real classes). Its findings, all fixed in `story.js` unless noted (tests 
 | The LIVE scene, the phone's boot and a death kept running behind the pause menu (medium) | `paused` hooks (main.js): they wait. |
 | A player walking on east could meet his run (medium-low) | The walk-back branch starts at x 7 and he breaks at once; a held sighting breaks early when the player comes on. |
 | Low: Hard's third catch reset the deaths and froze the clocks; a timed cut could shut the hot tap; releasing any key cancelled Q; a call-back on vibrate was a 12 m noise; opening the right door in the hunt recorded the packed-up nest; toasts expired under documents; a bedroom LIVE feed stayed live through the hunt; the LIVE scene snapped the wardrobe door without moving its handle and LED; the spare key was taken instantly and silently; dev events "Caught" and "The locked bathroom" could break the night. | All fixed: deaths kept and the clocks back to 03:07; the tap stays hot; Q only on Q; a buzz is a 4 m noise; no nest once packed; toasts wait while reading; the hunt cuts the feed; `closets.open`; searching takes 1.5 s with a 2.5 m noise (walking away stops it); "Caught" only respawns him in the hunt, the locked bathroom never re-locks after the cut. |
+
+## The final verification review (a fresh read of the fixed build)
+
+It confirmed every earlier fix in the code and with its own Node checks, and found seven small defects on the main
+path, all fixed (regressions in `tools/check-story.mjs`, "final review"):
+
+| Defect | Fix |
+| --- | --- |
+| The first sighting could be spent unseen in the dark (the watch armed without the torch, from any room), or "seen" from 12-18 m in the open-plan room, even with no line of sight. | Armed only by the torch in the corridor (x < 6) or the fuse box with it; seen only from the corridor with a clear line to him (`nav.sees`). A torchless player hears him at power-back, as designed. |
+| Caught with the phone up, the phone stayed in view through the death and the wake. | `caught()` drops it (and abandons a half-done search). |
+| The ajar bathroom door said "Close the bathroom door" and the first E shut it. | Ajar is not "asked open": the first E opens it. |
+| The hatch's drop and "...How long?" fired through the shut wardrobe door; "Someone wiped the mirror." through the corridor wall. | The hatch needs the right door open and the player in front of it; the mirror needs the player in the bathroom. |
+| LIVE in the bedroom showed a live picture under "no signal". | The camera does not draw there and the video is black (its colour only: no new shader). |
+| The fuse box's "What else is wet?" pointed at causes that were never built. | "Still tripping. ...One at a time, like the label says." |
+| Sound captions sat on top of the thoughts. | Captions at the top of the screen. |
+| Nice-to-haves done | Endings and evidence counted from this build's lists only (0.13 stored others on the same site); checkpoints saved under a new key (0.13's are a different night); the first fridge opening arms the kitchen ceiling's creaks; a pointer to the diary on the second "Where's the spare?"; his prints appear when the latch clicks, not in the beam; no journal toast during a death; the nightstand glow stays on the top; captions for his breathing and the drop; a Controls page in the pause menu; Hard's restart keeps a 112 call; the Act II tap-off creaks only once he is up there; an Act IV checkpoint says the goal. |

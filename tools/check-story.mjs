@@ -308,6 +308,48 @@ test('QA: the fuse box opened before the cut plays none of the dark\'s beats', (
   assert.ok(!story.has('fusebox-opened') && !calls.includes('play.door_rattle'));
 });
 
+test('final review: the sighting needs the torch in the corridor, and a clear line to him', () => {
+  const { story, sys, run } = night();
+  story.begin({ seed: 6 });
+  story.glassBreaks(); story.powerCut('test');
+  sys.intruder = { show: () => {}, place: () => {}, play: () => {}, setTorch: () => {} };
+  sys.flashlight = { held: false, on: false, beam: { up: { x: -1, y: 0, z: 0 } } };
+  for (const x of [0.5, 3, 5, 7.5, 8.8]) { sys.player.pos = { x, z: 3.6 }; run(0.3); }
+  assert.ok(!story.has('went-west') && !story.has('silhouette'), 'no torch: nothing is spent in the dark');
+  story.set('torch'); sys.flashlight = { held: true, on: true, beam: { up: { x: -1, y: 0, z: 0 } } };
+  sys.nav = { sees: () => false };
+  for (const x of [5.5, 4]) { sys.player.pos = { x, z: 3.6 }; run(0.3); }
+  assert.ok(story.has('went-west') && !story.has('silhouette'), 'no line of sight: not seen');
+  sys.nav = { sees: () => true }; run(0.3);
+  assert.ok(story.has('silhouette'));
+});
+
+test('final review: caught with the phone up, it drops out of view', () => {
+  const { story, sys } = night();
+  story.begin({ seed: 5 });
+  sys.phone = { raised: true, raiseK: 1, holder: { enabled: true }, video: { enabled: true }, seccam: { stopLive() {} } };
+  sys.death = { play: () => {}, wakeUp: () => {} };
+  story.caught();
+  assert.ok(!sys.phone.raised && !sys.phone.holder.enabled && !sys.phone.video.enabled);
+});
+
+test('final review: the mirror only from the bathroom, the hatch only with the wardrobe open', () => {
+  const { story, sys, said, run } = night();
+  story.begin({ seed: 5 });
+  story.set('bathroom-open');
+  const lookAt = (eye, at) => { const d = at.map((v, i) => v - eye[i]), n = Math.hypot(...d); sys.camera.getPosition = () => ({ x: eye[0], y: eye[1], z: eye[2] }); sys.camera.forward = { x: d[0] / n, y: d[1] / n, z: d[2] / n }; sys.player.pos = { x: eye[0], z: eye[2] }; run(0.2); };
+  lookAt([7.8, 1.6, 3.2], [6.5, 1.75, 1.25]);
+  assert.ok(!said.includes('Someone wiped the mirror.'), 'not through the wall from the corridor');
+  lookAt([7.6, 1.6, 1.25], [6.5, 1.75, 1.25]);
+  assert.ok(said.includes('Someone wiped the mirror.'));
+  sys.nest = { hatchOpen: true, drop() {} }; sys.flashlight = { on: true, held: true };
+  sys.closets = { doors: [{ id: 'right', angle: 0.18 }] };
+  lookAt([10.6, 1.6, 0.2], [9.55, 2.27, -0.12]);
+  assert.ok(!story.has('hatch-seen'), 'not through the shut wardrobe door');
+  sys.closets.doors[0].angle = 1; run(0.2);
+  assert.ok(story.has('hatch-seen'));
+});
+
 test('QA: a player walking on east never meets his run', () => {
   const { story, sys, run } = night();
   story.begin({ seed: 6 });

@@ -205,7 +205,7 @@ h1 { margin: 0; font: 300 2.6rem/1.1 Georgia, "Times New Roman", serif; letter-s
   transition: opacity .9s; pointer-events: none; }
 .hud-voice b { font-weight: 600; letter-spacing: .1em; text-transform: uppercase; font-size: .78em; color: #9fb4c8; margin-right: .5em; }
 .hud-voice.out { opacity: 0; }
-.hud-sound { position: fixed; left: 50%; bottom: 13%; transform: translateX(-50%); z-index: 13; width: min(40rem, calc(100vw - 3rem)); text-align: center;
+.hud-sound { position: fixed; left: 50%; top: 9%; bottom: auto; transform: translateX(-50%); z-index: 13; width: min(40rem, calc(100vw - 3rem)); text-align: center;
   font: italic 400 calc(.9rem * var(--subtitle, 1))/1.4 'Helvetica Neue', Arial, sans-serif; color: #b9c2cc; text-shadow: 0 1px 4px #000, 0 0 14px #000;
   transition: opacity .9s; pointer-events: none; }
 .hud-sound.out { opacity: 0; }

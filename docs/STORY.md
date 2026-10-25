@@ -111,14 +111,17 @@ of them 3 s after the game resumes).
     hinged cover: **MAIN**, **RCD** (tripped, with a TEST button) and seven breakers: LIGHTS 1, LIGHTS 2, KITCHEN, SOCKETS
     LIVING, SOCKETS BED, BATHROOM, OVEN. Taped inside the cover, a handwritten label: *"RCD trips → all breakers off, RCD
     up, breakers on one at a time. The one that trips it again: OFF."* The RCD stays up only while no wet circuit is on:
-    BATHROOM always, and on some runs one nuisance circuit with a cause the player could have seen (a puddle under the
-    coffee machine: KITCHEN; rain on a floor socket by the living-room window: SOCKETS LIVING). The clever player
-    switches BATHROOM off and lifts the RCD: two actions. Hints only for whoever is stuck: the second trip, *"Something's
-    wet."*; the third, *"The bathroom. Off first."*; tripping with BATHROOM off, *"Still tripping. ...What else is
-    wet?"*; the cover open 90 s without power, *"All off. Then one at a time."*
-11. **The man.** Armed once the player is well down the corridor (x < 6) or has opened the fuse box. 4 s after the
+    BATHROOM always, and on some runs one nuisance circuit (KITCHEN or SOCKETS LIVING; no visible cause is built yet:
+    the label's one-at-a-time procedure finds it). The clever player switches BATHROOM off and lifts the RCD: two
+    actions. Hints only for whoever is stuck: the second trip, *"Something's
+    wet."*; the third, *"The bathroom. Off first."*; tripping with BATHROOM off, *"Still tripping. ...One at a time,
+    like the label says."*; the cover open 90 s without power, *"All off. Then one at a time."*
+11. **The man.** Armed once the player, torch in hand, is well down the corridor (x < 6) or has opened the fuse box
+    with it (without the torch nothing starts: he is heard at power-back). His wet bare prints appear in the corridor
+    when the latch clicks (he walked from the bathroom to the front door). 4 s after the
     cover opens, from the far east end: one slow floorboard creak; again at 12 s; at 20 s the front door's handle goes
-    down, slowly, and back. When the player's torch beam points down the corridor towards the front door (from x < 8.2),
+    down, slowly, and back. When the player's torch beam points down the corridor towards the front door (from the
+    corridor, with nothing between),
     **a man is standing there at the edge of the light**, at least four metres away: black clothes, a blank white face,
     something long and bright in his hand. He holds still until the beam has been on him for a second (1.2-2.5 s).
     Then he runs, barefoot and wet (slapping steps): straight at the player, fast, and swerves into the bedroom doorway,

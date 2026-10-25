@@ -143,7 +143,8 @@ export class Menu {
 
   screen_records() {
     const ever = this.hooks.everFound?.() || new Set();
-    this.heading('Endings', `${Object.keys(this.progress.endings).length} of ${ENDINGS.length}`);
+    // Count only this build's endings and evidence (older builds on the same site stored others: 0.13's 'lodger').
+    this.heading('Endings', `${ENDINGS.filter(e => this.progress.endings[e.id]).length} of ${ENDINGS.length}`);
     const list = document.createElement('ul'); list.className = 'menu-endings';
     for (const e of ENDINGS) {
       const got = this.progress.endings[e.id], best = this.progress.best[e.id];
@@ -152,7 +153,7 @@ export class Menu {
       list.appendChild(li);
     }
     this.panel.appendChild(list);
-    this.heading('Evidence', `${ever.size} of ${EVIDENCE.length} found over all your nights`);
+    this.heading('Evidence', `${EVIDENCE.filter(e => ever.has(e.id)).length} of ${EVIDENCE.length} found over all your nights`);
     const ev = document.createElement('ul'); ev.className = 'menu-evidence';
     for (const e of EVIDENCE) { const li = document.createElement('li'); li.textContent = ever.has(e.id) ? e.title : '· · ·'; li.className = ever.has(e.id) ? 'got' : ''; ev.appendChild(li); }
     this.panel.appendChild(ev);
@@ -167,6 +168,19 @@ export class Menu {
       const div = document.createElement('article');
       div.innerHTML = `<h3>${e.title}</h3><p>${e.text}</p>`;
       list.appendChild(div);
+    }
+    this.panel.appendChild(list);
+    this.item('Back', () => this.back(), { cls: 'back' });
+  }
+
+  // The keys (shown once at the start of a night; here whenever they are needed).
+  screen_controls() {
+    this.heading('Controls');
+    const list = document.createElement('ul'); list.className = 'menu-endings';
+    for (const [k, what] of [['W A S D', 'move'], ['Mouse', 'look'], ['Shift', 'run'], ['C', 'crouch'], ['E', 'use (hold: the front door’s lock)'],
+      ['F', 'torch, once found'], ['Q', 'phone, once you have it (hold: silence it)'], ['Wheel · click', 'the phone’s choices'], ['B', 'head bob'],
+      ['G · 1 2 3', 'graphics · quality'], ['Esc', 'pause']]) {
+      const li = document.createElement('li'); li.innerHTML = `<b>${k}</b><span>${what}</span>`; list.appendChild(li);
     }
     this.panel.appendChild(list);
     this.item('Back', () => this.back(), { cls: 'back' });
@@ -230,6 +244,7 @@ export class Menu {
     this.heading('Paused', this.hooks.status?.() || '');
     this.item('Resume', () => this.hooks.resume(), { cls: 'primary' });
     this.item('Journal', () => this.show('journal'));
+    this.item('Controls', () => this.show('controls'));
     this.item('Settings', () => this.show('settings'));
     this.item('Back to the last checkpoint', () => this.hooks.restartCheckpoint(), { sub: this.hooks.checkpointName?.() || '' });
     this.item('Quit to the title', () => this.hooks.quitToTitle());

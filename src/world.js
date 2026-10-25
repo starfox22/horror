@@ -173,7 +173,8 @@ export class World {
     } else {
       d.locked = false;
       // Left ajar as he went.
-      d.angle = -14; d.target = -14; d.openRequested = true; d.pivot.setEulerAngles(0, d.angle, 0); this.doors.placeHandle(d);
+      // Not asked open: the first E opens it the rest of the way ("Open the bathroom door").
+      d.angle = -14; d.target = -14; d.openRequested = false; d.pivot.setEulerAngles(0, d.angle, 0); this.doors.placeHandle(d);
       this.story?.set('bathroom-open');
     }
   }

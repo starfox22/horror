@@ -339,7 +339,7 @@ phone.blocked = () => !isPlaying() || death.busy || !!endings.running;
 phone.paused = seccam.paused = death.paused = () => !isPlaying();
 app.on('update', dt => thought.update(isPlaying() ? dt : 0));
 // Journal toasts wait for a quiet moment: 5 s after a scare, no thought on screen.
-journal.ready = () => story.time - story.lastScare >= 5 && !thought.line && !thought.queue.length && !hud.reading;
+journal.ready = () => story.time - story.lastScare >= 5 && !thought.line && !thought.queue.length && !hud.reading && !death.busy;
 app.on('update', dt => journal.update(isPlaying() ? dt : 0));
 // The bedside clock keeps the night's time from 03:07, and is back at 03:07 every time you wake from him (story.wake).
 let clockFrom = 0;

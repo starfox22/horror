@@ -339,7 +339,8 @@ export class Phone {
     this.standGlow = new Entity('phone screen glow');
     this.standGlow.addComponent('render', { type: 'plane', material: m, castShadows: false, receiveShadows: false });
     for (const mi of this.standGlow.render.meshInstances) mi.isVisibleFunc = cam => !cam.node?.name?.startsWith('probe-') && cam.frustum.containsAabb(mi.aabb);
-    this.standGlow.setPosition(at.x, at.y + 0.001, at.z); this.standGlow.setLocalScale(0.55, 1, 0.55);
+    // The top's west edge is at x 13.51 (measured): centred a little east of the phone, small enough to stay on it.
+    this.standGlow.setPosition(at.x + 0.055, at.y + 0.001, at.z); this.standGlow.setLocalScale(0.38, 1, 0.38);
     this.standGlowAt = this.standGlow.getPosition().clone();
     this.standGlow.enabled = false;
     this.app.root.addChild(this.standGlow);

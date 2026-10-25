@@ -158,7 +158,7 @@ fn hash(p: vec2f) -> f32 { return fract(sin(dot(p, vec2f(12.9898, 78.233)) + uni
     const c = await this.loadClip(id);
     if (!c) return;
     this.clip = { c, t: 0, frame: -1, videoMat };
-    videoMat.emissiveMap = c.texture; videoMat.update();
+    videoMat.emissiveMap = c.texture; videoMat.emissive = new Color(1, 1, 1); videoMat.update();
   }
 
   // A still (Sweet Dreams): draws the clip's frame into an image URL for the overlay.
@@ -172,7 +172,7 @@ fn hash(p: vec2f) -> f32 { return fract(sin(dot(p, vec2f(12.9898, 78.233)) + uni
   // --- LIVE --------------------------------------------------------------------------------------------------------
   startLive(videoMat, inBedroom) {
     this.clip = null;
-    videoMat.emissiveMap = this.ir; videoMat.update();
+    videoMat.emissiveMap = this.ir; videoMat.emissive = new Color(1, 1, 1); videoMat.update();
     const dead = this.story?.has('hunt');
     this.live = { t: 0, videoMat, inBedroom, scene: null, dead };
     this.entity.camera.enabled = !dead;
@@ -218,7 +218,11 @@ fn hash(p: vec2f) -> f32 { return fract(sin(dot(p, vec2f(12.9898, 78.233)) + uni
     if (live && !live.dead) {
       // Half rate: the camera draws on every other frame (a cheap camera's stutter, and half the cost).
       this.frameSkip ^= 1;
-      this.entity.camera.enabled = this.frameSkip === 0;
+      // In the bedroom there is no picture at all (the feed says "no signal"): the camera does not draw, the video is
+      // black (its colour only: no new shader).
+      const blank = live.inBedroom();
+      this.entity.camera.enabled = this.frameSkip === 0 && !blank;
+      if (blank !== live.blank && live.videoMat) { live.blank = blank; live.videoMat.emissive = blank ? new Color(0, 0, 0) : new Color(1, 1, 1); live.videoMat.update?.(); }
       if (!this.scene && !live.inBedroom() && !this.story?.has('live')) { live.t += dt; if (live.t > 2.5) this.startScene(); }
       // In the bedroom the feed never comes (the camera is in there with you): the phone says so, once.
       if (live.inBedroom()) {

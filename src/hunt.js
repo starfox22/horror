@@ -188,6 +188,8 @@ export class Hunt {
     if (this.breathTimer <= 0 && near) {
       this.breathTimer = s.state === 'chase' ? 1.6 : 3 + this.rand() * 2;
       this.breath(this.rand() < 0.5 ? 'his_breath_1' : 'his_breath_2', s.state === 'chase' ? 0.8 : s.state === 'ambush' ? 0.55 : 0.4);
+      // Sound captions (Settings): his breathing, at most every 8 s.
+      if (this.time - (this.breathCaptioned ?? -99) > 8) { this.breathCaptioned = this.time; this.story?.caption?.(s.state === 'chase' ? '[Running, right behind you]' : '[Breathing, close]'); }
     }
     this.music?.danger(Math.max(0, 1 - Math.hypot(s.x - p.x, s.z - p.z) / 9), s.state);
   }
@@ -213,6 +215,7 @@ export class Hunt {
   dropped(phase, why) {
     const bank = this.bank, loud = why === 'trap', far = why === 'rush';
     if (phase === 'start') {
+      this.story?.caption?.('[The wardrobe, something coming down]');
       bank?.play('wardrobe_creak', { segment: 'random', at: [9.75, 1.6, -0.1], gain: loud ? 0.9 : 0.7, min: far ? 0.15 : 0 });
       bank?.play('hangers', { at: HATCH, gain: loud ? 0.8 : 0.5, delay: 0.1, min: far ? 0.1 : 0 });
       this.sys('nest')?.dust?.(3);
