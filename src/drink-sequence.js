@@ -111,6 +111,7 @@ export class DrinkSequence {
       }
     }
     this.rig = new ArmRig(this.arm, armData);
+    this.armContainer = container; this.armData = armData;     // the phone's hand is a second copy (phone.js setHand)
     this.grip = gripInGlass(armData, GLASS_HEIGHT);
     this.glassInverse = new Mat4(); this.shelfLocal = new Vec3(); this.glassCamera = new Vec3(); this.glassCameraRotation = new Quat();
     this.tiltRotation = new Quat(); this.inverseCamera = new Quat();

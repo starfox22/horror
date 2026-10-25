@@ -11,6 +11,16 @@
 // empty-battery glyph; booting: its logo; an alert: the lock screen), like a real phone lying face up.
 import { Color, Entity, StandardMaterial, Texture, Vec2, Vec3, Quat, PIXELFORMAT_RGBA8, FILTER_LINEAR, ADDRESS_CLAMP_TO_EDGE, BLEND_NONE, BLEND_ADDITIVE } from 'playcanvas';
 import { W, H, VIDEO, drawScreen, makeWallpaper } from './phone-screen.js';
+import { ArmRig, frameRotation } from './arm-rig.js';
+
+// The hand that holds it (build 0.15, the owner: "the smartphone does not look good on my hand"): the drinking arm's
+// model again (arm-rig.js), in the phone's own frame (x right, y up, z out of the screen; origin its centre): the palm
+// against its back a little right of centre and low, the fingers up and round its left edge, the thumb along its right;
+// the shoulder where the drinking arm's is (drink-sequence.js SHOULDER, camera space).
+export const HAND = {
+  palm: new Vec3(0.014, -0.038, -0.0055), fingers: new Vec3(-0.32, 1, 0.05), facing: new Vec3(0.1, 0, 1), grip: 0.62,
+  shoulder: new Vec3(0.19, -0.25, 0.09),
+};
 
 // Where it lies: the south nightstand's top (0.57 m, measured), beside the alarm clock; its charger's socket behind it.
 export const NIGHTSTAND = new Vec3(13.605, 0.572, 1.80);
@@ -151,6 +161,34 @@ export class Phone {
     const own = this.modelScreenMat.clone(); own.emissiveIntensity = intensity; own.update();
     mi.material = own;
     return mi;
+  }
+
+  // A copy of the first-person arm (drink-sequence.js armContainer) holds it: shown with the phone, posed every frame.
+  setHand(entity, data, configure) {
+    this.handCarrier = new Entity('first-person right arm · phone');
+    this.camera.addChild(this.handCarrier);
+    this.handCarrier.addChild(entity);
+    const playerCamera = this.camera.camera.camera;
+    for (const r of entity.findComponents('render')) for (const mi of r.meshInstances) {
+      mi.castShadow = false; mi.isVisibleFunc = cam => cam === playerCamera;
+      if (!mi.material._phoneConfigured) { mi.material._phoneConfigured = true; configure?.(mi.material); }
+    }
+    this.rig = new ArmRig(entity, data);
+    this.handPalm = new Vec3(...data.wristToPalm);
+    this.handLocal = frameRotation(new Vec3(0, 1, 0), new Vec3(0, 0, -1), HAND.fingers.clone().normalize(), HAND.facing.clone().normalize());
+    this.handCarrier.enabled = false;
+  }
+
+  poseHand() {
+    if (!this.rig) return;
+    this.handCarrier.enabled = this.holder.enabled;
+    if (!this.holder.enabled) return;
+    const at = this.holder.getLocalPosition(), turn = this.holder.getLocalRotation();
+    const rotation = (this._handRot ||= new Quat()).mul2(turn, this.handLocal);
+    // The wrist: where the palm must be, less the palm's offset from the wrist in the hand's frame.
+    const palm = turn.transformVector(HAND.palm, (this._palm ||= new Vec3())).add(at);
+    const wrist = rotation.transformVector(this.handPalm, (this._wrist ||= new Vec3())).mulScalar(-1).add(palm);
+    this.rig.pose(HAND.shoulder, wrist, rotation, { grip: HAND.grip });
   }
 
   // --- state ---------------------------------------------------------------------------------------------------
@@ -413,6 +451,7 @@ export class Phone {
       this.holder.setLocalPosition(0.075 - 0.045 * watch, -0.13 + 0.035 * watch - (1 - k) * 0.18 + Math.sin(t * 1.3) * 0.002, -0.27 + 0.03 * watch);
       this.holder.setLocalEulerAngles(8 - 4 * watch + (1 - k) * 25, -6 + 4 * watch, Math.sin(t * 0.9) * 0.6);
     }
+    this.poseHand();
     // Screens that change by themselves (a clip's time, LIVE's status, a call's line) redraw a few times a second, not
     // every frame: the canvas is a 540x1170 upload.
     if (this.raised && (this.app_ === 'clip' || this.app_ === 'live' || this.app_ === 'call')) {
