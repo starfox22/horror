@@ -122,6 +122,28 @@ export class Closets {
     door.target = door.openRequested ? 1 : 0;
     door.touching = false; door.pushMemo = {};
     this.sounds?.wardrobe(door.target === 1, [FRONT, 1.3, door.handlePoint.z]);
+    this.onNoise?.(FRONT, door.handlePoint.z, 'wardrobe');      // the hunt: he hears it (hunt.js, 6 m)
+    if (!this.moving.includes(door)) this.moving.push(door);
+  }
+
+  // Opened from inside by him (hunt.js: coming down through the hatch, or going up): fully, with the wardrobe's sound.
+  // Not the player's opening: no story beat, no noise.
+  open(door) {
+    if (door.openRequested && door.target === 1) return;
+    door.openRequested = true; door.target = 1;
+    door.touching = false; door.pushMemo = {};
+    this.sounds?.wardrobe(true, [FRONT, 1.3, door.handlePoint.z]);
+    if (!this.moving.includes(door)) this.moving.push(door);
+  }
+
+  // Swung by the story (story.js: he pulls the right door after him and it bounces back ajar): to `deg` degrees, no
+  // sound of its own; the player's next E opens it fully.
+  swing(id, deg) {
+    const door = this.doors.find(d => d.id === id);
+    if (!door) return;
+    door.openRequested = false;
+    door.target = Math.min(Math.max(deg / 100, 0), 1);
+    door.touching = false; door.pushMemo = {};
     if (!this.moving.includes(door)) this.moving.push(door);
   }
 

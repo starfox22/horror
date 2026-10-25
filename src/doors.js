@@ -65,6 +65,20 @@ export class Doors {
     door.moving = true;
     door.blocked = false; door.touching = false; door.pushMemo = {};
     this.sounds?.door?.(!!door.target, door.handle);
+    this.onNoise?.(door.handle.x, door.handle.z, 'door');      // the hunt: he hears it (hunt.js, 6 m)
+  }
+
+  // Opened by him (hunt.js: the bathroom door in his way): fully, from shut or ajar, with the latch and creak. A locked
+  // door stays shut.
+  open(door) {
+    if (door.locked) return false;
+    if (door.openRequested && door.target === door.open) return true;
+    door.openRequested = true; door.target = door.open;
+    door.vel += door.open * 0.25;
+    door.moving = true;
+    door.blocked = false; door.touching = false; door.pushMemo = {};
+    this.sounds?.door?.(true, door.handle);
+    return true;
   }
 
   update(dt) {

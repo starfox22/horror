@@ -548,6 +548,7 @@ export class Story {
     if (this.has('ended') || this.dying) return;
     if (!this.sys.items?.has('spare-key')) {
       this.sys.sounds?.lockedDoor?.();
+      this.sys.hunt?.noise(FRONT_DOOR[0], FRONT_DOOR[2], 'door');   // rattling it in the hunt carries 6 m
       if (!this.has('glass')) this.say(this.has('key-bowl') ? 'Locked. ...Where are my keys?' : 'Locked. Good.');
       else if (!this.has('silhouette')) {
         if (!this.has('door-thought')) { this.set('door-thought'); this.say('Locked.'); this.say('Out? Barefoot? Over a glass?', { gap: 0.6 }); }

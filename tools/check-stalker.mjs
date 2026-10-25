@@ -495,6 +495,19 @@ test('too long close by: he walks to the wardrobe, opens it and goes up, never v
   assert.deepEqual(events.slice(0, 2), ['open', 'up']);
 });
 
+test('up in the void he waits while someone stands by the wardrobe, but not for ever (no camping the hunt away)', () => {
+  for (const [p, extra] of [[{ x: -5, z: 2 }, 0], [{ x: 10.6, z: 0.6 }, 15]]) {
+    let down = null;
+    const s = new Stalker({ nav, random: rng(3), hooks: { drop: (phase) => { if (phase === 'start') down ??= s.time; } } });
+    s.spawn(10.25, -0.15, -90, 'backstage');
+    const q = { ...p, crouched: true, torch: false, moving: false };
+    s.update(DT, q);
+    const up = s.backstageFor + s.time - DT;
+    for (let t = 0; t < 90 && down === null; t += DT) s.update(DT, q);
+    assert.ok(down !== null && Math.abs(down - up - extra) < 0.25, `player at ${p.x}, ${p.z}: down at ${down?.toFixed(1)} s (due at ${up.toFixed(1)} + ${extra})`);
+  }
+});
+
 test('from the hatch: he comes down in the wardrobe and makes for the front door; holding E for its 3 s wins the race', () => {
   for (const difficulty of ['story', 'normal', 'hard']) for (const seed of SEEDS.slice(0, 10)) {
     const events = [];

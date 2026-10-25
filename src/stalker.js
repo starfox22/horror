@@ -135,7 +135,11 @@ export class Stalker {
     this.dark = 1.2;                    // his phone light comes on a moment after the main switch goes
     this.torch = false;
     this.grace = 3;
-    if (tutorial) { this.tutorial = TUTORIAL.seconds; this.tutorialTime = 0; this.tutorialOut = !player || !inCorridor(player.x, player.z); }
+    if (tutorial) {
+      this.tutorial = TUTORIAL.seconds; this.tutorialTime = 0; this.tutorialOut = !player || !inCorridor(player.x, player.z);
+      // Whatever ends it early (the corridor, coming close), no chase before the hint has been heard and acted on.
+      this.hold = TUTORIAL.hint + TUTORIAL.torchHeld;
+    }
   }
 
   // Where the hunt starts: `at` unless that is within TUTORIAL.spawn path metres of the player; then the first of
@@ -445,8 +449,8 @@ export class Stalker {
   // How long getting up takes after the landing (hunt.js plays the crouch's rise over it).
   riseTime(then) { return then === 'rush' ? DROP.rushRise : DROP.rise; }
 
-  // Up in the void: invisible, creaks crossing the ceiling; then down through the wardrobe again (never onto someone
-  // standing right by it: that is the wardrobe's own rule, below).
+  // Up in the void: invisible, creaks crossing the ceiling; then down through the wardrobe again: not while someone
+  // stands right by it (up to 15 s more; standing in it is the wardrobe's own rule, below).
   updateBackstage(dt, p) {
     this.speed = 0; this.torch = false;
     if (!this.backstageFor) {
@@ -455,7 +459,8 @@ export class Stalker {
     }
     this.creakTimer -= dt;
     if (this.creakTimer <= 0) { this.creakTimer = 2.5 + this.random() * 3; const n = this.nodes[Math.floor(this.random() * this.nodes.length)]; this.hooks.creak?.(n.x, n.z); }
-    if (this.stateTime > this.backstageFor && Math.hypot(p.x - PLACES.hatchOut[0], p.z - PLACES.hatchOut[1]) > 3) {
+    const clear = Math.hypot(p.x - PLACES.hatchOut[0], p.z - PLACES.hatchOut[1]) > 3;
+    if (this.stateTime > this.backstageFor && (clear || this.stateTime > this.backstageFor + 15)) {
       this.backstageFor = 0;
       this.hooks.backstage?.(false);
       this.dropDown('patrol');

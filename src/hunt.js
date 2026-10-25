@@ -146,11 +146,11 @@ export class Hunt {
     }
     if (s.door) { this.clip('try_door_inwards', { blend: 0.3 }); return; }        // at the bathroom door, pushing it open
     if (v < 0.08) this.clip(s.state === 'search' || s.state === 'patrol' ? 'idle_look_around_01' : 'idle_breathe_01', { speed: 1 });
-    else this.walk(v);
+    else this.gait(v);
   }
 
   // A walk or run matched to his speed (feet planted).
-  walk(v) {
+  gait(v) {
     if (v < 1.25) this.clip('walk_slow_01', { speed: v / STRIDE.walk_slow_01 });
     else if (v < 2.1) this.clip('walk_neutral_01', { speed: v / STRIDE.walk_neutral_01 });
     else this.clip('run_neutral_01', { speed: v / STRIDE.run_neutral_01 });
@@ -224,20 +224,17 @@ export class Hunt {
     }
   }
 
-  // The bathroom door in his way: he swings it open (doors.js open() if it has one; else as the player's E would), with
-  // its latch and a slow creak.
+  // The bathroom door in his way: he swings it open, its latch and creak (doors.js open() if it has one; else asked as
+  // the player's E asks it, the push and the sound).
   openDoor(door) {
     if (!door || door.locked) return;
     const doors = this.sys('doors');
-    if (doors?.open) doors.open(door);
-    else if (doors && (!door.openRequested || door.target !== door.open)) {
-      // Not asked to open fully (shut, or left ajar by the story): asked now, the push the player's E gives.
-      door.openRequested = true; door.target = door.open; door.vel = (door.vel || 0) + door.open * 0.25; door.moving = true;
-      door.blocked = false; door.touching = false; door.pushMemo = {};
-      doors.sounds?.door?.(true, door.handle);
-    }
-    const at = door.handle ? [door.handle.x, 1.2, door.handle.z] : [9.15, 1.2, 0.8];
-    this.bank?.play('door_creak', { at, gain: 0.55, rate: 0.82, delay: 0.25, send: 0.35 });
+    if (doors?.open) { doors.open(door); return; }
+    if (!doors || (door.openRequested && door.target === door.open)) return;
+    // Shut, or left ajar by the story (asked open to 14 degrees only): asked fully open now.
+    door.openRequested = true; door.target = door.open; door.vel = (door.vel || 0) + door.open * 0.25; door.moving = true;
+    door.blocked = false; door.touching = false; door.pushMemo = {};
+    doors.sounds?.door?.(true, door.handle);
   }
 
   // The wardrobe's right door (the hatch's half) swung open from inside as he comes down, or as he goes up.
@@ -246,7 +243,7 @@ export class Hunt {
     if (!right || right.angle > 0.6) return;
     if (closets.open) { closets.open(right); return; }
     right.openRequested = true; right.target = 1; right.touching = false; right.pushMemo = {};
-    if (!closets.moving.includes(right)) closets.moving.push(right);
+    if (closets.moving && !closets.moving.includes(right)) closets.moving.push(right);
     closets.sounds?.wardrobe?.(true, [9.725, 1.3, right.handlePoint?.z ?? -0.47]);
   }
 
