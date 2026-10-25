@@ -9,7 +9,7 @@
 // Screen: a canvas (drawn when something changes) on the model's screen, the video on its own quad in front of it. The
 // copy on the nightstand shows the same canvas: dark, except for a while after something wakes it (plugged in: the
 // empty-battery glyph; booting: its logo; an alert: the lock screen), like a real phone lying face up.
-import { Color, Entity, StandardMaterial, Texture, Vec2, Vec3, Quat, PIXELFORMAT_RGBA8, FILTER_LINEAR, ADDRESS_CLAMP_TO_EDGE, BLEND_NONE } from 'playcanvas';
+import { Color, Entity, StandardMaterial, Texture, Vec2, Vec3, Quat, PIXELFORMAT_RGBA8, FILTER_LINEAR, ADDRESS_CLAMP_TO_EDGE, BLEND_NONE, BLEND_ADDITIVE } from 'playcanvas';
 
 const W = 540, H = 1170;                   // screen canvas (iPhone-ish 19.5:9)
 // Where it lies: the south nightstand's top (0.57 m, measured), beside the alarm clock; its charger's socket behind it.
@@ -36,6 +36,7 @@ export class Phone {
     this.texture = new Texture(app.graphicsDevice, { width: W, height: H, format: PIXELFORMAT_RGBA8, mipmaps: false,
       minFilter: FILTER_LINEAR, magFilter: FILTER_LINEAR, addressU: ADDRESS_CLAMP_TO_EDGE, addressV: ADDRESS_CLAMP_TO_EDGE, name: 'phone-screen' });
     this.buildHolder();
+    this.buildStandGlow(CHARGER);
     this.chargerItem = interactions.add({ pos: CHARGER, size: 0.18, active: () => this.has && !this.onCharger,
       label: () => 'Put the phone on charge', use: () => this.putOnCharger() });
     this.takeItem = interactions.add({ pos: CHARGER, size: 0.18, active: () => this.onCharger,
@@ -117,8 +118,9 @@ export class Phone {
     this.video.setLocalPosition(0, 0.026, 0.0038);
   }
 
-  // Puts the screen canvas on a phone model's own screen mesh (material 'Lock_Screen'); false if it has none.
-  useScreen(entity) {
+  // Puts the screen canvas on a phone model's own screen mesh (material 'Lock_Screen'); false if it has none. intensity:
+  // the copy lying on the nightstand glows brighter than the one held up to your face (its own material, same shader).
+  useScreen(entity, { intensity = null } = {}) {
     const mi = entity.findComponents('render').flatMap(r => r.meshInstances).find(m => /^Lock_Screen/.test(m.material.name));
     if (!mi) return false;
     if (!this.modelScreenMat) {
@@ -127,7 +129,9 @@ export class Phone {
       m.update();
       this.modelScreenMat = m;
     }
-    mi.material = this.modelScreenMat;
+    if (intensity === null) { mi.material = this.modelScreenMat; return true; }
+    const own = this.modelScreenMat.clone(); own.emissiveIntensity = intensity; own.update();
+    mi.material = own;
     return true;
   }
 
@@ -317,9 +321,55 @@ export class Phone {
     this.dirty = true;
   }
 
+  // The light its screen throws on the nightstand while it is lit there: no lamp (a shadowed light would change the
+  // fixed shadow atlas), an additive glow on the wood like the light under the bathroom door; red for the battery
+  // glyph, white for the boot, cold for the lock screen. Kept out of the probes.
+  buildStandGlow(at) {
+    const c = document.createElement('canvas'); c.width = c.height = 64;
+    const g = c.getContext('2d'), grad = g.createRadialGradient(32, 32, 2, 32, 32, 32);
+    grad.addColorStop(0, '#fff'); grad.addColorStop(0.22, 'rgb(150,150,150)'); grad.addColorStop(0.55, 'rgb(38,38,38)'); grad.addColorStop(1, '#000');
+    g.fillStyle = grad; g.fillRect(0, 0, 64, 64);
+    const tex = new Texture(this.app.graphicsDevice, { width: 64, height: 64, format: PIXELFORMAT_RGBA8, mipmaps: true, name: 'phone-glow',
+      addressU: ADDRESS_CLAMP_TO_EDGE, addressV: ADDRESS_CLAMP_TO_EDGE });
+    tex.setSource(c);
+    const m = new StandardMaterial(); m.name = 'phone screen glow';
+    m.diffuse = Color.BLACK; m.emissive = new Color(0.62, 0.74, 1); m.emissiveMap = tex; m.emissiveIntensity = 0;
+    m.useLighting = false; m.blendType = BLEND_ADDITIVE; m.depthWrite = false; m.update();
+    this.standGlowMat = m;
+    this.standGlow = new Entity('phone screen glow');
+    this.standGlow.addComponent('render', { type: 'plane', material: m, castShadows: false, receiveShadows: false });
+    for (const mi of this.standGlow.render.meshInstances) mi.isVisibleFunc = cam => !cam.node?.name?.startsWith('probe-') && cam.frustum.containsAabb(mi.aabb);
+    this.standGlow.setPosition(at.x, at.y + 0.001, at.z); this.standGlow.setLocalScale(0.55, 1, 0.55);
+    this.standGlowAt = this.standGlow.getPosition().clone();
+    this.standGlow.enabled = false;
+    this.app.root.addChild(this.standGlow);
+    this.glowK = 0; this.glowLvl = -1;
+  }
+
+  // The shader warm-up (main.js): the glow on view for the sweep; returns the undo.
+  revealGlow() {
+    this.warming = true; this.glowLvl = -1;
+    return () => { this.warming = false; this.glowLvl = -1; this.standGlow.setPosition(this.standGlowAt); this.updateGlow(0); };
+  }
+
+  updateGlow(dt) {
+    if (!this.standGlow) return;
+    const on = this.onCharger && this.lit > 0 && (this.booting !== null || this.booted || this.charging);
+    this.glowK += ((on ? 1 : 0) - this.glowK) * (1 - Math.exp(-dt * 8));
+    const lvl = this.glowK < 0.003 ? 0 : this.glowK;
+    if (Math.abs(lvl - this.glowLvl) < 0.004) return;
+    this.glowLvl = lvl;
+    const red = !this.booted && this.booting === null, logo = this.booting !== null;
+    this.standGlowMat.emissive.set(...(red ? [1, 0.12, 0.1] : logo ? [0.9, 0.9, 0.92] : [0.62, 0.74, 1]));
+    this.standGlowMat.emissiveIntensity = Math.max(this.warming ? 0.001 : 0, lvl * (red ? 0.14 : logo ? 0.32 : 0.48));
+    this.standGlowMat.update();
+    this.standGlow.enabled = lvl > 0 || !!this.warming;
+  }
+
   // --- per frame ---------------------------------------------------------------------------------------------------
   update(dt) {
     dt = Math.min(dt, 0.1);
+    this.updateGlow(dt);
     if (this.charging) {
       this.chargeTime += dt;
       if (this.booted) this.charge = Math.min(100, this.charge + dt * 0.05);

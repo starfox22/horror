@@ -318,7 +318,7 @@ power.onChange(event => {
   const held = props.make('phone', { name: 'phone model', configure: m => probes.assign(m, 'main'), castShadows: false });
   if (held) phone.setModel(held);
   const charging = props.make('phone', { at: [phone.chargerAt.x, phone.chargerAt.y + 0.004, phone.chargerAt.z], euler: [-90, 95, 0], name: 'phone on the nightstand', configure: m => probes.assign(m, 'bed'), castShadows: false });
-  phone.useScreen(charging);
+  phone.useScreen(charging, { intensity: 2.4 });
   charging.enabled = phone.onCharger;
   phone.charger = on => { charging.enabled = on; };
 }
@@ -387,8 +387,9 @@ if (!shot || hash.has('warm')) {
     intruder.place(c.x + fw.x * 2, c.z + fw.z * 2, Math.atan2(-fw.x, -fw.z) * 180 / Math.PI, Math.max(0.16, c.y - 1.5));
     // The home camera looks at him too (its own tone mapping makes its own shader variants: LIVE shows him).
     seccam.entity.lookAt(intruder.pos.x, intruder.pos.y + 1.2, intruder.pos.z);
-    // The light under the bathroom door, on the floor a step ahead of each view (it is put back afterwards).
+    // The light under the bathroom door and the phone's on the nightstand, a step ahead of each view (put back after).
     world.doorGlow?.setPosition(c.x + fw.x * 1.4, Math.max(0.17, c.y - 1.3), c.z + fw.z * 1.4);
+    phone.standGlow?.setPosition(c.x + fw.x * 1.2, Math.max(0.17, c.y - 1.1), c.z + fw.z * 1.2);
   }, reveal: [
     revealInFront(drink.handCarrier),
     () => {
@@ -404,6 +405,7 @@ if (!shot || hash.has('warm')) {
       flashlight.warming = true;
       return () => { flashlight.warming = false; flashlight.beam.light.enabled = flashlight.on && flashlight.held; };
     },
+    () => phone.revealGlow(),                  // the phone's light on the nightstand (phone.js)
     () => {                                    // the light under the bathroom door (world.js)
       const glow = world.doorGlow, at = glow?.getPosition().clone();
       world.warming = true; world.doorGlowLevel = -1; world.updateDoorGlow();
@@ -601,7 +603,7 @@ if (menu) {
   } else menu.open('title');
 }
 window.__state.ready = true;
-window.__app = { app, player, frame, camera, flashlight, interactions, switches, rain, doors, devices, closets, fridge, taps, drink, probes, devMenu, eyes, graphics, frameLimiter, sceneQuality, wake, events, thought, fallingGlass, intruder,
+window.__app = { app, player, frame, camera, flashlight, interactions, switches, rain, doors, devices, closets, fridge, taps, drink, probes, devMenu, eyes, graphics, frameLimiter, sceneQuality, wake, events, thought, fallingGlass, intruder, crow,
   bank, music, power, fusebox, story, world, nest, seccam, phone, hunt, death, endings, hud, journal, menu, nav, items, props, startNight, chapterSave, applyCheckpoint, pc };
 
 // The artifact build (tools/make-artifact.mjs) ships the apartment as one GLB split into base64 text parts listed in

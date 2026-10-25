@@ -61,7 +61,7 @@ const [url, mode = 'webgl'] = process.argv.slice(2);
     await step('the figure', async () => { s.camera.setPosition(3.4, 1.62, 3.55); s.camera.lookAt(new s.pc.Vec3(12.3, 1.3, 3.55)); s.intruder.show(true); s.intruder.place(12.35, 3.55, -90); s.intruder.play('idle_breathe_01', { blend: 0 }); }, 6);
     await step('his run', async () => { s.story.flags.delete('silhouette'); s.story.sighting = null; s.story.startSighting({ seen: true }); for (let t = 0; t < 4; t += 0.05) { s.story.update(0.05); s.intruder.update?.(); if (Math.round(t * 20) % 10 === 0) await frames(1); } }, 6);
     await step('nest hanger', async () => { s.story.flags.delete('hanger'); s.story.wardrobeOpened({ id: 'right' }); await tick(2.5); for (let t = 0; t < 1.5; t += 0.05) s.nest.update(0.05); }, 6);
-    await step('phone boots', async () => { s.intruder.show(false); s.phone.booted = false; s.phone.onCharger = true; s.phone.charger?.(true); s.phone.boot(); await tick(3.5); }, 6);
+    await step('phone boots', async () => { s.intruder.show(false); s.camera.setPosition(12.75, 1.5, 1.05); s.camera.lookAt(new s.pc.Vec3(13.6, 0.57, 1.8)); s.phone.booted = false; s.phone.onCharger = true; s.phone.pluggedIn = true; s.phone.charger?.(true); s.phone.boot(); await tick(3.5); }, 6);
     await step('phone', async () => { s.phone.take(); s.phone.charge = 40; s.phone.booted = true; s.phone.dirty = true; s.phone.raised = true; await tick(1); }, 6);
     await step('LIVE', async () => { s.phone.openLive(); await tick(8); }, 10);
     await step('hunt', async () => { s.phone.raised = false; s.seccam.stopLive(); s.story.huntStart('test'); await tick(6); }, 10);
