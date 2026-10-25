@@ -155,7 +155,7 @@ export class Story {
     }
     // The hatch above the nest: a drop of water falls through the torch beam.
     const rightOpen = (this.sys.closets?.doors?.find(d => d.id === 'right')?.angle ?? 1) > 0.5;
-    if (this.sys.nest?.hatchOpen && !this.has('hatch-seen') && !this.has('hunt') && rightOpen && p.x < 10.9 && inWardrobe(p.x, p.z) === false && looking(9.55, 2.27, -0.12, 0.8, 2.4) && this.sys.flashlight?.on) {
+    if (this.sys.nest?.hatchOpen && !this.has('hatch-seen') && !this.has('hunt') && rightOpen && p.x < 10.9 && p.z < 0.35 && inWardrobe(p.x, p.z) === false && looking(9.55, 2.27, -0.12, 0.8, 2.4) && this.sys.flashlight?.on) {
       this.set('hatch-seen');
       this.sys.nest?.drop();
       this.say('...How long?', { delay: 1.2 });

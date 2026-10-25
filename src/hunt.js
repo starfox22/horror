@@ -71,6 +71,7 @@ export class Hunt {
     this.stalker.setDifficulty(this.difficulty());
     this.nav.setDoors?.(this.sys('doors')?.doors ?? []);
     this.time = 0; this.torchHeld = 0; this.prev = null; this.stepDist = 0; this.breathTimer = 0; this.respawnedFor = null;
+    this.breathCaptioned = null;
     this.knife(0);
   }
 
@@ -215,7 +216,8 @@ export class Hunt {
   dropped(phase, why) {
     const bank = this.bank, loud = why === 'trap', far = why === 'rush';
     if (phase === 'start') {
-      this.story?.caption?.('[The wardrobe, something coming down]');
+      const pp = this.player?.pos;
+      if (loud || far || !pp || Math.hypot(pp.x - HATCH[0], pp.z - HATCH[2]) < 7) this.story?.caption?.('[The wardrobe, something coming down]');
       bank?.play('wardrobe_creak', { segment: 'random', at: [9.75, 1.6, -0.1], gain: loud ? 0.9 : 0.7, min: far ? 0.15 : 0 });
       bank?.play('hangers', { at: HATCH, gain: loud ? 0.8 : 0.5, delay: 0.1, min: far ? 0.1 : 0 });
       this.sys('nest')?.dust?.(3);

@@ -128,3 +128,9 @@ path, all fixed (regressions in `tools/check-story.mjs`, "final review"):
 | The fuse box's "What else is wet?" pointed at causes that were never built. | "Still tripping. ...One at a time, like the label says." |
 | Sound captions sat on top of the thoughts. | Captions at the top of the screen. |
 | Nice-to-haves done | Endings and evidence counted from this build's lists only (0.13 stored others on the same site); checkpoints saved under a new key (0.13's are a different night); the first fridge opening arms the kitchen ceiling's creaks; a pointer to the diary on the second "Where's the spare?"; his prints appear when the latch clicks, not in the beam; no journal toast during a death; the nightstand glow stays on the top; captions for his breathing and the drop; a Controls page in the pause menu; Hard's restart keeps a 112 call; the Act II tap-off creaks only once he is up there; an Act IV checkpoint says the goal. |
+
+Its re-verification at `0fe1110` confirmed all seven fixed (its proof scripts re-run against the real modules; the
+corridor's whole length keeps a clear line to him for the sighting) and gave the verdict **ship**. The one new defect
+it found (the breathing caption went quiet after a respawn) and two notes (the hatch seen from beside the open leaf;
+the drop's caption heard from anywhere) were fixed before publishing. The last final-check run on the final build: 24
+steps, no shader built, on WebGL; WebGPU clean at `ffdf7b8` (later changes are colours, CSS and positions only).
