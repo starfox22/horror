@@ -175,7 +175,7 @@ export class Flashlight {
   // The intruder is drawn into this beam's shadow and no other (intruder.js seenBy): it is re-rendered every frame, so no
   // ghost of him can stay in it, as it would in a lamp's cached map. The engine makes the shadow camera on the beam's
   // first shadow render; it is marked from then on.
-  tagShadow() { for (const rd of this.beam.light.light._renderData || []) rd.shadowCamera.torchShadow = true; }
+  tagShadow() { for (const rd of this.beam.light.light?._renderData || []) rd.shadowCamera.torchShadow = true; }
 
   // The shader warm-up (main.js): the beam on at nothing, from the warm-up camera, so its shadow pass draws him (and
   // builds that pass's shaders) before play.

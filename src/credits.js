@@ -26,11 +26,11 @@ export function creditsHtml() {
     ])}</ul>
     <h3>The night's things</h3><ul class="cols">${people(dedupe(props.props).map(p => [`“${p.title.replace(/ \(.*\)$/, '')}”`, p.author, p.license, p.authorUrl || p.source]))}${people([
       ['“Crow” (the bird at the window)', 'Alexei Ostapenko', 'CC BY 4.0', 'https://sketchfab.com/alexanders823'],
-      ['“Blood Splatter” (on the glass)', 'ExileGL', 'CC0', 'https://opengameart.org/content/blood-splatter'],
+      ['“Blood Splatter” (on the glass, and on his glove)', 'ExileGL', 'CC0', 'https://opengameart.org/content/blood-splatter'],
     ])}</ul>
     <h3>People</h3><ul>${people([
       ['The intruder and the arm: avatars and animations from the Microsoft Rocketbox Avatar Library', 'Microsoft', 'MIT', 'https://github.com/microsoft/Microsoft-Rocketbox'],
-      ['His mask: “White Mask”', 'shedmon', 'CC BY 4.0', 'https://sketchfab.com/shedmon'],
+      ['His mask: “Porcelain Mask”', 'sleepwalker77', 'CC BY 4.0', 'https://sketchfab.com/sleepwalker77'],
     ])}</ul>
     <h3>Recordings</h3><p>Real recordings from Freesound and OpenGameArt contributors, through GitHub mirrors. Thank you:</p><ul class="cols">${rec}</ul>
     <h3>Type</h3><ul>${people([

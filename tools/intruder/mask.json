@@ -1,12 +1,14 @@
 {
-  "title": "White Mask",
-  "author": "shedmon",
-  "authorUrl": "https://sketchfab.com/shedmon",
-  "source": "https://sketchfab.com/3d-models/white-mask-c0d85900a7be438c8d2400bb71649d31",
+  "id": "porcelain",
+  "title": "Porcelain Mask",
+  "author": "sleepwalker77",
+  "authorUrl": "https://sketchfab.com/sleepwalker77",
+  "source": "https://sketchfab.com/3d-models/porcelain-mask-596d7fbddfdd4cbab5a81878e1bd7741",
   "license": "CC-BY-4.0",
-  "mirror": "https://github.com/discover3d/godot_game_101",
-  "commit": "242e1d6e12dcb0daef869c162e6381773e68a114",
-  "dir": "nc5432__Godot-Multiplayer/Models/white_mask",
-  "files": ["license.txt", "scene.gltf", "scene.bin", "textures/Default_baseColor.jpeg", "textures/Default_metallicRoughness.png", "textures/Default_normal.png"],
-  "fit": { "rotateX": 37, "scale": 0.68, "at": [0, 1.705, 0.098] }
+  "mirror": "https://github.com/LucasTBorges/VideoPlayground",
+  "commit": "d6437ba743d9234fb197d5a1992974369cf1582f",
+  "dir": "src/assets/mask",
+  "files": ["license.txt", "scene.gltf", "scene.bin", "textures/Material.000_baseColor.png", "textures/Material.000_metallicRoughness.png", "textures/Material.000_normal.png"],
+  "_fit": "rotateX: degrees turning the model upright (its face to +Z); tilt: degrees more about X; the eye holes' centres go onto his eyes (the rest pose's eye bones), scaled to his eye spacing times scale, forward metres in front of them, lift metres up; bloodTriangles: the tear's mesh simplified to this many. Chosen with fit-check.mjs: 0.96 and 0.042 keep the hood's rim behind the mask's edge (1.4 mm) and his face 3.9 mm behind it through every clip.",
+  "fit": { "rotateX": 90, "tilt": 0, "scale": 0.96, "forward": 0.042, "lift": 0, "bloodTriangles": 4000 }
 }

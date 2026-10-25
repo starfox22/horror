@@ -26,17 +26,18 @@ export const FIST = {
   0: [[0, 0, 22], [0, 0, 30], [0, 0, 36]],
 };
 // His arm's poses, in his own frame (metres from the shoulder: right, up, forward; directions likewise). The hold: the
-// elbow bent a little more than the animation's and the hand turned so the blade hangs point down, a little back. The
-// raised knife: the fist up by the side of his head, elbow out, the blade pointing forward and down. The strike: the fist
-// down in front of his chest, as deep as a body in front of him, the blade driven forward and down.
+// elbow bent a little more than the animation's (bend, degrees) and the hand turned so the blade hangs point down, a
+// little back, its flat turned partly to the front (edge, turn) so it catches a light shone at him. The raised knife: the
+// fist up by the side of his head, elbow out, the blade pointing forward and down. The strike: the fist down in front of
+// his chest, as deep as a body in front of him, the blade driven forward and down.
 export const POSES = {
-  hold: { bend: 38, blade: [0, -1, -0.32] },
+  hold: { bend: 38, blade: [0, -1, -0.32], edge: [1, 0, 0.35], turn: 0.6 },
   raised: { wrist: [0.14, 0.34, 0.24], pole: [1, -0.1, -0.5], blade: [0, -0.8, 0.6], clavicle: 16 },
   struck: { wrist: [-0.04, -0.3, 0.5], pole: [1, -0.6, -0.2], blade: [0, -0.6, 0.8], clavicle: 4 },
 };
 
 const _m = new Mat4(), _q = new Quat(), _q2 = new Quat(), _v = new Vec3(), _v2 = new Vec3();
-const X = new Vec3(1, 0, 0), Z = new Vec3(0, 0, 1), DOWN_KNIFE = new Vec3(0, -1, 0), EDGE_KNIFE = new Vec3(1, 0, 0);
+const X = new Vec3(1, 0, 0), DOWN_KNIFE = new Vec3(0, -1, 0), EDGE_KNIFE = new Vec3(1, 0, 0);
 const clamp01 = (k) => Math.min(1, Math.max(0, k || 0));
 // A rotation whose columns are the axes x, y, z (unit, right-handed).
 const basis = (x, y, z, out = new Quat()) => { _m.set([x.x, x.y, x.z, 0, y.x, y.y, y.z, 0, z.x, z.y, z.z, 0, 0, 0, 0, 1]); return out.setFromMat4(_m); };
@@ -104,7 +105,7 @@ export class Intruder {
     // poses blend from them (a bone a clip does not animate keeps what we wrote; see animated()).
     this.arm = ['Bip01 R Clavicle', 'Bip01 R UpperArm', 'Bip01 R Forearm', 'Bip01 R Hand'].map(name => {
       const node = this.bones.get(name);
-      return node && { node, base: node.getLocalRotation().clone(), written: null, out: new Quat() };
+      return node && { node, base: node.getLocalRotation().clone(), written: null };
     });
     const len = (name) => this.bones.get(name)?.getLocalPosition().length() ?? 0.28;
     this.upperLength = len('Bip01 R Forearm'); this.foreLength = len('Bip01 R Hand');
@@ -113,9 +114,8 @@ export class Intruder {
     // Never in a probe capture (they would keep him in the room's light after he left); the player's and the security
     // camera's views only, or the security camera's alone while `cameraOnly` (LIVE: his body never in the player's view).
     this.cameraOnly = false;
-    for (const mi of this.meshInstances) {
-      mi.isVisibleFunc = cam => (this.cameraOnly ? cam.node?.name === 'security camera' : isPlayerCamera(cam)) && cam.frustum.containsAabb(mi.aabb);
-    }
+    this.isPlayerCamera = isPlayerCamera;
+    for (const mi of this.meshInstances) mi.isVisibleFunc = cam => this.seenBy(cam) && cam.frustum.containsAabb(mi.aabb);
     // His phone torch, held low in the left hand and pointing ahead. It is a separate entity that follows the hand's
     // position each frame and his heading (a hand's rotation in a walk cycle swings the beam wildly).
     this.torch = new Entity('intruder phone light');
@@ -135,6 +135,13 @@ export class Intruder {
   }
 
   get visible() { return this.root.enabled; }
+  // Which cameras draw him (and his knife): see the constructor. Of the shadow cameras only the player's torch beam's
+  // (flashlight.js tags them torchShadow; realtime, so no ghost of him stays in a lamp's cached map) and not during LIVE;
+  // every other shadow camera fails the player-camera test below.
+  seenBy(cam) {
+    if (cam.torchShadow) return !this.cameraOnly;
+    return this.cameraOnly ? cam.node?.name === 'security camera' : this.isPlayerCamera(cam);
+  }
   // Hidden, he lets go of any pose (death.js and the hunt set them again when they need them).
   show(on = true) { this.root.enabled = on; if (!on) { this.setTorch(false); this.knifePose(0, 0); } }
 
@@ -209,7 +216,7 @@ export class Intruder {
     this.write(clav, aClav); this.write(upper, aUpper);
     this.write(fore, _q2.copy(aFore).mul(_q.setFromEulerAngles(0, 0, -POSES.hold.bend)));
     const holdBlade = frame(POSES.hold.blade).normalize();
-    const hold = this.handFor(holdBlade, fore);
+    const hold = this.handFor(holdBlade, fore, POSES.hold.edge && frame(POSES.hold.edge).normalize(), POSES.hold.turn);
     this.write(fore, hold.fore); this.write(hand, hold.hand);
     const w = Math.max(this.raise, this.strike);
     if (w <= 0) return;
@@ -256,10 +263,12 @@ export class Intruder {
 
   // The forearm and hand rotations (local) that point the blade along `blade` (world) with the wrist as straight as it
   // can be: the hand's fingers follow the forearm; part of the hand's roll about the forearm moves into the forearm.
-  handFor(blade, fore) {
+  // edge (optional, world) turns the knife about its blade towards that edge direction, by `turn` (0..1).
+  handFor(blade, fore, edge = null, turn = 0) {
     const foreWorld = fore.node.getRotation().clone();
     const foreDir = foreWorld.transformVector(X, new Vec3());
     const handWorld = frameRotation(this.bladeInHand, X, blade, foreDir, new Quat());
+    if (edge && turn > 0) handWorld.slerp(handWorld, frameRotation(this.bladeInHand, this.edgeInHand, blade, edge, _q2), turn);
     // The roll between forearm and hand about the forearm's axis: 60 % of it turns the forearm instead.
     const rel = new Quat().copy(foreWorld).invert().mul(handWorld);
     const roll = twistAngle(rel, X) * 0.6;

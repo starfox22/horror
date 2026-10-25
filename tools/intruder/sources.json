@@ -4,9 +4,18 @@
   "commit": "0943055db6ec570bcef9f2c8b41c9e5467c808f9",
   "license": "MIT",
   "mask": {
-    "mirror": "https://github.com/discover3d/godot_game_101",
-    "commit": "242e1d6e12dcb0daef869c162e6381773e68a114",
+    "title": "Porcelain Mask",
+    "author": "sleepwalker77",
+    "mirror": "https://github.com/LucasTBorges/VideoPlayground",
+    "commit": "d6437ba743d9234fb197d5a1992974369cf1582f",
     "license": "CC-BY-4.0"
+  },
+  "blood": {
+    "title": "Blood Splatter",
+    "author": "ExileGL",
+    "mirror": "https://github.com/KurtBliss/Karnage",
+    "commit": "8dfaa32779482b0de927ddcf46be0a18ce523c09",
+    "license": "CC0-1.0"
   },
   "files": {
     "LICENSE.md": "17474e386e0b9e1a700cc3d06b2b0882a2c376d9c6b49c7f8274409b8f8d2352",
@@ -43,11 +52,12 @@
     "Assets/Animations/all_animations_max_motextr_static/m_take_picture.max.fbx": "23cfa7dd190797a2a5a99e5658dbb2043a0b716e5049a0d7497d23b4f44dae4b",
     "Assets/Animations/all_animations_max_motextr_static/m_cell_phone_textmessage.max.fbx": "fe358efe720533691589b3f16d43bfb7719f51be7ae23abaa66459477fb4250b",
     "Assets/Animations/all_animations_max_motextr_static/m_crouch_idle.max.fbx": "d3704294853eda39d566cb31b0e6a6c50bd3cc3c1bda9102c1156c1537c12eeb",
-    "mask/license.txt": "29e644a45570ed93ebe78f52b2716c961da391430b4545bfe7b88ccf3a7d1dbe",
-    "mask/scene.gltf": "23b14fd8e2e4d1e367b3385a4fc447806128e0b6d9a7dcb229ebfcabe2ce46f8",
-    "mask/scene.bin": "3cc4f3e5847d79804e687687553ab88f56662e57d99e85a71be33568c1e6d19f",
-    "mask/textures/Default_baseColor.jpeg": "40ee02cc89340a0e6ce92c70273dcbd2161b86954283eed168823605081b773c",
-    "mask/textures/Default_metallicRoughness.png": "5a388ced66fc17022aca8b66f5a9dd3a7345b84e29b1552abe2ce8db39ff229d",
-    "mask/textures/Default_normal.png": "ac4df06b88c404140d35edb4a76a5e627927e6e892a581270bd977e365328ca7"
+    "mask-porcelain/license.txt": "0f0e8c4609e8b64efe69bcef50416c709d5624e9a757ec3ce474c8510b4d1378",
+    "mask-porcelain/scene.gltf": "2f6fb117139a1d445cfaaef307008b5040d3ace7cdafa3e3283d00c67a018b39",
+    "mask-porcelain/scene.bin": "16440a7cee345088662c8521cf6bb59f2f76a40852fa97dfc721d2e2f9572988",
+    "mask-porcelain/textures/Material.000_baseColor.png": "57dd943f83f1aeed9e6aada0b1ca83f5d4079400cc9d130789043a8ec364da13",
+    "mask-porcelain/textures/Material.000_metallicRoughness.png": "3c1c38ef2427c67b83982a64ee688233808085bf3d7897185ef7c0d4fe04523c",
+    "mask-porcelain/textures/Material.000_normal.png": "c9d44ede45806c3b113f354f32504d44eee6c74f433d22c7708102e6505f93df",
+    "blood/ExileGL__blood.png": "2f625d3ce46c723c54f3a78a94cd54aef808ef2480b470dd70bf7b6fdbb42c14"
   }
 }

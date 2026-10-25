@@ -157,8 +157,10 @@ evidence, replay): [STORY.md](STORY.md). In short:
   `intruder.js` + `stalker.js` + `navgrid.js` + `zones.js` + `hunt.js` (his body and mind: patrol, alert, investigate,
   search, chase, kill, ambush, backstage), `death.js`, `endings.js` (four endings), `menu.js`, `hud.js`, `journal.js`,
   `music.js`, `sound.js` (the recorded-sound bank), `credits.js`, `props.js` (the story's downloaded props).
-- **Assets**: the intruder (Rocketbox Male_Adult_18 dyed black + "White Mask" by shedmon) from `tools/intruder/`
-  (`fetch.mjs`, `build.mjs [masked|plain]`, `preview.mjs`); the story's props from `tools/props/` (`props.json`, pinned
+- **Assets**: the intruder (Rocketbox Male_Adult_18 dyed near-black + "Porcelain Mask" by sleepwalker77 since 0.14;
+  "White Mask" by shedmon before) from `tools/intruder/` (`fetch.mjs`, `build.mjs [masked|plain]`, `preview.mjs`,
+  `fit.mjs` and `fit-check.mjs`: the mask's clearance in every clip); his knife and the kitchen's set from
+  `tools/props/` ('knife', 'knives'); the story's props from `tools/props/` (`props.json`, pinned
   downloads, `build.mjs` with per-prop handling: the fuse box's levers and cover, the clock's hands, the pill label, the
   polaroids); 78 recordings from `tools/audio/` (`sounds.json`, `build.mjs`); the camera clips and the polaroid photo from
   `tools/bake-clips.mjs` (`public/assets/clips/`). Credits: CREDITS.md and the credits screen (credits.js reads
@@ -412,6 +414,11 @@ Full list, measurements and before/after renders: [BUILD_012.md](BUILD_012.md). 
 - The flashlight follows the camera with a lag (a slerp): in staged shots snap `flashlight.rot` to the camera.
 - The phone's canvas is drawn only when it is dirty and either held or lying on the nightstand (that copy shares it).
 - Story fallbacks use `story.soonest()`: a later event must never push a fallback later (the cut, the hunt).
+- A bone that a clip does not animate keeps whatever was last written to it: per-frame overrides (his fist, the knife
+  arm) must be absolute, never relative to the previous frame.
+- Black cloth reads grey under the torch because of its specular reflection, not its colour: cut the specular per texel
+  (`KHR_materials_specular`); pruning with gltf-transform does not fold a specular texture into a factor. The torch
+  blows out anything within about 1 m: judge how dark something reads at 2-4 m.
 - `tools/perf/scene-shots.mjs` loads the build once for many staged shots; freeze a sequence by stepping it by hand and
   then replacing the instance's `update` (`death.update = () => {}`). With several headless browsers running, the
   warm-up alone takes 30-45 minutes: run one browser job at a time.

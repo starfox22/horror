@@ -63,6 +63,7 @@
   https://sketchfab.com/3d-models/white-mask-c0d85900a7be438c8d2400bb71649d31 . Downloaded from the
   `discover3d/godot_game_101` GitHub mirror (commit `242e1d6`, `tools/intruder/mask.json`; licence text in the
   mirror's `license.txt`). Fitted to the head bone, textures resized to 1024/512 px; baked into `intruder.glb`.
+  Replaced in build 0.14 by "Porcelain Mask" (below); no longer ships.
 - **The story's props** (`public/assets/props/story/*.glb`, built by `tools/props/build.mjs` from
   `tools/props/props.json`, each download pinned to a commit and checked against `tools/props/sources.lock.json`;
   every licence and source is listed in `public/assets/props/story/LICENSES.txt`):
@@ -126,11 +127,36 @@ The credits screen picks them up from `sfx.json` like the rest.
   animation (a wing beat, looped, its climb damped to level flight; the glide into the landing that flings up and folds
   the wings), its feather cards alpha-tested, its metalness removed and roughness taken from its gloss map, textures
   resized (1024 / 512 px); quads added that show the loose feather cards painted in its own texture (the burst of
-  feathers, and the one left stuck to the glass).
+  feathers, and the one left stuck to the glass). In play (`src/crow.js`) its black is lit a little lighter and
+  glossier, so that it reads against the night.
 - **"Blood Splatter"** by ExileGL, **CC0 1.0**, https://opengameart.org/content/blood-splatter : one patch of it, given a
   soft edge, is the smear the crow leaves on the glass; the same patch dragged down in streaks is that smear as the rain
   washes it. From the `KurtBliss/Karnage` mirror (commit `8dfaa32`, SHA-256 checked), baked into `crow.glb` by
   `tools/crow/build.mjs`.
+
+### Build 0.14: his porcelain mask, his knife, the kitchen's knives
+
+- **His mask: "Porcelain Mask"** by sleepwalker77 (https://sketchfab.com/sleepwalker77), **CC BY 4.0**
+  (http://creativecommons.org/licenses/by/4.0/), https://sketchfab.com/3d-models/porcelain-mask-596d7fbddfdd4cbab5a81878e1bd7741 .
+  Downloaded from the `LucasTBorges/VideoPlayground` GitHub mirror (commit `d6437ba`, `src/assets/mask/`; licence in
+  the glTF's `asset.extras` and the mirror's `license.txt`; pinned in `tools/intruder/mask.json`, SHA-256 in
+  `tools/intruder/sources.json`). Baked into `public/assets/props/intruder.glb` by `tools/intruder/build.mjs`: turned
+  upright and fitted to the head bone with its eye holes on his eyes (checked against his face and hood through every
+  clip by `tools/intruder/fit-check.mjs`); its glaze made non-metallic, glossy, with a rougher crackle; its blood tear
+  kept (simplified from 35k to 4k triangles, wet dark red); textures cropped to the face and resized (1024 / 512 px);
+  its spare UV sets and vertex colours dropped. It replaces "White Mask" by shedmon, which no longer ships.
+- **The blood on his right glove**: "Blood Splatter" by ExileGL (**CC0 1.0**, above), the same download, recoloured
+  to dried blood and laid in patches over the glove in `intruder.glb`'s body texture (`tools/intruder/build.mjs`).
+  The same build darkens his clothes (less sheen) and works grime into his cuffs (texture edits of the Rocketbox maps).
+- **"Knife collection"** by Helindu (https://sketchfab.com/Helindu), **CC BY 4.0**,
+  https://sketchfab.com/3d-models/knife-collection-7f6df3818e5544c982e8cbbbbcb6305c . Downloaded from the
+  `nkanyi73/empathy-machines` GitHub mirror (commit `62dda23`, `Assets/Models/knife_collection/`; licence in the glTF's
+  `asset.extras` and the mirror's `license.txt`), pinned in `tools/props/props.json` and `sources.lock.json`. Built by
+  `tools/props/build.mjs` (op `knives`) at the set's real scale (0.495: the chef's knife 33 cm): `story/knife.glb`, the
+  chef's knife he carries (`src/intruder.js`), and `story/knives.glb`, its paring (bird's beak), utility, slicing and
+  bread knives as separate nodes for the kitchen's magnetic strip. Each knife in its own frame (heel at the origin,
+  point down, edge +X), handles and rivets simplified, the blades' mirror polish turned to satin, textures resized
+  (1024 / 512 px). Listed in `public/assets/props/story/LICENSES.txt` and on the credits screen.
 
 ## Build tools (not shipped)
 

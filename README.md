@@ -90,7 +90,7 @@ node tools/shoot.mjs dist out name=x,z,yaw ...   # headless screenshots (softwar
 | `src/menu.js`, `src/hud.js`, `src/journal.js`, `src/credits.js` | Title, new night, chapters, journal and endings, settings, credits, pause; prompts, captions and documents; evidence |
 | `src/sound.js`, `src/music.js` | Recorded sounds (doorway-routed, occluded, reverberant) and the score and stings |
 | `src/props.js` | The story's downloaded props, placed with per-room materials |
-| `tools/intruder/`, `tools/props/`, `tools/audio/` | Reproducible downloads and builds of the intruder (and his mask), the story's props, the recordings |
+| `tools/intruder/`, `tools/props/`, `tools/audio/` | Reproducible downloads and builds of the intruder (and his mask: `fit.mjs`, `fit-check.mjs` keep it clear of his face in every clip; `stage.html` previews him), the story's props (his knife, the kitchen's knives), the recordings |
 | `tools/bake-clips.mjs`, `tools/surfaces.mjs` | Bakes the camera clips and the polaroid photo from the game; measures the flat's surfaces for placing things |
 | `tools/crow/` | Reproducible download and build of the crow (and the blood smear it leaves) |
 | `tools/perf/` | Browser checks: no shader builds in play (`final-check.mjs`), hitches, leaks; `scene-shots.mjs` captures story moments for the build docs |
