@@ -10,6 +10,9 @@
 //  - polaroids: the blood smears painted out and the photo areas filled with the night shot of your bed
 //    (public/assets/clips/polaroid.jpg from tools/bake-clips.mjs, when present); three of the seven photos kept.
 //  - blanket: the blue towel scan dyed a worn charcoal wool.
+//  - knives: knives of one set, each a node in its own frame (heel of the blade at the origin, point -Y, edge +X, flats
+//    facing +-Z), measured (extras: lengths, tip, butt, grip); the blades' polish turned to satin. 'knife' is the chef's
+//    knife the intruder carries (intruder.js), 'knives' the rest of the kitchen's set.
 // Also writes public/assets/props/story/LICENSES.txt. Usage: node tools/props/build.mjs [id ...]
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -17,7 +20,7 @@ import { dirname, join, posix } from 'node:path';
 import sharp from 'sharp';
 import { Document, NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
-import { dedup, prune, simplify, transformMesh, unpartition, weld, listTextureSlots } from '@gltf-transform/functions';
+import { dedup, prune, simplify, simplifyPrimitive, transformMesh, unpartition, weld, weldPrimitive, listTextureSlots } from '@gltf-transform/functions';
 import { MeshoptSimplifier } from 'meshoptimizer';
 import draco3d from 'draco3dgltf';
 
@@ -358,6 +361,76 @@ const OPS = {
     top.setExtras({ photos: rects.length });
   } },
 
+  // Knives from one set (props.json 'knives': node name -> the set's knife, e.g. { "chef": "knife 4" }). Each knife is one
+  // node (handle, rivets and blade: three primitives sharing the set's three materials) in its own frame: the heel of
+  // the blade (where it leaves the handle, on the handle's axis) at the origin, the point down -Y, the edge +X, the flats
+  // facing +-Z (as it hangs on a magnetic strip on a wall facing +Z). Several sit side by side 7 cm apart along x.
+  // extras: lengths (m) and, in the node's frame, the tip, the butt and the grip (the middle of the handle). The blade's
+  // mirror polish is turned to a used kitchen knife's satin (roughness 0.22-0.4, its wear marks kept).
+  knives: { async post(doc, top, p) {
+    const role = (prim) => ({ 'Material': 'handle', 'Material.001': 'rivets', 'Material.002': 'blade' })[prim.getMaterial()?.getName()];
+    const sub = (a, b) => a.map((x, i) => x - b[i]), dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    const norm = (a) => { const l = Math.hypot(...a); return a.map(x => x / l); };
+    const entries = Object.entries(p.knives);
+    for (const [i, [name, source]] of entries.entries()) {
+      const nodes = meshNodes(doc).filter(n => n.getName().startsWith(`${source}_`));
+      if (!nodes.length) throw new Error(`${p.id}: no knife ${source}`);
+      const pts = { handle: [], rivets: [], blade: [] }, v = [];
+      for (const n of nodes) for (const prim of n.getMesh().listPrimitives()) {
+        const pos = prim.getAttribute('POSITION');
+        for (let k = 0; k < pos.getCount(); k++) pts[role(prim)].push([...pos.getElement(k, v)]);
+      }
+      const mean = (list) => list.reduce((a, q) => a.map((x, k) => x + q[k] / list.length), [0, 0, 0]);
+      const handleC = mean(pts.handle), bladeC = mean(pts.blade);
+      // The length axis, from the handle towards the point.
+      let t = principal([...pts.handle, ...pts.blade])[0].vector;
+      if (dot(sub(bladeC, handleC), t) < 0) t = t.map(x => -x);
+      const front = Math.max(...pts.handle.map(q => dot(q, t)));
+      const heel = handleC.map((x, k) => x + t[k] * (front - dot(handleC, t)));
+      // The blade's height across it (the second axis of its points), pointing to the edge: the thinner side (a ground
+      // edge, or a serrated one's teeth), measured in slices along the blade; for a blade modelled as an even slab, the
+      // side away from the point (a straight blade's point lies on its spine's side).
+      let e = principal(pts.blade)[1].vector;
+      e = norm(sub(e, t.map(x => x * dot(e, t))));
+      const n = cross(t, e), local3 = pts.blade.map(q => { const d = sub(q, heel); return [dot(d, t), dot(d, e), dot(d, n)]; });
+      const a0 = Math.min(...local3.map(q => q[0])), a1 = Math.max(...local3.map(q => q[0])), thin = [0, 0];
+      for (let s = 1; s < 7; s++) {
+        const slice = local3.filter(q => q[0] >= a0 + (a1 - a0) * s / 8 && q[0] < a0 + (a1 - a0) * (s + 1) / 8);
+        if (slice.length < 4) continue;
+        const lo = Math.min(...slice.map(q => q[1])), hi = Math.max(...slice.map(q => q[1])), band = (hi - lo) * 0.12;
+        const thick = (list) => (list.length ? Math.max(...list.map(q => q[2])) - Math.min(...list.map(q => q[2])) : 0);
+        thin[0] += thick(slice.filter(q => q[1] < lo + band)); thin[1] += thick(slice.filter(q => q[1] > hi - band));
+      }
+      const base = local3.filter(q => q[0] < a0 + (a1 - a0) * 0.3), mid = (Math.min(...base.map(q => q[1])) + Math.max(...base.map(q => q[1]))) / 2;
+      const tipAt = local3.reduce((a, q) => (q[0] > a[0] ? q : a));
+      if (Math.abs(thin[0] - thin[1]) > 0.0015 ? thin[0] < thin[1] : tipAt[1] > mid) e = e.map(x => -x);
+      const y = t.map(x => -x), z = cross(e, y);
+      const m = mat.mul(mat.basis(e, y, z), mat.translation(heel.map(x => -x)));
+      const mesh = doc.createMesh(name);
+      for (const n of nodes) for (const prim of n.getMesh().listPrimitives()) { n.getMesh().removePrimitive(prim); mesh.addPrimitive(prim); }
+      transformMesh(mesh, m);
+      for (const n of nodes) { n.getMesh().dispose(); n.dispose(); }
+      const node = doc.createNode(name).setMesh(mesh).setTranslation([(i - (entries.length - 1) / 2) * 0.07, 0, 0]);
+      top.addChild(node);
+      // Measurements in the knife's frame.
+      const local = (list) => list.map(q => apply(m, q));
+      const blade = local(pts.blade), handle = local([...pts.handle, ...pts.rivets]);
+      const tip = blade.reduce((a, q) => (q[1] < a[1] ? q : a)), butt = Math.max(...handle.map(q => q[1]));
+      const round = (q) => q.map(x => +x.toFixed(4));
+      node.setExtras({ length: +(butt - tip[1]).toFixed(3), blade: +(-tip[1]).toFixed(3), handle: +butt.toFixed(3), tip: round(tip), butt: [0, +butt.toFixed(4), 0],
+        grip: [0, +(butt / 2).toFixed(4), 0], point: '-Y', edge: '+X' });
+    }
+    for (const material of doc.getRoot().listMaterials()) {
+      const r = { 'Material': 'handle', 'Material.001': 'rivets', 'Material.002': 'blade' }[material.getName()];
+      if (r) material.setName(`knife ${r}`);
+      if (r !== 'blade' || !material.getMetallicRoughnessTexture()) continue;
+      const t = material.getMetallicRoughnessTexture();
+      const { data, info } = await sharp(Buffer.from(t.getImage())).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+      for (let k = 1; k < data.length; k += 3) data[k] = Math.round(255 * Math.min(1, 0.22 + (data[k] / 255) * 0.62));
+      t.setImage(await sharp(data, { raw: info }).jpeg({ quality: 92 }).toBuffer()).setMimeType('image/jpeg');
+    }
+  } },
+
   // A folded charcoal wool blanket from the royal-blue towel scan: luminance kept (the pile and folds), colour replaced.
   blanket: { async post(doc) {
     const t = doc.getRoot().listTextures()[0];
@@ -403,7 +476,14 @@ async function build(p) {
   const scale = fit.size ? fit.size / Math.max(...b.size) : fit.scale ?? 1;
   const origin = fit.origin === 'centre' ? b.centre : fit.origin === 'top' ? [b.centre[0], b.hi[1], b.centre[2]] : fit.origin === 'back' ? [b.centre[0], b.centre[1], b.lo[2]] : [b.centre[0], b.lo[1], b.centre[2]];
   transformAll(doc, mat.mul(mat.scaling(scale), mat.translation(origin.map(x => -x))));
-  if (p.simplify) await doc.transform(weld(), simplify({ simplifier: MeshoptSimplifier, ratio: p.simplify, error: 0.004 }));
+  if (p.simplify && p.simplifyOnly) {
+    // Only the primitives whose material matches 'simplifyOnly' (the knives' handles and rivets: their blades keep the
+    // ground edge the knives op reads, and their outline).
+    const re = new RegExp(p.simplifyOnly);
+    for (const prim of doc.getRoot().listMeshes().flatMap(m => m.listPrimitives())) {
+      if (re.test(prim.getMaterial()?.getName() || '')) { weldPrimitive(prim); simplifyPrimitive(prim, { simplifier: MeshoptSimplifier, ratio: p.simplify, error: 0.004 }); }
+    }
+  } else if (p.simplify) await doc.transform(weld(), simplify({ simplifier: MeshoptSimplifier, ratio: p.simplify, error: 0.004 }));
   // Material overrides (props.json 'materials': name pattern -> colour [r, g, b, a], roughness, metal, texture: false).
   for (const [pattern, o] of Object.entries(p.materials || {})) for (const m of doc.getRoot().listMaterials()) {
     if (!new RegExp(pattern).test(m.getName())) continue;

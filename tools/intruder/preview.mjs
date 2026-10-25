@@ -4,9 +4,10 @@
 //  - Sheets through the game's own src/intruder.js (the knife in his hand, his fingers, knifePose, his phone light) in a
 //    dim room at night (stage.html): 'look' (front and three-quarter, warm lamp light and a torch from the camera),
 //    'raised' (knifePose), 'hand' (the grip), 'fit' (the mask under the hood through walk, run, idle, look-around).
-//      NODE_PATH=$(npm root -g) node tools/intruder/preview.mjs --sheet look|raised|hand|fit out.jpg [--glb file] [--src dir]
+//      NODE_PATH=$(npm root -g) node tools/intruder/preview.mjs --sheet look|raised|hand|clips|grip|fit out.jpg [--glb file] [--src dir] [--eval js]
 //    --glb: the intruder GLB to show (default public/assets/props/intruder.glb); --src: a folder holding another
-//    intruder.js (and packed.js) to run instead of src/ (the 'before' of a change).
+//    intruder.js (with packed.js and arm-rig.js) to run instead of src/ (the 'before' of a change); --eval: a script run
+//    in the page once he is loaded (window.man: the Intruder), e.g. material trials.
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -19,6 +20,7 @@ const HERE = path.dirname(new URL(import.meta.url).pathname), PC = path.resolve(
 const args = process.argv.slice(2);
 const option = (name, fallback) => { const i = args.indexOf(name); return i >= 0 ? args.splice(i, 2)[1] : fallback; };
 const sheet = option('--sheet', null), glbOption = option('--glb', null), srcDir = path.resolve(option('--src', 'src'));
+const tweak = option('--eval', null);      // script run in the page after he is loaded (look development: material trials)
 const [out, glbArg = 'public/assets/props/intruder.glb', clipArg] = args;
 const glb = path.resolve(glbOption || glbArg);
 
@@ -76,7 +78,7 @@ if (!sheet) {
   // Panels: [caption, pose, view, lighting]. He faces +Z; his right hand is on -X.
   const HEAD = { bone: 'Bip01 Head', offset: [0, 0.075, 0], d: 0.82, fov: 30, pitch: 3 };
   const BODY = { at: [0, 0.92, 0], d: 4.3, fov: 30, pitch: 3 };
-  const HAND = { bone: 'Bip01 R Hand', d: 0.5, fov: 30 };
+  const HAND = { bone: 'Bip01 R Hand', offset: [0, -0.06, 0], d: 0.8, fov: 32 };
   const idle = { clip: 'idle_breathe_01', time: 1.2 }, walk = { clip: 'walk_slow_01', time: 0.35 };
   const SHEETS = {
     look: { size: [400, 560], columns: 4, panels: [
@@ -102,8 +104,28 @@ if (!sheet) {
       ['idle: front', idle, { ...HAND, yaw: -20, pitch: 10 }, 'warm'],
       ['idle: from behind', idle, { ...HAND, yaw: -150, pitch: 15 }, 'warm'],
       ['walking: from his right', walk, { ...HAND, yaw: -90, pitch: 5 }, 'warm'],
-      ['raised: from his right', { ...idle, raise: 1 }, { ...HAND, yaw: -95, pitch: 0 }, 'warm'],
-      ['raised: front, below', { ...idle, raise: 1 }, { ...HAND, yaw: -10, pitch: -25 }, 'warm'],
+      ['raised: from his right', { ...idle, raise: 1 }, { ...HAND, offset: [0, 0, 0], yaw: -95, pitch: 0 }, 'warm'],
+      ['raised: front, below', { ...idle, raise: 1 }, { ...HAND, offset: [0, 0, 0], yaw: -10, pitch: -25 }, 'warm'],
+    ] },
+    // Cloth trials (with --eval): the torch on him from the front, his face in it, and lamp light.
+    cloth: { size: [360, 520], columns: 3, panels: [
+      ['torch', { ...walk, phone: true }, { ...BODY, yaw: 0, torchAt: [0, 1.25, 0] }, 'torch'],
+      ['torch, close', idle, { ...HEAD, offset: [0, -0.2, 0], d: 1.3, yaw: -20 }, 'torch'],
+      ['lamp', idle, { ...BODY, yaw: 30 }, 'warm'],
+    ] },
+    // The knife held through the clips the game plays (three-quarter, from his right).
+    clips: { size: [360, 560], columns: 4, panels: [['idle_breathe_01', 1.2], ['idle_look_around_01', 1.9], ['walk_slow_01', 0.2], ['walk_slow_01', 0.7],
+      ['walk_neutral_01', 0.3], ['run_neutral_01', 0.15], ['run_neutral_01', 0.45], ['crouch_idle', 2.0]].map(([clip, time]) =>
+      [`${clip} ${time}s`, { clip, time }, { ...BODY, at: [0, clip === 'crouch_idle' ? 0.6 : 0.92, 0], yaw: -42 }, 'warm']) },
+    // Fitting the grip: the fist close up in even light, from the hand's own sides (Biped hand: +X to the knuckles, +Y
+    // the palm, +Z the thumb), with and without the knife.
+    grip: { size: [400, 400], columns: 3, panels: [
+      ['thumb side (fist, no knife)', { ...idle, knife: false }, { local: 'Bip01 R Hand', eye: [0.075, 0.015, 0.3], target: [0.075, 0.015, 0], fov: 22 }, 'studio'],
+      ['thumb side', idle, { local: 'Bip01 R Hand', eye: [0.075, 0.015, 0.3], target: [0.075, 0.015, 0], fov: 22 }, 'studio'],
+      ['little finger side', idle, { local: 'Bip01 R Hand', eye: [0.075, 0.015, -0.3], target: [0.075, 0.015, 0], fov: 22 }, 'studio'],
+      ['palm side', idle, { local: 'Bip01 R Hand', eye: [0.07, 0.3, 0], target: [0.07, 0, 0], fov: 24 }, 'studio'],
+      ['back of the hand', idle, { local: 'Bip01 R Hand', eye: [0.07, -0.3, 0.02], target: [0.07, 0, 0], fov: 24 }, 'studio'],
+      ['knuckles', idle, { local: 'Bip01 R Hand', eye: [0.35, 0.02, 0.05], target: [0.07, 0.01, 0], up: [0, 1, 0], fov: 24 }, 'studio'],
     ] },
     fit: { size: [320, 320], columns: 6, panels: [] },
   };
@@ -123,6 +145,7 @@ if (!sheet) {
   await page.goto(`${base}?w=${width}&h=${height}`);
   await page.waitForFunction(() => window.ready === true, null, { timeout: 120000 });
   console.log(await page.evaluate(() => window.boot()));
+  if (tweak) console.log('eval:', await page.evaluate(tweak));
   const shots = [];
   for (const [caption, pose, view, light] of spec.panels) {
     await page.evaluate(async ([pose, view, light]) => {

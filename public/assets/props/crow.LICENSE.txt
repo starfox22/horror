@@ -1,0 +1,17 @@
+The crow at the window (public/assets/props/crow.glb), built by tools/crow/build.mjs for src/crow.js.
+
+1. "Crow" by Alexei Ostapenko (https://sketchfab.com/alexanders823), licensed CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/).
+   Original: https://sketchfab.com/3d-models/crow-d5a9b0df4da3493688b63ce42c8a83e2
+   Downloaded from the GitHub mirror Jazhikho/project_harvest at commit 851d18e50e756df659bd476fad58ee7c8e4fdeb3 (assets/models/crow (1).glb, Git LFS),
+   SHA-256 710db5076a32e450b88401bde2f63294a7837b460ec6f9341de4582b8b95315a. Licence confirmed by the file's glTF asset.extras (author, "CC-BY-4.0", source); the same model in Rico-Rodriguez/critter-clash (commit 7fcd4f4, assets/sidekicks/LICENSE-sidekicks.txt: "Crow" by Alexei Ostapenko, CC BY 4.0, verified via the Sketchfab API).
+   Changes: Sketchfab's lamp and camera removed; scaled to a 0.90 m wingspan and turned to face -Z; two clips cut from
+   its one animation (a wing beat looped, with the body's climb damped to level flight; the glide into the landing
+   that folds the wings); alpha-blended feather cards made alpha-tested; metalness removed and roughness derived from
+   its gloss map; textures resized (1024 px base colour, 512 px normal and metal/roughness); five quads added that
+   show the loose feather cards painted in its own texture.
+
+2. "Blood Splatter" by ExileGL (https://opengameart.org/content/blood-splatter), CC0 1.0 (public domain dedication, https://creativecommons.org/publicdomain/zero/1.0/).
+   Downloaded from the GitHub mirror KurtBliss/Karnage at commit 8dfaa32779482b0de927ddcf46be0a18ce523c09 (assets/opengameart/ExileGL/ExileGL__blood.png),
+   SHA-256 2f625d3ce46c723c54f3a78a94cd54aef808ef2480b470dd70bf7b6fdbb42c14. Licence confirmed by BentleyBlanks/bentleyblanks.github.io Taierzhuang1938/_import/Data_SourceLicenses.md, which records the original blood_0.png with this SHA-256 ("ExileGL; Blood Splatter, page marked CC0; downloaded as-is"); CC0 also in sohaibsohail98/london-underground-the-last-train docs/reference/free-asset-sweep-2026-09.md.
+   Changes: a 280 x 340 px patch (at 540, 340) cropped, resized to 256 x 320 and given a soft oval edge
+   ('smear'); the same patch dragged down into streaks, diluted and blurred ('smear-wash').

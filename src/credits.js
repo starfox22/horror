@@ -24,7 +24,10 @@ export function creditsHtml() {
       ['“Glass Water Jug”', 'ShotaB', 'CC BY 4.0', 'https://sketchfab.com/ShotaB'],
       ['“Glass Collection”', 'RagingCow', 'CC BY 4.0', 'https://sketchfab.com/marcussamiran'],
     ])}</ul>
-    <h3>The night's things</h3><ul class="cols">${people(dedupe(props.props).map(p => [`“${p.title.replace(/ \(.*\)$/, '')}”`, p.author, p.license, p.authorUrl || p.source]))}</ul>
+    <h3>The night's things</h3><ul class="cols">${people(dedupe(props.props).map(p => [`“${p.title.replace(/ \(.*\)$/, '')}”`, p.author, p.license, p.authorUrl || p.source]))}${people([
+      ['“Crow” (the bird at the window)', 'Alexei Ostapenko', 'CC BY 4.0', 'https://sketchfab.com/alexanders823'],
+      ['“Blood Splatter” (on the glass)', 'ExileGL', 'CC0', 'https://opengameart.org/content/blood-splatter'],
+    ])}</ul>
     <h3>People</h3><ul>${people([
       ['The intruder and the arm: avatars and animations from the Microsoft Rocketbox Avatar Library', 'Microsoft', 'MIT', 'https://github.com/microsoft/Microsoft-Rocketbox'],
       ['His mask: “White Mask”', 'shedmon', 'CC BY 4.0', 'https://sketchfab.com/shedmon'],

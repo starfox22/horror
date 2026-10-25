@@ -88,11 +88,12 @@ export class Taps {
   // The water's textures: streaks for the stream, broken white water for the splash, a ring for the ripples.
   textures(device) {
     const streaks = canvasTexture(device, 32, 128, 'tap-stream', (g, w, h) => {
-      // Vertical streaks of thicker and thinner water, uneven down their length.
+      // Vertical streaks of thicker and thinner water, uneven down their length (whole periods both ways: it tiles round
+      // the stream and down it without a seam).
       const img = g.createImageData(w, h);
       for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
         const band = 0.62 + 0.22 * Math.sin(x / w * Math.PI * 6 + Math.sin(y / h * Math.PI * 2) * 1.3) + 0.12 * Math.sin(x / w * Math.PI * 14);
-        const ripple = 0.85 + 0.15 * Math.sin(y / h * Math.PI * 8 + x * 0.7);
+        const ripple = 0.85 + 0.15 * Math.sin(y / h * Math.PI * 8 + x / w * Math.PI * 6);
         const k = (y * w + x) * 4;
         img.data[k] = img.data[k + 1] = img.data[k + 2] = 255;
         img.data[k + 3] = Math.max(0, Math.min(1, band * ripple)) * 255;

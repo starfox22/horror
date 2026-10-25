@@ -51,6 +51,7 @@ import { Menu } from './menu.js';
 import { NavGrid } from './navgrid.js';
 import { creditsHtml } from './credits.js';
 import { Props } from './props.js';
+import { Crow } from './crow.js';
 
 const ASSETS = new URL('./assets/apartment/', location.href).href;
 const SPAWN = { x: WAKE_EXIT.x, z: WAKE_EXIT.z, yaw: WAKE_EXIT.yaw }; // clear bedside landing
@@ -344,6 +345,10 @@ if (hash.has('dark')) {
 if (hash.has('allon')) switches.rooms.forEach(r => { if (!r.on) switches.toggle(r); });
 if (hash.has('flash')) flashlight.pickUp();
 rain = new Rain(app, apartment, ambience, lit);
+// The crow at a window (crow.js; docs/STORY.md beat 5): once a night before the hunt, seen by the player's camera only.
+const crow = await Crow.create({ app, camera, player, story, bank, rain, isPlaying, isVisible: cam => cam === playerCam,
+  configureMaterial: (m, zone) => probes.assign(m, zone), blocked: () => drink.running || phone.raised || hud.reading || death.busy || !!endings.running });
+sys.crow = crow;
 fixShadowAtlas(app);
 const sceneQuality = new SceneQuality(app, { rain });
 sceneQuality.apply(graphicsPreferences.effective);
@@ -386,6 +391,7 @@ if (!shot || hash.has('warm')) {
     },
     () => { rain.revealing = true; return () => { rain.revealing = false; }; },
     () => taps.reveal(),                       // the taps' water (taps.js)
+    () => crow.reveal(),                       // the crow, his feathers and the smear on the glass (crow.js)
     // Build 0.13: the story's later things on view for the sweep (their shaders, and the intruder's light's shadows).
     // The phone held up with its video showing (phone.update keeps the holder only while it is raised).
     () => { phone.raised = true; phone.raiseK = 1; phone.video.enabled = true; return () => { phone.raised = false; phone.raiseK = 0; phone.video.enabled = false; phone.holder.enabled = false; }; },

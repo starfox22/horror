@@ -87,6 +87,51 @@
 - **Caveat** (the handwritten notes) by the Caveat Project Authors, SIL Open Font License 1.1; **Special Elite**
   (typewritten papers) by Astigmatic, Apache License 2.0. Files and licences in `public/assets/fonts/`.
 
+### Build 0.14: the night's new recordings
+
+Seven more recordings in `public/assets/audio/sfx/` (85 in all), built the same way (`tools/audio/sounds.json`, each
+mirror pinned to a commit and its file to a SHA-256 in `sounds.lock.json`; trimmed, levelled to a -1 dBFS peak):
+
+- `crow_caw`: **"Hooded Crow: Panic Cawing"** by Mish7913, **CC0**, https://freesound.org/s/741365/ (Freesound pack
+  "Birds"), from the `hatmix/gwj-78` mirror (commit `48863cf`, its `_readme_and_license.txt`). Mono, its four caws
+  played one at a time.
+- `window_thud`: **Kenney "Impact Sounds"** (www.kenney.nl), **CC0**, https://kenney.nl/assets/impact-sounds:
+  `impactGlass_heavy_000` (the pane's thunk and ring) with `impactSoft_heavy_000` (a soft heavy thud) mixed under it,
+  a bird against the window; from the `series-ai/jam-ready-assets` mirror (commit `2d7c410`, its `License.txt`).
+- `wing_flap`: **"wings-flap-large-1"** by dave.des, **CC0**, https://freesound.org/people/dave.des/sounds/127197/,
+  from the `arianne/stendhal` mirror (commit `fcd8330`, `doc/sources/audio-sfx.txt`).
+- `knife_stab`: **"Nasty knife stab 2"** by Aris621, **CC BY 3.0**, https://freesound.org/people/Aris621/sounds/478145/,
+  from the `Mooses2k/SecretHistories` mirror (commit `902ce1c`; licence per `Fris0uman/CDDA-Soundpacks`
+  `melee_hit_flesh/big_cutting/credits.md`). Trimmed to the stab and its tail.
+- `knife_slash`: **"Deep Cut / Slash / Gash"** by SypherZent, **CC0**,
+  https://freesound.org/people/SypherZent/sounds/420674/, from the `Mooses2k/SecretHistories` mirror (commit `902ce1c`).
+- `body_fall`: **"Falling body hits the floor"** by courtneyeck, **CC0**,
+  https://freesound.org/people/courtneyeck/sounds/673424/, from the `erladitia14/Silencio` mirror (commit `51836ab`,
+  its `MANIFEST.json`). Trimmed to the fall itself.
+- `faucet_open`: **"Kitchen Faucet with Water running into the Sink (Take B)"** by ani_music, **CC0**,
+  https://freesound.org/s/632456/, from the `NARBEHOUSE/Narbehouse.github.io` mirror (commit `c7efeff`, its
+  `CREDITS.md`). The first 1.6 s (the water coming on), faded.
+
+The credits screen picks them up from `sfx.json` like the rest.
+
+### Build 0.14: the crow at the window
+
+- **"Crow"** by Alexei Ostapenko (https://sketchfab.com/alexanders823), **CC BY 4.0**
+  (https://creativecommons.org/licenses/by/4.0/), https://sketchfab.com/3d-models/crow-d5a9b0df4da3493688b63ce42c8a83e2 :
+  the bird that strikes the window (STORY.md beat 5). Downloaded from the `Jazhikho/project_harvest` GitHub mirror
+  (commit `851d18e`, `assets/models/crow (1).glb`, Git LFS, SHA-256 checked); the licence is in the file's glTF
+  `asset.extras` and confirmed by the `Rico-Rodriguez/critter-clash` mirror's `assets/sidekicks/LICENSE-sidekicks.txt`
+  (verified there through the Sketchfab API). Built by `tools/crow/build.mjs` into `public/assets/props/crow.glb`
+  (+ `crow.LICENSE.txt`): scaled to a 0.90 m wingspan, Sketchfab's lamp and camera removed, two clips cut from its one
+  animation (a wing beat, looped, its climb damped to level flight; the glide into the landing that flings up and folds
+  the wings), its feather cards alpha-tested, its metalness removed and roughness taken from its gloss map, textures
+  resized (1024 / 512 px); quads added that show the loose feather cards painted in its own texture (the burst of
+  feathers, and the one left stuck to the glass).
+- **"Blood Splatter"** by ExileGL, **CC0 1.0**, https://opengameart.org/content/blood-splatter : one patch of it, given a
+  soft edge, is the smear the crow leaves on the glass; the same patch dragged down in streaks is that smear as the rain
+  washes it. From the `KurtBliss/Karnage` mirror (commit `8dfaa32`, SHA-256 checked), baked into `crow.glb` by
+  `tools/crow/build.mjs`.
+
 ## Build tools (not shipped)
 
 glTF Transform (MIT), meshoptimizer (MIT), ktx2-encoder (MIT, wraps Basis Universal), draco3dgltf (Apache-2.0),

@@ -3,7 +3,10 @@
 // blooming white, grain, vignette) by one blit pass; the clips (00:47, 02:58, and the still for Sweet Dreams) were
 // recorded the same way ahead of time (tools/bake-clips.mjs) and play from a sprite sheet.
 // LIVE is also a scene: he comes out of the wardrobe, crosses the room to the lens, looks up into it, and leaves the frame;
-// with the cloud camera's 8 s lag, the power dies the moment he is gone (story.js huntStart).
+// with the cloud camera's 8 s lag, the power dies the moment he is gone (story.js huntStart). The feed is 8 s old, so
+// during the scene he is drawn for this camera alone (cameraOnly) and leaves its frame under the lens, where nothing else
+// could see him either; the story holds its hunt fallback while it plays (liveRunning), and a hunt started any other way
+// ends it at once (endScene).
 import { Color, Entity, RenderTarget, Texture, Vec3, PIXELFORMAT_RGBA8, FILTER_LINEAR, ADDRESS_CLAMP_TO_EDGE, TONEMAP_ACES, GAMMA_SRGB,
   LIGHTFALLOFF_LINEAR, MASK_AFFECT_LIGHTMAPPED,
   ShaderUtils, SEMANTIC_POSITION, BlendState, drawQuadWithShader } from 'playcanvas';
@@ -11,6 +14,12 @@ import { Color, Entity, RenderTarget, Texture, Vec3, PIXELFORMAT_RGBA8, FILTER_L
 // The lens (the camera model's front: props.js 'camera', its bracket on the bed wall's panel at x 14.11) and what it looks at.
 export const CAM = { pos: [13.93, 1.95, 2.08], look: [10.6, 0.85, 0.05], fov: 96 };
 const RW = 384, RH = 216;
+// The scene's walk: out of the wardrobe across the room to the lens; then out of frame beneath it, into the corner of the
+// bed wall and the corridor wall, which neither the lens nor anywhere in the corridor can see (measured: every point of a
+// 0.27 m body from the floor to 1.85 m outside the frame with a 5 % margin, and out of sight of every eye height in the
+// corridor; tools/check-hunt.mjs).
+export const LIVE_WALK = [[10.2, 0.05], [11.3, 1.95], [13.55, 1.97]];
+export const LIVE_EXIT = [[13.85, 2.2], [14.02, 2.42]];
 
 export class Seccam {
   constructor({ app, camera, intruder, closets, nest, story, bank, props, configureMaterial }) {
@@ -94,10 +103,29 @@ fn hash(p: vec2f) -> f32 { return fract(sin(dot(p, vec2f(12.9898, 78.233)) + uni
     });
     this.uSource = device.scope.resolve('irSource'); this.uTime = device.scope.resolve('irTime'); this.uGain = device.scope.resolve('irGain');
     this.clips = {};
-    this.live = null; this.clip = null; this.frameSkip = 0;
-    app.on('framerender', () => {});
+    this.live = null; this.clip = null; this.frameSkip = 0; this.scene = null;
     app.on('postrender', () => this.blit());
     app.on('update', dt => this.update(dt));
+    // A hunt that begins while the scene plays (an emergency call, the front door, a fallback) ends the scene first.
+    story?.on?.(flag => { if (flag === 'hunt') this.endScene(); });
+  }
+
+  // LIVE's scene is playing, or about to (LIVE open outside the bedroom, counting down to it): story.js holds its hunt
+  // fallback meanwhile.
+  get liveRunning() { return !!this.scene || (!!this.live && !this.live.dead && !this.story?.has('live') && this.live.t > 0); }
+
+  // During the scene he is drawn for this camera alone (intruder.js: `cameraOnly` in his meshes' visibility test): the
+  // player's own eyes never meet the 8 s old him walking through the real flat.
+  cameraOnly(on) { if (this.intruder) this.intruder.cameraOnly = on; }
+
+  // The scene stops where it is: gone from the feed, the feed lost, the man the hunt's from now on.
+  endScene() {
+    if (!this.scene) return;
+    this.scene = null;
+    this.cameraOnly(false);
+    if (this.intruder) { this.intruder.headPitch = 0; this.intruder.show(false); }
+    if (this.live) this.live.dead = true;
+    this.entity.camera.enabled = false;
   }
 
   // Back on its bracket's view (the warm-up turns it to look at him).
@@ -197,30 +225,28 @@ fn hash(p: vec2f) -> f32 { return fract(sin(dot(p, vec2f(12.9898, 78.233)) + uni
     s.t += dt;
     const at = (t, fn) => { if (s.t >= t && !s[`done${t}`]) { s[`done${t}`] = true; fn(); } };
     at(0.5, () => { this.nest?.dust(3); this.bank?.play('creak_long', { at: [9.6, 2.7, -0.1], gain: 0.4, occlude: false }); });
-    at(2.6, () => { man.show(true); man.setTorch(false); man.place(9.5, -0.12, 90, 0.17); man.play('crouch_idle', { blend: 0 }); });
+    at(2.6, () => { this.cameraOnly(true); man.show(true); man.setTorch(false); man.place(9.5, -0.12, 90, 0.17); man.play('crouch_idle', { blend: 0 }); });
     at(3.4, () => man.play('crouch_out', { blend: 0.2 }));
-    at(6.4, () => { s.path = [[10.2, 0.05], [11.3, 1.95], [13.55, 1.97]]; s.leg = 0; man.play('walk_slow_01', { blend: 0.4 }); });
+    at(6.4, () => { s.path = LIVE_WALK; s.leg = 0; man.play('walk_slow_01', { blend: 0.4 }); });
     if (s.path && s.leg < s.path.length) {
       const [tx, tz] = s.path[s.leg], dx = tx - man.pos.x, dz = tz - man.pos.z, d = Math.hypot(dx, dz), v = 0.9 * dt;
       const yaw = Math.atan2(dx, dz) * 180 / Math.PI;
       if (d < v) { s.leg++; } else man.place(man.pos.x + dx / d * v, man.pos.z + dz / d * v, yaw, 0.17);
       if (s.leg === s.path.length) { s.pathDone = s.t; man.play('idle_breathe_01', { blend: 0.5 }); }
     }
-    if (s.pathDone) {
+    if (s.pathDone && !s.leaving) {
       // Under the lens: face it and look up into it.
       const k = Math.min(1, (s.t - s.pathDone) / 0.8);
       man.place(man.pos.x, man.pos.z, man.yaw + ((90 - man.yaw) * k * dt * 3), 0.17);
       man.headPitch = -38 * Math.min(1, (s.t - s.pathDone) / 1.2);
-      if (s.t - s.pathDone > 4.2 && !s.leaving) { s.leaving = true; man.headPitch = 0; s.path2 = [[11.2, 2.15], [10.45, 2.45], [10.4, 3.3]]; s.leg2 = 0; man.play('walk_slow_01', { blend: 0.4 }); }
+      if (s.t - s.pathDone > 4.2) { s.leaving = true; man.headPitch = 0; s.path2 = LIVE_EXIT; s.leg2 = 0; man.play('walk_slow_01', { blend: 0.4 }); }
     }
     if (s.path2 && s.leg2 < s.path2.length) {
-      const [tx, tz] = s.path2[s.leg2], dx = tx - man.pos.x, dz = tz - man.pos.z, d = Math.hypot(dx, dz), v = 1.0 * dt;
+      const [tx, tz] = s.path2[s.leg2], dx = tx - man.pos.x, dz = tz - man.pos.z, d = Math.hypot(dx, dz), v = 0.8 * dt;
       if (d < v) s.leg2++; else man.place(man.pos.x + dx / d * v, man.pos.z + dz / d * v, Math.atan2(dx, dz) * 180 / Math.PI, 0.17);
+      // Out of the frame beneath the lens: the feed is lost, and the power dies (story.js huntStart).
       if (s.leg2 === s.path2.length) {
-        man.show(false);
-        this.scene = null;
-        if (this.live) this.live.dead = true;
-        this.entity.camera.enabled = false;
+        this.endScene();
         this.story?.huntStart('live');
       }
     }

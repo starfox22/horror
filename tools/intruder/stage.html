@@ -60,10 +60,14 @@ const down = light('downlight', { type: 'spot', color: DOWN, intensity: 0.92, ra
 const lamp = light('lamp', { type: 'omni', color: WARM, intensity: 0.22, range: 5, castShadows: false }, [-1.5, 1.05, 1.1]);
 const torch = light('torch', { type: 'spot', color: new pc.Color(1, 0.94, 0.84), intensity: 8, range: 18, innerConeAngle: 7.5, outerConeAngle: 27,
   castShadows: true, shadowResolution: 1024, shadowBias: 0.05, normalOffsetBias: 0.02 }, [0, 1.6, 4], [0, 1.2, 0]);
+// 'studio': bright and even, for fitting (the grip, the mask) rather than for judging the look.
+const studio = light('studio', { type: 'directional', color: new pc.Color(1, 0.97, 0.93), intensity: 0, castShadows: false }, [0, 0, 0]);
+studio.setEulerAngles(35, 30, 0);
 window.lighting = (mode) => {
-  const warm = mode !== 'torch';
-  down.light.intensity = warm ? 0.92 : 0; lamp.light.intensity = warm ? 0.22 : 0; torch.light.intensity = warm ? 0 : 8;
-  app.scene.skyboxIntensity = warm ? 1 : 0.15;
+  const warm = mode === 'warm', bright = mode === 'studio';
+  down.light.intensity = warm ? 0.92 : bright ? 1.4 : 0; lamp.light.intensity = warm ? 0.22 : bright ? 0.8 : 0; torch.light.intensity = mode === 'torch' ? 8 : 0;
+  studio.light.intensity = bright ? 1.6 : 0;
+  app.scene.skyboxIntensity = warm ? 1 : bright ? 4 : 0.15;
 };
 
 window.frames = (n) => new Promise(r => { let i = 0; const f = () => (++i >= n ? r() : requestAnimationFrame(f)); requestAnimationFrame(f); });
@@ -76,7 +80,9 @@ window.boot = async () => {
   return { clips: Object.keys(man.clips), knife: !!man.knife, api: ['knifePose', 'raiseKnife', 'cameraOnly'].filter(k => k in man) };
 };
 // A clip frozen at `time` seconds, the knife pose, his phone light.
-window.pose = async ({ clip = 'idle_breathe_01', time = 0, raise = 0, strike = 0, phone = false, yaw = 0, headPitch = 0 } = {}) => {
+window.pose = async ({ clip = 'idle_breathe_01', time = 0, raise = 0, strike = 0, phone = false, yaw = 0, headPitch = 0, knife = true, grip } = {}) => {
+  if (man.knife) man.knife.enabled = knife;
+  if (grip) man.setGrip?.(grip);
   man.place(0, 0, yaw, 0);
   man.play(clip, { blend: 0, speed: 0 });
   await window.frames(2);
@@ -87,7 +93,14 @@ window.pose = async ({ clip = 'idle_breathe_01', time = 0, raise = 0, strike = 0
   await window.frames(3);
 };
 // The camera: yaw/pitch degrees around a point (a bone's position, or [x, y, z]), at distance d, field of view fov.
-window.view = ({ at = [0, 0.95, 0], bone, offset = [0, 0, 0], yaw = 0, pitch = 0, d = 3.6, fov = 34, torchAt } = {}) => {
+// Or in a bone's own frame: { local: 'Bip01 R Hand', eye: [x, y, z], target: [x, y, z], up: [x, y, z] } (fitting the grip).
+window.view = ({ at = [0, 0.95, 0], bone, offset = [0, 0, 0], yaw = 0, pitch = 0, d = 3.6, fov = 34, torchAt, local, eye, target, up = [1, 0, 0] } = {}) => {
+  if (local) {
+    const m = man.bones.get(local).getWorldTransform();
+    const e = m.transformPoint(new pc.Vec3(...eye)), t = m.transformPoint(new pc.Vec3(...target)), u = m.transformVector(new pc.Vec3(...up));
+    camera.camera.fov = fov; camera.setPosition(e); camera.lookAt(t, u);
+    return;
+  }
   const p = bone ? man.bones.get(bone)?.getPosition().clone() ?? new pc.Vec3(...at) : new pc.Vec3(...at);
   p.add(new pc.Vec3(...offset));
   const y = yaw * Math.PI / 180, t = pitch * Math.PI / 180;
