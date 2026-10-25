@@ -1,221 +1,229 @@
-# The Apartment — story and game design (build 0.13)
+# The Apartment — story and game design (build 0.14)
 
-The canonical design for the story, its beats, gameplay and endings. Code follows this document; change this first.
-Everything is staged in the real apartment (metres; floor plan in `docs/build-013/map.png`). Version 2: revised after
-two independent reviews (narrative/horror and game design/pacing); their main findings are folded in below.
+The canonical design for the night: its story, beats, scares, gameplay and endings. Code follows this document; change
+this first. Everything is staged in the real apartment (metres; floor plan in `docs/build-013/map.png`).
+
+Version 3 (build 0.14). The owner asked for a simpler story than 0.13's: **the man they evicted never left**, told with
+almost no backstory ("we will let the player imagine the rest"); plenty of believable jump scares; tension that builds
+before the attacker is ever seen; escape as the final goal; the knife slot left empty for whoever looks. A caretaker
+twist and a chained front door were proposed and rejected by the owner as too close to Netflix's "Unhinged": do not
+reintroduce them.
 
 ## Pillars
 
-1. **Plausible first, unbearable later.** Every early event has an ordinary explanation (the storm, the flat upstairs,
-   an old building, sleeping pills). The explanations wear out one at a time; none is ever taken away by force.
-2. **Two readings to the very end: real, or in my head.** A man lives in your ceiling — or you sleepwalk and
-   hallucinate on zolpidem (whose label warns of both) and every death is a nightmare you wake from at 03:07. Each piece
-   of evidence fits both until the player has worked out enough to tell the police who and where.
-3. **Built-up, timed scares.** Long quiet stretches of real-sounding night so each scare lands. Ordinary sounds first,
-   then wrong sounds, then silence that answers you, then sights, then contact. Minimum breathing room is written down.
-4. **The player is clever.** No markers. In-world instructions (the label in the fuse box, the sleep diary), deduction
-   rewarded (switch off the circuit you heard the water on), knowledge carried between runs. An expert finishes in
-   10-15 minutes; a first run takes 25-40.
-5. **Silence is a tool.** No music under exploration; drones only after something happens; the biggest sight (the far
-   silhouette) has no sting at all.
+1. **Simple, and imagined.** A notice on the fridge says the resident who had been causing disturbances has finally been
+   evicted. He never left. Nothing ever explains him: the player pieces it together from things (the notice, the
+   empty key bowl, the empty knife slot, his nest, the polaroids). No names, no letters, no confession.
+2. **Believable first.** Every scare has an ordinary cause (the storm, a bird, old wiring, the building, the pills)
+   until the causes run out. None is ever taken away by force.
+3. **Tension before the monster.** Quiet, then wrong sounds, then silence that answers you, then a sight, then contact.
+   The man is not seen until the player has been in the dark for a while (about six minutes into a first night).
+4. **Escape is the goal.** Once he has been seen, the night has one aim: get out of the flat. The keys are gone from the
+   bowl; the spare is somewhere in the flat (the sleep diary says where); he hunts you while you look.
+5. **Fair.** Every danger is telegraphed (his light reaches a room before he does, his breathing within a few metres, his
+   steps through doorways). Being caught is a jump scare, never a mystery. Checkpoints at every act.
+6. **Silence is a tool.** No music under exploration; drones only after something has happened; the first sighting has
+   no sting until he is gone.
 
-## The truth (stated only in the true ending)
+## The truth (never stated in full)
 
-Daniel Kessler, 41, rented this flat until March. When he was evicted he did not leave the building: he lives in the
-service void above the ceilings, and he comes down through a hatch in the roof of your bedroom wardrobe (the void runs
-above the whole floor). The landlord changed the lock; his old key, which no longer fits, lies in his nest. The first
-night he came back, you were sleepwalking on your prescription pills, and you opened the front door to him. Since then
-he comes down most nights. He drinks your water at your bedside. He takes photographs. Things you blamed on
-sleepwalking (the fridge left open, the toilet seat up, waking on the sofa) were partly him and partly you.
-Your doctor told you to film your nights; **the camera arrived today and tonight is its first night**.
+For a month someone in the building made the nights unbearable: banging in the ceilings, noises above the flats. The
+management finally evicted him; the notice is on your fridge. He did not leave. He moved into the service void above
+the ceilings and comes down into your flat through the inspection hatch in the roof of your bedroom wardrobe. He has
+been coming down at night while you sleep on your prescription pills. Tonight he took your keys from the bowl and the big
+knife from the block, and pulled your phone's charger out of the wall. When you wake at 03:07 he is in your wardrobe,
+holding its right door shut.
 
-| Time | Truth | What the player can find |
-| --- | --- | --- |
-| 00:47 | The camera's motion alert buzzes your phone on the nightstand. He takes the phone and shuts it in the fridge to silence it. | Clip 00:47: the wardrobe's left door opens a hand's width, a white face in the gap, it closes. The phone in the fridge, dead with cold. |
-| 02:58 | You are sleepwalking (you are in the kitchen). He stands at the foot of your empty bed, then notices the camera and turns to it. | Clip 02:58: duvet thrown back, a figure at the foot of the empty bed, face whited out by the infrared, it turns to the lens. "...Is that me?" |
-| 03:07 | You wake in bed (you went back to sleep at 03:01). He is behind the right wardrobe door, holding it shut. | The start. The right wardrobe door is "Stuck." |
-| ~03:09 | You are in the kitchen. He comes out to fetch his glass of water (yours) from the nightstand, knocks it over in the dark, cuts his bare foot. He goes into the bathroom to wash the cut and locks it. | The shattered glass and blood-pink water. "I didn't bring a glass to bed." Tap running behind the locked door. |
-| ~03:10 | You try the bathroom handle. He turns the tap off and holds still. When you knock, he drops your plugged-in hair-dryer into the basin: the RCD trips the whole flat. He knows it will: he wrote the label inside the fuse box when he lived here. | Silence that answers you, then the bang and darkness. |
-| ~03:11 | While you fetch the torch and walk to the fuse box (west end of the corridor), he leaves the bathroom and stands at the east end by the front door, watching you work. Then he goes back up into the void. | The silhouette at the edge of the torch beam. His wet prints (your size) in the corridor, ending side by side facing the box. |
-| ~03:13 | Power back. | The steamed bathroom (the building has central hot water), the hair-dryer in the basin, a band wiped clear in the fogged mirror at a head height above yours. |
-| ~03:14 | You find the nest. | Blanket, bottles, a key that does not fit your door, a returned letter for "D. Kessler", polaroids of you asleep taken from inside the wardrobe; the oldest is dated in March and says on the back in block capitals: YOU LET ME IN. The hatch above is open; a drop of water falls through your torch beam. |
-| ~03:15 | Your phone, booting on the charger, buzzes with the alerts you never got. The live view lags 8 s behind (a cheap cloud camera). | LIVE: he drops out of the hatch, walks out of the wardrobe and out of frame. At that moment the power dies: he was already at the fuse box, behind you. |
-| ~03:16 | He snaps the main switch off and hunts you. | The hunt. |
+What the player can find, in order: the stuck wardrobe door · the dead phone with its charger pulled · the notice ·
+the empty key bowl · the empty knife slot · the broken glass and the blood in the spill · the locked bathroom whose
+light goes out · the man at the end of the corridor · his prints · the wiped mirror · the nest (blanket, bottles, a key
+tagged 5B, polaroids of you asleep) · the hatch · the camera clips · him on LIVE.
 
 ## Space (who is where)
 
-- **Bedroom** x 9.3-14.2, z -1.4..2.4: bed (head at +x), two nightstands (the charger on the near one; the camera on
-  the dresser corner looking at the bed and the wardrobe), the wardrobe on the west wall: tall section z -1.32..0.28
-  behind two doors (left half: shelf with the torch; right half: rail, his nest on the floor, the hatch in its roof),
-  upper section z 1.34..2.36 above the open shoe closet. The en-suite **bathroom** door is between them (x 9.15,
-  z 0.39..1.25).
-- **Corridor** x 1.55-13.95, z 2.72..4.42, 12 m, windowless. The bedroom opens onto it at x 10.0-10.9; the **front door**
-  at its east end (x 12.9, south wall; nothing stands by it: the key bowl is on the kitchen worktop by the fridge, where you drop your keys coming in); the **fuse box** at its west end on the
-  south wall (x 2.3, z 4.42) by the mouth into the open-plan room; the office opens onto it at x 3.75-5.6.
-- **Open-plan room** x -6.5..6.3: kitchen along the north wall (fridge x 1.55, sink x -2.9, oven clock, coffee machine
-  and its coffee shelf), dining table, living room at the west end (sofa, laptop, arc lamp, windows), office at the
-  east end (desk, iMac, the sleep diary).
-
-The corridor is the only link between the two halves of the flat, which is why the tension lives there.
+- **Bedroom** x 9.3-14.2, z -1.4..2.4: bed (head at +x), two nightstands (the south one has the alarm clock and your
+  phone; the north one the pills), the camera on the dresser corner looking at the bed and the wardrobe, the bedroom
+  window on the north wall (x 10.4-12.75). The wardrobe on the west wall: tall section z -1.32..0.28 behind two doors
+  (left half: shelf with the torch; right half: rail, his nest on the floor, the hatch in its roof). The en-suite
+  **bathroom** door is beside it (x 9.15, z 0.39..1.25).
+- **Corridor** x 1.55-13.95, z 2.72..4.42, 12 m, windowless. The bedroom opens onto it at x 10.0-10.9, the **front door**
+  is at its east end (x 12.9), the **fuse box** at its west end (x 2.3), the office opening at x 3.75-5.6. It is the only
+  link between the two halves of the flat: the tension lives there.
+- **Open-plan room** x -6.5..6.3: kitchen on the north wall (fridge x 1.55 with the notice on its door, the sink and
+  its tap under the kitchen window, the knife block on the worktop, the coffee machine and coffee shelf), dining table,
+  living room at the west end (sofa, laptop, arc lamp, a floor-to-ceiling window wall), office at the east end (desk,
+  iMac, the sleep diary).
 
 ## Acts and beats
 
-Times are for a player who knows what to do. Each beat lists its trigger, its fallback (so the game never stalls) and
-its minimum breathing room.
+Times are for a first night. Each beat lists its trigger, its fallback (the night never stalls) and the scare type.
+Every scripted moment is an entry in `src/story-events.js` (`STORY_EVENTS`, in this order: the developer menu plays any
+of them 3 s after the game resumes).
 
-### Act I — Water (0:00-1:40)
+### Act I — Water (0:00-3:00): unease
 
-1. **Wake** (existing, 12 s; skippable). The bedside clock: 03:07. *"I just had a nightmare, I will go get some water at
-   the kitchen."* (the owner's line, verbatim). The charger cable on the nightstand has no phone on it.
-   The right wardrobe door: E → it gives a centimetre and stops. *"Stuck."* (He is holding it.)
-2. **The kitchen.** The oven clock blinks 03:07 (oven clocks are always wrong; after a death it will still say 03:07).
-   Open the fridge: jug, glass, and **your phone** on the top shelf.
-   E: *"...My phone?"* then *"Ice cold. Dead."* It goes in your pocket (it warms; on a charger it boots, see Act III).
-   Drink (existing).
-3. **The glass.** Exactly 3.0 s of play after the fridge door shuts (after drinking): a glass shatters in the bedroom,
-   heard wherever you are (placed, muffled and reverberant through walls, never quieter than a clear sound).
-   *"...Upstairs?"* — the ordinary explanation first. 40 s later if the player has not gone east: *"No. The bedroom."*
+1. **Wake** (existing, skippable). The bedside clock: 03:07. *"I just had a nightmare, I will go get some water at the
+   kitchen."* (the owner's line, verbatim).
+2. **The phone** lies on the south nightstand, dead. E: *"Dead."* Its charger has been pulled out of the wall: E on the
+   nightstand plugs it back in (*"I plugged it in. ...Didn't I?"*). A dead phone needs minutes of charge before it boots,
+   and the power will soon be gone: it boots in Act III (beat 12). The phone can be carried; it charges only on the
+   nightstand.
+3. **The wardrobe's right door**: E → it gives a centimetre and stops; hangers rattle inside. *"Stuck."* (He is holding
+   it.)
+4. **The kitchen.** On the outside of the fridge door, held by a magnet, a small printed notice: *"NOTICE TO RESIDENTS.
+   The resident who had been causing disturbances over the last month has finally been evicted. Thank you for your
+   patience."* Reading it: *"Finally."* The key bowl beside the fridge is empty (*"...My keys?"*). The knife block on
+   the worktop has one empty slot, the biggest; only a player who looks closely notices (*"The big one's gone."*).
+   Both taps turn on and off.
+5. **The crow** (believable false scare; once per night, any time before the hunt, never within 25 s of another
+   scare). The player stands within 2.6 m of a window, looking at it, not running. A crow, flushed from the roof by the
+   storm, comes out of the black and slams into the glass at eye height: a heavy thud, the pane rattling, a burst of
+   feathers, a distressed caw as it drops away; lightning a moment later. A feather stays stuck to the wet glass with a
+   smear of blood that the rain slowly washes down. *"Jesus. ...Just a bird."* The kitchen tap is under the kitchen
+   window, so a player who plays with the taps usually meets it.
+6. **The drink** (existing). Exactly 3.0 s of play after the fridge door shuts after drinking: **a glass shatters in the
+   bedroom**, at near full level wherever the player is (routed through the doorways, never muffled into a thud).
+   *"...What was that?"* 40 s later, if the player has not gone east: *"The bedroom."*
 
-### Act II — Dark (1:40-4:00)
+### Act II — Dark (3:00-7:00): the presence
 
-4. **The shards.** By the left nightstand: a broken tumbler in a spill of pink-tinged water. *"I didn't bring a glass to
-   bed."* The bathroom door is shut; behind it a tap runs.
-5. **Locked.** E on the bathroom handle: it gives, the latch doesn't. *"Locked."* The tap behind the door **stops**.
-   E again: you knock. *"...Hello?"* Two seconds of nothing. Then a crackle and a **bang** from inside, and the flat goes
-   out in a cascade from the bathroom outwards: lights, the fridge's hum, the router's click, the screens. Rain and the
-   wind are all that is left.
-   - Fallbacks: 25 s after the shards are seen, or 120 s after the glass broke, the cut happens wherever the player is.
-   - Sweet Dreams can be chosen between the glass breaking and this cut (hold E on the bed: "Go back to sleep").
-6. **Light.** Lightning every 6-10 s for 45 s after the cut, then every 20-35 s. 4 s after the cut, wherever the player
-   is: *"The torch. Wardrobe."* Opening the left wardrobe door in the dark: a cold draught and dust drifting down in the
-   next flash (plants the hatch; no sting). With the torch the right door now opens freely.
-7. **The fuse box.** At the corridor's west end; without the torch: *"I can't see a thing."* A wall-mounted consumer unit
-   with a hinged cover. Inside, left to right: **MAIN** (isolator, on), **RCD** (tripped, down, with a TEST button),
-   and seven breakers: LIGHTS 1, LIGHTS 2, KITCHEN, SOCKETS LIVING, SOCKETS BED, BATHROOM, OVEN. Taped inside the cover,
-   handwritten: *"RCD trips → all breakers off, RCD up, breakers on one at a time. The one that trips it again: OFF.
-   (Bathroom does it when wet.) — D."*
-   - The RCD stays up only while no faulty breaker is on. A faulty one tripping it: a loud snap and darkness again.
-   - Faulty: BATHROOM always; plus, on some runs, one nuisance circuit with a cause the player could have seen in Act I:
-     a puddle under the coffee machine (KITCHEN) or rain getting in at the living-room window onto a floor socket
-     (SOCKETS LIVING), with a drip sound there.
-   - The clever player switches BATHROOM off and lifts the RCD: 2 actions. The label is the fair fallback.
-   - Looking into the open box, the focus snaps to the nearest switch and shows its name and state.
-8. **The silhouette.** 4 s after the cover opens, from the far east end: one slow floorboard creak; again at 12 s.
-   A player who turns and sweeps the torch down the corridor sees, at the very edge of the beam, 11 m away by the front
-   door, **a man standing still**. The torch's cheap contact stutters; when the beam steadies, the corridor is empty.
-   No sound, no music. *"...Hello?"* a second later. Afterwards, if they walk there: *"Nobody. ...Nobody."*
-   - If the player never turns: at power-back the hall lights stutter on and off once and in that half-second he is at
-     the far end; then he is gone.
-9. **Power back.** Lights stutter and settle as they were; the fridge hums again; the router's lights; the iMac's chime.
-   The phone, if it is on a charger, starts to charge. *"...Okay."* Then at least **45 s of nothing**: a lit flat, rain,
-   the fridge.
-   On the way back east: his wet prints in the corridor, from the bedroom opening to x 12.4, two prints side by side
-   facing the fuse box, then back. *"...Mine?"*, then *"I wasn't over there."*
+7. **The glass.** By the bed: a broken tumbler in a spill of pink water, and in the spill one bare footprint, toward the
+   bathroom. *"I didn't bring a glass to bed."* then *"...Blood?"* The bathroom door is shut, its light shows under the
+   door, and a tap runs behind it.
+8. **Locked.** E on the bathroom handle: it gives, the latch doesn't. *"Locked."* Behind the door the tap stops. Then the
+   line of light under the door goes out. E again: you knock. *"...Hello?"* Two seconds of nothing. Then a crackle and a
+   **bang** from inside, and the flat goes out in a cascade from the bathroom outwards (lights, the fridge's hum, the
+   screens). Rain and thunder are all that is left. *"No. No, no, no."*
+   - Fallbacks: 25 s after the shards are seen, or 120 s after the glass, the cut happens wherever the player is.
+   - Sweet Dreams (secret ending) can be chosen between the glass and this cut: hold E on the bed.
+9. **Light.** Lightning every 6-10 s for 45 s after the cut, then every 20-35 s. 4 s after the cut: *"The torch.
+   Wardrobe."* Opening the left wardrobe door in the dark: a cold draught and dust drifting down in the next flash.
+   When the player leaves the bedroom with the torch, behind them the bathroom's latch clicks: unlocked. Nothing else.
+10. **The fuse box** at the corridor's west end. Without the torch: *"I can't see a thing."* A consumer unit with a
+    hinged cover: **MAIN**, **RCD** (tripped, with a TEST button) and seven breakers: LIGHTS 1, LIGHTS 2, KITCHEN, SOCKETS
+    LIVING, SOCKETS BED, BATHROOM, OVEN. Taped inside the cover, a handwritten label: *"RCD trips → all breakers off, RCD
+    up, breakers on one at a time. The one that trips it again: OFF."* The RCD stays up only while no wet circuit is on:
+    BATHROOM always, and on some runs one nuisance circuit with a cause the player could have seen (a puddle under the
+    coffee machine: KITCHEN; rain on a floor socket by the living-room window: SOCKETS LIVING). The clever player
+    switches BATHROOM off and lifts the RCD: two actions.
+11. **The man.** 4 s after the cover opens, from the far east end: one slow floorboard creak; again at 12 s. When the
+    player's torch beam points down the corridor towards the front door, **a man is standing there at the edge of the
+    light**, eleven metres away: black clothes, a blank white face, something long and bright in his hand. He holds
+    still for most of a second. Then he runs: straight at the player, heavy and fast, and swerves into the bedroom
+    doorway. The wardrobe bangs. A thump in the ceiling. Creaks crossing above the corridor. No music until the thump.
+    *"...Someone's in here."* *"He went into the bedroom."*
+    - If the player never turns: when the power comes back, he is heard instead: running steps from the front door into
+      the bedroom, the wardrobe, the thump overhead.
+    - Following him: the wardrobe's right door swings slowly, dust falls through the torch beam, the creaks move away.
+      *"He went up."*
+    - From now on the front door matters: *"Locked. ...My keys. He has my keys."*
+12. **Power back.** Lights stutter and settle as they were; the fridge hums again; the iMac chimes. *"...Okay."* Then at
+    least **45 s of nothing**. His prints are in the corridor: from the front door into the bedroom, wet and pink.
 
-### Act III — Steam (4:00-7:00)
+### Act III — Steam (7:00-11:00): his nest
 
-10. **The bathroom.** Its door now stands ajar; its light is dead (its circuit is off), so: torch. Steam in the beam,
-    the basin overflowing, your hair-dryer in it, water across the floor, the hot tap running. E: turn the tap off. In
-    the new quiet, something heavy shifts **in the ceiling**, moving towards the wardrobe. The mirror is fogged, with one
-    band wiped clear at a head height above yours. *"Someone wiped the mirror."*
-    - Nudge 45 s after power-back if not visited: *"...The bathroom."*
-11. **The nest.** The right wardrobe door. On its floor: a folded charcoal blanket, water bottles, a key that
-    doesn't fit your door, a returned letter for D. Kessler, and polaroids of your bed at night with you asleep in it,
-    taken from where you are standing. *"That's my bed."* The oldest one has writing on the back. In the roof of the
-    wardrobe a hatch is open onto black; when you look up a single drop of water falls through the torch beam.
-    *"...How long?"*
-12. **The alerts.** At least 20 s after the nest (or 60 s after power-back if the nest isn't found): the phone, on its
-    charger, finishes booting and buzzes with everything it missed. (No charger? It boots from the warmth of your pocket
-    4 minutes after you picked it up, at 4 %.) Q raises the phone. The camera app: **00:47**, **02:58**, **LIVE**.
-    - LIVE (only once the player is out of the bedroom): the bedroom as it is now (rendered live), with "LIVE · 8 s
-      delay". The wardrobe stands open as you left it. His legs drop out of the hatch; he steps out of the wardrobe,
-      crosses the room, looks up into the lens, and walks out of frame. At that moment the power dies (he left the
-      frame 8 s ago and has walked to the fuse box). The feed: "Connection lost".
+13. **The bathroom.** Its door stands ajar; its light is dead (its circuit is off): torch. Steam, the basin overflowing,
+    your hair-dryer in it, water across the floor, the hot tap running. E: turn the tap off. In the new quiet, something
+    heavy shifts **in the ceiling**, moving towards the wardrobe. The mirror is fogged, with one band wiped clear at a
+    head height above yours. *"Someone wiped the mirror."* Nudge 45 s after power-back if not visited: *"...The
+    bathroom."*
+14. **The phone** (if it is on its charger with power): it boots and **buzzes hard against the wooden nightstand** with
+    everything it missed. Home Cam: clips **00:47** (the wardrobe's left door opens a hand's width, a white face in the
+    gap) and **02:58** (the empty bed, a figure at its foot turning to the lens), and **LIVE**. If the charger was never
+    plugged in: 20 s after power-back, *"My phone. ...The charger."*
+15. **The nest.** The right wardrobe door now opens. As it swings, a hanger drops and clatters; dust. On the floor: a
+    folded charcoal blanket, water bottles, a brass key with a paper tag "5B", and polaroids of your bed at night with
+    you asleep in it, taken from where you are standing. *"That's my bed."* The oldest has writing on its back. In the
+    roof of the wardrobe the hatch is open onto black; looking up with the torch, a single drop of water falls through
+    the beam. *"...How long?"*
+16. **LIVE** (only once the player is out of the bedroom): the bedroom as it is now, "LIVE · 8 s delay". His legs drop
+    out of the hatch; he steps out of the wardrobe, crosses the room, looks up into the lens and walks out of frame. At
+    that moment the power dies (he walked to the fuse box 8 s ago). The feed: "Connection lost".
     - If the player never opens LIVE: the hunt starts 75 s after the nest was found, or 150 s after power-back.
+    - An emergency call made before the hunt starts it 12 s after the call ends (he heard you).
 
-### Act IV — The lodger (7:00-12:00)
+### Act IV — Out (11:00-18:00): the hunt
 
-The power is out again and stays out: the main switch is snapped off. Kessler hunts the player.
+The power is out again and stays out: the main switch is snapped off. He hunts the player through the dark flat.
 
+- **The goal.** Get out. The front door needs a key and yours are gone. The **sleep diary** on the office desk says
+  where the spare is (one place per run, all in the west half: the red tin on the coffee shelf · taped under the sofa
+  cushion · in the plant pot by the sofa); each place can also be searched without the diary. Take it (1.5 s, a 2.5 m
+  noise), cross the flat to the front door, **hold E for 3 s** to turn the stiff lock (three loud clicks, each a 6 m
+  noise; letting go keeps the progress), and leave.
 - **First encounter (scripted, survivable, the tutorial).** His phone light comes on near the fuse box. He walks the
-  open-plan room once, sweeping. For these 25 s he notices only a torch held on for more than 1.5 s or running.
-  Thoughts: *"His light."* then *"Torch off. Get down."* and the prompt *C · crouch* once.
-- **Him.** A man dressed all in black, hood up, black leather gloves, his face a blank white mask with dark eye holes (in
-  the infrared it glows; in your torch it is the first thing you see), and a phone torch (a cold white LED, the only light
-  besides yours and the lightning).
-  He walks between the rooms, stops and sweeps his light, goes to noises. His light reaches a room before he does. In a
-  doorway he always waits 2 s shining it down the corridor before stepping in; he never stops in the corridor. Within
-  4 m you hear his breathing and his steps; sounds reach you along the flat's open paths (through doorways, never
-  through walls), and his hearing uses the same path distance.
-- **Seeing you.** Suspicion fills (0.35 s + 0.12 s per metre) while you are in his phone light (35° half-angle, 9 m),
-  or within 2 m of him standing (1 m crouched) in his side view, or anywhere he has a line of sight to you with your torch
-  on (14 m). Crouched fills twice as slowly; running or torch twice as fast. At half he stops, turns his light towards
-  you and breathes in: you have a moment. Full: he comes. Lightning near him only turns his head.
-- **Hearing you** (path metres): crouched 0.5, walking 2.5, running 8, doors and the wardrobe 6, glass shards underfoot 5,
-  the phone ringing 12.
-- **The chase.** He runs (3.0 m/s; you run 2.4) to where he last saw you, plus where you were heading. Six seconds without
-  seeing you: he searches there, then nearby rooms, then goes back to walking. Sometimes, losing you, he switches his
-  light off and waits; only his breathing within 4 m gives him away. Low furniture hides you when crouched; walls,
-  wardrobes and the fridge always.
-- **Backstage.** The wardrobe is his door, not your hiding place: stand inside its right half for 3 s during the hunt and
-  dust falls, then he drops out of the hatch onto you. If he has been within 6 m of you for 25 of the last 60 s without a
-  chase, he goes up into the void for 25-40 s (creaks move across the ceiling) and comes back down. If he has been far
-  away for 45 s, he heads to the room next to yours. During the hunt he pulls the nest up into the void.
-- **Caught.** The view turns to him in a quarter second, his LED fills it, black. Then the bedroom, you gasping awake,
-  in under 8 s (any key skips). The bedside alarm clock (a wind-up one: its hands do not need the power) says 03:07 again; your
-  phone says the real time. *"...A dream?"* (first), *"Again."* (second), *"Wake up. Wake up."* (third). The shards are
-  still there. You keep everything you carried, everything you found, and a police call already made (with at least 30 s
-  left). He starts up in the void (heard above you) and you have 20 s.
-- **Ways out.**
-  - **Call the police.** Q, the phone (if it has booted), emergency call. The dispatcher: *"Emergency. What's the
-    address?"* Then the player chooses what to whisper; what they can say depends on what they found: *"There's someone
-    in my flat."* always; *"In the ceiling. Above the wardrobe."* (found the nest); *"Daniel Kessler. He used to live
-    here."* (found the letter and the old key). *"Officers are on their way. Two minutes. Stay on the line if you can.
-    Is there somewhere you can hide?"* Survive ~100 s (60 on Story). If you hang up they call back, and a ringing phone
-    is a 12 m noise unless you silenced it. Then: *"Police! Open the door!"* Your keys are gone from the bowl; they force
-    it.
-  - **Get out.** The sleep diary on the office desk: *"Spare key: [the red tin on the coffee shelf / taped under the sofa
-    cushion / in the plant pot in the hall]. DON'T move it again."* (each place can be searched without the diary) (one per run). Take it, reach the front door, unlock it
-    (3 s, a 6 m noise), leave. Before the hunt, the door makes you think twice: *"Out? Barefoot? Over a glass?"*
+  open-plan room once, sweeping it. Until the player enters the corridor or comes within 4 m of him, he notices only a
+  torch held on for more than 1.5 s, or running. Thoughts: *"His light."* then *"Torch off. Get down."* and the prompt
+  *C · crouch*; then *"Get out. ...The spare key."*
+- **Him.** Black clothes, the white mask, your kitchen knife in his right hand and his phone's cold LED in his left.
+  He walks between the rooms, stops and sweeps his light, goes to noises. His light reaches a room before he does; in a
+  doorway he waits 2 s shining it down the corridor; he never stops in the corridor. Within 5 m you hear his breathing.
+- **Seeing you** (stalker.js): suspicion fills while you are in his light (35° half-angle, 9 m), close in his side view
+  (2 m standing, 1 m crouched) or anywhere in sight with your torch on (14 m); crouched fills slower, running or torch
+  faster. At half he stops, turns his light to you and breathes in: you have a moment. Full: he comes, and before he
+  strikes he raises the knife into his light (0.45 s): there is always a last chance to see it coming.
+- **Hearing you** (path metres): crouched 0.5, walking 2.5, running 8, doors and the wardrobe 6, glass underfoot 5, the
+  phone ringing 12, the front-door lock 6 per click.
+- **Lures.** A running tap (kitchen or bathroom; water needs no power) is a 10 m noise: he walks over, turns it off,
+  sweeps, searches nearby. Set it, then leave by another way.
+- **The chase.** He runs (2.6 m/s on Normal; you run 2.4) to where he last saw you, plus where you were heading. Six
+  seconds without seeing you: he searches, then goes back to walking. He never ambushes in the corridor or within 4 m of
+  the front door. Walls, wardrobes and the fridge always hide you; low furniture hides you crouched.
+- **The wardrobe** is his door, not your hiding place: stand in its right half during the hunt and dust falls at 1 s;
+  at 4 s he drops out of the hatch onto you.
+- **Police.** The phone (if booted): an emergency call. *"Emergency. What's the address?"* Then what the player chooses
+  to whisper depends on what they found: *"There's someone in my flat."* always; *"He's in the ceiling. Above my
+  wardrobe."* (found the nest); *"It's the man they evicted. From 5B."* (read the notice and found the tagged key).
+  *"Officers are on their way. Stay on the line if you can."* They arrive in 60 / 100 / 110 s (Story / Normal / Hard).
+  A dispatcher's call-back during the hunt buzzes rather than rings.
+- **Caught.** The view is wrenched round to him; his light comes up under the mask; the knife comes down. A full-level
+  sting, the camera kicks, blood hits the lens, and the player falls: the view drops to the floor and rolls, and he
+  stands over you, looking down. Black, and silence. Then you wake, gasping, at 03:07: **on the sofa** (as the diary
+  says you have before). *"...A dream?"* (first), *"Again."* (second), *"Wake up. Wake up."* (third). The shards are
+  still by the bed; you keep everything you carried and found, and a police call already made. He is patrolling from the
+  bedroom door, with 8 s before he can catch anyone. On Hard, the third catch restarts Act IV.
 
 ## Endings
 
 | # | Name | How | Final beat |
 | --- | --- | --- | --- |
-| 1 | **Sweet Dreams** (secret) | Hold E on the bed ("Go back to sleep") between the glass breaking and the power cut. | Black. Rain. A wardrobe door, slowly. Floorboards. The mattress dips beside you. A breath at your ear. Then, no words: a still from the camera, infrared, 03:14, the bed, and a man standing at its foot. |
-| 2 | **Locked From the Inside** | The police come, and you could tell them neither where nor who. | They search; nothing (he pulled the nest up). An officer plays 02:58 on your phone: *"...That's you, isn't it?"* Another shines a torch up the hatch: *"Nobody could fit up there."* Dust falls in the beam. |
-| 3 | **Out** | Escape with the spare key. | The stairwell, your breath, bare feet on the stairs. Above, very softly, your front door closing and a key turning in it, from inside. |
-| 4 | **The Lodger** (true) | The police come and you told them both where and who. | They bring him down from the void. Card: *"Daniel Kessler, 41, lived here until March. Officers found bedding, food and 212 photographs in the service void above your wardrobe. He said he never broke in. He said you let him in. He said that whenever you woke, he put you back to bed."* |
-| — | Caught | He reaches you. | You wake up (not an ending: the hunt resumes). |
+| 1 | **Out** (main) | Unlock the front door with the spare key and leave. | The stairwell, your breath, bare feet on the stairs. Above, very softly, your front door closing, and a key turning in it from inside. |
+| 2 | **Evicted** (true) | The police come and you told them where and who. | They bring him down from the void. Card: *"Officers found a man living in the service void above your wardrobe. He had been evicted from the building. He never left."* |
+| 3 | **Locked From the Inside** | The police come and you could not tell them where. | They search; nothing. *"Front door was locked. From the inside."* An officer plays 02:58 on your phone: *"...That's you, isn't it?"* *"Do you take anything to help you sleep?"* |
+| 4 | **Sweet Dreams** (secret) | Hold E on the bed between the glass and the power cut. | Black. Rain. A wardrobe door, slowly. Floorboards. The mattress dips beside you. A breath at your ear. Then, no words: a still from the camera, infrared, 03:14, the bed, and a man standing at its foot. |
+| — | Caught | He reaches you. | You wake (not an ending: the hunt resumes). |
 
-The ending card also shows the time on the stopped clock, your time for the run, deaths, evidence found (x/14) and
-which reading your evidence supports.
+The ending card shows the time on the clock, the run's time, deaths, evidence found and which reading the evidence
+supports (someone was here / it was in my head).
 
-## Evidence (the journal; replay value)
+## Evidence (the journal)
 
-14 pieces, each with the thought you had when you found it: the stuck wardrobe door · the phone in the fridge ·
-the broken glass · the locked bathroom · the building notice on the fridge (central hot water; "noises reported in the
-ceiling voids of floors 4-6; maintenance will inspect") · the prescription on the nightstand (zolpidem: "may cause
-sleepwalking, complex sleep behaviours and hallucinations") · the sleep diary (woke on the sofa; fridge open in the
-morning; the toilet seat up — "I live alone"; "Dr. Haas says film the nights. Camera came today."; the spare key) ·
-the wiped mirror · the prints in the corridor · the nest · the old key · the returned letter · the polaroids (and what is
-written on the oldest) · clips 00:47 and 02:58 · the empty key bowl.
+Each with the thought you had: the stuck wardrobe · the dead phone · the notice · the empty key bowl · the empty knife
+slot · the broken glass · the blood in the spill · the locked bathroom · the man in the corridor · the prints · the wiped
+mirror · the nest · the key tagged 5B · the polaroids (and the back of the oldest) · clips 00:47 and 02:58 · the
+prescription (zolpidem: "may cause sleepwalking, complex sleep behaviours and hallucinations") · the sleep diary.
 
-The main menu keeps endings found, evidence found, best times, and unlocks chapter select (Act I-IV) after the first
+The main menu keeps endings found, evidence found, best times, and unlocks chapter select (Act I-IV) after a first
 ending.
+
+## Jump scares and breathing room
+
+Big scares in a first night, each after quiet: the crow (if met) · the glass · the bang · the man · the phone's buzz ·
+the hanger in the nest · his drop on LIVE · the catch. Minimum gap between two scripted scares: 25 s. Everything loud
+plays through the scare path (sound.js): full level, beds ducked for a second, never clipped (master limiter).
 
 ## Replay, difficulty, accessibility
 
-- Per run: the spare key's place (and the diary line), the nuisance circuit (none / kitchen / living), his patrol and
-  where the hunt's first sweep goes, lightning timing, and which ordinary night sounds play (a neighbour's toilet, the
-  lift, a car alarm set off by thunder, pipes knocking).
-- Difficulty: **Story** (he walks slower, can't catch a running player, doesn't hear walking, police in 60 s), **Normal**,
-  **Hard** (faster, hears walking at 4 m; after the third death you restart at the start of Act IV).
-- Settings: mouse sensitivity, invert Y, field of view, volumes (master, effects, ambience), subtitle size and backing,
-  head bob, **reduced flashes** (lightning, bangs and the torch stutter become fades), brightness calibration on first
-  launch, graphics (existing).
+- Per run: the spare key's place (and the diary line), the nuisance circuit (none / kitchen / living), his patrol,
+  lightning timing, and which ordinary night sounds play (a neighbour's toilet, the lift, a car alarm set off by
+  thunder, pipes knocking).
+- Difficulty: **Story** (slower, never catches a running player, deaf to walking, police in 60 s), **Normal**, **Hard**
+  (faster, hears walking at 4 m; the third catch restarts Act IV).
+- Settings: mouse sensitivity, invert Y, field of view, volumes (master, effects, ambience, music), subtitles,
+  head bob, **reduced flashes** (lightning, bangs, the torch stutter and the blood flash become fades), brightness,
+  graphics.
 
 ## Dialogue rules
 
 Thoughts are short, react rather than explain, and are subtitles in the waking line's style. The player character is
-never named or gendered (the officers say "Are you okay?", never "ma'am"/"sir"). Second person appears only in his words.
+never named or gendered. He never speaks.

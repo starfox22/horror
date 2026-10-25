@@ -1,0 +1,109 @@
+# Claude's playable preview: every push to Claude's branch publishes the whole Pages site with three builds, so no
+# existing URL disappears:
+#   /horror/          production, built from main
+#   /horror/codex/    Codex's review, built from codex-review (skipped if it fails to build)
+#   /horror/claude/   Claude's branch, this commit (after the Node regressions pass)
+# Later deployments from main or codex-review publish their own site without /claude/: push to Claude's branch again
+# (or run this workflow) to restore it. See docs/PREVIEW_DEPLOYMENT.md.
+name: Pages · Claude preview
+
+on:
+  push:
+    branches: [claude/pensive-volta-et0etl]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# The same lock as the other Pages workflows: they publish one site.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: read
+    steps:
+      - name: Check out production (main)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: sources/main
+          persist-credentials: false
+
+      - name: Check out Codex's review
+        uses: actions/checkout@v4
+        continue-on-error: true
+        with:
+          ref: codex-review
+          path: sources/codex
+          persist-credentials: false
+
+      - name: Check out this commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: sources/claude
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build production
+        working-directory: sources/main
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build Codex's review
+        id: codex
+        continue-on-error: true
+        working-directory: sources/codex
+        run: |
+          npm ci
+          npm run build
+
+      - name: Check and build Claude's branch
+        working-directory: sources/claude
+        run: |
+          npm ci
+          # Every regression (check-collision.mjs is a picture tool that writes into assets-src/, not a test).
+          node --test $(ls tools/check-*.mjs | grep -v check-collision)
+          node tools/check-reach.mjs
+          npm run build
+
+      - name: Assemble one site
+        run: |
+          mkdir -p site/claude
+          cp -a sources/main/dist/. site/
+          if [ -s sources/codex/dist/index.html ]; then mkdir -p site/codex && cp -a sources/codex/dist/. site/codex/; fi
+          cp -a sources/claude/dist/. site/claude/
+          printf '{"main":"%s","claude":"%s","codex":"%s"}\n' \
+            "$(git -C sources/main rev-parse HEAD)" "$(git -C sources/claude rev-parse HEAD)" \
+            "$(git -C sources/codex rev-parse HEAD 2>/dev/null || echo none)" > site/claude/build-info.json
+          test -s site/index.html
+          test -s site/claude/index.html
+          test -s site/claude/assets/apartment/scene.gltf
+          du -sh site
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}claude/
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
