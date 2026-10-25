@@ -18,9 +18,9 @@ import { zoneAt } from './zones.js';
 // zone: where the player must stand to reach it (zones.js).
 export const TAPS = {
   kitchen: { label: 'the kitchen tap', zone: 'main', spout: [-2.6505, 1.074, -1.0165], lands: 0.689, pool: 0.6905, handle: [-2.57, 1.05, -1.09],
-    width: [0.0068, 0.0047], gain: 0.5, splash: 0.034 },
+    width: [0.0085, 0.0062], gain: 0.5, splash: 0.036 },
   bathroom: { label: 'the bathroom tap', zone: 'bath', spout: [6.6715, 1.228, 1.246], lands: 0.9655, pool: 0.9715, handle: [6.6, 1.2, 1.246],
-    width: [0.0056, 0.0038], gain: 0.55, splash: 0.03,
+    width: [0.007, 0.005], gain: 0.55, splash: 0.032,
     // The bowl brimming (the story's tap left running hot: it overflows at the back, where the tap's ledge is lowest, at
     // 1.114): its water surface at 1.104, out to the bowl's walls (rays from the bowl's middle, every 11.25 degrees).
     basin: { y: 1.104, centre: [6.745, 1.2465], outline: [[6.9067, 1.2465], [6.9045, 1.2782], [6.8969, 1.3094], [6.8855, 1.3404],
@@ -137,7 +137,7 @@ export class Taps {
     tap.mats = {
       // Clear water with streaks running down it (they scroll: pose()). Tiled twice down the tube, so its texture
       // transform is never the identity (which would be another shader).
-      stream: water(`${id} tap stream`, m => { m.diffuse = new Color(0.6, 0.67, 0.71); m.gloss = 0.93; m.opacity = 0.62; m.opacityMap = streaks;
+      stream: water(`${id} tap stream`, m => { m.diffuse = new Color(0.84, 0.89, 0.92); m.gloss = 0.93; m.opacity = 0.86; m.opacityMap = streaks;
         m.opacityMapTiling.set(1, 2); m.specular = new Color(1, 1, 1); }),
       splash: water(`${id} tap splash`, m => { m.diffuse = new Color(0.86, 0.89, 0.91); m.gloss = 0.7; m.opacity = 0.75; m.opacityMap = foam; }),
       ripples: [0, 1].map(k => water(`${id} tap ripple ${k}`, m => { m.diffuse = new Color(0.8, 0.84, 0.87); m.gloss = 0.9; m.opacity = 0.5; m.opacityMap = ring; })),
@@ -161,7 +161,7 @@ export class Taps {
       for (let i = 1; i <= B.outline.length; i++) indices.push(0, i % B.outline.length + 1, i);
       const mesh = new Mesh(this.app.graphicsDevice);
       mesh.setPositions(positions); mesh.setNormals(positions.map((_, i) => (i % 3 === 1 ? 1 : 0))); mesh.setIndices(indices); mesh.update();
-      tap.mats.basin = water(`${id} basin water`, m => { m.diffuse = new Color(0.03, 0.04, 0.045); m.gloss = 0.95; m.opacity = 0.78; });
+      tap.mats.basin = water(`${id} basin water`, m => { m.diffuse = new Color(0.05, 0.075, 0.085); m.gloss = 0.97; m.opacity = 0.62; });
       const mi = new MeshInstance(mesh, tap.mats.basin);
       mi.calculateSortDistance = () => 1e4;              // behind every other water, whatever the camera
       tap.basinWater = new Entity(`${id} basin water`); this.app.root.addChild(tap.basinWater);
