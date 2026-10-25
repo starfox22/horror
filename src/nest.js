@@ -47,7 +47,7 @@ export class Nest {
     const item = (prop, label, use) => interactions.add({ pos: prop.getPosition().clone().add(new Vec3(0, 0.03, 0)), size: 0.1,
       active: () => this.root.enabled && this.packed !== true && this.rightDoorOpen(), label: () => label, use });
     item(this.props.polaroids, 'Look at the polaroids', () => this.examinePolaroids());
-    item(this.props.key, 'Pick up the key', () => { this.story?.oldKey(); this.hud?.examine({ className: 'typed', html: '<h1>A key</h1>Brass, worn. A front-door key on a paper tag, in pencil:<br><br><b style="font-size:2rem">5B</b>' }); });
+    item(this.props.key, 'Look at the key', () => { this.story?.oldKey(); this.hud?.examine({ className: 'typed', html: '<h1>A key</h1>Brass, worn. A front-door key on a paper tag, in pencil:<br><br><b style="font-size:2rem">5B</b>' }); });
     item(this.props.blanket, 'The blanket', () => { this.story?.nestSeen(); this.story?.say('It’s warm.'); });
     noProbes(this.root);
     this.reset();
@@ -121,7 +121,7 @@ export class Nest {
     this.story?.polaroids();
     const img = this.stills?.url?.('polaroid') || '';
     this.hud?.examine({ className: 'photo', html: img ? `<img src="${img}" alt="My bed at night, from inside the wardrobe">` : '<div style="height:18rem;background:#111"></div>',
-      back: '<div>YOU LET ME IN<br><small style="font-size:1.1rem">14 . 3</small></div>', onFlip: () => this.story?.polaroidBack() });
+      back: '<div style="font-family:inherit;font-size:1.6rem;opacity:.72">14 . 3</div>', onFlip: () => this.story?.polaroidBack() });
   }
 
   reset() { this.packed = false; for (const p of Object.values(this.props)) p.enabled = true; this.hatch(false); this.dustTimer = 0; this.dustEntity.particlesystem.stop(); }

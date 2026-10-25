@@ -17,7 +17,7 @@ export const EVIDENCE = [
   { id: 'nest', title: 'The wardrobe floor', text: 'A blanket. Bottles. Above it, a hatch in the wardrobe’s roof, open on the dark.', points: 'real' },
   { id: 'old-key', title: 'A key', text: 'A front-door key on a paper tag: 5B. Not mine.', points: 'real' },
   { id: 'polaroids', title: 'Polaroids', text: 'My bed, at night, with me asleep in it. Taken from inside the wardrobe.', points: 'real' },
-  { id: 'let-me-in', title: 'The oldest polaroid', text: 'On the back, in block capitals: YOU LET ME IN.', points: 'both' },
+  { id: 'let-me-in', title: 'The oldest polaroid', text: 'On the back, in pencil: 14 . 3. Seven months ago.', points: 'real' },
   { id: 'clip-0047', title: 'Home Cam · 00:47', text: 'The wardrobe door opens a hand’s width. A white face in the gap. It closes.', points: 'real' },
   { id: 'clip-0258', title: 'Home Cam · 02:58', text: 'The bed is empty. Someone stands at the foot of it, face white in the infrared. Is that me?', points: 'both' },
   { id: 'pills', title: 'My prescription', text: 'Zolpidem 10 mg, one at night. May cause sleepwalking, complex sleep behaviours, and hallucinations.', points: 'head' },
@@ -29,6 +29,9 @@ export class Journal {
   constructor({ hud } = {}) {
     this.hud = hud;
     this.found = new Map();       // id -> order found
+    this.pending = [];            // toasts waiting their turn (update)
+    this.wait = 0;
+    this.ready = null;            // main.js: is it a quiet moment (no scare just now, no thought on screen)?
     let ever = [];
     try { ever = JSON.parse(localStorage.getItem(EVER_KEY) || '[]'); } catch { /* private mode */ }
     this.ever = new Set(ever);
@@ -40,8 +43,16 @@ export class Journal {
     this.found.set(id, this.found.size + 1);
     this.ever.add(id);
     try { localStorage.setItem(EVER_KEY, JSON.stringify([...this.ever])); } catch { /* ignore */ }
-    this.hud?.toast(`Journal · ${e.title}`, 2.2);
+    this.pending.push(`Journal · ${e.title}`);
     return true;
+  }
+
+  // Toasts take their turn: one at a time, never on top of a scare or a thought (seconds of play).
+  update(dt) {
+    this.wait = Math.max(0, this.wait - dt);
+    if (!this.pending.length || this.wait > 0 || this.ready?.() === false) return;
+    this.hud?.toast(this.pending.shift(), 2.2);
+    this.wait = 3.4;
   }
 
   has(id) { return this.found.has(id); }
@@ -58,5 +69,5 @@ export class Journal {
   entries() { return EVIDENCE.filter(e => this.found.has(e.id)).sort((a, b) => this.found.get(a.id) - this.found.get(b.id)); }
   save() { return [...this.found.keys()]; }
   load(ids = []) { this.found = new Map(ids.map((id, i) => [id, i + 1])); }
-  reset() { this.found.clear(); }
+  reset() { this.found.clear(); this.pending.length = 0; }
 }

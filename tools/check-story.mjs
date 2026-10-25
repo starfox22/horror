@@ -76,7 +76,7 @@ test('Act II to IV: power back by the label, the nest, the hunt fallback', () =>
   if (story.nuisance !== 'none') { sys.power.setBreaker(story.nuisance, false); sys.power.setRcd(true); }
   story.powerRestored(); run(5);
   assert.ok(story.has('restored') && story.has('silhouette'), 'never turned round: he is heard running into the bedroom when the lights come back');
-  assert.ok(calls.includes('play.steps_boots') && calls.includes('play.door_slam'), 'his run and the wardrobe are heard');
+  assert.ok(calls.includes('play.step_wet') && calls.includes('play.door_slam'), 'his run (bare, wet feet) and the wardrobe are heard');
   assert.equal(story.act, 3);
   story.nestSeen(); run(76);
   assert.ok(story.has('hunt'), 'the hunt starts without LIVE too');
@@ -91,7 +91,7 @@ test('the front door: not over a glass before he is seen; after, his keys; with 
   assert.ok(said.includes('Locked. Good.'), 'before anything has happened, a locked door is good');
   story.glassBreaks();
   story.frontDoor();
-  assert.ok(said.includes('Out? Barefoot? Over a glass?'));
+  assert.ok(said.includes('...Where are my keys?'), 'after the glass, the keys are missed');
   assert.ok(calls.includes('sounds.lockedDoor'));
   story.keyBowl();
   assert.ok(story.has('key-bowl') && calls.includes('journal.key-bowl'));
@@ -138,18 +138,22 @@ test('a caught player loses a half-turned lock and the night stands still meanwh
 });
 
 test('the phone: dead on the nightstand, its charger pulled; it boots once the power is back, after the quiet', () => {
-  const { story, said, calls, run } = night();
+  const { story, sys, said, calls, run } = night();
   story.begin({ seed: 4 });
   story.phoneTaken({ booted: false, pluggedIn: false });
   assert.ok(said.includes('Dead.') && said.some(t => /charger/.test(t)) && calls.includes('journal.phone-dead'));
   story.phoneCharging();
-  assert.ok(said.includes('I always plug it in.'));
+  assert.ok(said.includes('I never unplug it.'));
   assert.equal(story.phoneMayBoot(600), false, 'not before the power has come back');
   story.glassBreaks(); story.powerCut('test'); story.powerRestored();
   assert.equal(story.phoneMayBoot(600), false, 'not straight away');
   run(36);
   assert.equal(story.phoneMayBoot(10), false, 'not without minutes on the charger');
-  assert.equal(story.phoneMayBoot(31), true);
+  assert.equal(story.phoneMayBoot(31), false, 'not while the player is out of earshot');
+  sys.player.pos = { x: 12.8, z: 1.2 };
+  assert.equal(story.phoneMayBoot(31), true, 'within earshot of the nightstand');
+  sys.player.pos = { x: 0.5, z: 0.5 }; run(90);
+  assert.equal(story.phoneMayBoot(31), true, 'and two minutes after the power came back wherever the player is');
 });
 
 test('the man in the corridor: seen at the end of the torch, he runs at you and into the bedroom', () => {
@@ -162,17 +166,96 @@ test('the man in the corridor: seen at the end of the torch, he runs at you and 
   sys.player.pos = { x: 3.0, z: 3.6 };
   story.fuseboxOpened(); run(0.2);
   assert.ok(story.has('silhouette') && placed[0] === 'show', 'he is there at the edge of the light');
-  run(0.5);
-  assert.ok(!calls.includes('play.steps_boots'), 'he holds still first');
+  run(0.8);
+  assert.ok(!calls.includes('play.step_wet'), 'he holds still first');
   run(3);
-  assert.ok(calls.includes('play.steps_boots'), 'then runs, heavy');
+  assert.ok(calls.includes('play.step_wet'), 'then runs (bare, wet feet)');
   const xs = placed.filter(Array.isArray).map(p => p[0]);
   assert.ok(Math.min(...xs) > 10, 'towards you, but never past the bedroom doorway');
   assert.ok(placed.includes('hide'), 'gone into the bedroom: not vanished in the open');
   assert.ok(calls.includes('play.door_slam'), 'the wardrobe bangs');
   run(6);
-  assert.ok(said.includes('...Someone’s in here.') && said.includes('He went into the bedroom.'));
+  assert.ok(said.includes('...Someone’s in here.') && said.includes('He’s in my bedroom.'));
   assert.ok(calls.includes('world.prints') && calls.includes('nest.hatch'));
+});
+
+test('the man in the corridor: never as the player steps out of the bedroom; down the hall, the latch, then the beam', () => {
+  const { story, sys, calls, run } = night();
+  story.begin({ seed: 6 });
+  story.glassBreaks(); story.powerCut('test'); story.set('torch');
+  const placed = [];
+  sys.intruder = { show: (on) => placed.push(on ? 'show' : 'hide'), place: (x, z) => placed.push([x, z]), play: () => {}, setTorch: () => {} };
+  sys.flashlight = { held: true, on: true, beam: { up: { x: -1, y: 0, z: 0 } } };
+  sys.player.pos = { x: 10.45, z: 2.9 }; run(1);
+  assert.ok(!story.has('silhouette') && !story.has('latch'), 'stepping out of the bedroom, torch east: nothing yet');
+  sys.flashlight.beam.up = { x: 1, y: 0, z: 0 };          // aimed west, walking down the hall
+  for (const x of [9.5, 8.5, 7.5, 6.5, 5.5, 4.5, 3.5]) { sys.player.pos = { x, z: 3.6 }; run(0.3); }
+  assert.ok(story.has('latch') && calls.includes('play.latch_1'), 'halfway down, behind you, the latch');
+  assert.ok(!story.has('silhouette'), 'not while the torch points away');
+  sys.flashlight.beam.up = { x: -1, y: 0, z: 0 }; run(0.2);
+  assert.ok(story.has('silhouette') && placed[0] === 'show', 'turning round: him, at the end of the beam');
+  run(6);
+  const near = placed.filter(Array.isArray).map(([x, z]) => Math.hypot(x - 3.5, z - 3.6));
+  assert.ok(Math.min(...near) > 1, 'his run never comes within a metre of the player');
+});
+
+test('walking back east before turning round: he breaks for the bedroom ahead of the player, never through them', () => {
+  const { story, sys, run } = night();
+  story.begin({ seed: 6 });
+  story.glassBreaks(); story.powerCut('test'); story.set('torch');
+  const placed = [];
+  sys.intruder = { show: () => {}, place: (x, z) => placed.push([x, z]), play: () => {}, setTorch: () => {} };
+  sys.flashlight = { held: true, on: false, beam: { up: { x: 1, y: 0, z: 0 } } };
+  for (const x of [8, 6, 5]) { sys.player.pos = { x, z: 3.6 }; run(0.3); }
+  assert.ok(story.has('went-west') && !story.has('silhouette'));
+  for (const x of [6, 7, 8, 8.7]) { sys.player.pos = { x, z: 3.6 }; run(0.3); }
+  assert.ok(story.has('silhouette'), 'coming back east, he runs');
+  run(6);
+  assert.ok(placed.every(([x, z]) => Math.hypot(x - 8.7, z - 3.6) > 1), 'and never through the player');
+});
+
+test('a fridge left open after the drink still starts the glass; no drink at all, the glass comes anyway', () => {
+  const a = night();
+  a.story.begin({ seed: 2 });
+  a.sys.fridge = { openRequested: true, angle: 100, handle: { x: 1.9, z: -0.6 } };
+  a.sys.player.pos = { x: 1.6, z: -0.2 };
+  a.story.drank(); a.run(20);
+  assert.ok(!a.calls.includes('events.signal'), 'standing at the open fridge: not yet');
+  a.run(6);
+  assert.ok(a.calls.includes('events.signal'), '25 s after the drink at the latest');
+  const b = night();
+  b.story.begin({ seed: 2 });
+  b.sys.player.pos = { x: 0, z: 0.5 };
+  b.run(241);
+  assert.ok(b.said.includes('Water. Then bed.'));
+  b.run(121);
+  assert.ok(b.story.has('glass'), 'six minutes in, the glass breaks anyway');
+});
+
+test('the wardrobe: stuck until he has been seen (rattling only before the glass); the nest only after him', () => {
+  const { story, calls, run } = night();
+  story.begin({ seed: 3 });
+  assert.equal(story.wardrobeStuck({ id: 'right' }), true);
+  assert.ok(calls.includes('play.hangers'), 'before the glass: held from inside');
+  story.glassBreaks(); story.powerCut('test');
+  calls.length = 0;
+  assert.equal(story.wardrobeStuck({ id: 'right' }), true, 'still stuck in the dark');
+  assert.ok(!calls.includes('play.hangers'), 'but silent: he is in the bathroom');
+  story.wardrobeOpened({ id: 'right' }); run(2);
+  assert.ok(!story.has('nest-seen'), 'no nest before the man');
+  story.set('silhouette');
+  assert.equal(story.wardrobeStuck({ id: 'right' }), false);
+  story.wardrobeOpened({ id: 'right' }); run(2);
+  assert.ok(story.has('nest-seen'));
+});
+
+test('the spare key can be searched for only once the player needs it badly: after the nest, or in the hunt', () => {
+  const { story } = night();
+  story.begin({ seed: 3 });
+  story.set('silhouette');
+  assert.equal(story.spareSearchable(), false);
+  story.set('nest-seen');
+  assert.equal(story.spareSearchable(), true);
 });
 
 test('the run varies by seed: the spare key moves, the nuisance circuit changes', () => {

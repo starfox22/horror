@@ -173,14 +173,14 @@ export class Hunt {
   sounds(dt) {
     const s = this.stalker;
     if (s.state === 'backstage' || s.state === 'off' || !this.bank) return;
-    // A footstep every stride's length of ground covered: shoes on wood, heavier running.
+    // A footstep every stride's length of ground covered: bare feet on wood (his prints are bare), heavier running.
     this.stepDist += s.speed * dt;
     const stride = s.speed > 2.1 ? 1.05 : 0.72;
     if (this.stepDist > stride) {
       this.stepDist = 0;
       const running = s.speed > 2.1;
-      this.bank.play(running ? 'steps_boots' : 'steps_shoes', { segment: 'random', at: [s.x, 0.2, s.z], gain: running ? 0.85 : 0.55,
-        rate: [0.92, 1.04], ref: 1.2, rolloff: 1.1, send: 0.3 });
+      this.bank.play('step_floor', { at: [s.x, 0.2, s.z], gain: running ? 0.85 : 0.5,
+        rate: running ? [0.85, 0.95] : [0.88, 1.0], ref: 1.2, rolloff: 1.1, send: 0.3 });
     }
     // Breathing when he is close (within 5 m), louder in a chase or an ambush.
     this.breathTimer -= dt;

@@ -6,7 +6,7 @@ import { EVIDENCE } from './journal.js';
 const SETTINGS_KEY = 'horror.settings.v1', PROGRESS_KEY = 'horror.progress.v1';
 export const DEFAULT_SETTINGS = {
   master: 0.9, sfx: 1, ambience: 0.9, music: 0.8, sensitivity: 1, invertY: false, headBob: true,
-  subtitleSize: 1, subtitleBack: false, reducedFlashes: false, brightness: 1, calibrated: false, difficulty: 'normal',
+  subtitleSize: 1, subtitleBack: false, soundCaptions: false, reducedFlashes: false, brightness: 1, calibrated: false, difficulty: 'normal',
 };
 export const ENDINGS = [
   { id: 'out', name: 'Out', hint: 'There is always a spare key.' },
@@ -197,6 +197,7 @@ export class Menu {
     toggle('Head bob', 'headBob');
     slider('Subtitle size', 'subtitleSize', 0.8, 1.5, 0.05);
     toggle('Subtitle backing', 'subtitleBack', 'a dark band behind thoughts and voices');
+    toggle('Sound captions', 'soundCaptions', 'the night’s important sounds described on screen, [in brackets]');
     toggle('Reduced flashes', 'reducedFlashes', 'lightning, bangs and the torch’s stutter become soft fades');
     this.item('Brightness', () => this.show('brightness', { then: () => this.back() }));
     this.item('Graphics', () => this.hooks.openGraphics?.());

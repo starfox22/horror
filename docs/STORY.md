@@ -65,19 +65,21 @@ of them 3 s after the game resumes).
 1. **Wake** (existing, skippable). The bedside clock: 03:07. *"I just had a nightmare, I will go get some water at the
    kitchen."* (the owner's line, verbatim).
 2. **The phone** lies on the south nightstand, dead. E: *"Dead."* Its charger has been pulled out of the wall: E on the
-   nightstand plugs it back in (*"I plugged it in. ...Didn't I?"*). A dead phone needs minutes of charge before it boots,
+   nightstand plugs it back in (*"I never unplug it."*); its screen shows the red empty-battery glyph for a moment. A dead phone needs minutes of charge before it boots,
    and the power will soon be gone: it boots in Act III (beat 12). The phone can be carried; it charges only on the
    nightstand.
 3. **The wardrobe's right door**: E → it gives a centimetre and stops; hangers rattle inside. *"Stuck."* (He is holding
-   it.)
+   it.) It stays stuck until he has been seen; after the glass it no longer rattles (he is in the bathroom then).
 4. **The kitchen.** On the outside of the fridge door, held by a magnet, a small printed notice: *"NOTICE TO RESIDENTS.
    The resident who had been causing disturbances over the last month has finally been evicted. Thank you for your
-   patience."* Reading it: *"Finally."* The key bowl beside the fridge is empty (*"...My keys?"*). The knife rack on
+   patience."* Reading it: *"Finally."* Some 9 s later, the first wrong sound: something heavy crossing the kitchen
+   ceiling, three slow creaks moving east. *"...Upstairs."* (If the notice is never read, the creaks come 12 s after the
+   player first walks into the kitchen.) The key bowl beside the fridge is empty (*"...My keys?"*). The knife rack on
    the wall over the worktop has one gap, where the biggest hangs; only a player who looks closely notices (*"The big
    one's gone."*).
    Both taps turn on and off.
-5. **The crow** (believable false scare; once per night, any time before the hunt, never within 25 s of another
-   scare). The player stands within 2.6 m of a window, looking at it, not running. A crow, flushed from the roof by the
+5. **The crow** (believable false scare; once per night, any time before the man has been seen, never within 25 s of
+   another scare). The player stands within 2.6 m of a window, looking at it, not running. A crow, flushed from the roof by the
    storm, comes out of the black and slams into the glass at eye height: a heavy thud, the pane rattling, a burst of
    feathers, a distressed caw as it drops away; lightning a moment later. A feather stays stuck to the wet glass with a
    smear of blood that the rain slowly washes down. *"Jesus. ...Just a bird."* The kitchen tap is under the kitchen
@@ -85,6 +87,10 @@ of them 3 s after the game resumes).
 6. **The drink** (existing). Exactly 3.0 s of play after the fridge door shuts after drinking: **a glass shatters in the
    bedroom**, at near full level wherever the player is (routed through the doorways, never muffled into a thud).
    *"...What was that?"* 40 s later, if the player has not gone east: *"The bedroom."*
+   - Fallbacks: a fridge left open after the drink starts the glass too (12 s after the drink once the player is 2 m
+     from it, 25 s at the latest); no drink by 4:00, *"Water. Then bed."*; by 6:00 the glass breaks anyway, as soon as
+     the player is out of the bedroom and the bathroom.
+   - Shutting a tap before the glass knocks the pipes (*"Pipes."*); after the glass nothing explains a sound away.
 
 ### Act II — Dark (3:00-7:00): the presence
 
@@ -93,32 +99,39 @@ of them 3 s after the game resumes).
    door, and a tap runs behind it.
 8. **Locked.** E on the bathroom handle: it gives, the latch doesn't. *"Locked."* Behind the door the tap stops. Then the
    line of light under the door goes out. E again: you knock. *"...Hello?"* Two seconds of nothing. Then a crackle and a
-   **bang** from inside, and the flat goes out in a cascade from the bathroom outwards (lights, the fridge's hum, the
+   **bang** from inside (the light under the door is his: if the player switched the bathroom's lights off, he switched
+   them on), and the flat goes out in a cascade from the bathroom outwards (lights, the fridge's hum, the
    screens). Rain and thunder are all that is left. *"No. No, no, no."*
    - Fallbacks: 25 s after the shards are seen, or 120 s after the glass, the cut happens wherever the player is.
    - Sweet Dreams (secret ending) can be chosen between the glass and this cut: hold E on the bed.
-9. **Light.** Lightning every 6-10 s for 45 s after the cut, then every 20-35 s. 4 s after the cut: *"The torch.
-   Wardrobe."* Opening the left wardrobe door in the dark: a cold draught and dust drifting down in the next flash.
-   When the player leaves the bedroom with the torch, behind them the bathroom's latch clicks: unlocked. Nothing else.
+9. **Light.** Lightning every 6-10 s for 45 s after the cut, then every 20-35 s. 4 s after the cut: *"The torch. Left
+   side of the wardrobe."* Halfway down the corridor with the torch (x < 8), behind the player the bathroom's latch
+   clicks: unlocked. Nothing else.
 10. **The fuse box** at the corridor's west end. Without the torch: *"I can't see a thing."* A consumer unit with a
     hinged cover: **MAIN**, **RCD** (tripped, with a TEST button) and seven breakers: LIGHTS 1, LIGHTS 2, KITCHEN, SOCKETS
     LIVING, SOCKETS BED, BATHROOM, OVEN. Taped inside the cover, a handwritten label: *"RCD trips → all breakers off, RCD
     up, breakers on one at a time. The one that trips it again: OFF."* The RCD stays up only while no wet circuit is on:
     BATHROOM always, and on some runs one nuisance circuit with a cause the player could have seen (a puddle under the
     coffee machine: KITCHEN; rain on a floor socket by the living-room window: SOCKETS LIVING). The clever player
-    switches BATHROOM off and lifts the RCD: two actions.
-11. **The man.** 4 s after the cover opens, from the far east end: one slow floorboard creak; again at 12 s. When the
-    player's torch beam points down the corridor towards the front door, **a man is standing there at the edge of the
-    light**, eleven metres away: black clothes, a blank white face, something long and bright in his hand. He holds
-    still for most of a second. Then he runs: straight at the player, heavy and fast, and swerves into the bedroom
-    doorway. The wardrobe bangs. A thump in the ceiling. Creaks crossing above the corridor. No music until the thump.
-    *"...Someone's in here."* *"He went into the bedroom."*
-    - If the player never turns: when the power comes back, he is heard instead: running steps from the front door into
-      the bedroom, the wardrobe, the thump overhead.
-    - Following him: the wardrobe's right door swings slowly, dust falls through the torch beam, the creaks move away.
-      *"He went up."*
+    switches BATHROOM off and lifts the RCD: two actions. Hints only for whoever is stuck: the second trip, *"Something's
+    wet."*; the third, *"The bathroom. Off first."*; tripping with BATHROOM off, *"Still tripping. ...What else is
+    wet?"*; the cover open 90 s without power, *"All off. Then one at a time."*
+11. **The man.** Armed once the player is well down the corridor (x < 6) or has opened the fuse box. 4 s after the
+    cover opens, from the far east end: one slow floorboard creak; again at 12 s; at 20 s the front door's handle goes
+    down, slowly, and back. When the player's torch beam points down the corridor towards the front door (from x < 8.2),
+    **a man is standing there at the edge of the light**, at least four metres away: black clothes, a blank white face,
+    something long and bright in his hand. He holds still until the beam has been on him for a second (1.2-2.5 s).
+    Then he runs, barefoot and wet (slapping steps): straight at the player, fast, and swerves into the bedroom doorway,
+    round the wardrobe's right door as he pulls it open, and in. It bangs shut behind him and springs ajar. A thump in
+    the ceiling. Creaks crossing above the corridor. No music until the thump. *"...Someone's in here."* *"He's in my
+    bedroom."* He is never seen vanishing: he is hidden only out of the player's sight or inside the wardrobe.
+    - Walking back east before turning round (between x 8.5 and the bedroom doorway): he breaks for the bedroom at once,
+      ahead of the player. East of the doorway nothing starts (his run would cross the player).
+    - If the player never turns: when the power comes back, he is heard (and, in the lit corridor, can be seen) running
+      from the front door into the bedroom, the wardrobe, the thump overhead. *"...Someone's in here."* *"In my
+      bedroom."*
     - From now on the front door matters: *"Locked. ...My keys. He has my keys."*
-12. **Power back.** Lights stutter and settle as they were; the fridge hums again; the iMac chimes. *"...Okay."* Then at
+12. **Power back.** Lights stutter and settle as they were; the fridge hums again; the iMac chimes. *"Okay."* Then at
     least **45 s of nothing**. His prints are in the corridor: from the front door into the bedroom, wet and pink.
 
 ### Act III — Steam (7:00-11:00): his nest
@@ -126,21 +139,28 @@ of them 3 s after the game resumes).
 13. **The bathroom.** Its door stands ajar; its light is dead (its circuit is off): torch. Steam, the basin overflowing,
     your hair-dryer in it, water across the floor, the hot tap running. E: turn the tap off. In the new quiet, something
     heavy shifts **in the ceiling**, moving towards the wardrobe. The mirror is fogged, with one band wiped clear at a
-    head height above yours. *"Someone wiped the mirror."* Nudge 45 s after power-back if not visited: *"...The
+    head height above yours. *"Someone wiped the mirror."* Nudge 45 s after power-back if not visited: *"The
     bathroom."*
-14. **The phone** (if it is on its charger with power): it boots and **buzzes hard against the wooden nightstand** with
-    everything it missed. Home Cam: clips **00:47** (the wardrobe's left door opens a hand's width, a white face in the
+14. **The phone** (if it is on its charger with power, once the player is within earshot of it, 7 m, or two minutes
+    after power-back): its screen lights the nightstand with its maker's mark for 3 s, silently; then it **buzzes hard
+    against the wooden nightstand** with everything it missed, the lock screen lit with the alerts (dark again after
+    20 s). Heard from another room: *"My phone."* Home Cam: clips **00:47** (the wardrobe's left door opens a hand's width, a white face in the
     gap) and **02:58** (the empty bed, a figure at its foot turning to the lens), and **LIVE**. If the charger was never
     plugged in: 20 s after power-back, *"My phone. ...The charger."*
-15. **The nest.** The right wardrobe door now opens. As it swings, a hanger drops and clatters; dust. On the floor: a
-    folded charcoal blanket, water bottles, a brass key with a paper tag "5B", and polaroids of your bed at night with
-    you asleep in it, taken from where you are standing. *"That's my bed."* The oldest has writing on its back. In the
+15. **The nest.** The right wardrobe door, ajar since he went in, now opens. As it swings, a hanger drops and clatters;
+    dust. On the floor: a folded charcoal blanket, water bottles, a brass key with a paper tag "5B" (*"5B." "Not
+    mine."*), and polaroids of your bed at night with you asleep in it, taken from where you are standing. *"That's my
+    bed."* The oldest has a date pencilled on its back, *14 . 3*: *"March. ...Seven months."* In the
     roof of the wardrobe the hatch is open onto black; looking up with the torch, a single drop of water falls through
     the beam. *"...How long?"*
-16. **LIVE** (only once the player is out of the bedroom): the bedroom as it is now, "LIVE · 8 s delay". His legs drop
+16. **LIVE** (only once the player is out of the bedroom; in it the feed says "no signal" after 3 s and the player
+    thinks *"No signal in here."*; lowering the phone and raising it again comes back to LIVE): the bedroom as it is now,
+    "LIVE · 8 s delay". His legs drop
     out of the hatch; he steps out of the wardrobe, crosses the room, looks up into the lens and walks out of frame. At
     that moment the power dies (he walked to the fuse box 8 s ago). The feed: "Connection lost".
-    - If the player never opens LIVE: the hunt starts 75 s after the nest was found, or 150 s after power-back.
+    - If the player never opens LIVE: the hunt starts 75 s after the nest was found, or 150 s after power-back, whichever
+      comes first; never while LIVE plays, nor while the player stands at the wardrobe (up to 45 s more). The nest is
+      packed up only out of the player's view.
     - An emergency call made before the hunt starts it 12 s after the call ends (he heard you).
 
 ### Act IV — Out (11:00-18:00): the hunt
@@ -149,15 +169,19 @@ The power is out again and stays out: the main switch is snapped off. He hunts t
 
 - **The goal.** Get out. The front door needs a key and yours are gone. The **sleep diary** on the office desk says
   where the spare is (one place per run, all in the west half: the red tin on the coffee shelf · taped under the sofa
-  cushion · in the plant pot by the sofa); each place can also be searched without the diary. Take it (1.5 s, a 2.5 m
+  cushion · in the green vase on the coffee table); each place can also be searched without the diary, but only once
+  the player needs the spare badly enough: after the nest, or in the hunt (earlier, a first night would end at the
+  door minutes after he is first seen; before that the front door only says *"He has my keys."*). Take it (1.5 s, a 2.5 m
   noise), cross the flat to the front door, **hold E for 3 s** to turn the stiff lock (three loud clicks, each a 6 m
   noise; letting go keeps the progress), and leave.
 - **First encounter (scripted, survivable, the tutorial).** He starts at least 8 m of path from the player (the fuse
   box; else the far end of the open-plan room, the office desk, mid-corridor, the bedroom door); his phone light comes
   on 1.2 s after the main switch goes. For up to 25 s he sweeps the open-plan room, keeping 5 m from the player. Until
   the player enters the corridor or comes within 4 m of him, he notices only a torch held on for more than 1.5 s (from
-  6 s in), or running, and never more than to stop and look; whatever ends it, no chase starts before 7.5 s. Thoughts: *"His light."* then *"Torch off. Get down."* and the prompt
-  *C · crouch*; then *"Get out. ...The spare key."*
+  6 s in), or running, and never more than to stop and look; whatever ends it, no chase starts before 7.5 s, and the
+  wardrobe never drops him on anyone during it (or any respawn's grace). Thoughts: *"His light."* (if he is in sight;
+  otherwise *"He's back."*) then *"Torch off. Get down."* (with the torch on; otherwise *"Get down. Stay quiet."*) and
+  the prompt *C · crouch*; then *"Get out. ...The spare key."*
 - **Him.** Black clothes, the white mask, your kitchen knife in his right hand and his phone's cold LED in his left.
   He walks between the rooms, stops and sweeps his light, goes to noises. His light reaches a room before he does; in a
   doorway he waits 2 s shining it down the corridor; he never stops in the corridor. Within 5 m you hear his breathing.
@@ -227,8 +251,11 @@ plays through the scare path (sound.js): full level, beds ducked for a second, n
 - Difficulty: **Story** (slower, never catches a running player, deaf to walking, police in 60 s), **Normal**, **Hard**
   (faster, hears walking at 4 m; the third catch restarts Act IV).
 - Settings: mouse sensitivity, invert Y, field of view, volumes (master, effects, ambience, music), subtitles,
-  head bob, **reduced flashes** (lightning, bangs, the torch stutter and the blood flash become fades), brightness,
+  head bob, **reduced flashes** (lightning, bangs, the torch stutter and the blood flash become fades), **sound
+  captions** (the night's important sounds described in brackets: [Glass shatters, in the bedroom], [A bang. The power
+  dies.], [Running footsteps], [Something heavy, in the ceiling], [A phone buzzes, in the bedroom], ...), brightness,
   graphics.
+- Journal toasts wait for a quiet moment (5 s after a scare, no thought on screen), one at a time.
 
 ## Dialogue rules
 

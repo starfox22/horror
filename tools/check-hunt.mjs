@@ -179,13 +179,19 @@ test('standing in the wardrobe: pressed into its open right half counts, in fron
   assert.equal(n.hunt.inWardrobe({ x: 10.1, z: -0.9 }), false, 'the left half is the torch shelf');
   n.right.angle = 0;
   assert.equal(n.hunt.inWardrobe({ x: 10.1, z: -0.1 }), false);
-  // In the hunt: dust at 1 s, he comes down at 4 s.
+  // In the hunt (after its first seconds of grace): dust at 1 s, he comes down at 4 s.
   const m = night({ at: [10.1, -0.1] });
   m.right.angle = 1;
   m.hunt.start({ tutorial: false, from: 'fusebox' });
-  m.run(WARDROBE.drop + 0.2);
+  m.run(m.s.grace + WARDROBE.drop + 0.2);
   assert.ok(m.nest.dusts >= 2, 'dust (and the drop) from the hatch');
   assert.ok(['drop', 'alert', 'investigate', 'chase', 'kill'].includes(m.s.state), `he came down (${m.s.state})`);
+  // Never inside the first encounter: a hunt that starts while the player is at the nest does not open with a death.
+  const t = night({ at: [10.1, -0.1] });
+  t.right.angle = 1;
+  t.hunt.start({ tutorial: true, from: 'fusebox' });
+  t.run(7);
+  assert.ok(!['drop', 'chase', 'kill'].includes(t.s.state), `not during the first encounter (${t.s.state})`);
 });
 
 // --- LIVE ---------------------------------------------------------------------------------------------------------------

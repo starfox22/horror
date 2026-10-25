@@ -151,7 +151,7 @@ menu = shot ? null : new Menu({
   credits: creditsHtml(),
   sound: (kind) => bank?.play(kind === 'hover' ? 'latch_2' : 'breaker_1', { gain: kind === 'hover' ? 0.05 : 0.12, rate: kind === 'hover' ? 2.4 : 1.8, bus: 'ui' }),
 });
-if (menu) { $('intro').style.display = 'none'; menu.setBuild('Build 0.13'); menu.open('loading'); }
+if (menu) { $('intro').style.display = 'none'; menu.setBuild('Build 0.14'); menu.open('loading'); }
 const ambience = new Ambience();
 const bank = new SoundBank(ambience);
 const soundsLoading = bank.load('./assets/audio/').catch(error => { console.warn(`Recorded sounds unavailable: ${error.message}`); return null; });
@@ -245,7 +245,7 @@ const fridge = await Fridge.create({ app, apartment, interactions, grid, player,
 const drink = await DrinkSequence.create({ app, camera, player, fridge, interactions,
   configureMaterial: material => probes.assign(material, 'main'),
   onStart: () => { $('reticle').hidden = true; interactions.enabled = false; interactions.update(); },
-  onComplete: () => { $('reticle').hidden = !player.active; interactions.enabled = player.active; },
+  onComplete: () => { $('reticle').hidden = !player.active; interactions.enabled = player.active; story.drank(); },
 }).catch(failLoad);
 const playerCam = camera.camera.camera;
 const intruder = await Intruder.create({ app, sounds: null, isPlayerCamera: cam => cam === playerCam || cam.node?.name === 'security camera' }).catch(failLoad);
@@ -289,6 +289,7 @@ Object.assign(sys, { fusebox, world, nest, seccam, phone, hunt, death, endings, 
 frontDoor(apartment);
 fridge.onShutAfterDrink = () => events.signal('fridge-shut-after-drink');
 doors.onLocked = () => story.bathroomTried();
+doors.lockedLabel = () => (story.has('bath-tried') && !story.has('power-cut') ? 'Knock' : null);
 closets.stuck = (door) => story.wardrobeStuck(door);
 closets.opened = (door) => story.wardrobeOpened(door);
 phone.noise = (x, z, kind = 'phone') => { const p = player.pos; hunt.noise(x ?? p.x, z ?? p.z, kind); };
@@ -335,6 +336,9 @@ sys.eHeld = () => eDown && isPlaying();                 // the front door's lock
 flashlight.canToggle = () => isPlaying() && !death.busy && !endings.running;
 phone.blocked = () => !isPlaying() || death.busy || !!endings.running;
 app.on('update', dt => thought.update(isPlaying() ? dt : 0));
+// Journal toasts wait for a quiet moment: 5 s after a scare, no thought on screen.
+journal.ready = () => story.time - story.lastScare >= 5 && !thought.line && !thought.queue.length;
+app.on('update', dt => journal.update(isPlaying() ? dt : 0));
 // The bedside clock keeps the night's time from 03:07, and is back at 03:07 every time you wake from him (story.wake).
 let clockFrom = 0;
 story.on(flag => { if (flag === 'woke') clockFrom = story.time; });
@@ -492,7 +496,8 @@ if (shot) { intro.classList.add('gone'); intro.style.display = 'none'; player.ac
 // --- Nights: the menu's New night / Continue / Chapters. The first night of a page starts in place; any later one
 // reloads the page (every system back to its first state) and starts from the menu's single button.
 let nightStarted = false;
-function nightClock() { const d = new Date(2026, 9, 25, 3, 7, 0); d.setSeconds(d.getSeconds() + Math.floor(story.time)); return d; }
+// The night's time: 03:07 when it began, and again every time you wake from him (the phone agrees with the bedside clock).
+function nightClock() { const d = new Date(2026, 9, 25, 3, 7, 0); d.setSeconds(d.getSeconds() + Math.floor(Math.max(0, story.time - clockFrom))); return d; }
 const ACT_START = {
   2: { x: 10.4, z: 1.0, yaw: 95 }, 3: { x: 2.6, z: 3.75, yaw: 180 }, 4: { x: 4.6, z: 0.4, yaw: 20 },
 };
@@ -564,6 +569,7 @@ function applySettings(st) {
   if (rain) rain.reducedFlashes = v('reducedFlashes');
   if (flashlight) flashlight.reducedFlashes = v('reducedFlashes');
   if (death) death.reducedFlashes = v('reducedFlashes');
+  if (hud) hud.soundCaptions = !!v('soundCaptions');
   if (eyes) eyes.brightness = v('brightness');
   if (story && !nightStarted) story.difficulty = v('difficulty');
 }

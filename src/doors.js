@@ -46,7 +46,8 @@ export class Doors {
     door.blocker = this.grid.addBlocker(door.segment);
     this.placeHandle(door);
     // A locked door (story: he is in the bathroom) rattles instead (onLocked: story.js).
-    interactions.add({ pos: door.handle, size: 0.42, label: () => `${door.openRequested ? 'Close' : 'Open'} ${def.label}`,
+    // A locked door's prompt is the story's to name (lockedLabel: main.js), e.g. 'Knock' once the handle has been tried.
+    interactions.add({ pos: door.handle, size: 0.42, label: () => (door.locked && this.lockedLabel?.(door)) || `${door.openRequested ? 'Close' : 'Open'} ${def.label}`,
       use: () => (door.locked ? this.onLocked?.(door) : this.toggle(door)) });
     return door;
   }

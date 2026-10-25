@@ -1,8 +1,8 @@
 // The fuse box (docs/STORY.md, Act II): a wall-mounted consumer unit at the corridor's west end (Poly Haven's "Power
 // Box 01", CC0: tools/props). Its hinged cover opens with E; inside, its own levers move: the top row is the flat's
 // seven circuits and a spare (printed label strip under them), the second row spares, the bottom row the RCD and the
-// red MAIN switch. A handwritten label is taped inside the cover (his handwriting, from when he lived here). The logic
-// is power.js: the RCD stays up only while no wet circuit is switched on.
+// red MAIN switch. A handwritten label is taped inside the cover. The logic is power.js: the RCD stays up only while no
+// wet circuit is switched on. Each time it snaps down again story.js may think a hint (fuseTripped).
 // While the cover is open, looking near a lever focuses it and the prompt names it with its state.
 import { Entity, StandardMaterial, Texture, Vec3, PIXELFORMAT_RGBA8 } from 'playcanvas';
 import { CIRCUITS } from './power.js';
@@ -18,9 +18,7 @@ const LABEL = `RCD trips (whole flat off):
 3. Breakers ON one at a time.
    The one that trips it again → leave it OFF.
 
-(Bathroom does it when wet.)
-
-— D.`;
+(Bathroom does it when wet.)`;
 
 export class Fusebox {
   constructor({ app, interactions, power, bank, story, hud, props, configureMaterial }) {
@@ -148,6 +146,7 @@ export class Fusebox {
     this.bank?.play('rcd_trip', { at, gain: 1, delay: 0.09 });
     this.story?.sys.music?.sting('low');
     this.tries = (this.tries || 0) + 1;
+    this.story?.fuseTripped?.(this.tries);
   }
 
   syncLevers() {

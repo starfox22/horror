@@ -91,7 +91,7 @@ export class Endings {
       [33.5, () => this.card('evicted')],
     ] : [
       [15.5, () => voice('Officer', 'There’s nobody here. Front door was locked. From the inside.')],
-      [20.5, () => voice('Officer', 'Is this the clip? ...That’s you, isn’t it?')],
+      [20.5, () => voice('Officer', 'This one. 02:58. ...That’s you, isn’t it?')],
       [25, () => { voice('Officer', 'Nobody could fit up there.'); b?.play('water_drop', { gain: 0.3, delay: 1.5 }); }],
       [29.5, () => voice('Officer', 'Do you take anything to help you sleep?')],
       [34, () => this.card('locked')],

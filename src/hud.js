@@ -10,6 +10,8 @@ export class Hud {
     this.crouchEl.setAttribute('aria-label', 'Crouching');
     this.voiceEl = el('div', 'hud-voice'); this.voiceEl.hidden = true;
     this.toastEl = el('div', 'hud-toast'); this.toastEl.hidden = true;
+    this.soundEl = el('div', 'hud-sound'); this.soundEl.hidden = true;
+    this.soundCaptions = false;   // settings: the night's important sounds described on screen
     this.docEl = el('div', 'hud-doc'); this.docEl.hidden = true;
     this.docEl.innerHTML = '<div class="sheet"></div><p class="hint">E · put it down</p>';
     this.docEl.addEventListener('click', () => this.closeDoc());
@@ -39,6 +41,14 @@ export class Hud {
     this.voiceEl.hidden = false; this.voiceEl.classList.remove('out');
     clearTimeout(this.voiceTimer);
     this.voiceTimer = setTimeout(() => { this.voiceEl.classList.add('out'); setTimeout(() => { this.voiceEl.hidden = true; }, 900); }, Math.max(3.5, text.length * 0.075) * 1000);
+  }
+
+  // A sound, in words ([Glass shatters, in the bedroom]), for players who turned sound captions on.
+  soundCaption(text, seconds = 2.8) {
+    if (!this.soundCaptions) return;
+    this.soundEl.textContent = text; this.soundEl.hidden = false; this.soundEl.classList.remove('out');
+    clearTimeout(this.soundTimer);
+    this.soundTimer = setTimeout(() => { this.soundEl.classList.add('out'); setTimeout(() => { this.soundEl.hidden = true; }, 900); }, seconds * 1000);
   }
 
   crouch(on) { this.crouchEl.hidden = !on; }

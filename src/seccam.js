@@ -182,7 +182,7 @@ fn hash(p: vec2f) -> f32 { return fract(sin(dot(p, vec2f(12.9898, 78.233)) + uni
   liveStatus() {
     const l = this.live; if (!l) return '';
     if (l.dead) return 'connection lost';
-    if (l.inBedroom()) return 'connecting…';
+    if (l.inBedroom()) return l.bedT > 3 ? 'no signal' : 'connecting…';
     return '8 s delay';
   }
 
@@ -215,6 +215,11 @@ fn hash(p: vec2f) -> f32 { return fract(sin(dot(p, vec2f(12.9898, 78.233)) + uni
       this.frameSkip ^= 1;
       this.entity.camera.enabled = this.frameSkip === 0;
       if (!this.scene && !live.inBedroom() && !this.story?.has('live')) { live.t += dt; if (live.t > 2.5) this.startScene(); }
+      // In the bedroom the feed never comes (the camera is in there with you): the phone says so, once.
+      if (live.inBedroom()) {
+        live.bedT = (live.bedT || 0) + dt;
+        if (live.bedT > 3 && !this.saidNoSignal) { this.saidNoSignal = true; this.story?.say('No signal in here.'); }
+      }
     }
     if (this.scene) this.updateScene(dt);
   }

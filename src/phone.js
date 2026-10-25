@@ -192,8 +192,15 @@ export class Phone {
     if (!this.has || this.onCharger) return;
     this.raised = !this.raised;
     this.bank?.play('blanket', { gain: 0.25 });
-    if (this.raised) { this.app_ = this.booted ? (this.call ? 'call' : 'lock') : 'dead'; this.sel = 0; }
-    else if (this.app_ === 'live') this.seccam?.stopLive();
+    // Raised again it shows what it showed (Home Cam, LIVE reconnecting), unless a call came in meanwhile.
+    if (this.raised) {
+      if (!this.booted) this.app_ = 'dead';
+      else if (this.call) this.app_ = 'call';
+      else if (this.app_ === 'live') this.openLive();
+      else if (this.app_ === 'clip') this.app_ = 'cam';
+      else if (this.app_ !== 'cam') this.app_ = 'lock';
+      this.sel = 0;
+    } else if (this.app_ === 'live' || this.app_ === 'clip') { this.seccam?.stopLive(); this.video.enabled = false; }
     this.dirty = true;
   }
 
@@ -237,7 +244,7 @@ export class Phone {
     this.bank?.play('phone_dial', { gain: 0.3 });
     this.bank?.play('phone_static', { gain: 0.2, delay: 1.6 });
     this.call = { t: 0, line: 'Calling 112…', choices: null, step: 0 };
-    this.story?.after(3.2, () => this.dispatcher('Emergency. What’s the address?', this.firstChoices()), 'call');
+    this.story?.after(3.2, () => this.dispatcher('112. What’s your emergency?', this.firstChoices()), 'call');
     this.noise?.(null, null, 'walk');
   }
 
@@ -374,7 +381,7 @@ export class Phone {
       g.font = '200 150px "Helvetica Neue", Arial, sans-serif';
       g.fillText(`${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`, W / 2, 300);
       g.font = '400 28px "Helvetica Neue", Arial, sans-serif'; g.fillStyle = '#b8c0cc';
-      g.fillText('Saturday 25 October', W / 2, 350);
+      g.fillText(`${['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getDay()]} ${now.getDate()} ${['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][now.getMonth()]}`, W / 2, 350);
       let y = 430;
       for (const n of this.notifications.filter(x => x.unread)) {
         this.card(g, 30, y, W - 60, 110);

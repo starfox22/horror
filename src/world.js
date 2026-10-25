@@ -164,6 +164,12 @@ export class World {
       d.angle = 0; d.target = 0; d.openRequested = false; d.vel = 0; d.moving = false; d.pivot.setEulerAngles(0, 0, 0); this.doors.placeHandle(d);
       d.locked = true;
       this.tap(true);
+      // His light on in there (a player may have switched the bathroom's lights off): the line under the door.
+      const sw = this.story?.sys.switches, rooms = (sw?.rooms || []).filter(r => r.id === 'mirror' || r.id === 'bathroom');
+      if (rooms.length && !rooms.some(r => r.on)) {
+        const room = rooms.find(r => r.id === 'bathroom') || rooms[0];
+        room.on = true; if (!sw.fades.includes(room)) sw.fades.push(room);
+      }
     } else {
       d.locked = false;
       // Left ajar as he went.
@@ -366,7 +372,7 @@ export class World {
         this.notice.getWorldTransform().getZ(out);
         return toEye.sub2(eye, this.noticeAt).dot(out) > 0.05;
       },
-      use: () => { this.hud?.examine({ className: 'typed', html: noticeHtml() }); this.story?.sys.journal?.find('notice'); } });
+      use: () => { this.hud?.examine({ className: 'typed', html: noticeHtml() }); this.story?.sys.journal?.find('notice'); this.story?.noticeRead?.(); } });
   }
 
   // The sheet as printed: off-white paper with a little grain and a fold, the heading spaced out and struck twice over a
@@ -431,7 +437,7 @@ export class World {
       { id: 'pills', model: 'pills', at: PILLS, size: [0.05, 0.08], yaw: 200, className: 'pills', evidence: 'pills',
         html: '<b>ZOLPIDEM TARTRATE 10 mg</b><br>Take ONE tablet at bedtime.<br><br>WARNING: May cause sleepwalking, sleep-driving and other complex sleep behaviours, with no memory of the event. May cause hallucinations. Do not take with alcohol.<br><br><small>Dr. M. Haas</small>' },
       { id: 'diary', model: 'diary', at: DIARY, size: [0.19, 0.14], yaw: -12, className: '', evidence: 'diary',
-        html: () => `<h2>SLEEP DIARY</h2>12th — woke on the sofa. Don’t remember going there.<br>15th — fridge open in the morning. Milk out.<br>19th — toilet seat up. I live alone.<br>21st — Dr Haas: film the nights. Keep taking the pills.<br>24th — Camera came today. Put it up in the bedroom corner, over the dresser.<br><br>Spare key: ${this.story?.spareKey?.line || 'the red tin on the coffee shelf'}. DON’T move it again.` },
+        html: () => `<h2>SLEEP DIARY</h2>12th — woke on the sofa. Don’t remember going there.<br>15th — fridge open in the morning. Milk out.<br>19th — wet footprints on the bathroom floor. I live alone.<br>21st — Dr Haas: film the nights. Keep taking the pills.<br>24th — Camera came today. Put it up in the bedroom corner, over the dresser.<br><br>Spare key: ${this.story?.spareKey?.line || 'the red tin on the coffee shelf'}. DON’T move it again.` },
     ];
     for (const p of this.papers) {
       const model = p.model && this.props?.make(p.model, { parent: this.root, at: p.at, euler: [0, p.yaw, 0], configure: (m) => this.configureMaterial?.(m, p.id) });
@@ -470,7 +476,9 @@ export class World {
     this.tin = this.props?.make('tin', { parent: this.root, at: TIN, euler: [0, 25, 0], configure: (m) => this.configureMaterial?.(m, 'tin') });
     const where = { tin: ['Look in the tin', 'Old receipts. A screw.'], sofa: ['Feel under the cushion', 'Crumbs.'], plant: ['Feel in the vase', 'Stems. Cold water.'] };
     for (const spot of SPARE_SPOTS) {
-      this.interactions.add({ pos: new Vec3(...spot.at), size: spot.size, label: () => where[spot.id][0], active: () => !this.story?.sys.items?.has('spare-key'),
+      // Searchable once the player needs the spare badly enough (story.js spareSearchable: after his nest, or the hunt).
+      this.interactions.add({ pos: new Vec3(...spot.at), size: spot.size, label: () => where[spot.id][0],
+        active: () => !this.story?.sys.items?.has('spare-key') && (this.story?.spareSearchable?.() ?? true),
         use: () => {
           if (this.story?.spareKey?.id === spot.id) this.takeKey(spot);
           else { this.bank?.play(spot.id === 'tin' ? 'latch_2' : 'blanket', { at: spot.at, gain: 0.3, rate: 1.2 }); this.story?.say(where[spot.id][1]); }

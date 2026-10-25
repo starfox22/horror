@@ -107,47 +107,47 @@ export class Death {
     const rnd = (a, b) => a + Math.random() * (b - a), side = Math.random() < 0.5 ? -1 : 1;
     const hit = { x: w * (0.5 + side * rnd(0.18, 0.32)), y: h * rnd(0.3, 0.55) };
     g.clearRect(0, 0, w, h);
-    // The spray: the image's speckle in blood red, strongest where it hit, gone by the far side.
+    // The spray: a part of the image's speckle, enlarged and turned (its rows never show), in blood red, thick where it
+    // hit and gone within half the screen.
     if (this.bloodImage?.complete && this.bloodImage.naturalWidth) {
       const s = Object.assign(this.doc.createElement('canvas'), { width: w, height: h }), q = s.getContext('2d');
-      q.drawImage(this.bloodImage, 0, 0, w, h);
-      q.globalCompositeOperation = 'source-in'; q.fillStyle = '#a10808'; q.fillRect(0, 0, w, h);
+      const img = this.bloodImage, cw = img.naturalWidth * rnd(0.35, 0.5), ch = img.naturalHeight * rnd(0.35, 0.5);
+      q.save(); q.translate(hit.x, hit.y); q.rotate(rnd(0.3, 1.2) * side);
+      const size = Math.max(w, h) * 0.95;
+      q.drawImage(img, rnd(0, img.naturalWidth - cw), rnd(0, img.naturalHeight - ch), cw, ch, -size / 2, -size / 2, size, size);
+      q.restore();
+      q.globalCompositeOperation = 'source-in'; q.fillStyle = '#8e0505'; q.fillRect(0, 0, w, h);
       q.globalCompositeOperation = 'destination-in';
-      const fade = q.createRadialGradient(hit.x, hit.y, 0, hit.x, hit.y, Math.max(w, h) * 0.75);
-      fade.addColorStop(0, 'rgba(0,0,0,1)'); fade.addColorStop(0.45, 'rgba(0,0,0,0.7)'); fade.addColorStop(1, 'rgba(0,0,0,0)');
+      const fade = q.createRadialGradient(hit.x, hit.y, 0, hit.x, hit.y, Math.max(w, h) * 0.48);
+      fade.addColorStop(0, 'rgba(0,0,0,0.95)'); fade.addColorStop(0.35, 'rgba(0,0,0,0.55)'); fade.addColorStop(1, 'rgba(0,0,0,0)');
       q.fillStyle = fade; q.fillRect(0, 0, w, h);
       g.drawImage(s, 0, 0);
     }
     const unit = Math.min(w, h);
     const splat = (x, y, rad) => {
-      g.save(); g.translate(x, y);
-      const body = g.createRadialGradient(-rad * 0.2, -rad * 0.25, rad * 0.1, 0, 0, rad * 1.1);
-      body.addColorStop(0, 'rgba(120,6,6,0.96)'); body.addColorStop(1, 'rgba(62,0,0,0.97)');
-      g.fillStyle = body;
-      // A lumpy body: a closed curve through points at random radii.
-      const n = 22, pts = [];
-      for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2, rr = rad * rnd(0.72, 1.12); pts.push([Math.cos(a) * rr, Math.sin(a) * rr]); }
+      // Flat and dark, as blood on glass is: a lumpy body stretched along the throw, a darker rim, thin spikes ending
+      // in drops, droplets thrown further.
+      g.save(); g.translate(x, y); g.rotate(rnd(-0.5, 0.5)); g.scale(rnd(1.1, 1.45), 1);
+      g.fillStyle = 'rgba(92,0,0,0.9)'; g.strokeStyle = 'rgba(38,0,0,0.55)'; g.lineWidth = Math.max(1, rad * 0.035);
+      const n = 26, pts = [];
+      for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2, rr = rad * rnd(0.55, 1.15) * (i % 5 === 0 ? rnd(1, 1.35) : 1); pts.push([Math.cos(a) * rr, Math.sin(a) * rr]); }
       g.beginPath();
       g.moveTo((pts[0][0] + pts[n - 1][0]) / 2, (pts[0][1] + pts[n - 1][1]) / 2);
       for (let i = 0; i < n; i++) { const a = pts[i], b = pts[(i + 1) % n]; g.quadraticCurveTo(a[0], a[1], (a[0] + b[0]) / 2, (a[1] + b[1]) / 2); }
-      g.fill();
-      // Spikes thrown out of it, each ending in a drop; droplets further out.
-      for (let i = 0, m = Math.round(rnd(7, 13)); i < m; i++) {
-        const a = rnd(0, Math.PI * 2), len = rad * rnd(1.25, 2.4), wid = rad * rnd(0.08, 0.2);
+      g.fill(); g.stroke();
+      for (let i = 0, m = Math.round(rnd(4, 9)); i < m; i++) {
+        const a = rnd(0, Math.PI * 2), len = rad * rnd(1.3, 2.8), wid = rad * rnd(0.04, 0.11);
         g.beginPath();
         g.moveTo(Math.cos(a + Math.PI / 2) * wid, Math.sin(a + Math.PI / 2) * wid);
         g.lineTo(Math.cos(a) * len, Math.sin(a) * len);
         g.lineTo(Math.cos(a - Math.PI / 2) * wid, Math.sin(a - Math.PI / 2) * wid);
         g.fill();
-        g.beginPath(); g.arc(Math.cos(a) * len, Math.sin(a) * len, rad * rnd(0.04, 0.1), 0, Math.PI * 2); g.fill();
+        g.beginPath(); g.ellipse(Math.cos(a) * len, Math.sin(a) * len, rad * rnd(0.04, 0.09), rad * rnd(0.03, 0.06), a, 0, Math.PI * 2); g.fill();
       }
-      for (let i = 0, m = Math.round(rnd(14, 26)); i < m; i++) {
-        const a = rnd(0, Math.PI * 2), dist = rad * rnd(1.3, 3.6);
-        g.beginPath(); g.arc(Math.cos(a) * dist, Math.sin(a) * dist, rad * rnd(0.02, 0.09), 0, Math.PI * 2); g.fill();
+      for (let i = 0, m = Math.round(rnd(10, 22)); i < m; i++) {
+        const a = rnd(0, Math.PI * 2), dist = rad * rnd(1.3, 3.4);
+        g.beginPath(); g.arc(Math.cos(a) * dist, Math.sin(a) * dist, rad * rnd(0.015, 0.07), 0, Math.PI * 2); g.fill();
       }
-      // Wet: a faint highlight along its upper edge.
-      g.strokeStyle = 'rgba(255,190,190,0.22)'; g.lineWidth = Math.max(1.5, rad * 0.05);
-      g.beginPath(); g.arc(-rad * 0.12, -rad * 0.12, rad * 0.62, Math.PI * 1.05, Math.PI * 1.45); g.stroke();
       g.restore();
       for (let i = 0, m = Math.round(rnd(1, 3)); i < m; i++) {
         r.drips.push({ x: x + rad * rnd(-0.6, 0.6), y: y + rad * rnd(0.45, 0.8), w: rad * rnd(0.07, 0.14), len: 0,

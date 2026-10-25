@@ -472,6 +472,8 @@ export class Stalker {
   wardrobe(dt, p) {
     if (!p.inWardrobe) { this.wardrobeTime = 0; this.dusted = false; return; }
     if (this.state === 'chase' || this.state === 'kill' || this.state === 'drop') return;
+    // Never inside the first encounter or a respawn's grace: the hunt must not open with a death nobody could avoid.
+    if (this.tutorial > 0 || this.grace > 0 || this.hold > 0) { this.wardrobeTime = 0; return; }
     this.wardrobeTime += dt;
     if (this.wardrobeTime >= WARDROBE.dust && !this.dusted) { this.dusted = true; this.hooks.dust?.(); }
     if (this.wardrobeTime < WARDROBE.drop) return;
