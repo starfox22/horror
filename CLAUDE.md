@@ -9,7 +9,9 @@ on its own branch, Codex on `codex-review`) and asks for one batch of changes at
 1. `AGENTS.md`: branch and merge rules shared with Codex.
 2. `docs/HANDOFF.md`: the owner's requirements build by build, how everything fits together, published builds,
    **Gotchas learned the hard way** (read them all before touching lighting, probes, shaders or the shadow atlas).
-3. `docs/BUILD_014.md`: the latest Claude build (the owner's simpler story: the evicted man never left; the knife,
+3. `docs/BUILD_015.md`: the latest Claude build (no light for the intruder and his footsteps, the cut that waits for the
+   torch and flickers first, replayable developer events, the floors' normals, the new phone and its screens, the bug
+   pass). `docs/BUILD_014.md`: the build before it (the owner's simpler story: the evicted man never left; the knife,
    the porcelain mask, the crow, the taps, the death with blood and the fall, the hold-to-unlock escape, the developer
    menu's delayed events) and how it was verified; `docs/STORY.md` (v3): the design every beat follows (truth,
    triggers, fallbacks, scares, endings, evidence). `docs/BUILD_013.md` (the night's systems: power, fuse box, phone and

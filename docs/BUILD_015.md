@@ -28,12 +28,43 @@ on screen.
 | The torch | `flashlight.js` pickUp, `hud.js` hidePrompt, `main.js` | Taken from the shelf it stays off; *F · Flashlight on* stays on screen until it is first switched on. (`pickUp({ on: true })` for test captures and `#flash`.) |
 | Developer events | `story.js` dev*, `story-events.js` | Several events did nothing when played out of order: once-only flags (the glass, the locked door, the cut, the tap, LIVE, the hunt), or a state they needed (the nest needed the man seen and the nest not packed; LIVE refused after the hunt). Each now puts in place what it needs (the torch, the power, the hunt stopped, the wardrobe door, the phone booted and up for LIVE) and clears its once-only flags, so it plays from any point of the night, again and again. |
 | The phone | `tools/props/build.mjs` op `phone`, `props.json`, `phone.js`, `phone-screen.js`, `main.js` | A new model: "iPhone 17 Pro" by Ranguel (CC BY 4.0): the maker's logo filled in, graphite, full detail (51k triangles; the old one had been cut to 12 % with 512 px textures). Its screen gets planar UVs in the build, upright: the old model's screen showed the canvas upside down. The screen's look is drawn by `phone-screen.js` (previewed without the game: `tools/phone/preview.mjs`): a wallpaper of night through a wet window, status bar, the lock screen's date and clock, frosted alerts with the clips' thumbnails, Home Cam with its clips and LIVE, a player with a timeline, the emergency call (the dispatcher's words in a bubble, the answers as buttons, the call controls), the boot and the dead battery. The video sits over `VIDEO`'s rectangle on any model (`fitVideo`, `screenRect`). The first-person arm (the drinking arm again) holds it (`setHand`, `poseHand`, `HAND`). |
+| The floors under the torch | `floor-normals.js`, `main.js` fixFloorNormals | The real cause of the corridor's "shadows that make no sense": the downloaded flat's floors are low-poly slabs whose top and sides share vertices, so their normals lean across the walkable surface (the corridor's up to 37 degrees; the open-plan marble's and the bathroom's almost on their side, up-components 0.06 and 0.04; the office carpet, the living-room rug). Ceiling lights hid it; a torch held low lights a floor at a grazing angle and the leaning normals came out as dark wedges and bands with straight edges. At load every vertex of the walkable, upward-facing triangles near the floor gets those triangles' own normal (area-weighted, so a rug keeps its folds), its tangent made perpendicular again; written into the vertex buffers once. The investigation ruled out, by captures with each switched off: the beam's shadow, its bounce light, the clustered-lighting grid. |
 | The torch's beam | `flashlight.js` | The beam's pattern is dithered (its dim spill fell off over a few 8-bit levels: rings, stretched into arcs across the floor); the bounce light eases to each new spot instead of jumping there 10 times a second. |
+
+## The bug pass
+
+An independent review of every 0.15 change (scenario probes against the real story, events and power code) found, and
+0.15 fixes:
+- The glass broke a second time later in the night: the story's own run of the event (the fridge shut again after
+  drinking, or any shut after a checkpoint) went through the developer menu's replay. The story's run now breaks it once;
+  only the menu replays it (`story-events.js`, `Director.play` passes how it was played).
+- Two right arms: the phone could be raised during the drink, and its new hand hung from the same shoulder as the
+  drinking arm (`main.js` phone.blocked).
+- Switching the torch on hid any prompt on screen (the hunt's *C · Crouch*), and other prompts replaced *F · Flashlight on*
+  for good: the torch now takes down only its own prompt (`hud.js` hidePrompt(key), `flashlight.js` prompting).
+- A hunt started before the cut (developer menu) left the cut armed: it came mid-hunt and froze him. The hunt now cancels
+  any cut still to come and a cut never starts during a hunt.
+- Developer replays that left the night stuck: the nest before the man was seen left the bathroom locked for good; a
+  hunt stopped by another replay left the main switch broken and the hunt never coming back (`story.js` devNest,
+  devStopHunt). The power-back replay now always shows a restore (a flat with power goes dark for a second first).
+- The menu's chapter 2 (and a checkpoint 0.14 saved at the cut) started in the dark without the torch: every checkpoint
+  from Act II gives it (`main.js` applyCheckpoint, CHAPTER_FLAGS).
+- `tools/bake-clips.mjs` still called his removed light.
+- Smaller: "There. ...By the fuse box." only when the torch is on him (he carries no light); the torch gripped at a
+  death no longer slides its bounce in from where it last shone; no Sweet Dreams during the flicker; behind the pause
+  menu a flicker or a cut waits (`power.paused`); the buzz fades out of each dip instead of clicking; a missing clip
+  still does not break the thumbnails; LIVE from the menu puts the phone in the hand before it boots; the incoming call
+  can be declined; the call's clock starts when the dispatcher answers.
+
+The phone's screen was dark in the hand even after the new model: its triangles face the back (the file's material is
+double-sided, the game's screen material is not), so it was culled and the cover glass showed the phone's insides; the
+build now winds them to face out (`tools/props/build.mjs` op phone). `tools/phone/model-check.mjs` renders the model with
+its screen alone, in seconds, for checks like this.
 
 ## Verification
 
-- `node --test tools/check-*.mjs`: 212 tests (new: the cut waits for the torch and flickers first; every developer
-  event three times in different orders; his footsteps; the torch picked up off with its prompt; the phone's screen
+- `node --test tools/check-*.mjs`: 214 tests (new: the cut waits for the torch and flickers first; every developer
+  event three times in different orders; his footsteps; the floors' normals; the torch picked up off with its prompt; the phone's screen
   states).
 - `tools/perf/events-audit.mjs` (new): every developer-menu event in the real game, chosen while paused (nothing runs in
   2 s of pause), then played within 3 s of resuming, each with what it did (sounds, thoughts, flags, power, the man,

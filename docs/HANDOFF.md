@@ -64,6 +64,14 @@ The owner explicitly requested promoting verified build 0.11 to `main` and handi
   rest"), with plenty of believable jump scares and tension before he shows up; then creative control was handed over
   ("make the game AAA"), work stays on this branch, with a playable link online. Details: [BUILD_014.md](BUILD_014.md),
   the design in [STORY.md](STORY.md) v3.
+- Build 0.15 (Claude, on `claude/pensive-volta-et0etl`, owner request of 2026-10-25 after 0.14): shadows that make
+  sense on the floor when the dark corridor is lit by the torch; an AAA phone (downloaded model) with AAA screens and
+  messages, and screenshots of it and of the scenes that use it; a dramatic power cut (the flat's lights flicker with a
+  repeating short-circuit "tzzz" for about a second, then out); every developer-menu event working 3 s after unpausing;
+  no flashlight for the attacker, and his steps heard when he is near. Mid-task: the power must not go off until the
+  player has the torch (it was pitch black with no way to find it), and the torch is picked up switched off, F turns it
+  on, with a prompt on screen. Then: a general bug pass and AAA graphics, and when done, push to `main` (the owner
+  asked in that conversation). Details: [BUILD_015.md](BUILD_015.md).
 - Show screenshots and links before big decisions; publish each prototype to a web link.
 - Keep everything documented so another AI can continue.
 
@@ -140,6 +148,17 @@ make-artifact keeps `collision.json` and `sight.json` beside the parts and packs
   haze lit by the spot lamps and the torch, grading (no contrast: see Gotchas), vignette, slight fringing, eye
   adaptation (`EyeAdaptation`). High/Medium/Low (keys 1-3); Auto targets 60 FPS through effect, shadow and resolution budgets (`scene-quality.js`, `graphics-settings.js`). The limiter defaults to 60; Unlimited is manual.
 - **Sound**: Web Audio ambience/fixture feedback (`src/ambience.js`) includes rain, droplets, room tone, fridge, tap and footsteps with HRTF/reverb. Drinking (`src/drink-sequence.js`) uses downloaded CC0 gulp/exhale recordings, synchronized with the paused animation clock. See DRINK_ASSETS.md for attribution and provenance.
+
+## Build 0.15 changes (where they live)
+Full list, the bug pass and verification: [BUILD_015.md](BUILD_015.md). In short: no light for the intruder and his
+footsteps (`intruder.js`, `stalker.js` looking/lookYaw, `hunt.js` STEPS, `seccam.js` footfall, `death.js` with the
+player's gripped torch or a lightning flash); the cut waits for the torch and flickers with a synthesized buzz first
+(`story.js` waitForTorch/brownout/tookTorch/powerCut/blackout, `power.js` surge, `sound.js` buzz); the torch picked up
+off with its F prompt (`flashlight.js`, `hud.js`); every developer event replayable from anywhere (`story.js` dev*,
+`story-events.js`, `tools/perf/events-audit.mjs`); the floors' normals rebuilt at load (`floor-normals.js`, `main.js`
+fixFloorNormals); the phone: a new model ("iPhone 17 Pro" by Ranguel, `tools/props/build.mjs` op phone), its screens
+(`phone-screen.js`, previewed by `tools/phone/preview.mjs`; the model alone by `tools/phone/model-check.mjs`), the hand
+holding it (`phone.js` setHand/poseHand/HAND); capture scenes in `tools/perf/scenes/` (phone, hall-torch, tour).
 
 ## Build 0.14 changes (where they live)
 Full list, the director's review and verification: [BUILD_014.md](BUILD_014.md); the design: [STORY.md](STORY.md) v3. In
@@ -443,6 +462,18 @@ Full list, measurements and before/after renders: [BUILD_012.md](BUILD_012.md). 
 - `app.stats` frame counters and `_shaderStats` are only filled in the engine's profiler build: to count shadow renders
   and new shaders, wrap `app.renderer.shadowRenderer.renderFace` and watch `graphicsDevice.shaders.length`
   (`tools/perf/hitch.mjs` does, see its README).
+
+### Build 0.15
+- A floor that shades oddly under the torch is a normals problem, not shadows: the downloaded flat's floors share
+  vertices between top and sides. `fixFloorNormals` (main.js) rebuilds them at load; anything new laid on the floor
+  that looks banded under the torch should go through it (it takes meshes whose bounds start below 0.35 m).
+- The phone's screen mesh must face +Z and the game's screen material is single-sided: a model whose screen faces the
+  back shows nothing at all (the build's phone op winds it). Check a new phone with `tools/phone/model-check.mjs`
+  before any in-game capture.
+- A prompt belongs to its key: hide it with `hud.hidePrompt(key)`, never unconditionally.
+- `power.update` stands still while paused (`power.paused`, main.js): a cut, a restore or a surge waits behind the menu.
+- Developer-menu replays (story.js dev*) must leave a night that normal play can still finish: stop the hunt with
+  `devStopHunt` (it re-arms the hunt fallback and mends the main switch), never by clearing flags alone.
 
 ## Continuation
 

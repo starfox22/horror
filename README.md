@@ -67,6 +67,7 @@ node tools/shoot.mjs dist out name=x,z,yaw ...   # headless screenshots (softwar
 | `src/frame-limiter.js`, `src/graphics-settings.js` | Saved graphics preferences (Auto + VSync by default), FPS limit and native settings dialog |
 | `src/scene-quality.js` | Pixel budgets, texture detail and rain quality (shadows and lit shaders identical at every preset) |
 | `src/flashlight-surfaces.js` | Cached triangle tracing for occluded flashlight return light |
+| `src/floor-normals.js` | The floors' leaning normals rebuilt at load, so the torch lights them as flat |
 | `src/lighting.js` | Lamps at their fixtures, ceiling downlights, lightning-only sky light, night sky, probe capture |
 | `src/post.js` | Camera effects (TAA, SSAO, bloom, volumetric haze, grading, vignette), eye adaptation, quality levels |
 | `src/ambience.js` | Synthesised sound: rain, room tone, fridge, tap, footsteps, switches, thunder |
@@ -85,7 +86,7 @@ node tools/shoot.mjs dist out name=x,z,yaw ...   # headless screenshots (softwar
 | `src/world.js`, `src/nest.js` | What the night leaves in the flat (shards, the bathroom, prints, papers, the spare key, bowl, clock) and his nest and hatch |
 | `src/intruder.js`, `src/stalker.js`, `src/hunt.js` | The masked man: body, animation and phone torch; his senses and states; the hunt (Act IV) |
 | `src/navgrid.js`, `src/zones.js` | Walking (A* on a 20 cm grid), seeing (baked height field `sight.json`), hearing through doorways; rooms and areas |
-| `src/phone.js`, `src/seccam.js` | The phone (dead on the nightstand, its charger pulled; Home Cam clips and LIVE, the emergency call) and the camera's infrared view |
+| `src/phone.js`, `src/phone-screen.js`, `src/seccam.js` | The phone (dead on the nightstand, its charger pulled; held in the first-person hand; Home Cam clips and LIVE, the emergency call), its screens drawn into a canvas, and the camera's infrared view |
 | `src/death.js`, `src/endings.js` | Being caught (the knife, blood on the lens, the fall to the floor) and waking on the sofa; the four endings |
 | `src/menu.js`, `src/hud.js`, `src/journal.js`, `src/credits.js` | Title, new night, chapters, journal and endings, settings, credits, pause; prompts, captions and documents; evidence |
 | `src/sound.js`, `src/music.js` | Recorded sounds (doorway-routed, occluded, reverberant) and the score and stings |

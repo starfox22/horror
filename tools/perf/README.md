@@ -10,6 +10,8 @@ these scripts count what makes frames slow (shadow-map faces, shader builds, dra
 | `final-check.mjs <url> [webgpu]` | After the warm-up: fridge, drink, fridge shut, falling glass, lightning, switch, flashlight, coffee; any shader built or shadow burst is a regression. |
 | `leak.mjs <url> <outdir> '^Bedroom' name=x,z,yaw[,pitch] ...` | Only one group's lights on (developer overrides), then screenshots of neighbouring rooms: light there came through a wall. |
 | `drink-shots.mjs <url> <outdir> [x,z,yaw,pitch] [webgpu]` | Opens the fridge and renders the drinking action at fixed times (`TIMES=...`); log in `<outdir>/log.txt`. |
+| `events-audit.mjs <dist> <out.json> [--shots dir] [--endings]` | Every developer-menu event in the real game: chosen while paused (nothing may run), played within 3 s of resuming, and what it did (sounds, thoughts, flags, power, the man, the phone); story order, reverse order, then the endings. |
+| `scene-shots.mjs <dist> <out> <scenes.mjs>` with `scenes/phone.mjs`, `scenes/hall-torch.mjs`, `scenes/tour.mjs` | The phone in the hand and on the nightstand; the corridor in the dark with the torch; a tour of the flat lit, dark with the torch, the man in the beam, lightning. |
 | `event-check.mjs <url> [webgpu]` | Drinks, shuts the fridge, checks the falling glass fires once after 3 s of play with its thought, and the developer menu's Events button. |
 
 Never `pkill -f` with a pattern that appears in your own shell command line (it kills the shell).

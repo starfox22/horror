@@ -152,7 +152,7 @@ menu = shot ? null : new Menu({
   credits: creditsHtml(),
   sound: (kind) => bank?.play(kind === 'hover' ? 'latch_2' : 'breaker_1', { gain: kind === 'hover' ? 0.05 : 0.12, rate: kind === 'hover' ? 2.4 : 1.8, bus: 'ui' }),
 });
-if (menu) { $('intro').style.display = 'none'; menu.setBuild('Build 0.14'); menu.open('loading'); }
+if (menu) { $('intro').style.display = 'none'; menu.setBuild('Build 0.15'); menu.open('loading'); }
 const ambience = new Ambience();
 const bank = new SoundBank(ambience);
 const soundsLoading = bank.load('./assets/audio/').catch(error => { console.warn(`Recorded sounds unavailable: ${error.message}`); return null; });
