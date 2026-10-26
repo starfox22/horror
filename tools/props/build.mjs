@@ -452,6 +452,9 @@ const OPS = {
       scan(pr, (q, i) => { uv[2 * i] = (q[0] - lo[0]) / (hi[0] - lo[0]); uv[2 * i + 1] = (hi[1] - q[1]) / (hi[1] - lo[1]); });
       pr.setAttribute('TEXCOORD_0', doc.createAccessor().setType('VEC2').setArray(uv).setBuffer(doc.getRoot().listBuffers()[0]));
     }
+    // The screen lies exactly on the display frame's face (z-fighting: the black frame won): lifted 0.2 mm, still under
+    // the cover glass.
+    for (const pr of screens) { const pos = pr.getAttribute('POSITION'), q = []; for (let i = 0; i < pos.getCount(); i++) { pos.getElement(i, q); q[2] += 0.0002; pos.setElement(i, q); } }
     console.log(`phone: ${screens.length} screen primitive(s), ${((hi[0] - lo[0]) * 1000).toFixed(1)} x ${((hi[1] - lo[1]) * 1000).toFixed(1)} (source units / 1000)`);
     screen.getMaterial().setName('Lock_Screen');
     // The logo's holes in the frosted back: boundary loops (vertices welded by position) smaller than 3 cm, each closed

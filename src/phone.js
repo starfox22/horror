@@ -19,7 +19,7 @@ import { ArmRig, frameRotation } from './arm-rig.js';
 // towards its left edge, curling round it (grip); the thumb (the rig's -X at rest) up along its right edge. The shoulder
 // is where the drinking arm's is (drink-sequence.js SHOULDER, camera space).
 export const HAND = {
-  palm: new Vec3(0.012, -0.022, -0.0068), fingers: new Vec3(-1, 0.18, 0), facing: new Vec3(0, 0, 1), grip: 0.7,
+  palm: new Vec3(0.026, -0.024, -0.0068), fingers: new Vec3(-1, 0.18, 0), facing: new Vec3(0, 0, 1), grip: 0.5,
   shoulder: new Vec3(0.19, -0.25, 0.09),
 };
 
@@ -171,9 +171,17 @@ export class Phone {
     this.camera.addChild(this.handCarrier);
     this.handCarrier.addChild(entity);
     const playerCamera = this.camera.camera.camera;
+    // Its own materials (the drinking arm keeps its): a faint emissive, the screen's cold light on the fingers, set by
+    // how lit the screen is (poseHand). Emissive from the start, so lighting it builds no shader in play.
+    this.handMats = new Map();
     for (const r of entity.findComponents('render')) for (const mi of r.meshInstances) {
       mi.castShadow = false; mi.isVisibleFunc = cam => cam === playerCamera;
-      if (!mi.material._phoneConfigured) { mi.material._phoneConfigured = true; configure?.(mi.material); }
+      if (!this.handMats.has(mi.material)) {
+        const m = mi.material.clone(); configure?.(m);
+        m.emissive = new Color(0.55, 0.62, 0.8); m.emissiveIntensity = 0.001; m.update();
+        this.handMats.set(mi.material, m);
+      }
+      mi.material = this.handMats.get(mi.material);
     }
     this.rig = new ArmRig(entity, data);
     this.handPalm = new Vec3(...data.wristToPalm);
@@ -191,6 +199,8 @@ export class Phone {
     const palm = turn.transformVector(HAND.palm, (this._palm ||= new Vec3())).add(at);
     const wrist = rotation.transformVector(this.handPalm, (this._wrist ||= new Vec3())).mulScalar(-1).add(palm);
     this.rig.pose(HAND.shoulder, wrist, rotation, { grip: HAND.grip });
+    const glow = this.booted && this.booting === null ? 0.05 : 0.004;
+    if (glow !== this.handGlow) { this.handGlow = glow; for (const m of this.handMats.values()) { m.emissiveIntensity = glow; m.update(); } }
   }
 
   // --- state ---------------------------------------------------------------------------------------------------
