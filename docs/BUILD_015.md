@@ -61,6 +61,21 @@ double-sided, the game's screen material is not), so it was culled and the cover
 build now winds them to face out (`tools/props/build.mjs` op phone). `tools/phone/model-check.mjs` renders the model with
 its screen alone, in seconds, for checks like this.
 
+## Captures (docs/build-015/)
+
+Headless (SwiftShader), `tools/perf/scene-shots.mjs` with `tools/perf/scenes/{hall-torch,phone,tour}.mjs`:
+- The corridor in the dark with the torch, before and after the floors' normals:
+  [east, before](build-015/hall-east-before.jpg) / [after](build-015/hall-east-after.jpg),
+  [the fuse box end, before](build-015/hall-fusebox-before.jpg) / [after](build-015/hall-fusebox-after.jpg) (the hard
+  band across the floor), [the floor, before](build-015/hall-floor-before.jpg) / [after](build-015/hall-floor-after.jpg)
+  (the rings at the beam's edge).
+- The phone: [before (0.13/0.14)](build-015/phone-before.jpg); the new model with its screen
+  ([model-check](build-015/phone-model.jpg)); every screen ([preview](build-015/phone-screens.jpg)); in the hand in the
+  dark corridor: [the lock screen and its alerts](build-015/phone-lock.jpg), [Home Cam](build-015/phone-cam.jpg),
+  [a clip](build-015/phone-clip.jpg), [LIVE](build-015/phone-live.jpg), [the emergency call](build-015/phone-call.jpg);
+  [on the nightstand with its alerts](build-015/phone-nightstand.jpg).
+- [The man in the torch's beam](build-015/man-in-the-beam.jpg) (no light of his own) and [a lightning flash](build-015/lightning.jpg).
+
 ## Verification
 
 - `node --test tools/check-*.mjs`: 214 tests (new: the cut waits for the torch and flickers first; every developer
@@ -70,3 +85,9 @@ its screen alone, in seconds, for checks like this.
   2 s of pause), then played within 3 s of resuming, each with what it did (sounds, thoughts, flags, power, the man,
   the phone, the camera, a death or an ending). 13 story events in order and again in reverse, then the four endings:
   none dead, none early, no page errors.
+- `tools/perf/final-check.mjs` on WebGL and WebGPU after the warm-up: 24 steps (Act I, the cut with its flicker and
+  buzz, the fuse box, his run, the nest, the phone booting, the phone in the hand with its light, LIVE, the hunt, the
+  crow, the death with the gripped torch, the wake): no shader built in any step, no page errors.
+- In the browser, the hallway diagnostics that found the floors: captures with the beam's shadow off, the bounce light
+  off, the clustered-lighting grid at 1x1x1 and twice as fine (no change), then ray traces of the floor and a survey of
+  every walkable surface's normals.
