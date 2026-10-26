@@ -39,9 +39,9 @@ export class Endings {
 
   card(id) {
     const s = this.story, j = s.sys.journal;
-    this.menu.ended(id, s.endedAt);
+    this.menu?.ended(id, s.endedAt);             // no menu in the capture tools (#shot)
     const reading = { real: 'Someone was here.', head: 'It was in my head.', both: 'I don’t know.' }[j?.reading?.() || 'both'];
-    this.menu.open('ending', { id, epilogue: EPILOGUES[id], stats: { time: s.endedAt, clock: this.clock?.label?.() || '03:2x', deaths: s.deaths, evidence: j?.count ?? 0, reading } });
+    this.menu?.open('ending', { id, epilogue: EPILOGUES[id], stats: { time: s.endedAt, clock: this.clock?.label?.() || '03:2x', deaths: s.deaths, evidence: j?.count ?? 0, reading } });
     s.clearSave();
   }
 

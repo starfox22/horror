@@ -4,7 +4,7 @@
 // ending. An event that changes nothing a player could see or hear is reported as dead. Three passes: in story order
 // from a fresh night, again in reverse order (each from a later night than its own: the developer picks any of them at
 // any time), then the endings one after another.
-// node tools/perf/events-audit.mjs <dist-dir> <out.json> [--shots <dir>]
+// node tools/perf/events-audit.mjs <dist-dir> <out.json> [--shots <dir>] [--endings]
 // Software rendering loads the flat in minutes: run it in the background and poll its output.
 import { createServer } from 'node:http';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
@@ -112,8 +112,11 @@ const run = async (pass, id) => {
   console.log(`${pass} ${id}: ${r.ran ? 'ran' : 'DID NOT RUN'}${r.playedWhilePaused ? ' (while paused!)' : ''} ${r.alive ? 'alive' : 'DEAD'} ` +
     `${JSON.stringify({ sounds: r.did?.sounds?.slice(0, 8), says: r.did?.says, changed: Object.keys(r.diff || {}) })}`);
 };
-for (const id of story) await run('order', id);
-for (const id of [...story].reverse()) await run('again', id);
+// --endings: only the endings (they need no night behind them).
+if (!args.includes('--endings')) {
+  for (const id of story) await run('order', id);
+  for (const id of [...story].reverse()) await run('again', id);
+}
 for (const id of endings) {
   await run('ending', id);
   // The next ending from a night that has not ended (an ending stops play: the developer would start a new night).
