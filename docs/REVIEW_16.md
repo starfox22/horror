@@ -25,6 +25,7 @@ The inherited game is the complete night described in [BUILD_015.md](BUILD_015.m
 - **Scaled floor-level geometry:** normal repair assumed uniform scale although the committed apartment includes nonuniformly scaled curtains and door geometry. It now uses inverse-transpose world normals and the corresponding transpose conversion back to local space. A survey found 265 corrected vertices with errors above 2°, worst 55.59°; the corrected normal deviation is effectively zero. Tangents remain perpendicular, and existing axis-aligned floors retain their correction.
 - **Unlit no-torch capture:** the existing death fallback asked for lightning but `main.js` never supplied its `rain` dependency. The real rain system is now passed in, preserving the existing fallback for developer/replayed catches before torch pickup.
 - **Paused bed ending:** the delayed return-to-sleep action now verifies active play before triggering an ending, even if an earlier interaction focus and held key survive until its callback.
+- **Stale menu build label:** the title menu had a separate hardcoded version. Its footer now reads the existing start-screen build label, keeping both views consistent on later releases.
 
 Tests first reproduced the power, HUD, phone, visibility and normal-transform defects against the old behavior. The source/API, fonts and layout of the HUD and phone remain as designed in 0.15; the fixes address incorrect timing, visibility and light state.
 

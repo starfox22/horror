@@ -20,7 +20,7 @@ Codex has resumed from the complete Claude 0.15 game, shared exactly by `main` a
 
 - Claude's build (0.15, `claude/pensive-volta-et0etl`): https://starfox22.github.io/horror/claude/
 - Production (`main`, build 0.15): https://starfox22.github.io/horror/
-- Codex review (`codex-review`): https://starfox22.github.io/horror/codex/
+- Codex review (0.16, `codex-review`): https://starfox22.github.io/horror/codex/
 - The claude.ai artifact (always the latest Claude build): https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9
 - Locally: `npm install && npm run dev`, open the printed URL. Click to enter.
 

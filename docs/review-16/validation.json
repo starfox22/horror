@@ -2249,5 +2249,15 @@
     "seconds": 1543,
     "failures": [],
     "status": "PASS"
+  },
+  "menuLabel": {
+    "status": "PASS",
+    "labels": {
+      "index": "Build 0.16",
+      "menu": "Build 0.16"
+    },
+    "errors": [],
+    "scope": "real menu initialization before model loading; version-label correction only",
+    "note": "Final metadata-only correction after the gameplay audits; both visible version labels use the existing index label."
   }
 }

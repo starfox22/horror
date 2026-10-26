@@ -4,6 +4,11 @@ A first-person browser horror game in the spirit of Konami's P.T. (one quiet nig
 look), built on PlayCanvas 2.23.1 (WebGPU with a WebGL 2 fallback) and Vite. The owner works with AI agents (Claude
 on its own branch, Codex on `codex-review`) and asks for one batch of changes at a time.
 
+Current owner handoff (2026-10-26): development returned to Codex. `main` and this Claude branch were exactly the
+same 0.15 commit (`c5a619f`); Codex incorporated that whole history and continues its 0.16 bug pass on `codex-review`.
+Read `docs/REVIEW_16.md` and the current section of `docs/HANDOFF.md` before resuming. The Claude-specific branch
+rules below remain in force for future Claude tasks; historical main-promotion approvals do not authorize new pushes.
+
 ## Read first, in this order
 
 1. `AGENTS.md`: branch and merge rules shared with Codex.
