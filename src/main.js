@@ -6,6 +6,7 @@
 import * as pc from 'playcanvas';
 import { SHADOWUPDATE_THISFRAME } from 'playcanvas';
 import { WalkGrid } from './walkgrid.js';
+import { flattenFloorNormals } from './floor-normals.js';
 import { Player } from './player.js';
 import { setupLighting, addDownlights, fixShadowAtlas, effectsLayer } from './lighting.js';
 import { Probes, ZONES, baseName } from './probes.js';
@@ -180,6 +181,7 @@ status('Lighting the rooms…', 0.9);
 const apartment = container.instantiateRenderEntity({ castShadows: true, receiveShadows: true });
 app.root.addChild(apartment);
 tuneMaterials(apartment);
+fixFloorNormals(apartment);          // the floors' leaning normals, which the torch showed as wedges of shadow
 
 const camera = new pc.Entity('camera');
 camera.addComponent('camera', { fov: 68, nearClip: 0.05, farClip: 60, clearColor: new pc.Color(0, 0, 0) });
@@ -665,6 +667,39 @@ function showHint() {
   if (h.dataset.shown) return;
   h.dataset.shown = '1'; h.hidden = false;
   setTimeout(() => h.classList.add('fade'), 6000);
+}
+
+// The floors' normals (floor-normals.js): every walkable, upward-facing triangle near the floor gets its own normal,
+// written into the mesh's vertex buffer once at load. World space in and out (the nodes rotate and scale uniformly).
+function fixFloorNormals(root) {
+  const done = new Set(), q = new pc.Vec3(), r = new pc.Vec3(), inverse = new pc.Mat4();
+  let vertices = 0;
+  for (const render of root.findComponents('render')) for (const mi of render.meshInstances) {
+    const mesh = mi.mesh;
+    if (done.has(mesh) || mi.aabb.getMin().y > 0.35 || !mesh.vertexBuffer) continue;
+    done.add(mesh);
+    const pos = [], nrm = [], idx = [];
+    const n = mesh.getPositions(pos);
+    if (!n || mesh.getNormals(nrm) !== n || !mesh.getIndices(idx)) continue;
+    const world = mi.node.getWorldTransform();
+    for (let i = 0; i < n * 3; i += 3) {
+      world.transformPoint(q.set(pos[i], pos[i + 1], pos[i + 2]), r); pos[i] = r.x; pos[i + 1] = r.y; pos[i + 2] = r.z;
+      world.transformVector(q.set(nrm[i], nrm[i + 1], nrm[i + 2]), r).normalize(); nrm[i] = r.x; nrm[i + 1] = r.y; nrm[i + 2] = r.z;
+    }
+    const changed = flattenFloorNormals(pos, nrm, idx);
+    if (!changed) continue;
+    vertices += changed;
+    inverse.copy(world).invert();
+    const it = new pc.VertexIterator(mesh.vertexBuffer);
+    for (let i = 0; i < n; i++) {
+      inverse.transformVector(q.set(nrm[i * 3], nrm[i * 3 + 1], nrm[i * 3 + 2]), r);
+      r.normalize();                       // back to the mesh's space: the inverse rotation, renormalised
+      it.element[pc.SEMANTIC_NORMAL].set(r.x, r.y, r.z);
+      it.next();
+    }
+    it.end();
+  }
+  return vertices;
 }
 
 // Glass stays see-through but reflective; screens and lamp emitters glow into the bloom without blinding.

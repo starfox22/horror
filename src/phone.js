@@ -14,11 +14,12 @@ import { W, H, VIDEO, drawScreen, makeWallpaper } from './phone-screen.js';
 import { ArmRig, frameRotation } from './arm-rig.js';
 
 // The hand that holds it (build 0.15, the owner: "the smartphone does not look good on my hand"): the drinking arm's
-// model again (arm-rig.js), in the phone's own frame (x right, y up, z out of the screen; origin its centre): the palm
-// against its back a little right of centre and low, the fingers up and round its left edge, the thumb along its right;
-// the shoulder where the drinking arm's is (drink-sequence.js SHOULDER, camera space).
+// model again (arm-rig.js), in the phone's own frame (x right, y up, z out of the screen; origin its centre). As a
+// right hand holds a phone: the palm against its back, a little right of centre and low; the fingers across the back
+// towards its left edge, curling round it (grip); the thumb (the rig's -X at rest) up along its right edge. The shoulder
+// is where the drinking arm's is (drink-sequence.js SHOULDER, camera space).
 export const HAND = {
-  palm: new Vec3(0.014, -0.038, -0.0068), fingers: new Vec3(-0.32, 1, 0.05), facing: new Vec3(0.1, 0, 1), grip: 0.62,
+  palm: new Vec3(0.012, -0.022, -0.0068), fingers: new Vec3(-1, 0.18, 0), facing: new Vec3(0, 0, 1), grip: 0.7,
   shoulder: new Vec3(0.19, -0.25, 0.09),
 };
 
@@ -153,11 +154,8 @@ export class Phone {
     if (!mi) return null;
     if (!this.modelScreenMat) {
       const m = this.screenMat.clone();
-      // The canvas stretched over the screen's own UV rectangle (the build gives it 0..1, v 0 at the top: upright).
-      const uv = [], n = mi.mesh.getUvs(0, uv);
-      let u0 = 0, u1 = 1, v0 = 0, v1 = 1;
-      if (n) { u0 = v0 = Infinity; u1 = v1 = -Infinity; for (let i = 0; i < n * 2; i += 2) { u0 = Math.min(u0, uv[i]); u1 = Math.max(u1, uv[i]); v0 = Math.min(v0, uv[i + 1]); v1 = Math.max(v1, uv[i + 1]); } }
-      m.emissiveMapTiling = new Vec2(1 / (u1 - u0), 1 / (v1 - v0)); m.emissiveMapOffset = new Vec2(-u0 / (u1 - u0), -v0 / (v1 - v0));
+      // The canvas fills the screen: the build gives the screen planar UVs 0..1, v 0 at the top (tools/props/build.mjs).
+      m.emissiveMapTiling = new Vec2(1, 1); m.emissiveMapOffset = new Vec2(0, 0);
       m.update();
       this.modelScreenMat = m;
     }
@@ -452,8 +450,9 @@ export class Phone {
       const k = this.raiseK, t = performance.now() / 1000;
       // Held up in front of you while you watch the camera (clips, LIVE), lower to the right otherwise.
       const watch = this.watchK = (this.watchK ?? 0) + (((this.app_ === 'clip' || this.app_ === 'live') ? 1 : 0) - (this.watchK ?? 0)) * (1 - Math.exp(-dt * 6));
-      this.holder.setLocalPosition(0.075 - 0.045 * watch, -0.13 + 0.035 * watch - (1 - k) * 0.18 + Math.sin(t * 1.3) * 0.002, -0.27 + 0.03 * watch);
-      this.holder.setLocalEulerAngles(8 - 4 * watch + (1 - k) * 25, -6 + 4 * watch, Math.sin(t * 0.9) * 0.6);
+      // Up where it can be read (build 0.15: it was held so low that its screen ran off the bottom of the view).
+      this.holder.setLocalPosition(0.052 - 0.04 * watch, -0.078 + 0.03 * watch - (1 - k) * 0.2 + Math.sin(t * 1.3) * 0.002, -0.25 + 0.02 * watch);
+      this.holder.setLocalEulerAngles(6 - 3 * watch + (1 - k) * 25, -8 + 6 * watch, -3 + 3 * watch + Math.sin(t * 0.9) * 0.6);
     }
     this.poseHand();
     // Screens that change by themselves (a clip's time, LIVE's status, a call's line) redraw a few times a second, not
