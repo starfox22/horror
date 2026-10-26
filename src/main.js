@@ -527,7 +527,7 @@ const ACT_START = {
   2: { x: 10.4, z: 1.0, yaw: 95 }, 3: { x: 2.6, z: 3.75, yaw: 180 }, 4: { x: 4.6, z: 0.4, yaw: 20 },
 };
 const CHAPTER_FLAGS = {
-  2: ['phone', 'charging', 'glass', 'shards-seen', 'bath-tried', 'bath-dark', 'bath-knocked', 'power-cut'],
+  2: ['phone', 'charging', 'glass', 'shards-seen', 'bath-tried', 'bath-dark', 'bath-knocked', 'torch', 'power-cut'],
   3: ['phone', 'charging', 'glass', 'shards-seen', 'bath-tried', 'bath-dark', 'bath-knocked', 'power-cut', 'torch', 'latch', 'fusebox-opened', 'silhouette', 'prints', 'restored', 'bathroom-open'],
   4: ['phone', 'charging', 'glass', 'shards-seen', 'bath-tried', 'bath-dark', 'bath-knocked', 'power-cut', 'torch', 'latch', 'fusebox-opened', 'silhouette', 'prints', 'restored', 'bathroom-open',
     'bathroom-visited', 'tap-off', 'hanger', 'nest-seen', 'old-key', 'alerts', 'live', 'hunt'],
@@ -547,7 +547,8 @@ function chapterSave(act) {
 function applyCheckpoint(save) {
   const f = new Set(save.flags);
   if (f.has('glass')) { fridge.hasDrunk = true; fridge.setGlassWater(0.12, 0); }
-  if (f.has('torch') && !flashlight.held) flashlight.pickUp();
+  // From the cut on the torch is in hand (build 0.15: the cut waits for it), also for a checkpoint saved by 0.14 at the cut.
+  if ((f.has('torch') || save.act >= 2) && !flashlight.held) flashlight.pickUp();
   if (save.act >= 2) { rain.burst?.(save.act === 2 ? 30 : 0); }
   if (f.has('power-cut')) power.faults.add('bathroom');
   if (f.has('silhouette') && !f.has('nest-seen') && !f.has('hunt')) closets.swing('right', 18);   // ajar since he went in
