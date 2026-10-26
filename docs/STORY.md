@@ -1,9 +1,9 @@
-# The Apartment — story and game design (build 0.14)
+# The Apartment — story and game design (0.14 night, updated for 0.17)
 
 The canonical design for the night: its story, beats, scares, gameplay and endings. Code follows this document; change
 this first. Everything is staged in the real apartment (metres; floor plan in `docs/build-013/map.png`).
 
-Version 3 (build 0.14). The owner asked for a simpler story than 0.13's: **the man they evicted never left**, told with
+Version 3 (build 0.14), with the owner's 0.17 charged-phone revision. The owner asked for a simpler story than 0.13's: **the man they evicted never left**, told with
 almost no backstory ("we will let the player imagine the rest"); plenty of believable jump scares; tension that builds
 before the attacker is ever seen; escape as the final goal; the knife slot left empty for whoever looks. A caretaker
 twist and a chained front door were proposed and rejected by the owner as too close to Netflix's "Unhinged": do not
@@ -31,10 +31,10 @@ For a month someone in the building made the nights unbearable: banging in the c
 management finally evicted him; the notice is on your fridge. He did not leave. He moved into the service void above
 the ceilings and comes down into your flat through the inspection hatch in the roof of your bedroom wardrobe. He has
 been coming down at night while you sleep on your prescription pills. Tonight he took your keys from the bowl and the big
-knife from the block, and pulled your phone's charger out of the wall. When you wake at 03:07 he is in your wardrobe,
+knife from the block. Your phone is already charged when you wake. At 03:07 he is in your wardrobe,
 holding its right door shut.
 
-What the player can find, in order: the stuck wardrobe door · the dead phone with its charger pulled · the notice ·
+What the player can find, in order: the stuck wardrobe door · the charged phone · the notice ·
 the empty key bowl · the empty knife slot · the broken glass and the blood in the spill · the locked bathroom whose
 light goes out · the man at the end of the corridor · his prints · the wiped mirror · the nest (blanket, bottles, a key
 tagged 5B, polaroids of you asleep) · the hatch · the camera clips · him on LIVE.
@@ -64,10 +64,9 @@ of them 3 s after the game resumes).
 
 1. **Wake** (existing, skippable). The bedside clock: 03:07. *"I just had a nightmare, I will go get some water at the
    kitchen."* (the owner's line, verbatim).
-2. **The phone** lies on the south nightstand, dead. E: *"Dead."* Its charger has been pulled out of the wall: E on the
-   nightstand plugs it back in (*"I never unplug it."*); its screen shows the red empty-battery glyph for a moment. A dead phone needs minutes of charge before it boots,
-   and the power will soon be gone: it boots in Act III (beat 12). The phone can be carried; it charges only on the
-   nightstand.
+2. **The phone** lies on the south nightstand, already booted at 100%. E takes it; Q raises it. No charging objective,
+   dead-battery dialogue or first-pickup boot scare. It can be carried and its camera archives/calling used immediately.
+   Putting it back on charge remains optional. Early LIVE is the ordinary feed; its scripted visitor waits for Act III.
 3. **The wardrobe's right door**: E → it gives a centimetre and stops; hangers rattle inside. *"Stuck."* (He is holding
    it.) It stays stuck until he has been seen; after the glass it no longer rattles (he is in the bathroom then).
 4. **The kitchen.** On the outside of the fridge door, held by a magnet, a small printed notice: *"NOTICE TO RESIDENTS.
@@ -153,12 +152,12 @@ of them 3 s after the game resumes).
     heavy shifts **in the ceiling**, moving towards the wardrobe. The mirror is fogged, with one band wiped clear at a
     head height above yours. *"Someone wiped the mirror."* Nudge 45 s after power-back if not visited: *"The
     bathroom."*
-14. **The phone** (if it is on its charger with power, once the player is within earshot of it, 7 m, or two minutes
-    after power-back): its screen lights the nightstand with its maker's mark for 3 s, silently; then it **buzzes hard
-    against the wooden nightstand** with everything it missed, the lock screen lit with the alerts (dark again after
-    20 s). Heard from another room: *"My phone."* Home Cam: clips **00:47** (the wardrobe's left door opens a hand's width, a white face in the
-    gap) and **02:58** (the empty bed, a figure at its foot turning to the lens), and **LIVE**. If the charger was never
-    plugged in: 20 s after power-back, *"My phone. ...The charger."*
+14. **The phone reminder** arrives after at least 35 s of quiet following power-back. Charging is irrelevant. A carried
+    phone buzzes in the pocket; on the nightstand, wait until within 7 m or a two-minute fallback. Its screen lights with
+    the camera alerts (dark again after 20 s on wood). Heard from another room: *"My phone."* Home Cam archives:
+    **00:47** (the wardrobe's left door opens a hand's width, a white face in the gap) and **02:58** (the empty bed,
+    a figure at its foot turning to the lens). Watched clips stay read. The reminder does not reboot the phone or interrupt
+    the current app; after this beat, LIVE may stage the visitor. An uncollected-phone nudge says *"My phone. ...On the nightstand."*
 15. **The nest.** The right wardrobe door, ajar since he went in, now opens. As it swings, a hanger drops and clatters;
     dust. On the floor: a folded charcoal blanket, water bottles, a brass key with a paper tag "5B" (*"5B." "Not
     mine."*), and polaroids of your bed at night with you asleep in it, taken from where you are standing. *"That's my
@@ -217,11 +216,15 @@ The power is out again and stays out: the main switch is snapped off. He hunts t
   up, steps out and breathes in (your moment), then comes at a run. A player who runs at the thump gets away.
 - **The race.** Starting on the front door's lock before the hunt brings him down the same way: he lands in the
   wardrobe and runs for the front door; holding E for its 3 s wins by about a second.
-- **Police.** The phone (if booted): an emergency call. *"Emergency. What's the address?"* Then what the player chooses
+- **Police.** The charged phone allows an emergency call immediately. Before a sighting, the player reports uncertainty
+  (a broken glass only after it actually breaks), rather than dispatching police. Then what the player chooses
   to whisper depends on what they found: *"There's someone in my flat."* always; *"He's in the ceiling. Above my
   wardrobe."* (found the nest); *"It's the man they evicted. From 5B."* (read the notice and found the tagged key).
   *"Officers are on their way. Stay on the line if you can."* They arrive in 60 / 100 / 110 s (Story / Normal / Hard).
   A dispatcher's call-back during the hunt buzzes rather than rings.
+  A credible early report dispatches officers immediately, including before power restoration; their actual arrival is
+  never postponed and can legitimately end the night early. Its forced hunt waits until restored power and the alert
+  reminder, then twelve more seconds, and allows an active LIVE scene to finish. Saved police intent rearms this trigger.
 - **Caught.** The view is wrenched round to him; your own torch (gripped on; without one, a lightning flash) on the
   mask; the knife comes down. A full-level
   sting, the camera kicks, blood hits the lens, and the player falls: the view drops to the floor and rolls, and he
@@ -246,7 +249,7 @@ supports (someone was here / it was in my head).
 
 ## Evidence (the journal)
 
-Each with the thought you had: the stuck wardrobe · the dead phone · the notice · the empty key bowl · the gap on the knife
+Each with the thought you had: the stuck wardrobe · the notice · the empty key bowl · the gap on the knife
 rack · the broken glass · the blood in the spill · the locked bathroom · the man in the corridor · the prints · the wiped
 mirror · the nest · the key tagged 5B · the polaroids (and the back of the oldest) · clips 00:47 and 02:58 · the
 prescription (zolpidem: "may cause sleepwalking, complex sleep behaviours and hallucinations") · the sleep diary.

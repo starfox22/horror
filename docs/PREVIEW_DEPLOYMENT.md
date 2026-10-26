@@ -4,7 +4,7 @@ All Codex development continues on `codex-review`. The owner must explicitly req
 
 ## Current baseline and paths
 
-On 2026-10-26, a fresh fetch confirmed `main` and Claude's branch were exactly the same build 0.15 commit, `c5a619f1e75881f46edbcf392f6c7f1e27e7a47e`. Codex was fast-forwarded to that entire history; the 0.16 bug pass continues from it. See [REVIEW_16.md](REVIEW_16.md) and [HANDOFF.md](HANDOFF.md).
+On 2026-10-26, a fresh fetch confirmed `main` and Claude's branch were exactly the same build 0.15 commit, `c5a619f1e75881f46edbcf392f6c7f1e27e7a47e`. Codex was fast-forwarded to that entire history; the 0.16 bug pass and 0.17 charged-phone review continue from it. See [REVIEW_17.md](REVIEW_17.md), [REVIEW_16.md](REVIEW_16.md) and [HANDOFF.md](HANDOFF.md).
 
 | Path | Source |
 | --- | --- |

@@ -118,6 +118,19 @@ async function main() {
     };
     try {
     s.player.camera = s.camera;
+    await step('charged first phone pickup', async () => {
+      const ph = s.phone;
+      if (!ph.booted || ph.charge !== 100 || !ph.onCharger) throw new Error('A new night must start with a charged, ready phone on the nightstand');
+      ph.takeFromCharger(); ph.toggle();
+      for (let i = 0; i < 30; i++) ph.update(0.05);
+      if (ph.app_ !== 'lock' || !ph.has || !ph.holder.enabled || ph.charging || ph.booting !== null) throw new Error('First pickup must work immediately without charging or rebooting');
+      const pose = ph.holder.getLocalPosition().clone(), rotation = ph.holder.getLocalRotation().clone();
+      for (let i = 0; i < 20; i++) ph.update(0);
+      if (!pose.equals(ph.holder.getLocalPosition()) || !rotation.equals(ph.holder.getLocalRotation())) throw new Error('Paused phone pose moved');
+      out.checks.push({ name: 'first pickup charged and pose frozen in pause', pass: true, charge: ph.charge });
+      ph.raised = false;
+      for (let i = 0; i < 30; i++) ph.update(0.05);
+    }, 6);
     await step('open fridge', async () => { s.fridge.toggle(); for (let i = 0; i < 400 && s.fridge.moving; i++) { s.fridge.update(1 / 60); await frames(1); } });
     await step('drink', async () => { s.drink.start(); for (const t of [0.5, 1.0, 1.5, 2.5, 3.5, 5.0, 6.5, 7.3, 8.0]) { s.drink.apply(t); await frames(1); } s.drink.finish(); });
     await step('close fridge', async () => { s.fridge.toggle(); for (let i = 0; i < 400 && s.fridge.moving; i++) { s.fridge.update(1 / 60); await frames(1); } });
@@ -139,7 +152,7 @@ async function main() {
     await step('the figure', async () => { s.camera.setPosition(3.4, 1.62, 3.55); s.camera.lookAt(new s.pc.Vec3(12.3, 1.3, 3.55)); s.intruder.show(true); s.intruder.place(12.35, 3.55, -90); s.intruder.play('idle_breathe_01', { blend: 0 }); }, 6);
     await step('his run', async () => { s.story.flags.delete('silhouette'); s.story.sighting = null; s.story.startSighting({ seen: true }); for (let t = 0; t < 4; t += 0.05) { s.story.update(0.05); s.intruder.update?.(); if (Math.round(t * 20) % 10 === 0) await frames(1); } }, 6);
     await step('nest hanger', async () => { s.story.flags.delete('hanger'); s.story.wardrobeOpened({ id: 'right' }); await tick(2.5); for (let t = 0; t < 1.5; t += 0.05) s.nest.update(0.05); }, 6);
-    await step('phone boots', async () => { s.intruder.show(false); s.camera.setPosition(12.75, 1.5, 1.05); s.camera.lookAt(new s.pc.Vec3(13.6, 0.57, 1.8)); s.phone.booted = false; s.phone.onCharger = true; s.phone.pluggedIn = true; s.phone.charger?.(true); s.phone.boot(); await tick(3.5); }, 6);
+    await step('phone alert reminder', async () => { s.intruder.show(false); s.camera.setPosition(12.75, 1.5, 1.05); s.camera.lookAt(new s.pc.Vec3(13.6, 0.57, 1.8)); s.phone.onCharger = true; s.phone.pluggedIn = true; s.phone.charger?.(true); s.story.flags.delete('alerts'); s.phone.notifyAlerts(); await tick(3.5); }, 6);
     await step('phone', async () => { s.phone.take(); s.phone.charge = 40; s.phone.booted = true; s.phone.dirty = true; s.phone.raised = true; await tick(1); }, 6);
     await step('LIVE', async () => { s.phone.openLive(); await tick(8); }, 10);
     await step('hunt', async () => { s.phone.raised = false; s.seccam.stopLive(); s.story.huntStart('test'); await tick(6); }, 10);

@@ -41,7 +41,7 @@ export class Devices {
     this.computer = this.makeComputer(interactions);
     this.coffee = this.makeCoffee(interactions);
     app.on('update', (dt) => this.update(dt));
-    app.on('destroy', () => { this.coffee?.playback?.stop?.(); this.coffee?.cycle.stop(); this.coffee?.effects?.destroy(); });
+    app.on('destroy', () => { this.cancelComputerRestart(this.computer); this.coffee?.playback?.stop?.(); this.coffee?.cycle.stop(); this.coffee?.effects?.destroy(); });
   }
 
   // A small animation: fn(t in 0..1) over `seconds`, then done().
@@ -145,13 +145,28 @@ export class Devices {
     if (pc) {
       pc.set(pc.level);
       const live = this.power?.live('living');
-      if (!live && pc.on) pc.down = true;
-      if (live && pc.down && event?.settled && !pc.busy) {
-        pc.down = false; pc.on = false; pc.level = 0; pc.set(0);
-        setTimeout(() => { if (this.power?.live('living')) this.toggleComputer(pc); }, 2500);
+      if (!live) {
+        this.cancelComputerRestart(pc);
+        if (pc.on) pc.down = true;
+      }
+      if (live && pc.down && event?.settled && !pc.busy && pc.restartTimer == null) {
+        pc.on = false; pc.level = 0; pc.set(0);
+        pc.restartTimer = setTimeout(() => {
+          pc.restartTimer = null;
+          if (this.power?.live('living') && pc.down && !pc.on && !pc.busy) this.toggleComputer(pc);
+        }, 2500);
       }
     }
+    // A pump and grinder cannot keep running on a dead worktop circuit. Visual
+    // inrush/surge flicker alone does not cut the supply: use live(), not k().
+    if (this.power && !this.power.live('kitchen')) this.stopCoffee();
     this.coffee?.glow(this.coffee.level);
+  }
+
+  cancelComputerRestart(pc) {
+    if (!pc) return;
+    clearTimeout(pc.restartTimer);
+    pc.restartTimer = null;
   }
 
   // --- MacBook ----------------------------------------------------------------------------------------------------
@@ -227,13 +242,15 @@ export class Devices {
       if (glow) { glow.light.intensity = pc.glowBase * v; glow.light.enabled = v > 0.01; }
     };
     pc.set(1);    // left on: the screens light the office until the player shuts the computer down
-    interactions.add({ pos: new Vec3(5.24, 1.10, -1.10), size: 0.22, label: () => `${pc.on ? 'Shut down' : 'Turn on'} the computer`,
+    interactions.add({ pos: new Vec3(5.24, 1.10, -1.10), size: 0.22, label: () => !pc.on && this.power && !this.power.live('living')
+      ? 'Computer · no power' : `${pc.on ? 'Shut down' : 'Turn on'} the computer`,
       use: () => this.toggleComputer(pc), active: () => !pc.busy });
     return pc;
   }
 
   toggleComputer(pc) {
-    if (pc.busy) return;
+    if (pc.busy || !pc.on && this.power && !this.power.live('living')) return false;
+    this.cancelComputerRestart(pc); pc.down = false;      // manual control supersedes automatic recovery
     if (pc.glow) this.override?.([pc.glow]);
     pc.busy = true;
     pc.on = !pc.on;
@@ -241,13 +258,20 @@ export class Devices {
     if (pc.on) {
       // Power button, a moment of black, the chime, then the screen fades up (a grey boot screen first).
       this.sounds?.click?.(2600, 0.25, 0.1, at);
-      setTimeout(() => this.sounds?.chime?.(at), 700);
-      this.run(0.7, () => {}, () => this.run(0.35, (t) => pc.set(0.25 * t), () => this.run(1.6, () => {}, () =>
-        this.run(0.9, (t) => pc.set(0.25 + 0.75 * ease(t)), () => { pc.busy = false; this.onLightChange?.(); }))));
+      this.run(0.7, () => {}, () => {
+        if (!this.power || this.power.live('living')) this.sounds?.chime?.(at);
+        this.run(0.35, (t) => pc.set(0.25 * t), () => this.run(1.6, () => {}, () =>
+          this.run(0.9, (t) => pc.set(0.25 + 0.75 * ease(t)), () => {
+            pc.busy = false;
+            if (!this.power || this.power.live('living')) pc.down = false;
+            this.onLightChange?.();
+          })));
+      });
     } else {
       this.sounds?.click?.(2200, 0.2, 0.08, at);
       this.run(1.2, () => {}, () => this.run(0.25, (t) => pc.set(1 - t), () => { pc.busy = false; this.onLightChange?.(); }));
     }
+    return true;
   }
 
   // --- coffee machine ---------------------------------------------------------------------------------------------
@@ -269,7 +293,8 @@ export class Devices {
       led.light.intensity = 0.05 * k * p; led.light.enabled = k * p > 0.01;
     };
     interactions.add({ pos: new Vec3(COFFEE_POSITION.x, COFFEE_POSITION.y, COFFEE_POSITION.z), size: 0.2,
-      label: () => coffee.busy ? `${coffee.phase}…` : coffee.cycle.state ? 'Coffee ready · brew fresh cups' : 'Make a coffee',
+      label: () => this.power && !this.power.live('kitchen') ? 'Coffee machine · no power'
+        : coffee.busy ? `${coffee.phase}…` : coffee.interrupted ? 'Brew fresh cups' : coffee.cycle.state ? 'Coffee ready · brew fresh cups' : 'Make a coffee',
       use: () => this.brew(coffee) });
     return coffee;
   }
@@ -282,17 +307,27 @@ export class Devices {
   }
 
   brew(c) {
-    if (c.busy) return false;
+    if (c.busy || this.power && !this.power.live('kitchen')) return false;
     this.override?.([c.led]);
     c.playback?.stop?.();
     c.effects ||= this.createCoffeeEffects();
     c.effects.reset();
     c.playback = this.sounds?.coffee?.(COFFEE_POSITION) || null;
     c.cycle.start(c.playback?.elapsed);
-    c.busy = true; c.phase = 'Heating'; c.lightCaptured = false;
+    c.busy = true; c.interrupted = false; c.phase = 'Heating'; c.lightCaptured = false;
     c.glow(0);
     c.effects.update(c.cycle.state);
     return true;
+  }
+
+  stopCoffee() {
+    const c = this.coffee;
+    if (!c?.busy || !c.cycle.active) return;
+    c.playback?.stop?.(); c.playback = null;
+    c.cycle.stop(); c.busy = false; c.interrupted = true; c.phase = 'Interrupted';
+    // Keep the serving already poured; stop the pump and new steam particles.
+    c.cycle.state = { ...c.cycle.state, busy: false, flow: 0, drip: false, steam: 0, glow: 0 };
+    c.glow(0); c.effects?.update(c.cycle.state);
   }
 
   updateCoffee(dt) {

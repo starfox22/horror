@@ -4,7 +4,6 @@
 // Build 0.14 (docs/STORY.md v3): the evicted man never left. The texts say what was seen, never who he is.
 export const EVIDENCE = [
   { id: 'stuck', title: 'The wardrobe door', text: 'The right door of the wardrobe would not open. It gave a centimetre, then stopped. Stuck, I thought.', points: 'both' },
-  { id: 'phone-dead', title: 'My phone', text: 'Dead on the nightstand. The charger was pulled out of the wall. I always plug it in.', points: 'both' },
   { id: 'notice', title: 'Notice to residents', text: 'The resident who had been causing disturbances over the last month has finally been evicted. Finally.', points: 'real' },
   { id: 'key-bowl', title: 'The key bowl', text: 'Empty. My keys are always in it.', points: 'real' },
   { id: 'knife', title: 'The knives', text: 'One missing from the rack. The biggest one.', points: 'real' },
@@ -69,6 +68,11 @@ export class Journal {
 
   entries() { return EVIDENCE.filter(e => this.found.has(e.id)).sort((a, b) => this.found.get(a.id) - this.found.get(b.id)); }
   save() { return [...this.found.keys()]; }
-  load(ids = []) { this.found = new Map(ids.map((id, i) => [id, i + 1])); }
+  load(ids = []) {
+    // The dead-phone objective was retired in 0.17. Old/unknown entries must not inflate the current evidence total.
+    const valid = new Set(EVIDENCE.map(e => e.id));
+    this.found = new Map([...new Set(ids)].filter(id => valid.has(id)).map((id, i) => [id, i + 1]));
+    this.pending.length = 0;
+  }
   reset() { this.found.clear(); this.pending.length = 0; }
 }

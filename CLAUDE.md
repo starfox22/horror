@@ -5,8 +5,8 @@ look), built on PlayCanvas 2.23.1 (WebGPU with a WebGL 2 fallback) and Vite. The
 on its own branch, Codex on `codex-review`) and asks for one batch of changes at a time.
 
 Current owner handoff (2026-10-26): development returned to Codex. `main` and this Claude branch were exactly the
-same 0.15 commit (`c5a619f`); Codex incorporated that whole history and continues its 0.16 bug pass on `codex-review`.
-Read `docs/REVIEW_16.md` and the current section of `docs/HANDOFF.md` before resuming. The Claude-specific branch
+same 0.15 commit (`c5a619f`); Codex incorporated that whole history and continues with build 0.17 on `codex-review`.
+Read `docs/REVIEW_17.md`, `docs/REVIEW_16.md` and the current section of `docs/HANDOFF.md` before resuming. The Claude-specific branch
 rules below remain in force for future Claude tasks; historical main-promotion approvals do not authorize new pushes.
 
 ## Read first, in this order
@@ -31,7 +31,7 @@ rules below remain in force for future Claude tasks; historical main-promotion a
 ## Working rules (the owner's)
 
 - Work on `claude/pensive-volta-et0etl` (the owner: "do not create a new one", even if the session suggests another
-  branch); start by fetching it and `main` and merging `main` in if it moved (Codex pushes docs there). Merge into or
+  branch); start by fetching it and `main` and merging `main` in if it moved after an owner-approved promotion. Merge into or
   push to `main` **only when the owner asks in the current conversation**; a past approval does not carry over. No
   pull requests unless asked. Never touch `codex-review`.
 - Every push to `claude/pensive-volta-et0etl` publishes a playable preview at **https://starfox22.github.io/horror/claude/**

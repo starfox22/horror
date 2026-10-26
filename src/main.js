@@ -42,7 +42,7 @@ import { World } from './world.js';
 import { Taps } from './taps.js';
 import { Nest } from './nest.js';
 import { Seccam } from './seccam.js';
-import { Phone } from './phone.js';
+import { Phone, freshPhoneState, CLIPS } from './phone.js';
 import { Hunt } from './hunt.js';
 import { Death } from './death.js';
 import { Endings } from './endings.js';
@@ -282,6 +282,7 @@ const nest = new Nest({ app, interactions, story, hud, bank, closets, props, con
 const seccam = new Seccam({ app, camera, intruder, closets, nest, story, bank, props, configureMaterial: m => probes.assign(m, 'bed') });
 const phone = new Phone({ app, camera, interactions, bank, story, hud, seccam, clock: { now: () => nightClock() } });
 phone.power = power;
+phone.motion = () => ({ yaw: player.yaw, pitch: player.pitch, speed: player.bobOn ? player.vel.length() : 0, phase: player.bobPhase });
 const hunt = new Hunt({ app, intruder, nav, walk: grid, player, camera, flashlight, bank, story, music, difficulty: () => story.difficulty });
 const fadeEl = Object.assign(document.createElement('div'), { id: 'fade' }); document.body.appendChild(fadeEl);
 const death = new Death({ app, camera, player, intruder, bank, music, veil: fadeEl, walk: grid, flashlight, rain });
@@ -314,8 +315,7 @@ power.onChange(event => {
     if (story.has('power-cut') && !story.has('restored') && power.rcd && power.main && power.live('lights2')) story.powerRestored();
   }
 });
-// The phone (props.js 'phone'): in the hand (phone.js), and lying on the south nightstand (dead, its charger pulled out
-// of the wall, when the night begins; charging there once it is put back: story.js phoneTaken / phoneCharging).
+// The charged phone (props.js 'phone'): in the hand and lying on the south nightstand. Charging is optional.
 {
   const held = props.make('phone', { name: 'phone model', configure: m => probes.assign(m, 'main'), castShadows: false });
   if (held) phone.setModel(held);
@@ -338,6 +338,7 @@ window.addEventListener('blur', () => { eDown = false; });
 sys.eHeld = () => eDown && isPlaying();                 // the front door's lock turns while E is held (story.js)
 flashlight.canToggle = () => isPlaying() && !death.busy && !endings.running;
 phone.blocked = () => !isPlaying() || death.busy || !!endings.running || drink.running;   // one right arm at a time
+player.blocked = () => !isPlaying() || death.busy || !!endings.running || drink.running;
 // Behind the pause menu nothing moves on: the phone's boot, the LIVE scene, a death and its wake wait.
 phone.paused = seccam.paused = death.paused = power.paused = () => !isPlaying();
 app.on('update', dt => thought.update(isPlaying() ? dt : 0));
@@ -461,7 +462,7 @@ app.on('update', (dt) => {
   if (death.busy || endings.running) { /* the camera is theirs */ }
   else if (wake && !wake.completed) wake.update();
   else if (drink.running) drink.update();
-  else if (hud.reading) { player.vel?.set?.(0, 0, 0); }   // reading a paper: the night (and you) stand still
+  else if (hud.reading) { player.vel.set(0, 0, 0); player.keys.clear(); }   // reading: no queued steps after closing
   else player.update(dt);
   interactions.enabled = player.active && !drink.running && !phone.raised && !hud.reading && !death.busy;
   interactions.update();
@@ -541,7 +542,7 @@ function chapterSave(act) {
   if (act === 4) power.rcd = true, power.breakers.bathroom = false;
   if (act === 2) power.rcd = false;
   return { v: 1, act, flags, time: [0, 0, 110, 240, 420][act], deaths: 0, seed: Date.now() >>> 0, difficulty: menu?.settings.difficulty || 'normal', power,
-    journal: CHAPTER_JOURNAL[act] || [], phone: { has: act >= 4, charge: act >= 4 ? 9 : 0, booted: act >= 4, onCharger: act < 4, pluggedIn: act >= 2, chargeTime: act >= 3 ? 120 : 0, silenced: false, notifications: [] }, items: [] };
+    journal: CHAPTER_JOURNAL[act] || [], phone: { ...freshPhoneState({ has: act >= 4, pluggedIn: act >= 2 }), notifications: act >= 4 ? CLIPS.map(c => ({ ...c, unread: true })) : [] }, items: [] };
 }
 
 // The world as a checkpoint left it, beyond what world.js rebuilds from the flags.

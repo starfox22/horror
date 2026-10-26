@@ -38,7 +38,8 @@ export class Death {
     app.on('update', dt => this.update(this.paused?.() ? 0 : dt));   // paused (main.js): it waits
     doc.defaultView?.addEventListener?.('keydown', (e) => {
       const r = this.running;
-      if (r?.wake && r.t > 0.5 && !e.repeat) r.t = Math.max(r.t, r.wakeEnd - 0.35);
+      if (r?.wake && r.t > 0.5 && !this.paused?.() && !e.repeat && e.code !== 'Escape'
+        && !/^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName)) r.t = Math.max(r.t, r.wakeEnd - 0.35);
     });
   }
 

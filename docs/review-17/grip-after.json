@@ -1,0 +1,107 @@
+{
+  "pass": true,
+  "reports": [
+    {
+      "pass": true,
+      "failures": [],
+      "view": "lock",
+      "handVertices": 4020,
+      "screenFrontVertices": 0,
+      "trianglesOverScreen": 0,
+      "projectedTriangleAreaMm2": 0,
+      "maxEnvelopeCompressionMm": 0.821,
+      "fingertipGapMm": {
+        "thumb": 1.723,
+        "index": 2.233,
+        "middle": 2.687,
+        "ring": 2.587,
+        "pinky": 2.988
+      },
+      "phoneDimensionsMm": [
+        73.103,
+        150,
+        13.288
+      ],
+      "screen": {
+        "min": [
+          -0.033399924635887146,
+          -0.0724538117647171,
+          0.005902787670493126
+        ],
+        "max": [
+          0.03339989110827446,
+          0.0724538117647171,
+          0.005902788136154413
+        ]
+      }
+    },
+    {
+      "pass": true,
+      "failures": [],
+      "view": "video",
+      "handVertices": 4020,
+      "screenFrontVertices": 0,
+      "trianglesOverScreen": 0,
+      "projectedTriangleAreaMm2": 0,
+      "maxEnvelopeCompressionMm": 0.821,
+      "fingertipGapMm": {
+        "thumb": 1.723,
+        "index": 2.233,
+        "middle": 2.687,
+        "ring": 2.587,
+        "pinky": 2.988
+      },
+      "phoneDimensionsMm": [
+        73.103,
+        150,
+        13.288
+      ],
+      "screen": {
+        "min": [
+          -0.033399924635887146,
+          -0.0724538117647171,
+          0.005902787670493126
+        ],
+        "max": [
+          0.03339989110827446,
+          0.0724538117647171,
+          0.005902788136154413
+        ]
+      }
+    },
+    {
+      "pass": true,
+      "failures": [],
+      "view": "turning",
+      "handVertices": 4020,
+      "screenFrontVertices": 0,
+      "trianglesOverScreen": 0,
+      "projectedTriangleAreaMm2": 0,
+      "maxEnvelopeCompressionMm": 0.821,
+      "fingertipGapMm": {
+        "thumb": 1.723,
+        "index": 2.233,
+        "middle": 2.687,
+        "ring": 2.587,
+        "pinky": 2.988
+      },
+      "phoneDimensionsMm": [
+        73.103,
+        150,
+        13.288
+      ],
+      "screen": {
+        "min": [
+          -0.033399924635887146,
+          -0.0724538117647171,
+          0.005902787670493126
+        ],
+        "max": [
+          0.03339989110827446,
+          0.0724538117647171,
+          0.005902788136154413
+        ]
+      }
+    }
+  ]
+}

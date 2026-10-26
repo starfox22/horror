@@ -103,16 +103,20 @@ fn hash(p: vec2f) -> f32 { return fract(sin(dot(p, vec2f(12.9898, 78.233)) + uni
     });
     this.uSource = device.scope.resolve('irSource'); this.uTime = device.scope.resolve('irTime'); this.uGain = device.scope.resolve('irGain');
     this.clips = {};
-    this.live = null; this.clip = null; this.frameSkip = 0; this.scene = null;
+    this.live = null; this.clip = null; this.frameSkip = 0; this.scene = null; this.playbackRequest = 0;
     app.on('postrender', () => this.blit());
     app.on('update', dt => this.update(this.paused?.() ? 0 : dt));   // paused (main.js): it waits
     // A hunt that begins while the scene plays (an emergency call, the front door, a fallback) ends the scene first.
     story?.on?.(flag => { if (flag === 'hunt') this.endScene(); });
   }
 
+  // An already charged phone can show the ordinary feed from Act I. The scripted visitor still belongs after the
+  // restored-power quiet and camera alert; watching an early feed must neither skip those acts nor hold their fallback.
+  get scriptedLiveReady() { return !!this.story?.has('restored') && !!this.story?.has('alerts'); }
+
   // LIVE's scene is playing, or about to (LIVE open outside the bedroom, counting down to it): story.js holds its hunt
-  // fallback meanwhile.
-  get liveRunning() { return !!this.scene || (!!this.live && !this.live.dead && !this.story?.has('live') && this.live.t > 0); }
+  // fallback meanwhile. Explicit developer playback starts a scene directly, regardless of the ordinary feed's gate.
+  get liveRunning() { return !!this.scene || (this.scriptedLiveReady && !!this.live && !this.live.dead && !this.story?.has('live') && this.live.t > 0); }
 
   // During the scene he is drawn for this camera alone (intruder.js: `cameraOnly` in his meshes' visibility test): the
   // player's own eyes never meet the 8 s old him walking through the real flat.
@@ -155,8 +159,9 @@ fn hash(p: vec2f) -> f32 { return fract(sin(dot(p, vec2f(12.9898, 78.233)) + uni
 
   async playClip(id, videoMat) {
     this.stopLive();
+    const request = this.playbackRequest;
     const c = await this.loadClip(id);
-    if (!c) return;
+    if (!c || request !== this.playbackRequest) return;
     this.clip = { c, t: 0, frame: -1, videoMat };
     videoMat.emissiveMap = c.texture; videoMat.emissive = new Color(1, 1, 1); videoMat.update();
   }
@@ -171,14 +176,18 @@ fn hash(p: vec2f) -> f32 { return fract(sin(dot(p, vec2f(12.9898, 78.233)) + uni
 
   // --- LIVE --------------------------------------------------------------------------------------------------------
   startLive(videoMat, inBedroom) {
-    this.clip = null;
+    this.stopLive();
     videoMat.emissiveMap = this.ir; videoMat.emissive = new Color(1, 1, 1); videoMat.update();
     const dead = this.story?.has('hunt');
     this.live = { t: 0, videoMat, inBedroom, scene: null, dead };
     this.entity.camera.enabled = !dead;
   }
 
-  stopLive() { this.live = null; this.entity.camera.enabled = false; }
+  stopLive() {
+    // A load can finish after Back, Q, another clip or LIVE. It may fill the asset cache, but cannot reclaim playback.
+    this.playbackRequest = (this.playbackRequest ?? 0) + 1;
+    this.live = null; this.clip = null; this.entity.camera.enabled = false;
+  }
 
   liveStatus() {
     const l = this.live; if (!l) return '';
@@ -223,7 +232,7 @@ fn hash(p: vec2f) -> f32 { return fract(sin(dot(p, vec2f(12.9898, 78.233)) + uni
       const blank = live.inBedroom();
       this.entity.camera.enabled = this.frameSkip === 0 && !blank;
       if (blank !== live.blank && live.videoMat) { live.blank = blank; live.videoMat.emissive = blank ? new Color(0, 0, 0) : new Color(1, 1, 1); live.videoMat.update?.(); }
-      if (!this.scene && !live.inBedroom() && !this.story?.has('live')) { live.t += dt; if (live.t > 2.5) this.startScene(); }
+      if (this.scriptedLiveReady && !this.scene && !live.inBedroom() && !this.story?.has('live')) { live.t += dt; if (live.t > 2.5) this.startScene(); }
       // In the bedroom the feed never comes (the camera is in there with you): the phone says so, once.
       if (live.inBedroom()) {
         live.bedT = (live.bedT || 0) + dt;

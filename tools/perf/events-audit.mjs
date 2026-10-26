@@ -66,6 +66,26 @@ if (!startup?.ready || startup.error) throw new Error(`Initialization failed: ${
 report.initialized = true;
 console.log('initialized', JSON.stringify(startup));
 
+// Exercise the real constructor state and legacy continuation in the final bundle,
+// before the event harness deliberately resets the story through developer cases.
+report.phoneChecks = await page.evaluate(() => {
+  const s = window.__app, ph = s.phone, original = ph.save(), hadFlag = s.story.has('phone'), checks = [];
+  const check = (name, pass) => { if (!pass) throw new Error(name); checks.push({ name, pass: true }); };
+  check('new night starts with a charged, booted phone', ph.charge === 100 && ph.booted && ph.onCharger);
+  ph.takeFromCharger(); ph.toggle();
+  for (let i = 0; i < 30; i++) ph.update(0.05);
+  check('actual first pickup immediately displays the working lock screen', ph.has && ph.holder.enabled && ph.app_ === 'lock' && !ph.charging && ph.booting === null);
+  const at = ph.holder.getLocalPosition().clone(), rotation = ph.holder.getLocalRotation().clone();
+  for (let i = 0; i < 20; i++) ph.update(0);
+  check('held phone pose freezes during pause', at.equals(ph.holder.getLocalPosition()) && rotation.equals(ph.holder.getLocalRotation()));
+  ph.load({ ...original, charge: 0, booted: false });
+  check('legacy dead-phone continuation is charged and clears transient hand/video state', ph.charge === 100 && ph.booted && !ph.holder.enabled && !ph.video.enabled && !ph.handCarrier?.enabled);
+  ph.load(original);
+  if (!hadFlag) s.story.flags.delete('phone');
+  return checks;
+});
+console.log('phone checks', JSON.stringify(report.phoneChecks));
+
 // In the page: hooks that record what the game does, and one event's run.
 await page.evaluate(() => {
   const s = window.__app;

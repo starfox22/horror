@@ -4,7 +4,13 @@ A browser horror game in the spirit of Konami's P.T. (first person, one quiet ho
 works with AI agents; whoever picks this up continues from the state below and keeps this file current. A new Claude
 session starts from `CLAUDE.md` (repo root: what to read, rules, commands, publishing); keep it current too.
 
-## Current continuation — Codex, 2026-10-26
+## Current continuation — Codex 0.17, 2026-10-26
+
+The owner requested a further bug pass, a review of the held phone, and a phone already charged at first pickup. Continue on `codex-review` from build 0.17; read [REVIEW_17.md](REVIEW_17.md) and the [matched screenshot gallery](review-17/README.md). New nights and chapter presets use `freshPhoneState()` (100%, booted), and old dead-phone saves migrate without requiring a charge. The later alert is an independent story reminder; ordinary early LIVE works but its scripted visitor waits for restored power and alerts. An early credible police call still dispatches immediately; its forced hunt waits for that beat and respects an active LIVE scene.
+
+The phone-specific grip is in `src/phone-grip.js` and its play-time motion is in `src/phone-motion.js`. Keep the existing licensed hand and phone and the drinking pose separate from this grip. `tools/check-phone-grip.mjs` skins the real asset through the actual runtime pose and verifies screen projection/contact. Phone/media lifecycle, input, appliance-power recovery, coffee interruption and reading/wake guards have new regressions. Use [REVIEW_17.md](REVIEW_17.md) for the complete change list and validation. The playable review URL remains https://starfox22.github.io/horror/codex/?v=0.17. Do not promote it to main without a new explicit owner request.
+
+## Prior continuation — Codex 0.16, 2026-10-26
 
 The owner moved development back to Codex and requested a branch comparison, incorporation of all latest Claude work, a bug pass and an updated playable link. Fresh remote `main` and `claude/pensive-volta-et0etl` were exactly identical at build 0.15, commit `c5a619f1e75881f46edbcf392f6c7f1e27e7a47e`. Existing `codex-review` was fast-forwarded to that shared commit, including all 59 newer Claude commits and preserving all prior Codex work. Development now continues on `codex-review`, with the 0.16 bug pass documented in [REVIEW_16.md](REVIEW_16.md). The gameplay/story baseline is the complete 0.15 night, including [BUILD_015.md](BUILD_015.md), [BUILD_014.md](BUILD_014.md) and [STORY.md](STORY.md). Earlier main-promotion permissions and Claude branch instructions remain historical; Codex must not push to either source branch without a current explicit request.
 

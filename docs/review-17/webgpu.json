@@ -1,0 +1,223 @@
+{
+  "mode": "webgpu",
+  "url": "http://127.0.0.1:4180/",
+  "initialized": true,
+  "steps": [
+    {
+      "name": "charged first phone pickup",
+      "shaders": [],
+      "materials": [],
+      "shadowFaces": 0,
+      "maxFacesPerFrame": 0
+    },
+    {
+      "name": "open fridge",
+      "shaders": [],
+      "materials": [],
+      "shadowFaces": 29,
+      "maxFacesPerFrame": 1
+    },
+    {
+      "name": "drink",
+      "shaders": [],
+      "materials": [],
+      "shadowFaces": 0,
+      "maxFacesPerFrame": 0
+    },
+    {
+      "name": "close fridge",
+      "shaders": [],
+      "materials": [],
+      "shadowFaces": 20,
+      "maxFacesPerFrame": 2
+    },
+    {
+      "name": "falling glass",
+      "shaders": [],
+      "materials": [],
+      "shadowFaces": 0,
+      "maxFacesPerFrame": 0
+    },
+    {
+      "name": "lightning",
+      "shaders": [],
+      "materials": [],
+      "shadowFaces": 10,
+      "maxFacesPerFrame": 7
+    },
+    {
+      "name": "kitchen switch",
+      "shaders": [],
+      "materials": [],
+      "shadowFaces": 0,
+      "maxFacesPerFrame": 0
+    },
+    {
+      "name": "flashlight",
+      "shaders": [],
+      "materials": [],
+      "shadowFaces": 16,
+      "maxFacesPerFrame": 2
+    },
+    {
+      "name": "coffee",
+      "shaders": [],
+      "materials": [],
+      "shadowFaces": 41,
+      "maxFacesPerFrame": 3
+    },
+    {
+      "name": "taps",
+      "shaders": [],
+      "materials": [],
+      "shadowFaces": 24,
+      "maxFacesPerFrame": 2
+    },
+    {
+      "name": "light under the door",
+      "shaders": [],
+      "materials": [],
+      "shadowFaces": 18,
+      "maxFacesPerFrame": 2
+    },
+    {
+      "name": "bathroom light out",
+      "shaders": [],
+      "materials": [],
+      "shadowFaces": 22,
+      "maxFacesPerFrame": 2
+    },
+    {
+      "name": "power cut",
+      "shaders": [],
+      "materials": [],
+      "shadowFaces": 22,
+      "maxFacesPerFrame": 2
+    },
+    {
+      "name": "fuse box",
+      "shaders": [],
+      "materials": [],
+      "shadowFaces": 12,
+      "maxFacesPerFrame": 2
+    },
+    {
+      "name": "levers",
+      "shaders": [],
+      "materials": [],
+      "shadowFaces": 29,
+      "maxFacesPerFrame": 9
+    },
+    {
+      "name": "the figure",
+      "shaders": [],
+      "materials": [],
+      "shadowFaces": 12,
+      "maxFacesPerFrame": 2
+    },
+    {
+      "name": "his run",
+      "shaders": [],
+      "materials": [],
+      "shadowFaces": 91,
+      "maxFacesPerFrame": 9
+    },
+    {
+      "name": "nest hanger",
+      "shaders": [],
+      "materials": [],
+      "shadowFaces": 56,
+      "maxFacesPerFrame": 8
+    },
+    {
+      "name": "phone alert reminder",
+      "shaders": [],
+      "materials": [],
+      "shadowFaces": 20,
+      "maxFacesPerFrame": 8
+    },
+    {
+      "name": "phone",
+      "shaders": [],
+      "materials": [],
+      "shadowFaces": 14,
+      "maxFacesPerFrame": 2
+    },
+    {
+      "name": "LIVE",
+      "shaders": [],
+      "materials": [],
+      "shadowFaces": 86,
+      "maxFacesPerFrame": 9
+    },
+    {
+      "name": "hunt",
+      "shaders": [],
+      "materials": [],
+      "shadowFaces": 22,
+      "maxFacesPerFrame": 2
+    },
+    {
+      "name": "crow",
+      "shaders": [],
+      "materials": [],
+      "shadowFaces": 26,
+      "maxFacesPerFrame": 2
+    },
+    {
+      "name": "caught",
+      "shaders": [],
+      "materials": [],
+      "shadowFaces": 36,
+      "maxFacesPerFrame": 2
+    },
+    {
+      "name": "wake",
+      "shaders": [],
+      "materials": [],
+      "shadowFaces": 26,
+      "maxFacesPerFrame": 2
+    },
+    {
+      "name": "paused bed hold",
+      "shaders": [],
+      "materials": [],
+      "shadowFaces": 4,
+      "maxFacesPerFrame": 2
+    },
+    {
+      "name": "caught without torch",
+      "shaders": [],
+      "materials": [],
+      "shadowFaces": 10,
+      "maxFacesPerFrame": 3
+    }
+  ],
+  "checks": [
+    {
+      "name": "first pickup charged and pose frozen in pause",
+      "pass": true,
+      "charge": 100
+    },
+    {
+      "name": "real bed hold stays paused",
+      "passed": true
+    },
+    {
+      "name": "real no-torch death strikes lightning",
+      "passed": true,
+      "calls": 1
+    }
+  ],
+  "problems": [],
+  "shadowBudget": null,
+  "startup": {
+    "state": {
+      "ready": true,
+      "error": null
+    },
+    "device": "webgpu"
+  },
+  "failures": [],
+  "status": "PASS"
+}

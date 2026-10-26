@@ -218,8 +218,8 @@ function seenFromCorridor(nav, walk, x, z) {
 }
 
 // Seccam's scene methods on a stand-in (its constructor needs a GPU): the man, the story, the wardrobe, the camera.
-function feed() {
-  const listeners = new Set(), flags = new Set(), calls = [];
+function feed({ ready = true } = {}) {
+  const listeners = new Set(), flags = new Set(ready ? ['restored', 'alerts'] : []), calls = [];
   const story = { has: (f) => flags.has(f), on: (fn) => listeners.add(fn), liveWatched: () => flags.add('live'),
     huntStart: (cause) => { calls.push(cause); if (!flags.has('hunt')) { flags.add('hunt'); for (const fn of listeners) fn('hunt'); } } };
   const cam = Object.create(Seccam.prototype);
@@ -228,6 +228,79 @@ function feed() {
   story.on(flag => { if (flag === 'hunt') cam.endScene(); });     // as the constructor does
   return { cam, story, flags, calls, man: cam.intruder };
 }
+
+test('an early LIVE view remains an ordinary feed until restored power and the Act III alert', () => {
+  const { cam, flags, calls } = feed({ ready: false });
+  cam.live = { t: 0, videoMat: {}, inBedroom: () => false, dead: false };
+  const step = seconds => { for (let i = 0; i < seconds * 30; i++) cam.update(DT); };
+  step(8);
+  assert.equal(cam.scene, null, 'a charged phone cannot skip the water and fuse-box acts');
+  assert.equal(cam.liveRunning, false, 'an ordinary feed does not hold the hunt fallback');
+  assert.equal(cam.live.t, 0, 'the scripted countdown has not started');
+  flags.add('restored'); step(8);
+  assert.equal(cam.scene, null, 'power alone does not skip the quiet before the alert');
+  flags.add('alerts'); step(1);
+  assert.equal(cam.liveRunning, true, 'the story now waits while the scene counts down');
+  assert.equal(cam.scene, null, 'it still gets its own 2.5-second countdown');
+  step(1.6);
+  assert.ok(cam.scene, 'LIVE plays normally once its story prerequisites are met');
+  assert.deepEqual(calls, [], 'the hunt waits until the scene itself ends');
+});
+
+test('developer LIVE can still play directly before ordinary feed story prerequisites', () => {
+  const { cam } = feed({ ready: false });
+  cam.runLive();
+  assert.ok(cam.scene, 'the explicit developer event bypasses automatic timing');
+  assert.equal(cam.liveRunning, true);
+});
+
+function delayedClips() {
+  const { cam } = feed();
+  const pending = new Map();
+  cam.loadClip = id => new Promise(resolve => pending.set(id, resolve));
+  const clip = id => ({ texture: { id }, meta: { frames: 2, fps: 1, w: 1, h: 1, cols: 2 }, img: {}, g: { drawImage() {} }, canvas: {} });
+  const material = { emissiveMap: null, update() {} };
+  return { cam, pending, clip, material };
+}
+
+test('leaving a clip while it loads cannot resume it after the player has left', async () => {
+  const { cam, pending, clip, material } = delayedClips();
+  const loading = cam.playClip('old', material);
+  cam.stopLive();
+  pending.get('old')(clip('old')); await loading;
+  assert.equal(cam.clip, null);
+  assert.equal(material.emissiveMap, null, 'the cancelled load does not replace the current texture');
+});
+
+test('the latest selected clip wins even when the previous clip finishes loading last', async () => {
+  const { cam, pending, clip, material } = delayedClips();
+  const old = cam.playClip('old', material), next = cam.playClip('next', material);
+  pending.get('next')(clip('next')); await next;
+  const selected = cam.clip;
+  pending.get('old')(clip('old')); await old;
+  assert.equal(cam.clip, selected);
+  assert.equal(material.emissiveMap.id, 'next');
+});
+
+test('switching to LIVE cancels a pending clip and preserves the infrared texture', async () => {
+  const { cam, pending, clip, material } = delayedClips();
+  cam.ir = { id: 'infrared' };
+  const loading = cam.playClip('old', material);
+  cam.startLive(material, () => false);
+  const live = cam.live;
+  pending.get('old')(clip('old')); await loading;
+  assert.equal(cam.clip, null);
+  assert.equal(cam.live, live);
+  assert.equal(material.emissiveMap, cam.ir);
+});
+
+test('lowering the phone stops an already playing clip instead of uploading hidden frames', () => {
+  const { cam, clip } = delayedClips();
+  cam.clip = { c: clip('playing'), t: 0, frame: -1 };
+  cam.stopLive();
+  assert.equal(cam.clip, null);
+  cam.update(DT);
+});
 
 test('LIVE: he is drawn for the home camera alone, leaves its frame where nothing else could see him, and the story waits for it', () => {
   const walk = new WalkGrid(COLLISION), nav = new NavGrid(walk, SIGHT);

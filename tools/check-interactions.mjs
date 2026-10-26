@@ -45,6 +45,35 @@ test('pausing stops movement and does not preserve keys entered in a menu', () =
   assert.equal(player.bobOn, bob, 'holding B must toggle once');
 });
 
+test('reading blocks mouse look, new movement and crouch keys even while pointer lock remains', () => {
+  const emit = input(), scene = app();
+  document.pointerLockElement = scene.graphicsDevice.canvas = {};
+  const player = new Player(scene, { setPosition() {}, setEulerAngles() {} }, grid(), { x: 13, z: 3.55, yaw: 90 });
+  player.active = true;
+  let reading = false;
+  player.blocked = () => reading;
+  emit('keydown', { code: 'KeyW' });
+  player.update(1 / 60);
+  reading = true;
+  const pos = player.pos.clone(), yaw = player.yaw, pitch = player.pitch, bob = player.bobOn;
+  player.update(1 / 60);
+  assert.equal(player.pos.distance(pos), 0, 'blocked state clears the velocity tail immediately');
+  assert.equal(player.keys.size, 0);
+  emit('keydown', { code: 'KeyW' });
+  emit('keydown', { code: 'KeyC' });
+  emit('keydown', { code: 'KeyB' });
+  emit('mousemove', { movementX: 80, movementY: -40 }, 'document');
+  assert.equal(player.yaw, yaw, 'the camera must not turn invisibly behind the document');
+  assert.equal(player.pitch, pitch);
+  assert.equal(player.crouched, false);
+  assert.equal(player.bobOn, bob);
+  reading = false;
+  player.update(1 / 60);
+  assert.equal(player.pos.distance(pos), 0, 'keys entered while reading cannot start movement afterwards');
+  emit('keydown', { code: 'KeyW' }); player.update(1 / 60);
+  assert.ok(player.pos.distance(pos) > 0, 'fresh input works immediately after reading');
+});
+
 test('interaction rechecks busy objects, moved targets, and pointer lock between frames', () => {
   const emit = input();
   const camera = { getPosition: () => new Vec3(), forward: new Vec3(0, 0, -1) };

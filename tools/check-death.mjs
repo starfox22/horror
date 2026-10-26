@@ -8,6 +8,7 @@ import { Death, WAKE_TO } from '../src/death.js';
 
 function scene({ reducedFlashes = false } = {}) {
   const handlers = [];
+  const keyHandlers = [];
   const els = [];
   const drawn = [];
   // A 2D context that records what is painted (the blood canvas).
@@ -16,7 +17,7 @@ function scene({ reducedFlashes = false } = {}) {
   const doc = {
     createElement: (tag) => { const e = { id: '', tag, style: { cssText: '' } }; if (tag === 'canvas') e.getContext = ctx; els.push(e); return e; },
     body: { appendChild() {} },
-    defaultView: { addEventListener() {} },
+    defaultView: { addEventListener: (type, fn) => { if (type === 'keydown') keyHandlers.push(fn); } },
   };
   globalThis.document = { pointerLockElement: null };
   const camPos = new Vec3(4, 1.79, 3.6), camRot = [0, 0, 0];
@@ -37,7 +38,8 @@ function scene({ reducedFlashes = false } = {}) {
   const death = new Death({ app, camera, player, intruder, bank, music: { stopAll() {} }, veil, walk, doc });
   death.reducedFlashes = reducedFlashes;
   const step = (seconds, dt = 1 / 60) => { for (let t = 0; t < seconds; t += dt) handlers.forEach(fn => fn(dt)); };
-  return { death, step, played, poses, veil, camPos, camRot, intruder, player, els, drawn };
+  return { death, step, played, poses, veil, camPos, camRot, intruder, player, els, drawn,
+    key: e => keyHandlers.forEach(fn => fn(e)) };
 }
 
 test('caught: the knife goes up, comes down, blood, the fall, black in under three seconds', () => {
@@ -90,4 +92,21 @@ test('waking: on the sofa, standing in a free cell facing the room; later deaths
   s.death.play(() => { second = t; });
   for (; t < 4 && second === null; t += 1 / 60) s.step(1 / 60);
   assert.ok(second < 2.8, `the second time is shorter (${second?.toFixed(2)} s)`);
+});
+
+test('wake skipping waits while paused and ignores Escape or menu input', () => {
+  const s = scene();
+  let done = false;
+  s.death.wakeUp(() => { done = true; }); s.step(0.6);
+  const at = s.death.running.t;
+  s.death.paused = () => true;
+  s.key({ code: 'Space' }); s.step(0.5);
+  assert.equal(s.death.running.t, at, 'a key behind the pause menu cannot advance the wake');
+  s.death.paused = () => false;
+  s.key({ code: 'Escape' });
+  s.key({ code: 'Space', target: { tagName: 'INPUT' } });
+  s.key({ code: 'Space', repeat: true });
+  assert.equal(s.death.running.t, at, 'Escape pauses instead of skipping, and controls do not leak into the scene');
+  s.key({ code: 'Space' }); s.step(0.5);
+  assert.equal(done, true, 'a deliberate gameplay key still skips the wake');
 });

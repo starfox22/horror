@@ -1,0 +1,45 @@
+{
+  "review": "0.17",
+  "base_commit": "f6d06205549839ba5b8d8b8a13faf9fcbc7fd867",
+  "node": {
+    "tests": 272,
+    "pass": 272,
+    "fail": 0
+  },
+  "final_bundle": {
+    "path": "assets/index-D4muC8Xi.js",
+    "sha256": "70b8662e1e5d27629d1db178d5e8922724f4446266184352f439eb36a360e6ef"
+  },
+  "webgpu": {
+    "report": "webgpu.json",
+    "steps": 27,
+    "failures": 0,
+    "unexpected_shader_builds": 0,
+    "maximum_shadow_faces_per_frame": 9,
+    "bundle": "assets/index-DDLjj_0C.js",
+    "note": "Broad graphics/runtime candidate; final nonvisual call-audio, selection and journal changes subsequently checked by the final Node suite and WebGL audit."
+  },
+  "captures": {
+    "before": "0.16 f6d0620",
+    "after": "0.17 graphics candidate; later nonvisual fixes do not change these setups",
+    "viewport": [
+      960,
+      600
+    ],
+    "script": "tools/perf/scenes/review-017.mjs",
+    "quality": 3
+  },
+  "webgl": {
+    "report": "events-webgl.json",
+    "status": "PASS",
+    "cases": 28,
+    "phone_checks": 4,
+    "failures": 0,
+    "problems": 0,
+    "all_events_ran_at_seconds": [
+      3
+    ],
+    "played_while_paused": 0,
+    "bundle": "assets/index-D4muC8Xi.js"
+  }
+}

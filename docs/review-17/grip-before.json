@@ -1,0 +1,131 @@
+{
+  "pass": false,
+  "reports": [
+    {
+      "pass": false,
+      "failures": [
+        "663 skin triangles obscure the active screen",
+        "Hand compression exceeds 1 mm (6.612 mm)",
+        "thumb fingertip floats 25.353 mm from the phone",
+        "index fingertip floats 30.303 mm from the phone",
+        "middle fingertip floats 38.915 mm from the phone",
+        "ring fingertip floats 28.111 mm from the phone",
+        "pinky fingertip floats 17.683 mm from the phone"
+      ],
+      "view": "lock",
+      "handVertices": 4020,
+      "screenFrontVertices": 356,
+      "trianglesOverScreen": 663,
+      "projectedTriangleAreaMm2": 1440.504,
+      "maxEnvelopeCompressionMm": 6.612,
+      "fingertipGapMm": {
+        "thumb": 25.353,
+        "index": 30.303,
+        "middle": 38.915,
+        "ring": 28.111,
+        "pinky": 17.683
+      },
+      "phoneDimensionsMm": [
+        73.103,
+        150,
+        13.288
+      ],
+      "screen": {
+        "min": [
+          -0.033399924635887146,
+          -0.0724538117647171,
+          0.005902787670493126
+        ],
+        "max": [
+          0.03339989110827446,
+          0.0724538117647171,
+          0.005902788136154413
+        ]
+      }
+    },
+    {
+      "pass": false,
+      "failures": [
+        "663 skin triangles obscure the active screen",
+        "Hand compression exceeds 1 mm (6.612 mm)",
+        "thumb fingertip floats 25.353 mm from the phone",
+        "index fingertip floats 30.303 mm from the phone",
+        "middle fingertip floats 38.915 mm from the phone",
+        "ring fingertip floats 28.111 mm from the phone",
+        "pinky fingertip floats 17.683 mm from the phone"
+      ],
+      "view": "video",
+      "handVertices": 4020,
+      "screenFrontVertices": 356,
+      "trianglesOverScreen": 663,
+      "projectedTriangleAreaMm2": 1440.504,
+      "maxEnvelopeCompressionMm": 6.612,
+      "fingertipGapMm": {
+        "thumb": 25.353,
+        "index": 30.303,
+        "middle": 38.915,
+        "ring": 28.111,
+        "pinky": 17.683
+      },
+      "phoneDimensionsMm": [
+        73.103,
+        150,
+        13.288
+      ],
+      "screen": {
+        "min": [
+          -0.033399924635887146,
+          -0.0724538117647171,
+          0.005902787670493126
+        ],
+        "max": [
+          0.03339989110827446,
+          0.0724538117647171,
+          0.005902788136154413
+        ]
+      }
+    },
+    {
+      "pass": false,
+      "failures": [
+        "663 skin triangles obscure the active screen",
+        "Hand compression exceeds 1 mm (6.612 mm)",
+        "thumb fingertip floats 25.353 mm from the phone",
+        "index fingertip floats 30.303 mm from the phone",
+        "middle fingertip floats 38.915 mm from the phone",
+        "ring fingertip floats 28.111 mm from the phone",
+        "pinky fingertip floats 17.683 mm from the phone"
+      ],
+      "view": "turning",
+      "handVertices": 4020,
+      "screenFrontVertices": 356,
+      "trianglesOverScreen": 663,
+      "projectedTriangleAreaMm2": 1440.504,
+      "maxEnvelopeCompressionMm": 6.612,
+      "fingertipGapMm": {
+        "thumb": 25.353,
+        "index": 30.303,
+        "middle": 38.915,
+        "ring": 28.111,
+        "pinky": 17.683
+      },
+      "phoneDimensionsMm": [
+        73.103,
+        150,
+        13.288
+      ],
+      "screen": {
+        "min": [
+          -0.033399924635887146,
+          -0.0724538117647171,
+          0.005902787670493126
+        ],
+        "max": [
+          0.03339989110827446,
+          0.0724538117647171,
+          0.005902788136154413
+        ]
+      }
+    }
+  ]
+}

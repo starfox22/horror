@@ -361,8 +361,9 @@ function call(g, s, wp) {
     });
     text(g, labels[i], x, row + 98, { font: f(500, 24), color: DIM, align: 'center' });
   });
-  const hangSel = opts.length === 1 && opts[0][0] === 'Hang up';
+  const hangSel = opts[s.sel ?? 0]?.[0] === 'Hang up';
   circleButton(g, W / 2, H - 196, 72, RED, () => handset(g, W / 2, H - 192, 1.9, '#fff', true));
   if (hangSel) { g.strokeStyle = 'rgba(255,255,255,0.9)'; g.lineWidth = 5; g.beginPath(); g.arc(W / 2, H - 196, 84, 0, Math.PI * 2); g.stroke(); }
+  text(g, 'Right click · hang up', W / 2, H - 62, { font: f(500, 22), color: FAINT, align: 'center' });
   homeBar(g);
 }

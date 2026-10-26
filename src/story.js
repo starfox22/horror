@@ -163,6 +163,8 @@ export class Story {
       this.sys.journal?.find('prints');
     }
     if (this.unlock) this.updateUnlock(dt);
+    if (this.phoneAlertsReady()) this.phoneAlerts();
+    this.armCallHunt();
     // The wiped mirror (Act III, the bathroom).
     if (this.has('bathroom-open') && !this.has('mirror-seen') && zoneAt(p.x, p.z) === 'bath' && looking(6.5, 1.75, 1.25, 0.85, 2.4)) {
       this.set('mirror-seen'); this.say('Someone wiped the mirror.'); this.sys.journal?.find('mirror');
@@ -273,25 +275,20 @@ export class Story {
     this.say('Pipes.', { delay: 2.8, hold: 1.4 });
   }
 
-  // The phone, taken from the nightstand (phone.js): dead, and its charger pulled out of the wall.
+  // The charged phone can be used immediately; taking it never requires a charging objective.
   phoneTaken(phone) {
-    if (!this.set('phone')) return;
-    if (phone?.booted) return;
-    this.say('Dead.', { delay: 0.2 });
-    if (!phone?.pluggedIn) this.say('...The charger’s out of the wall.', { gap: 0.6 });
-    this.sys.journal?.find('phone-dead');
+    this.set('phone');
   }
 
   // Put back on the nightstand with its charger plugged in again.
-  phoneCharging() { if (this.set('charging')) this.say('I never unplug it.', { delay: 0.4 }); }
+  phoneCharging() { this.set('charging'); }
 
-  // A flat phone needs minutes on the charger before it can start; it starts once the power is back, after the quiet
-  // that follows (its buzz is a scare of its own).
-  // It waits for the player to be within earshot of it (7 m), or two minutes after the power came back.
-  phoneMayBoot(chargeTime) {
-    if (!this.has('restored') || chargeTime < 30) return false;
+  // The Act III alert reminder keeps its breathing room without a charging prerequisite.
+  // Carried: heard in the pocket; on the nightstand: within earshot, or a two-minute fallback.
+  phoneAlertsReady() {
+    if (!this.has('restored') || this.has('alerts') || this.has('hunt') || this.has('ended')) return false;
     const since = this.time - (this.restoredAt ?? this.time), near = Math.hypot(this.pos.x - 13.6, this.pos.z - 1.8) < 7;
-    return since >= 35 && (near || since > 120) && (this.canScare() || since > 90);
+    return since >= 35 && (this.sys.phone?.has || near || since > 120) && (this.canScare() || since > 90);
   }
 
   // Story event 'falling-glass': 3 s after the fridge shuts after drinking.
@@ -604,7 +601,7 @@ export class Story {
     this.save();
     this.signal('power-restored');
     // 45 s of nothing; then the nudges and the fallbacks.
-    this.after(20, () => { if (!this.sys.phone?.charging && !this.sys.phone?.booted) this.say('My phone. ...The charger.'); }, 'nudge-phone');
+    this.after(20, () => { if (!this.has('phone') && !this.sys.phone?.has) this.say('My phone. ...On the nightstand.'); }, 'nudge-phone');
     this.after(45, () => { if (!this.has('bathroom-visited')) this.say('The bathroom.'); }, 'nudge-bathroom');
     this.huntFallback(150);
   }
@@ -633,11 +630,10 @@ export class Story {
   polaroidBack() { if (this.set('let-me-in')) { this.say('March. ...Seven months.', { delay: 0.6 }); this.sys.journal?.find('let-me-in'); } }
   oldKey() { if (this.set('old-key')) { this.say('5B.', { delay: 0.3 }); this.say('Not mine.', { gap: 0.6 }); this.sys.journal?.find('old-key'); } }
 
-  // The phone boots now and buzzes with what it missed (the developer menu; in a night it boots on its charger once
-  // the power is back: phone.js asks phoneMayBoot).
+  // An alert reminder, without rebooting or depending on the optional charger.
   phoneAlerts() {
     if (this.has('alerts')) return;
-    this.sys.phone?.boot();
+    this.sys.phone?.notifyAlerts();
   }
 
   // Its buzz on the nightstand is a scare of its own (phone.js boot, when it lies there).
@@ -741,15 +737,28 @@ export class Story {
   }
 
   // --- endings -------------------------------------------------------------------------------------------------
-  // The police were told: what they were told decides how it ends (Evicted = where and who). A call made before the
-  // hunt is heard above the ceiling: the hunt starts 12 s later.
+  // The police were told: what they were told decides how it ends (Evicted = where and who). A charged phone can
+  // report him in Act II: officers leave immediately, while the call's hunt waits for the restored-power alert beat.
   policeCalled({ where, who }) {
     const first = !this.has('police');
     this.set('police'); this.told = { where: !!(where || this.told?.where), who: !!(who || this.told?.who) };
     if (!first) return;
     const seconds = { story: 60, normal: 100, hard: 110 }[this.difficulty] ?? 100;
     this.after(seconds, () => this.policeArrive(), 'police');
-    if (!this.has('hunt')) this.after(12, () => this.huntStart('call'), 'hunt-call');
+    this.armCallHunt();
+  }
+
+  // Derived from saved flags, so a checkpoint cannot lose a pending call's consequence. Restoring gives a fresh
+  // twelve-second warning window; the real officers retain their saved arrival time. LIVE owns him until it finishes.
+  armCallHunt() {
+    const ready = () => this.has('police') && this.has('restored') && this.has('alerts') && !this.has('hunt') && !this.has('ended');
+    if (!ready() || this.timers.some(t => t.id === 'hunt-call')) return;
+    const go = () => {
+      if (!ready()) return;
+      if (this.sys.seccam?.liveRunning) { this.after(1, go, 'hunt-call'); return; }
+      this.huntStart('call');
+    };
+    this.after(12, go, 'hunt-call');
   }
 
   policeArrive() {

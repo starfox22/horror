@@ -31,9 +31,10 @@ export class Player {
     this.surfaceAt = null; // (x, z) => 'glass' | 'water' | null: what is underfoot besides the floor (story world)
     this.crouched = false; this.crouchHeld = false; this.crouchK = 0;
     this.sensitivity = 1; this.invertY = false;
+    this.blocked = null;   // main.js: reading, another camera owner, paused/hidden game
 
     window.addEventListener('keydown', (e) => {
-      if (!this.active || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName)) return;
+      if (!this.canControl || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName)) return;
       this.keys.add(e.code);
       if (e.code === 'KeyB' && !e.repeat) this.bobOn = !this.bobOn;
       if (e.code === 'KeyC' && !e.repeat) this.crouched = !this.crouched;
@@ -46,7 +47,7 @@ export class Player {
       if (document.pointerLockElement !== app.graphicsDevice.canvas) stop();
     });
     document.addEventListener('mousemove', (e) => {
-      if (!this.active || document.pointerLockElement !== app.graphicsDevice.canvas) return;
+      if (!this.canControl || document.pointerLockElement !== app.graphicsDevice.canvas) return;
       this.yaw -= e.movementX * LOOK * this.sensitivity;
       this.pitch = math.clamp(this.pitch - e.movementY * LOOK * this.sensitivity * (this.invertY ? -1 : 1), -85, 85);
     });
@@ -54,13 +55,15 @@ export class Player {
   }
 
   held(...codes) { return codes.some(c => this.keys.has(c)); }
+  get canControl() { return this.active && !this.blocked?.(); }
 
   update(dt) {
     dt = Math.min(dt, 0.05);
     // Pausing must stop immediately, including the acceleration tail of the last step.
-    if (!this.active) { this.keys.clear(); this.vel.set(0, 0, 0); }
+    const canControl = this.canControl;
+    if (!canControl) { this.keys.clear(); this.vel.set(0, 0, 0); this.running = false; this.crouchHeld = false; }
     let fx = 0, fz = 0;
-    if (this.active) {
+    if (canControl) {
       const f = (this.held('KeyW', 'ArrowUp') ? 1 : 0) - (this.held('KeyS', 'ArrowDown') ? 1 : 0);
       const s = (this.held('KeyD', 'ArrowRight') ? 1 : 0) - (this.held('KeyA', 'ArrowLeft') ? 1 : 0);
       const r = this.yaw * math.DEG_TO_RAD;

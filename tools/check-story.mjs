@@ -165,23 +165,34 @@ test('a caught player loses a half-turned lock and the night stands still meanwh
   assert.equal(story.time, t, 'no story time passes while he has you');
 });
 
-test('the phone: dead on the nightstand, its charger pulled; it boots once the power is back, after the quiet', () => {
+test('the charged phone works early; its later alert reminder waits for restored power and breathing room', () => {
   const { story, sys, said, calls, run } = night();
+  sys.phone = { has: false, save() {}, notifyAlerts() { story.set('alerts'); calls.push('phone.alerts'); } };
   story.begin({ seed: 4 });
-  story.phoneTaken({ booted: false, pluggedIn: false });
-  assert.ok(said.includes('Dead.') && said.some(t => /charger/.test(t)) && calls.includes('journal.phone-dead'));
+  story.phoneTaken({ booted: true, charge: 100, pluggedIn: false });
+  assert.ok(story.has('phone'));
+  assert.ok(!said.includes('Dead.') && !calls.includes('journal.phone-dead'));
   story.phoneCharging();
-  assert.ok(said.includes('I never unplug it.'));
-  assert.equal(story.phoneMayBoot(600), false, 'not before the power has come back');
+  assert.ok(!said.includes('I never unplug it.'));
+  assert.equal(story.phoneAlertsReady(), false, 'not before the power has come back');
   story.glassBreaks(); story.blackout('test'); story.powerRestored();
-  assert.equal(story.phoneMayBoot(600), false, 'not straight away');
+  assert.equal(story.phoneAlertsReady(), false, 'not straight away');
   run(36);
-  assert.equal(story.phoneMayBoot(10), false, 'not without minutes on the charger');
-  assert.equal(story.phoneMayBoot(31), false, 'not while the player is out of earshot');
+  assert.equal(story.phoneAlertsReady(), false, 'not while the phone is on the nightstand out of earshot');
   sys.player.pos = { x: 12.8, z: 1.2 };
-  assert.equal(story.phoneMayBoot(31), true, 'within earshot of the nightstand');
-  sys.player.pos = { x: 0.5, z: 0.5 }; run(90);
-  assert.equal(story.phoneMayBoot(31), true, 'and two minutes after the power came back wherever the player is');
+  assert.equal(story.phoneAlertsReady(), true, 'within earshot, with no charging time at all');
+  run(0.1);
+  assert.equal(calls.filter(c => c === 'phone.alerts').length, 1);
+  run(5);
+  assert.equal(calls.filter(c => c === 'phone.alerts').length, 1, 'one reminder per night');
+});
+
+test('a carried phone receives the alert reminder without returning to the bedroom or charger', () => {
+  const { story, sys, run, calls } = night();
+  sys.phone = { has: true, save() {}, notifyAlerts() { story.set('alerts'); calls.push('phone.alerts'); } };
+  story.begin({ seed: 4 }); story.glassBreaks(); story.blackout('test'); story.powerRestored();
+  run(36);
+  assert.ok(story.has('alerts') && calls.includes('phone.alerts'));
 });
 
 test('the man in the corridor: seen at the end of the torch, he runs at you and into the bedroom', () => {
@@ -329,6 +340,57 @@ test('QA: a police call survives a checkpoint (the timer and what they were told
   assert.ok(b.story.told?.where && b.story.told?.who, 'and know where and who');
 });
 
+test('an early police call dispatches immediately but its hunt waits for restored power, alerts and twelve seconds', () => {
+  const { story, calls, run } = night();
+  story.begin({ seed: 9 }); story.glassBreaks(); story.blackout('test'); story.set('silhouette');
+  story.policeCalled({ where: true, who: false });
+  assert.ok(story.has('police') && story.told.where, 'the truthful early report is sent immediately');
+  const arrival = story.timers.find(t => t.id === 'police').at;
+  run(13);
+  assert.equal(story.has('hunt'), false, 'calling after the Act II sighting cannot skip the fuse box');
+  story.set('restored'); run(13);
+  assert.equal(story.has('hunt'), false, 'restoration alone does not skip the quiet and phone alerts');
+  story.set('alerts'); run(11.9);
+  assert.equal(story.has('hunt'), false, 'the alert has its own breathing room');
+  run(0.2);
+  assert.ok(story.has('hunt') && calls.includes('hunt.start'));
+  assert.equal(story.timers.find(t => t.id === 'police').at, arrival, 'the actual police arrival is never postponed');
+});
+
+test('a call-triggered hunt waits for the active LIVE scene instead of interrupting it', () => {
+  const { story, sys, run } = night();
+  story.begin({ seed: 9 }); story.set('silhouette'); story.set('restored'); story.set('alerts');
+  sys.seccam = { liveRunning: true };
+  story.policeCalled({ where: false, who: false });
+  run(14);
+  assert.equal(story.has('hunt'), false, 'the scripted visitor gets to finish on the feed');
+  assert.equal(story.timers.filter(t => t.id === 'hunt-call').length, 1, 'waiting keeps one owned timer');
+  sys.seccam.liveRunning = false; run(1.1);
+  assert.equal(story.has('hunt'), true, 'the call still takes effect once the scene no longer owns him');
+});
+
+test('a saved early police call naturally rearms its pending hunt after restore', () => {
+  const a = night();
+  a.story.begin({ seed: 9 }); a.story.act = 3;
+  for (const f of ['power-cut', 'silhouette', 'restored', 'alerts']) a.story.set(f);
+  a.story.policeCalled({ where: true, who: true }); a.run(4);
+  const saved = a.story.save(), b = night();
+  b.story.restore(saved); b.run(11.9);
+  assert.equal(b.story.has('hunt'), false, 'restoration gives a fresh short warning window');
+  b.run(0.3);
+  assert.equal(b.story.has('hunt'), true, 'saved police intent cannot lose its hunt because transient timers were cleared');
+  assert.ok(b.story.told.where && b.story.told.who);
+  assert.ok(b.story.timers.some(t => t.id === 'police'), 'the original officers remain on their way');
+});
+
+test('police can arrive during an unresolved early puzzle without a forced hunt or a stalled ending', () => {
+  const { story, calls, run } = night();
+  story.begin({ seed: 9 }); story.glassBreaks(); story.blackout('test'); story.set('silhouette');
+  story.policeCalled({ where: false, who: false }); run(101);
+  assert.equal(story.has('hunt'), false);
+  assert.equal(calls.filter(c => c === 'endings.police').length, 1, 'the early report remains a legitimate rescue');
+});
+
 test('QA: the fuse box opened before the cut plays none of the dark\'s beats', () => {
   const { story, calls, run } = night();
   story.begin({ seed: 2 });
@@ -431,7 +493,7 @@ test('build 0.15: every developer-menu event plays from any point of the night, 
   const { story, sys, calls, said, run } = night();
   // The systems the replays touch, as far as they need to answer.
   sys.flashlight = { held: false, on: false, pickUp() { this.held = true; story.tookTorch(); } };
-  sys.phone = { booted: false, has: false, boot() { this.booted = true; calls.push('phone.boot'); }, openLive() { calls.push('phone.live'); }, charger() {}, save: () => ({}) };
+  sys.phone = { booted: true, has: false, boot() { this.booted = true; calls.push('phone.boot'); }, notifyAlerts() { story.set('alerts'); calls.push('phone.alerts'); }, openLive() { calls.push('phone.live'); }, charger() {}, save: () => ({}) };
   sys.seccam = { runLive: () => calls.push('seccam.live'), cameraOnly() {} };
   sys.crow = { strike: () => { calls.push('crow.strike'); return true; } };
   sys.intruder = { show: (on) => calls.push(`man.${on}`), place() {}, play() {} };
