@@ -51,6 +51,8 @@
     "claude": "c5a619f1e75881f46edbcf392f6c7f1e27e7a47e",
     "hosted_bundle_matches_local": true,
     "all_three_roots_http": 200,
-    "gallery_and_eight_pngs_http": 200
+    "gallery_and_eight_pngs_http": 200,
+    "critical_assets_http_200": 24,
+    "ci_evidence": "Build and deploy status APIs passed; CI log host blocked by network policy. Exact 272 count is verified locally."
   }
 }
