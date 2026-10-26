@@ -18,7 +18,7 @@ import { ArmRig, frameRotation } from './arm-rig.js';
 // against its back a little right of centre and low, the fingers up and round its left edge, the thumb along its right;
 // the shoulder where the drinking arm's is (drink-sequence.js SHOULDER, camera space).
 export const HAND = {
-  palm: new Vec3(0.014, -0.038, -0.0055), fingers: new Vec3(-0.32, 1, 0.05), facing: new Vec3(0.1, 0, 1), grip: 0.62,
+  palm: new Vec3(0.014, -0.038, -0.0068), fingers: new Vec3(-0.32, 1, 0.05), facing: new Vec3(0.1, 0, 1), grip: 0.62,
   shoulder: new Vec3(0.19, -0.25, 0.09),
 };
 
@@ -153,7 +153,11 @@ export class Phone {
     if (!mi) return null;
     if (!this.modelScreenMat) {
       const m = this.screenMat.clone();
-      m.emissiveMapTiling = new Vec2(1 / 0.7894, 1 / 0.9804); m.emissiveMapOffset = new Vec2(-0.0792 / 0.7894, -0.0069 / 0.9804);
+      // The canvas stretched over the screen's own UV rectangle (the build gives it 0..1, v 0 at the top: upright).
+      const uv = [], n = mi.mesh.getUvs(0, uv);
+      let u0 = 0, u1 = 1, v0 = 0, v1 = 1;
+      if (n) { u0 = v0 = Infinity; u1 = v1 = -Infinity; for (let i = 0; i < n * 2; i += 2) { u0 = Math.min(u0, uv[i]); u1 = Math.max(u1, uv[i]); v0 = Math.min(v0, uv[i + 1]); v1 = Math.max(v1, uv[i + 1]); } }
+      m.emissiveMapTiling = new Vec2(1 / (u1 - u0), 1 / (v1 - v0)); m.emissiveMapOffset = new Vec2(-u0 / (u1 - u0), -v0 / (v1 - v0));
       m.update();
       this.modelScreenMat = m;
     }

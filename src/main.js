@@ -318,7 +318,7 @@ power.onChange(event => {
   const held = props.make('phone', { name: 'phone model', configure: m => probes.assign(m, 'main'), castShadows: false });
   if (held) phone.setModel(held);
   if (drink?.armContainer) phone.setHand(drink.armContainer.instantiateRenderEntity({ castShadows: false, receiveShadows: true }), drink.armData, m => probes.assign(m, 'main'));
-  const charging = props.make('phone', { at: [phone.chargerAt.x, phone.chargerAt.y + 0.004, phone.chargerAt.z], euler: [-90, 95, 0], name: 'phone on the nightstand', configure: m => probes.assign(m, 'bed'), castShadows: false });
+  const charging = props.make('phone', { at: [phone.chargerAt.x, phone.chargerAt.y + 0.0075, phone.chargerAt.z], euler: [-90, 95, 0], name: 'phone on the nightstand', configure: m => probes.assign(m, 'bed'), castShadows: false });
   phone.useScreen(charging, { intensity: 2.4 });
   charging.enabled = phone.onCharger;
   phone.charger = on => { charging.enabled = on; };

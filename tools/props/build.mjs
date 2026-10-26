@@ -20,7 +20,7 @@ import { dirname, join, posix } from 'node:path';
 import sharp from 'sharp';
 import { Document, NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
-import { dedup, prune, simplify, simplifyPrimitive, transformMesh, unpartition, weld, weldPrimitive, listTextureSlots } from '@gltf-transform/functions';
+import { dedup, dequantize, prune, simplify, simplifyPrimitive, transformMesh, unpartition, weld, weldPrimitive, listTextureSlots } from '@gltf-transform/functions';
 import { MeshoptSimplifier } from 'meshoptimizer';
 import draco3d from 'draco3dgltf';
 
@@ -432,6 +432,70 @@ const OPS = {
   } },
 
   // A folded charcoal wool blanket from the royal-blue towel scan: luminance kept (the pile and folds), colour replaced.
+  // The phone ("iPhone 17 Pro" by Ranguel): its maker's logo is a hole cut in the frosted back (filled here: a fan of
+  // triangles over each small boundary loop of that panel); its screen has no UVs (given planar ones here: u left to
+  // right seen from the front, v 0 at the top, so the game's canvas fills it upright) and its material is renamed
+  // Lock_Screen (phone.js looks for it); turned so the screen faces +Z.
+  phone: { pre(doc) {
+    const prims = (re) => meshNodes(doc).flatMap(n => n.getMesh().listPrimitives()).filter(pr => re.test(pr.getMaterial()?.getName() || ''));
+    const screens = prims(/^Screen$/), screen = screens[0];
+    if (!screen) throw new Error('phone: no Screen primitive');
+    const sb = { lo: [Infinity, Infinity, Infinity], hi: [-Infinity, -Infinity, -Infinity] }, v = [];
+    const scan = (pr, fn) => { const pos = pr.getAttribute('POSITION'); for (let i = 0; i < pos.getCount(); i++) fn(pos.getElement(i, v), i); };
+    scan(screen, (q) => { for (let k = 0; k < 3; k++) { sb.lo[k] = Math.min(sb.lo[k], q[k]); sb.hi[k] = Math.max(sb.hi[k], q[k]); } });
+    if ((sb.lo[2] + sb.hi[2]) / 2 < bounds(doc).centre[2]) transformAll(doc, mat.rotY(180));
+    // Planar UVs over the screen's own rectangle (after the turn).
+    const lo = [Infinity, Infinity], hi = [-Infinity, -Infinity];
+    scan(screen, (q) => { lo[0] = Math.min(lo[0], q[0]); lo[1] = Math.min(lo[1], q[1]); hi[0] = Math.max(hi[0], q[0]); hi[1] = Math.max(hi[1], q[1]); });
+    for (const pr of screens) {
+      const n = pr.getAttribute('POSITION').getCount(), uv = new Float32Array(n * 2);
+      scan(pr, (q, i) => { uv[2 * i] = (q[0] - lo[0]) / (hi[0] - lo[0]); uv[2 * i + 1] = (hi[1] - q[1]) / (hi[1] - lo[1]); });
+      pr.setAttribute('TEXCOORD_0', doc.createAccessor().setType('VEC2').setArray(uv).setBuffer(doc.getRoot().listBuffers()[0]));
+    }
+    console.log(`phone: ${screens.length} screen primitive(s), ${((hi[0] - lo[0]) * 1000).toFixed(1)} x ${((hi[1] - lo[1]) * 1000).toFixed(1)} (source units / 1000)`);
+    screen.getMaterial().setName('Lock_Screen');
+    // The logo's holes in the frosted back: boundary loops (vertices welded by position) smaller than 3 cm, each closed
+    // by a fan from its centre, wound like the panel round it.
+    for (const pr of prims(/^Frosted_glass$/)) {
+      const pos = pr.getAttribute('POSITION'), nrm = pr.getAttribute('NORMAL'), idx = pr.getIndices();
+      const tri = [...(idx ? idx.getArray() : Array.from({ length: pos.getCount() }, (_, i) => i))];
+      const keyOf = new Map(), key = [], first = [];
+      for (let i = 0; i < pos.getCount(); i++) { const k = pos.getElement(i, v).map(x => Math.round(x * 1e5)).join(); if (!keyOf.has(k)) { keyOf.set(k, keyOf.size); first.push(i); } key.push(keyOf.get(k)); }
+      const edges = new Map();
+      for (let t = 0; t < tri.length; t += 3) for (let k = 0; k < 3; k++) { const a = key[tri[t + k]], b = key[tri[t + (k + 1) % 3]], e = a < b ? `${a}_${b}` : `${b}_${a}`; edges.set(e, (edges.get(e) || 0) + 1); }
+      const adj = new Map();
+      for (const [e, c] of edges) if (c === 1) { const [a, b] = e.split('_').map(Number); (adj.get(a) || adj.set(a, []).get(a)).push(b); (adj.get(b) || adj.set(b, []).get(b)).push(a); }
+      const seen = new Set(), attrs = pr.listSemantics().map(sem => [sem, pr.getAttribute(sem)]);
+      const grow = Object.fromEntries(attrs.map(([sem, acc]) => [sem, [...acc.getArray()]]));
+      let count = pos.getCount(), filled = 0;
+      for (const start of adj.keys()) {
+        if (seen.has(start)) continue;
+        const loop = [start]; seen.add(start);
+        for (let cur = start, prev = -1; ;) { const next = adj.get(cur).find(x => x !== prev && !seen.has(x)); if (next === undefined) break; loop.push(next); seen.add(next); prev = cur; cur = next; }
+        const pts = loop.map(k => pos.getElement(first[k], []));
+        const ext = [0, 1, 2].map(k => Math.max(...pts.map(q => q[k])) - Math.min(...pts.map(q => q[k])));
+        if (Math.max(...ext) > 0.03 || loop.length < 3) continue;
+        // The centre vertex: every attribute averaged over the loop.
+        for (const [sem, acc] of attrs) {
+          const size = acc.getElementSize(), sum = new Array(size).fill(0);
+          for (const k of loop) acc.getElement(first[k], v).forEach((x, j) => { sum[j] += x / loop.length; });
+          if (sem === 'NORMAL') { const l = Math.hypot(...sum) || 1; for (let j = 0; j < 3; j++) sum[j] /= l; }
+          grow[sem].push(...sum);
+        }
+        const c = count++, cp = grow.POSITION.slice(c * 3, c * 3 + 3), cn = nrm ? grow.NORMAL.slice(c * 3, c * 3 + 3) : [0, 0, 1];
+        for (let i = 0; i < loop.length; i++) {
+          const a = first[loop[i]], b = first[loop[(i + 1) % loop.length]], pa = pos.getElement(a, []), pb = pos.getElement(b, []);
+          const u = pa.map((x, j) => x - cp[j]), w = pb.map((x, j) => x - cp[j]), face = cross(u, w);
+          tri.push(...(face[0] * cn[0] + face[1] * cn[1] + face[2] * cn[2] >= 0 ? [c, a, b] : [c, b, a]));
+        }
+        filled++;
+      }
+      for (const [sem, acc] of attrs) acc.setArray(new Float32Array(grow[sem]));
+      const indices = idx || doc.createAccessor().setType('SCALAR').setBuffer(doc.getRoot().listBuffers()[0]);
+      indices.setArray(new Uint32Array(tri)); pr.setIndices(indices);
+      console.log(`phone: filled ${filled} logo hole(s) in the back`);
+    }
+  } },
   blanket: { async post(doc) {
     const t = doc.getRoot().listTextures()[0];
     const { data, info } = await sharp(Buffer.from(t.getImage())).removeAlpha().raw().toBuffer({ resolveWithObject: true });
@@ -449,6 +513,8 @@ async function build(p) {
   const main = await fetchSources(p);
   const doc = main.endsWith('.obj') ? objDocument(readFileSync(main, 'utf8'), p.texture ? readFileSync(join(SRC, p.repo.replace('/', '__'), p.texture)) : null) : await io.read(main);
   for (const e of doc.getRoot().listExtensionsUsed()) if (/draco|meshopt/.test(e.extensionName)) e.dispose();
+  // Quantized vertices (KHR_mesh_quantization) back to floats: the fitting below transforms them.
+  if (doc.getRoot().listExtensionsUsed().some(e => e.extensionName === 'KHR_mesh_quantization')) await doc.transform(dequantize());
   const top = flattenScene(doc, p.id);
   if (p.keep) {
     const re = new RegExp(p.keep);
@@ -494,8 +560,11 @@ async function build(p) {
     for (const e of m.listExtensions()) if (o.plain) m.setExtension(e.extensionName, null);
   }
   await resizeTextures(doc, p);
+  // Every texture is a JPEG or PNG now: a leftover WebP extension would only make loaders ask for it.
+  for (const e of doc.getRoot().listExtensionsUsed()) if (e.extensionName === 'EXT_texture_webp') e.dispose();
   await OPS[p.op]?.post?.(doc, top, p);
-  await doc.transform(unpartition(), prune({ keepLeaves: true }), dedup());
+  // The phone's screen UVs serve the game's canvas, not a texture in the file: prune would drop them as unused.
+  await doc.transform(unpartition(), prune({ keepLeaves: true, keepAttributes: p.op === 'phone' }), dedup());
   for (const prim of doc.getRoot().listMeshes().flatMap(m => m.listPrimitives())) for (const t of prim.listTargets()) prim.removeTarget(t);
   doc.getRoot().getAsset().extras = { title: p.title, author: p.author, license: p.license, source: p.source, mirror: `https://github.com/${p.repo}/blob/${p.commit}/${p.file}` };
   const out = join(OUT, `${p.id}.glb`);

@@ -67,8 +67,9 @@
 - **The story's props** (`public/assets/props/story/*.glb`, built by `tools/props/build.mjs` from
   `tools/props/props.json`, each download pinned to a commit and checked against `tools/props/sources.lock.json`;
   every licence and source is listed in `public/assets/props/story/LICENSES.txt`):
-  - CC BY 4.0 (Sketchfab, via GitHub mirrors; the licence is embedded in each glTF's `asset.extras`): "Smartphone" by
-    Naudaff3D (the phone; its screen shows the game's canvas) · "Prescription Pill Bottle" by 3Dexter (label repainted
+  - CC BY 4.0 (Sketchfab, via GitHub mirrors; the licence is embedded in each glTF's `asset.extras`): "iPhone 17 Pro" by
+    Ranguel (the phone, from build 0.15: its maker's logo filled in, recoloured graphite, planar UVs on its screen, which
+    shows the game's canvas; until 0.14 "Smartphone" by Naudaff3D) · "Prescription Pill Bottle" by 3Dexter (label repainted
     for the story's zolpidem prescription) · "Note Book [2K]" by Lyndschoko (the sleep diary) · "door keys" by
     artemtem (the spare keys; one of its keys alone is the old key in the nest) · "Water Bottles" by HGowl (two loose
     bottles) · "Papers & Envelopes" by bossdeff (one envelope: the returned letter) · "Polaroid pictures" by
