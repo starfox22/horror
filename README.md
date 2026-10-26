@@ -1,7 +1,7 @@
 # horror
 True horror game
 
-A first-person browser horror game in the spirit of P.T., built on PlayCanvas. Current state: **build 0.14, a whole night
+A first-person browser horror game in the spirit of P.T., built on PlayCanvas. Current state: **build 0.16, a whole night
 in one flat**: you wake at 03:07 in a storm; a notice on the fridge says the troublesome resident has finally been
 evicted; a glass shatters in your empty bedroom; the power dies; a masked man with your kitchen knife runs into your
 bedroom and up into the ceiling; you find where he has been living, and then he hunts you. Get out. Believable scares
@@ -14,12 +14,12 @@ For Claude's continuation after the owner-approved 0.11 promotion, read [CLAUDE_
 
 All Codex reviews continue on `codex-review`, while Claude works on its own branch. Codex merges into or pushes to `main` only when the owner explicitly asks. The first review adds a lighting/material pass and interaction fixes. See [the change list and validation guide](docs/CODEX_ENVIRONMENT_PASS.md), [side-by-side screenshots](docs/review/README.md), and [preview deployment instructions](docs/PREVIEW_DEPLOYMENT.md).
 
-The latest pass adds [a 60 FPS Auto target, lighter graphics budgets, sparse waking lights and a downloaded rigged hand drinking water](docs/REVIEW_11.md), with [comparison screenshots](docs/review-11/README.md). The [0.10 pass](docs/REVIEW_10.md) documents the waking opening, refrigerator and fixture/flashlight shadows; [0.9](docs/REVIEW_09.md) documents switch detail, coffee animation and shelf placement.
+Codex has resumed from the complete Claude 0.15 game, shared exactly by `main` and `claude/pensive-volta-et0etl`. The [0.16 bug pass](docs/REVIEW_16.md) fixes power-transition races, disappearing HUD messages, stale phone-call callbacks, camera visibility and scaled-geometry normals. Claude's [0.15 guide and captures](docs/BUILD_015.md) document the inherited latest phone, lighting and story changes. Earlier Codex work is recorded in [0.11](docs/REVIEW_11.md), [0.10](docs/REVIEW_10.md) and [0.9](docs/REVIEW_09.md).
 
 ## Play
 
-- Claude's latest build (0.14, the branch `claude/pensive-volta-et0etl`, published on every push): https://starfox22.github.io/horror/claude/
-- Production (`main`; build 0.13 until the owner promotes a newer one): https://starfox22.github.io/horror/
+- Claude's build (0.15, `claude/pensive-volta-et0etl`): https://starfox22.github.io/horror/claude/
+- Production (`main`, build 0.15): https://starfox22.github.io/horror/
 - Codex review (`codex-review`): https://starfox22.github.io/horror/codex/
 - The claude.ai artifact (always the latest Claude build): https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9
 - Locally: `npm install && npm run dev`, open the printed URL. Click to enter.

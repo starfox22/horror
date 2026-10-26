@@ -28,6 +28,67 @@ test('the RCD will not stay up while the wet circuit is on', () => {
   assert.equal(p.rcd, false);
 });
 
+test('a quick main-switch reversal replaces the unfinished restore instead of relighting the flat', () => {
+  const p = new Power(), at = { x: 2.3, z: 4.4 };
+  p.setMain(false); settle(p);
+  p.setMain(true); p.update(0.05); p.setMain(false);
+  for (let i = 0; i < 6; i++) p.update(0.1);
+  assert.equal(p.main, false);
+  for (const c of CIRCUITS) {
+    assert.equal(p.live(c.id), false);
+    assert.equal(p.k(c.id, at), 0, `${c.id} must follow the newer off transition`);
+    assert.equal(p.transitions.filter(t => t.circuits.includes(c.id)).length, 1, 'one current animation per circuit');
+  }
+  settle(p);
+  assert.equal(p.transitions.length, 0);
+});
+
+test('a rejected RCD restore records the retrip and goes dark while the lever stays down', () => {
+  const p = new Power(), at = { x: 2.3, z: 4.4 }, events = [];
+  p.faults.add('bathroom'); p.trip([7, 1]); settle(p);
+  p.onChange(event => { if (event) events.push(event); });
+  assert.equal(p.setRcd(true), 'tripped');
+  assert.equal(p.rcd, false);
+  const retrip = events.find(event => event.cause === 'retrip');
+  assert.deepEqual(retrip?.off, CIRCUITS.map(c => c.id), 'the off event must reach every light owner');
+  for (let i = 0; i < 6; i++) p.update(0.1);
+  for (const c of CIRCUITS) assert.equal(p.k(c.id, at), 0, `${c.id}: no stale restore after an automatic retrip`);
+});
+
+test('energizing a wet breaker retrips the whole flat and supersedes its attempted restore', () => {
+  const p = new Power(), at = { x: 2.3, z: 4.4 }, events = [];
+  p.faults.add('bathroom'); p.setBreaker('bathroom', false); settle(p);
+  p.onChange(event => { if (event) events.push(event); });
+  assert.equal(p.setBreaker('bathroom', true), 'tripped');
+  assert.equal(p.rcd, false);
+  assert.deepEqual(events.find(event => event.cause === 'retrip')?.off, CIRCUITS.map(c => c.id));
+  for (let i = 0; i < 6; i++) p.update(0.1);
+  for (const c of CIRCUITS) {
+    assert.equal(p.live(c.id), false);
+    assert.equal(p.k(c.id, at), 0, `${c.id}: the retrip wins over the attempt`);
+  }
+});
+
+test('restoring the main trips a wet breaker that was enabled while supply was off', () => {
+  const p = new Power(), events = [];
+  p.setMain(false); settle(p);
+  p.setBreaker('bathroom', false); p.faults.add('bathroom');
+  assert.equal(p.setBreaker('bathroom', true), 'on');
+  assert.equal(p.rcd, true, 'the circuit was enabled while deenergized');
+  p.onChange(event => { if (event) events.push(event); });
+  assert.equal(p.setMain(true), 'tripped');
+  assert.equal(p.main, true); assert.equal(p.rcd, false);
+  assert.deepEqual(events.find(event => event.cause === 'retrip')?.off, CIRCUITS.map(c => c.id));
+  settle(p);
+  for (const c of CIRCUITS) {
+    assert.equal(p.live(c.id), false);
+    assert.equal(p.k(c.id), 0, `${c.id}: a fault cannot be bypassed through the main switch`);
+  }
+  p.setBreaker('bathroom', false); p.setRcd(true); settle(p);
+  assert.equal(p.live('lights1'), true, 'isolating the fault still restores the usable circuits');
+  assert.equal(p.live('bathroom'), false);
+});
+
 test('the clever way: wet circuit off, RCD up — the flat is back, the bathroom stays dark', () => {
   const p = new Power();
   p.faults.add('bathroom'); p.trip([7, 1]); settle(p);

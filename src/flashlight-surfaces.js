@@ -115,8 +115,11 @@ function traceTree(tree, origin, direction, limit) {
 }
 
 export class FlashlightSurfaces {
-  constructor(root) {
+  // The optional engine Camera matches MeshInstance.isVisibleFunc's renderer API.
+  // Geometry-only tools can omit it and query all enabled instances as before.
+  constructor(root, camera = null) {
     this.root = root;
+    this.camera = camera;
     this.trees = new WeakMap();
     this.inverse = new Mat4();
     this.localOrigin = new Vec3(); this.localDirection = new Vec3();
@@ -132,6 +135,9 @@ export class FlashlightSurfaces {
       if (render.enabled === false || render.entity?.enabled === false) continue;
       for (const mi of render.meshInstances) {
         if (mi.visible === false || mi.castShadow === false || mi.material?.opacity <= 0 || !mi.mesh?.getPositions) continue;
+        // LIVE keeps the actor enabled for the security camera alone. His hidden
+        // body must not intercept the player's beam and create a phantom return.
+        if (this.camera && mi.isVisibleFunc && !mi.isVisibleFunc(this.camera)) continue;
         const box = mi.aabb;
         if (box && boxEntry([box.center.x - box.halfExtents.x, box.center.y - box.halfExtents.y, box.center.z - box.halfExtents.z],
           [box.center.x + box.halfExtents.x, box.center.y + box.halfExtents.y, box.center.z + box.halfExtents.z], worldOrigin, worldDirection, nearest) === Infinity) continue;

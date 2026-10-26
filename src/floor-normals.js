@@ -5,11 +5,14 @@
 // a grazing angle and the leaning normals made wedges of dark and light with straight edges across it. At load, each
 // vertex of the walkable, upward-facing triangles near the floor gets the normal of those triangles (area-weighted), so
 // a flat floor is lit as flat and a rug keeps its own folds; the slabs' sides, never seen, take the same.
+import { Vec3 } from 'playcanvas';
 
 // positions: world-space [x, y, z, ...]; normals: world-space, same layout (changed in place); indices: triangles.
+// With worldTransform, both input arrays are in mesh space and corrected normals are written back in mesh space.
 // Triangles whose face normal points up (y > minUp) with every corner below maxY count. Returns how many vertices
 // changed by more than `tolerance` degrees.
-export function flattenFloorNormals(positions, normals, indices, { maxY = 0.35, minUp = 0.9, tolerance = 2 } = {}) {
+export function flattenFloorNormals(positions, normals, indices, { maxY = 0.35, minUp = 0.9, tolerance = 2, worldTransform = null } = {}) {
+  if (worldTransform) return flattenTransformedFloorNormals(positions, normals, indices, worldTransform, { maxY, minUp, tolerance });
   const sum = new Map();
   for (let t = 0; t < indices.length; t += 3) {
     const a = indices[t] * 3, b = indices[t + 1] * 3, c = indices[t + 2] * 3;
@@ -35,6 +38,27 @@ export function flattenFloorNormals(positions, normals, indices, { maxY = 0.35, 
     const old = Math.hypot(normals[k], normals[k + 1], normals[k + 2]) || 1;
     if ((normals[k] * n[0] + normals[k + 1] * n[1] + normals[k + 2] * n[2]) / old < cos) changed++;
     normals[k] = n[0]; normals[k + 1] = n[1]; normals[k + 2] = n[2];
+  }
+  return changed;
+}
+
+function flattenTransformedFloorNormals(positions, normals, indices, world, options) {
+  const worldPositions = Array.from(positions), worldNormals = Array.from(normals), v = new Vec3();
+  // Normals use the inverse transpose, not the position/vector transform. The
+  // curtains and door models have nonuniform scale; using the latter leans their
+  // corrected normals again when the renderer transforms them back to the room.
+  const toWorld = world.clone().invert().transpose(), toMesh = world.clone().transpose();
+  for (let i = 0; i < worldPositions.length; i += 3) {
+    world.transformPoint(v.set(positions[i], positions[i + 1], positions[i + 2]), v);
+    worldPositions[i] = v.x; worldPositions[i + 1] = v.y; worldPositions[i + 2] = v.z;
+    toWorld.transformVector(v.set(normals[i], normals[i + 1], normals[i + 2]), v).normalize();
+    worldNormals[i] = v.x; worldNormals[i + 1] = v.y; worldNormals[i + 2] = v.z;
+  }
+  const changed = flattenFloorNormals(worldPositions, worldNormals, indices, options);
+  if (!changed) return 0;
+  for (let i = 0; i < normals.length; i += 3) {
+    toMesh.transformVector(v.set(worldNormals[i], worldNormals[i + 1], worldNormals[i + 2]), v).normalize();
+    normals[i] = v.x; normals[i + 1] = v.y; normals[i + 2] = v.z;
   }
   return changed;
 }

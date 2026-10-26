@@ -4,6 +4,10 @@ A browser horror game in the spirit of Konami's P.T. (first person, one quiet ho
 works with AI agents; whoever picks this up continues from the state below and keeps this file current. A new Claude
 session starts from `CLAUDE.md` (repo root: what to read, rules, commands, publishing); keep it current too.
 
+## Current continuation — Codex, 2026-10-26
+
+The owner moved development back to Codex and requested a branch comparison, incorporation of all latest Claude work, a bug pass and an updated playable link. Fresh remote `main` and `claude/pensive-volta-et0etl` were exactly identical at build 0.15, commit `c5a619f1e75881f46edbcf392f6c7f1e27e7a47e`. Existing `codex-review` was fast-forwarded to that shared commit, including all 59 newer Claude commits and preserving all prior Codex work. Development now continues on `codex-review`, with the 0.16 bug pass documented in [REVIEW_16.md](REVIEW_16.md). The gameplay/story baseline is the complete 0.15 night, including [BUILD_015.md](BUILD_015.md), [BUILD_014.md](BUILD_014.md) and [STORY.md](STORY.md). Earlier main-promotion permissions and Claude branch instructions remain historical; Codex must not push to either source branch without a current explicit request.
+
 ## Main promotion and Claude continuation — 2026-10-24
 
 The owner explicitly requested promoting verified build 0.11 to `main` and handing continuation to Claude. Read [CLAUDE_HANDOFF.md](CLAUDE_HANDOFF.md) for the current baseline, publication verification, Claude's existing branch, asset licenses, regression commands and implementation guardrails. The gameplay baseline is `259e12e6ade8d6ad97fcd6af81be4d2e95e453a4`; its review documentation is included. The canonical production URL is https://starfox22.github.io/horror/. This approval covers the current promotion; future main pushes still require an explicit owner request. Codex continues on `codex-review`; Claude updates its separate branch from the promoted `main` before continuing.
@@ -80,7 +84,7 @@ The owner explicitly requested promoting verified build 0.11 to `main` and handi
 All Codex review passes use `codex-review`. Build 0.8 is its first environment, lighting and interaction pass; Claude continues on a separate branch.
 Read [CODEX_ENVIRONMENT_PASS.md](CODEX_ENVIRONMENT_PASS.md) for the full change list, validation commands, comparison methodology and follow-up constraints.
 [PREVIEW_DEPLOYMENT.md](PREVIEW_DEPLOYMENT.md) documents the separate `/codex/` Pages build and deployment prerequisites.
-This remains a quiet apartment prototype with no added scares. The default Vite configuration now handles optional missing assets correctly, so the earlier external onboarding override is unnecessary on this branch.
+The first Codex reviews were quiet apartment prototypes; the current 0.15/0.16 baseline includes the full night and scripted scares developed later. The default Vite configuration handles optional missing assets correctly, so the earlier external onboarding override is unnecessary on this branch.
 
 ## Codex review 0.9
 
@@ -483,9 +487,9 @@ Full list, measurements and before/after renders: [BUILD_012.md](BUILD_012.md). 
 
 ## Continuation
 
-1. Build 0.13 (Claude) is on `claude/pensive-volta-et0etl` and, at the owner's request ("publish directly to main"),
-   on `main`; read [BUILD_013.md](BUILD_013.md) and [STORY.md](STORY.md) first. Codex continues on `codex-review`:
-   merge the current `main` into it before its next pass.
+1. Codex resumes on `codex-review` from the complete 0.15 game shared by `main` and `claude/pensive-volta-et0etl`,
+   with the 0.16 bug pass on top. Read [REVIEW_16.md](REVIEW_16.md), [BUILD_015.md](BUILD_015.md),
+   [BUILD_014.md](BUILD_014.md) and [STORY.md](STORY.md). The synchronization is already done; do not restart from 0.11/0.13.
 2. The night is complete: four endings, deaths that wake you at 03:07, checkpoints per act, chapters after a first
    ending, a journal of 18 pieces of evidence, three difficulties. Node regressions: `node --test tools/check-*.mjs`;
    browser checks: `tools/perf/final-check.mjs` (WebGL and WebGPU) and the headless play-through described in

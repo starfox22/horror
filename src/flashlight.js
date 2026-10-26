@@ -77,7 +77,7 @@ export class Flashlight {
     this.hud = hud;
     this.grid = grid;
     this.player = player;
-    this.surfaces = new FlashlightSurfaces(app.root);
+    this.surfaces = new FlashlightSurfaces(app.root, camera.camera?.camera);
     this.surfaceTimer = 0;
     this.held = false;
     this.on = false;

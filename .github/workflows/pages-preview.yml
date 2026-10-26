@@ -35,6 +35,13 @@ jobs:
           path: sources/codex
           persist-credentials: false
 
+      - name: Check out Claude's preview
+        uses: actions/checkout@v4
+        with:
+          ref: claude/pensive-volta-et0etl
+          path: sources/claude
+          persist-credentials: false
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -50,20 +57,39 @@ jobs:
         run: |
           npm ci
           node tools/check-reach.mjs
-          node --test tools/check-interactions.mjs tools/check-graphics-settings.mjs tools/check-frame-limiter.mjs tools/check-scene-quality.mjs tools/check-lamp-lighting.mjs tools/check-flashlight-shadows.mjs tools/check-wake-sequence.mjs tools/check-fridge.mjs tools/check-drink-sequence.mjs tools/check-coffee.mjs tools/check-flashlight-placement.mjs tools/check-switches.mjs
+          node --input-type=module <<'NODE'
+          import { readdirSync } from 'node:fs';
+          import { spawnSync } from 'node:child_process';
+          const checks = readdirSync('tools')
+            .filter(name => /^check-.*\.mjs$/.test(name) && name !== 'check-collision.mjs')
+            .sort().map(name => `tools/${name}`);
+          const result = spawnSync(process.execPath, ['--test', ...checks], { stdio: 'inherit' });
+          process.exit(result.status ?? 1);
+          NODE
           npm run build
 
-      - name: Assemble both games in one site
+      - name: Build Claude's preview
+        working-directory: sources/claude
         run: |
-          mkdir -p site/codex
+          npm ci
+          npm run build
+
+      - name: Assemble all three games in one site
+        run: |
+          mkdir -p site/codex site/claude
           cp -a sources/main/dist/. site/
           cp -a sources/codex/dist/. site/codex/
+          cp -a sources/claude/dist/. site/claude/
           original_sha="$(git -C sources/main rev-parse HEAD)"
           preview_sha="$(git -C sources/codex rev-parse HEAD)"
-          printf '{"original":"%s","preview":"%s"}\n' "$original_sha" "$preview_sha" > site/codex/build-info.json
+          claude_sha="$(git -C sources/claude rev-parse HEAD)"
+          printf '{"original":"%s","preview":"%s","claude":"%s"}\n' "$original_sha" "$preview_sha" "$claude_sha" > site/codex/build-info.json
+          printf '{"main":"%s","claude":"%s","codex":"%s"}\n' "$original_sha" "$claude_sha" "$preview_sha" > site/claude/build-info.json
           test -s site/index.html
           test -s site/codex/index.html
           test -s site/codex/assets/apartment/scene.gltf
+          test -s site/claude/index.html
+          test -s site/claude/assets/apartment/scene.gltf
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

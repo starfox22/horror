@@ -79,6 +79,10 @@ export class Power {
   apply(before, from, cause) {
     const changed = CIRCUITS.map(c => c.id).filter(c => before[c] !== this.live(c));
     if (!changed.length) return [];
+    // A quick second input replaces a circuit's unfinished animation. Keeping
+    // both would let level() find an old restore after that circuit is off.
+    for (const t of this.transitions) t.circuits = t.circuits.filter(c => !changed.includes(c));
+    this.transitions = this.transitions.filter(t => t.circuits.length);
     const off = changed.filter(c => !this.live(c)), on = changed.filter(c => this.live(c));
     if (off.length) this.transitions.push({ at: this.time, from, circuits: off, on: false, spread: 0.035 });
     if (on.length) this.transitions.push({ at: this.time, from, circuits: on, on: true, spread: 0.012 });
@@ -101,7 +105,12 @@ export class Power {
   // The player lifts the RCD: it stays up only if no faulty circuit is on; otherwise it snaps back down at once.
   setRcd(up, from = [2.3, 4.4]) {
     const before = this.snapshot();
-    if (up && this.faulty()) { this.rcd = true; this.apply(before, from, 'attempt'); this.rcd = false; this.apply(this.snapshot(), from, 'retrip'); return 'tripped'; }
+    if (up && this.faulty()) {
+      this.rcd = true; this.apply(before, from, 'attempt');
+      const energized = this.snapshot();
+      this.rcd = false; this.apply(energized, from, 'retrip');
+      return 'tripped';
+    }
     this.rcd = up;
     this.apply(before, from, up ? 'restore' : 'off');
     return up ? 'up' : 'down';
@@ -113,8 +122,9 @@ export class Power {
     if (on && this.rcd && this.main && this.faults.has(c)) {
       // A wet circuit switched on: the RCD trips the whole flat.
       this.apply(before, from, 'attempt');
+      const energized = this.snapshot();
       this.rcd = false;
-      this.apply(this.snapshot(), from, 'retrip');
+      this.apply(energized, from, 'retrip');
       return 'tripped';
     }
     this.apply(before, from, on ? 'restore' : 'off');
@@ -124,6 +134,15 @@ export class Power {
   setMain(on, from = [2.3, 4.4]) {
     const before = this.snapshot();
     this.main = on;
+    // A breaker can be enabled while the main is off. Restoring supply must
+    // still trip the RCD if that circuit is wet, just like lifting the RCD.
+    if (on && this.rcd && this.faulty()) {
+      this.apply(before, from, 'attempt');
+      const energized = this.snapshot();
+      this.rcd = false;
+      this.apply(energized, from, 'retrip');
+      return 'tripped';
+    }
     this.apply(before, from, on ? 'restore' : 'main');
   }
 

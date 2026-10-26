@@ -1,0 +1,2253 @@
+{
+  "comparisonDate": "2026-10-26",
+  "sourceBranches": {
+    "main": "c5a619f1e75881f46edbcf392f6c7f1e27e7a47e",
+    "claude/pensive-volta-et0etl": "c5a619f1e75881f46edbcf392f6c7f1e27e7a47e"
+  },
+  "sameCommit": true,
+  "sameTree": "67007d7daf7b38e31eaabb54dc3e857b1ab1b118",
+  "importedClaudeCommits": 59,
+  "integration": "fast-forward existing codex-review; all previous Codex commits retained",
+  "baselineNode": {
+    "pass": 213,
+    "fail": 0,
+    "excludes": "check-collision.mjs picture generator"
+  },
+  "finalNode": {
+    "pass": 231,
+    "fail": 0
+  },
+  "productionBuild": "PASS",
+  "beforeAfterCaptures": {
+    "baseline": "frozen build0.15 at shared source commit",
+    "after": "build0.16 after bug fixes",
+    "cameraAndDriver": "tools/perf/scenes/review-016.mjs",
+    "quality": 2,
+    "viewport": [
+      720,
+      480
+    ],
+    "retouching": false
+  },
+  "browserChecks": "PASS: 26 WebGPU scenarios and 28 WebGL event/ending cases",
+  "publication": "pending",
+  "webgpu": {
+    "mode": "webgpu",
+    "url": "http://127.0.0.1:4180/",
+    "initialized": true,
+    "steps": [
+      {
+        "name": "open fridge",
+        "shaders": [],
+        "materials": [],
+        "shadowFaces": 31,
+        "maxFacesPerFrame": 2
+      },
+      {
+        "name": "drink",
+        "shaders": [],
+        "materials": [],
+        "shadowFaces": 0,
+        "maxFacesPerFrame": 0
+      },
+      {
+        "name": "close fridge",
+        "shaders": [],
+        "materials": [],
+        "shadowFaces": 19,
+        "maxFacesPerFrame": 1
+      },
+      {
+        "name": "falling glass",
+        "shaders": [],
+        "materials": [],
+        "shadowFaces": 0,
+        "maxFacesPerFrame": 0
+      },
+      {
+        "name": "lightning",
+        "shaders": [],
+        "materials": [],
+        "shadowFaces": 3,
+        "maxFacesPerFrame": 3
+      },
+      {
+        "name": "kitchen switch",
+        "shaders": [],
+        "materials": [],
+        "shadowFaces": 0,
+        "maxFacesPerFrame": 0
+      },
+      {
+        "name": "flashlight",
+        "shaders": [],
+        "materials": [],
+        "shadowFaces": 16,
+        "maxFacesPerFrame": 2
+      },
+      {
+        "name": "coffee",
+        "shaders": [],
+        "materials": [],
+        "shadowFaces": 41,
+        "maxFacesPerFrame": 3
+      },
+      {
+        "name": "taps",
+        "shaders": [],
+        "materials": [],
+        "shadowFaces": 24,
+        "maxFacesPerFrame": 2
+      },
+      {
+        "name": "light under the door",
+        "shaders": [],
+        "materials": [],
+        "shadowFaces": 18,
+        "maxFacesPerFrame": 2
+      },
+      {
+        "name": "bathroom light out",
+        "shaders": [],
+        "materials": [],
+        "shadowFaces": 22,
+        "maxFacesPerFrame": 2
+      },
+      {
+        "name": "power cut",
+        "shaders": [],
+        "materials": [],
+        "shadowFaces": 22,
+        "maxFacesPerFrame": 2
+      },
+      {
+        "name": "fuse box",
+        "shaders": [],
+        "materials": [],
+        "shadowFaces": 12,
+        "maxFacesPerFrame": 2
+      },
+      {
+        "name": "levers",
+        "shaders": [],
+        "materials": [],
+        "shadowFaces": 32,
+        "maxFacesPerFrame": 9
+      },
+      {
+        "name": "the figure",
+        "shaders": [],
+        "materials": [],
+        "shadowFaces": 12,
+        "maxFacesPerFrame": 2
+      },
+      {
+        "name": "his run",
+        "shaders": [],
+        "materials": [],
+        "shadowFaces": 30,
+        "maxFacesPerFrame": 2
+      },
+      {
+        "name": "nest hanger",
+        "shaders": [],
+        "materials": [],
+        "shadowFaces": 14,
+        "maxFacesPerFrame": 2
+      },
+      {
+        "name": "phone boots",
+        "shaders": [],
+        "materials": [],
+        "shadowFaces": 14,
+        "maxFacesPerFrame": 2
+      },
+      {
+        "name": "phone",
+        "shaders": [],
+        "materials": [],
+        "shadowFaces": 14,
+        "maxFacesPerFrame": 2
+      },
+      {
+        "name": "LIVE",
+        "shaders": [],
+        "materials": [],
+        "shadowFaces": 22,
+        "maxFacesPerFrame": 2
+      },
+      {
+        "name": "hunt",
+        "shaders": [],
+        "materials": [],
+        "shadowFaces": 22,
+        "maxFacesPerFrame": 2
+      },
+      {
+        "name": "crow",
+        "shaders": [],
+        "materials": [],
+        "shadowFaces": 28,
+        "maxFacesPerFrame": 3
+      },
+      {
+        "name": "caught",
+        "shaders": [],
+        "materials": [],
+        "shadowFaces": 35,
+        "maxFacesPerFrame": 2
+      },
+      {
+        "name": "wake",
+        "shaders": [],
+        "materials": [],
+        "shadowFaces": 24,
+        "maxFacesPerFrame": 2
+      },
+      {
+        "name": "paused bed hold",
+        "shaders": [],
+        "materials": [],
+        "shadowFaces": 4,
+        "maxFacesPerFrame": 2
+      },
+      {
+        "name": "caught without torch",
+        "shaders": [],
+        "materials": [],
+        "shadowFaces": 9,
+        "maxFacesPerFrame": 3
+      }
+    ],
+    "checks": [
+      {
+        "name": "real bed hold stays paused",
+        "passed": true
+      },
+      {
+        "name": "real no-torch death strikes lightning",
+        "passed": true,
+        "calls": 1
+      }
+    ],
+    "problems": [],
+    "shadowBudget": null,
+    "startup": {
+      "state": {
+        "ready": true,
+        "error": null
+      },
+      "device": "webgpu"
+    },
+    "failures": [],
+    "status": "PASS"
+  },
+  "eventsWebgl": {
+    "initialized": true,
+    "problems": [],
+    "results": [
+      {
+        "pass": "order",
+        "id": "falling-glass",
+        "playedWhilePaused": 0,
+        "ranAt": 3,
+        "ran": true,
+        "alive": true,
+        "did": {
+          "sounds": [
+            "glass_break",
+            "thunder_far_4"
+          ],
+          "says": [
+            "...What was that?"
+          ],
+          "voices": []
+        },
+        "diff": {
+          "flags": {
+            "from": [],
+            "to": [
+              "glass"
+            ]
+          },
+          "tap": {
+            "from": false,
+            "to": true
+          }
+        }
+      },
+      {
+        "pass": "order",
+        "id": "crow",
+        "playedWhilePaused": 0,
+        "ranAt": 3,
+        "ran": true,
+        "alive": true,
+        "did": {
+          "sounds": [
+            "scare:window_thud",
+            "window_thud",
+            "crow_caw",
+            "wing_flap",
+            "thunder_far_1"
+          ],
+          "says": [
+            "Jesus.",
+            "...Just a bird."
+          ],
+          "voices": []
+        },
+        "diff": {}
+      },
+      {
+        "pass": "order",
+        "id": "bathroom-locked",
+        "playedWhilePaused": 0,
+        "ranAt": 3,
+        "ran": true,
+        "alive": true,
+        "did": {
+          "sounds": [
+            "door_locked",
+            "latch_2",
+            "water_drop"
+          ],
+          "says": [
+            "Locked."
+          ],
+          "voices": []
+        },
+        "diff": {
+          "flags": {
+            "from": [
+              "glass"
+            ],
+            "to": [
+              "bath-dark",
+              "bath-tried",
+              "glass"
+            ]
+          },
+          "lightsOn": {
+            "from": [
+              "mirror",
+              "hood"
+            ],
+            "to": [
+              "hood"
+            ]
+          },
+          "tap": {
+            "from": true,
+            "to": false
+          }
+        }
+      },
+      {
+        "pass": "order",
+        "id": "power-cut",
+        "playedWhilePaused": 0,
+        "ranAt": 3,
+        "ran": true,
+        "alive": true,
+        "did": {
+          "sounds": [
+            "elevator",
+            "arc_zap",
+            "arc_crackle",
+            "arc_discharge",
+            "boom",
+            "rcd_trip",
+            "power_down",
+            "scare:boom",
+            "thunder_far_2"
+          ],
+          "says": [
+            "No. No, no, no.",
+            "The bedroom."
+          ],
+          "voices": []
+        },
+        "diff": {
+          "flags": {
+            "from": [
+              "bath-dark",
+              "bath-tried",
+              "glass"
+            ],
+            "to": [
+              "bath-dark",
+              "bath-tried",
+              "glass",
+              "night-lift",
+              "power-cut",
+              "torch"
+            ]
+          },
+          "act": {
+            "from": 1,
+            "to": 2
+          },
+          "power": {
+            "from": {
+              "main": true,
+              "rcd": true,
+              "breakers": {
+                "lights1": true,
+                "lights2": true,
+                "kitchen": true,
+                "living": true,
+                "bed": true,
+                "bathroom": true,
+                "oven": true
+              },
+              "lit": [
+                "lights1",
+                "lights2",
+                "kitchen",
+                "living",
+                "bed",
+                "bathroom",
+                "oven"
+              ]
+            },
+            "to": {
+              "main": true,
+              "rcd": false,
+              "breakers": {
+                "lights1": true,
+                "lights2": true,
+                "kitchen": true,
+                "living": true,
+                "bed": true,
+                "bathroom": true,
+                "oven": true
+              },
+              "lit": []
+            }
+          },
+          "lightsOn": {
+            "from": [
+              "hood"
+            ],
+            "to": []
+          },
+          "tap": {
+            "from": false,
+            "to": true
+          }
+        }
+      },
+      {
+        "pass": "order",
+        "id": "silhouette",
+        "playedWhilePaused": 0,
+        "ranAt": 3,
+        "ran": true,
+        "alive": true,
+        "did": {
+          "sounds": [
+            "thunder_far_4",
+            "scare:step_wet",
+            "step_wet",
+            "his_breath_2",
+            "step_floor",
+            "wardrobe_creak",
+            "door_slam",
+            "scare:door_kick",
+            "door_kick",
+            "scare:boom",
+            "boom",
+            "creak_3",
+            "creak_2",
+            "thunder_far_3"
+          ],
+          "says": [
+            "...Someone\u2019s in here.",
+            "He\u2019s in my bedroom."
+          ],
+          "voices": []
+        },
+        "diff": {
+          "flags": {
+            "from": [
+              "bath-dark",
+              "bath-tried",
+              "glass",
+              "night-lift",
+              "power-cut",
+              "torch"
+            ],
+            "to": [
+              "bath-dark",
+              "bath-tried",
+              "bathroom-open",
+              "glass",
+              "night-lift",
+              "power-cut",
+              "prints",
+              "silhouette",
+              "torch"
+            ]
+          },
+          "man": {
+            "from": {
+              "visible": false,
+              "at": [
+                0,
+                0
+              ],
+              "clip": null
+            },
+            "to": {
+              "visible": false,
+              "at": [
+                10.45,
+                -0.1
+              ],
+              "clip": "run_neutral_01"
+            }
+          },
+          "wardrobeRight": {
+            "from": 0,
+            "to": 0.18
+          },
+          "nest": {
+            "from": {
+              "hatch": false,
+              "packed": false
+            },
+            "to": {
+              "hatch": true,
+              "packed": false
+            }
+          }
+        }
+      },
+      {
+        "pass": "order",
+        "id": "power-back",
+        "playedWhilePaused": 0,
+        "ranAt": 3,
+        "ran": true,
+        "alive": true,
+        "did": {
+          "sounds": [
+            "thunder_near_1",
+            "thunder_far_3"
+          ],
+          "says": [
+            "Okay."
+          ],
+          "voices": []
+        },
+        "diff": {
+          "flags": {
+            "from": [
+              "bath-dark",
+              "bath-tried",
+              "bathroom-open",
+              "glass",
+              "night-lift",
+              "power-cut",
+              "prints",
+              "silhouette",
+              "torch"
+            ],
+            "to": [
+              "bath-dark",
+              "bath-tried",
+              "bathroom-open",
+              "glass",
+              "night-lift",
+              "power-cut",
+              "prints",
+              "restored",
+              "silhouette",
+              "torch"
+            ]
+          },
+          "act": {
+            "from": 2,
+            "to": 3
+          },
+          "power": {
+            "from": {
+              "main": true,
+              "rcd": false,
+              "breakers": {
+                "lights1": true,
+                "lights2": true,
+                "kitchen": true,
+                "living": true,
+                "bed": true,
+                "bathroom": true,
+                "oven": true
+              },
+              "lit": []
+            },
+            "to": {
+              "main": true,
+              "rcd": true,
+              "breakers": {
+                "lights1": true,
+                "lights2": true,
+                "kitchen": true,
+                "living": false,
+                "bed": true,
+                "bathroom": false,
+                "oven": true
+              },
+              "lit": [
+                "lights1",
+                "lights2",
+                "kitchen",
+                "bed",
+                "oven"
+              ]
+            }
+          },
+          "lightsOn": {
+            "from": [],
+            "to": [
+              "hood"
+            ]
+          }
+        }
+      },
+      {
+        "pass": "order",
+        "id": "tap-off",
+        "playedWhilePaused": 0,
+        "ranAt": 3,
+        "ran": true,
+        "alive": true,
+        "did": {
+          "sounds": [
+            "latch_2",
+            "water_drop",
+            "creak_3",
+            "creak_long"
+          ],
+          "says": [
+            "My phone. ...The charger."
+          ],
+          "voices": []
+        },
+        "diff": {
+          "flags": {
+            "from": [
+              "bath-dark",
+              "bath-tried",
+              "bathroom-open",
+              "glass",
+              "night-lift",
+              "power-cut",
+              "prints",
+              "restored",
+              "silhouette",
+              "torch"
+            ],
+            "to": [
+              "bath-dark",
+              "bath-tried",
+              "bathroom-open",
+              "glass",
+              "night-lift",
+              "power-cut",
+              "prints",
+              "restored",
+              "silhouette",
+              "tap-off",
+              "torch"
+            ]
+          },
+          "tap": {
+            "from": true,
+            "to": false
+          }
+        }
+      },
+      {
+        "pass": "order",
+        "id": "alerts",
+        "playedWhilePaused": 0,
+        "ranAt": 3,
+        "ran": true,
+        "alive": true,
+        "did": {
+          "sounds": [
+            "phone_buzz"
+          ],
+          "says": [
+            "My phone."
+          ],
+          "voices": []
+        },
+        "diff": {
+          "flags": {
+            "from": [
+              "bath-dark",
+              "bath-tried",
+              "bathroom-open",
+              "glass",
+              "night-lift",
+              "power-cut",
+              "prints",
+              "restored",
+              "silhouette",
+              "tap-off",
+              "torch"
+            ],
+            "to": [
+              "alerts",
+              "bath-dark",
+              "bath-tried",
+              "bathroom-open",
+              "glass",
+              "night-lift",
+              "power-cut",
+              "prints",
+              "restored",
+              "silhouette",
+              "tap-off",
+              "torch"
+            ]
+          },
+          "phone": {
+            "from": {
+              "booted": false,
+              "booting": null,
+              "lit": 0,
+              "app": "lock"
+            },
+            "to": {
+              "booted": true,
+              "booting": null,
+              "lit": 13.7,
+              "app": "lock"
+            }
+          }
+        }
+      },
+      {
+        "pass": "order",
+        "id": "nest",
+        "playedWhilePaused": 0,
+        "ranAt": 3,
+        "ran": true,
+        "alive": true,
+        "did": {
+          "sounds": [
+            "wardrobe_creak",
+            "scare:hangers",
+            "hangers",
+            "gasp",
+            "thunder_far_1"
+          ],
+          "says": [
+            "The bathroom."
+          ],
+          "voices": []
+        },
+        "diff": {
+          "flags": {
+            "from": [
+              "alerts",
+              "bath-dark",
+              "bath-tried",
+              "bathroom-open",
+              "glass",
+              "night-lift",
+              "power-cut",
+              "prints",
+              "restored",
+              "silhouette",
+              "tap-off",
+              "torch"
+            ],
+            "to": [
+              "alerts",
+              "bath-dark",
+              "bath-tried",
+              "bathroom-open",
+              "glass",
+              "hanger",
+              "nest-seen",
+              "night-lift",
+              "power-cut",
+              "prints",
+              "restored",
+              "silhouette",
+              "tap-off",
+              "torch"
+            ]
+          },
+          "phone": {
+            "from": {
+              "booted": true,
+              "booting": null,
+              "lit": 13.7,
+              "app": "lock"
+            },
+            "to": {
+              "booted": true,
+              "booting": null,
+              "lit": 1,
+              "app": "lock"
+            }
+          },
+          "wardrobeRight": {
+            "from": 0.18,
+            "to": 1
+          }
+        }
+      },
+      {
+        "pass": "order",
+        "id": "live",
+        "playedWhilePaused": 0,
+        "ranAt": 3,
+        "ran": true,
+        "alive": true,
+        "did": {
+          "sounds": [
+            "creak_long",
+            "step_floor"
+          ],
+          "says": [],
+          "voices": []
+        },
+        "diff": {
+          "flags": {
+            "from": [
+              "alerts",
+              "bath-dark",
+              "bath-tried",
+              "bathroom-open",
+              "glass",
+              "hanger",
+              "nest-seen",
+              "night-lift",
+              "power-cut",
+              "prints",
+              "restored",
+              "silhouette",
+              "tap-off",
+              "torch"
+            ],
+            "to": [
+              "alerts",
+              "bath-dark",
+              "bath-tried",
+              "bathroom-open",
+              "glass",
+              "hanger",
+              "live",
+              "nest-seen",
+              "night-lift",
+              "power-cut",
+              "prints",
+              "restored",
+              "silhouette",
+              "tap-off",
+              "torch"
+            ]
+          },
+          "man": {
+            "from": {
+              "visible": false,
+              "at": [
+                10.45,
+                -0.1
+              ],
+              "clip": "run_neutral_01"
+            },
+            "to": {
+              "visible": true,
+              "at": [
+                11.13,
+                1.66
+              ],
+              "clip": "walk_slow_01"
+            }
+          },
+          "phone": {
+            "from": {
+              "booted": true,
+              "booting": null,
+              "lit": 1,
+              "app": "lock"
+            },
+            "to": {
+              "booted": true,
+              "booting": null,
+              "lit": 0,
+              "app": "live"
+            }
+          },
+          "seccam": {
+            "from": false,
+            "to": true
+          }
+        }
+      },
+      {
+        "pass": "order",
+        "id": "hunt",
+        "playedWhilePaused": 0,
+        "ranAt": 3,
+        "ran": true,
+        "alive": true,
+        "did": {
+          "sounds": [
+            "step_floor",
+            "scare:sting_braam",
+            "sting_braam",
+            "breaker_big",
+            "creak_2",
+            "creak_3",
+            "thunder_far_3"
+          ],
+          "says": [
+            "He\u2019s back. ...Listen.",
+            "Get down. Stay quiet."
+          ],
+          "voices": []
+        },
+        "diff": {
+          "flags": {
+            "from": [
+              "alerts",
+              "bath-dark",
+              "bath-tried",
+              "bathroom-open",
+              "glass",
+              "hanger",
+              "live",
+              "nest-seen",
+              "night-lift",
+              "power-cut",
+              "prints",
+              "restored",
+              "silhouette",
+              "tap-off",
+              "torch"
+            ],
+            "to": [
+              "alerts",
+              "bath-dark",
+              "bath-tried",
+              "bathroom-open",
+              "glass",
+              "hanger",
+              "hunt",
+              "live",
+              "nest-seen",
+              "night-lift",
+              "power-cut",
+              "prints",
+              "restored",
+              "silhouette",
+              "tap-off",
+              "torch"
+            ]
+          },
+          "act": {
+            "from": 3,
+            "to": 4
+          },
+          "power": {
+            "from": {
+              "main": true,
+              "rcd": true,
+              "breakers": {
+                "lights1": true,
+                "lights2": true,
+                "kitchen": true,
+                "living": false,
+                "bed": true,
+                "bathroom": false,
+                "oven": true
+              },
+              "lit": [
+                "lights1",
+                "lights2",
+                "kitchen",
+                "bed",
+                "oven"
+              ]
+            },
+            "to": {
+              "main": false,
+              "rcd": true,
+              "breakers": {
+                "lights1": true,
+                "lights2": true,
+                "kitchen": true,
+                "living": false,
+                "bed": true,
+                "bathroom": false,
+                "oven": true
+              },
+              "lit": []
+            }
+          },
+          "lightsOn": {
+            "from": [
+              "hood"
+            ],
+            "to": []
+          },
+          "man": {
+            "from": {
+              "visible": true,
+              "at": [
+                11.13,
+                1.66
+              ],
+              "clip": "walk_slow_01"
+            },
+            "to": {
+              "visible": true,
+              "at": [
+                -1.75,
+                3.19
+              ],
+              "clip": "walk_slow_01"
+            }
+          },
+          "seccam": {
+            "from": true,
+            "to": false
+          },
+          "hunt": {
+            "from": false,
+            "to": true
+          },
+          "nest": {
+            "from": {
+              "hatch": true,
+              "packed": false
+            },
+            "to": {
+              "hatch": true,
+              "packed": true
+            }
+          }
+        }
+      },
+      {
+        "pass": "order",
+        "id": "caught",
+        "playedWhilePaused": 0,
+        "ranAt": 3,
+        "ran": true,
+        "alive": true,
+        "did": {
+          "sounds": [
+            "step_floor",
+            "creak_3",
+            "scare:sting_scare",
+            "sting_scare",
+            "his_breath_2",
+            "knife_stab",
+            "gasp",
+            "body_fall",
+            "heartbeat",
+            "tinnitus",
+            "his_breath_1",
+            "blanket",
+            "latch_1",
+            "door_creak"
+          ],
+          "says": [
+            "...A dream?"
+          ],
+          "voices": []
+        },
+        "diff": {
+          "flags": {
+            "from": [
+              "alerts",
+              "bath-dark",
+              "bath-tried",
+              "bathroom-open",
+              "glass",
+              "hanger",
+              "hunt",
+              "live",
+              "nest-seen",
+              "night-lift",
+              "power-cut",
+              "prints",
+              "restored",
+              "silhouette",
+              "tap-off",
+              "torch"
+            ],
+            "to": [
+              "alerts",
+              "bath-dark",
+              "bath-tried",
+              "bathroom-open",
+              "glass",
+              "hanger",
+              "hunt",
+              "live",
+              "nest-seen",
+              "night-lift",
+              "power-cut",
+              "prints",
+              "restored",
+              "silhouette",
+              "tap-off",
+              "torch",
+              "woke"
+            ]
+          },
+          "man": {
+            "from": {
+              "visible": true,
+              "at": [
+                -1.75,
+                3.19
+              ],
+              "clip": "walk_slow_01"
+            },
+            "to": {
+              "visible": true,
+              "at": [
+                9.46,
+                0.94
+              ],
+              "clip": "try_door_inwards"
+            }
+          }
+        }
+      },
+      {
+        "pass": "again",
+        "id": "caught",
+        "playedWhilePaused": 0,
+        "ranAt": 3,
+        "ran": true,
+        "alive": true,
+        "did": {
+          "sounds": [
+            "step_floor",
+            "scare:sting_braam",
+            "sting_braam",
+            "his_breath_2",
+            "knife_stab",
+            "gasp",
+            "body_fall",
+            "heartbeat",
+            "tinnitus",
+            "his_breath_1",
+            "blanket"
+          ],
+          "says": [
+            "Again."
+          ],
+          "voices": []
+        },
+        "diff": {
+          "man": {
+            "from": {
+              "visible": true,
+              "at": [
+                9.46,
+                0.94
+              ],
+              "clip": "try_door_inwards"
+            },
+            "to": {
+              "visible": true,
+              "at": [
+                8.09,
+                3.61
+              ],
+              "clip": "walk_slow_01"
+            }
+          }
+        }
+      },
+      {
+        "pass": "again",
+        "id": "hunt",
+        "playedWhilePaused": 0,
+        "ranAt": 3,
+        "ran": true,
+        "alive": true,
+        "did": {
+          "sounds": [
+            "step_floor",
+            "thunder_far_2",
+            "creak_3",
+            "scare:sting_braam",
+            "sting_braam",
+            "breaker_big",
+            "creak_2"
+          ],
+          "says": [
+            "Get out. ...The spare key.",
+            "He\u2019s back. ...Listen.",
+            "Get down. Stay quiet."
+          ],
+          "voices": []
+        },
+        "diff": {
+          "man": {
+            "from": {
+              "visible": true,
+              "at": [
+                8.09,
+                3.61
+              ],
+              "clip": "walk_slow_01"
+            },
+            "to": {
+              "visible": true,
+              "at": [
+                4.4,
+                0.2
+              ],
+              "clip": "idle_look_around_01"
+            }
+          }
+        }
+      },
+      {
+        "pass": "again",
+        "id": "live",
+        "playedWhilePaused": 0,
+        "ranAt": 3,
+        "ran": true,
+        "alive": true,
+        "did": {
+          "sounds": [
+            "step_floor",
+            "creak_2",
+            "creak_long"
+          ],
+          "says": [],
+          "voices": []
+        },
+        "diff": {
+          "flags": {
+            "from": [
+              "alerts",
+              "bath-dark",
+              "bath-tried",
+              "bathroom-open",
+              "glass",
+              "hanger",
+              "hunt",
+              "live",
+              "nest-seen",
+              "night-lift",
+              "power-cut",
+              "prints",
+              "restored",
+              "silhouette",
+              "tap-off",
+              "torch",
+              "woke"
+            ],
+            "to": [
+              "alerts",
+              "bath-dark",
+              "bath-tried",
+              "bathroom-open",
+              "glass",
+              "hanger",
+              "live",
+              "nest-seen",
+              "night-lift",
+              "power-cut",
+              "prints",
+              "restored",
+              "silhouette",
+              "tap-off",
+              "torch",
+              "woke"
+            ]
+          },
+          "act": {
+            "from": 4,
+            "to": 3
+          },
+          "power": {
+            "from": {
+              "main": false,
+              "rcd": true,
+              "breakers": {
+                "lights1": true,
+                "lights2": true,
+                "kitchen": true,
+                "living": false,
+                "bed": true,
+                "bathroom": false,
+                "oven": true
+              },
+              "lit": []
+            },
+            "to": {
+              "main": true,
+              "rcd": true,
+              "breakers": {
+                "lights1": true,
+                "lights2": true,
+                "kitchen": true,
+                "living": false,
+                "bed": true,
+                "bathroom": false,
+                "oven": true
+              },
+              "lit": [
+                "lights1",
+                "lights2",
+                "kitchen",
+                "bed",
+                "oven"
+              ]
+            }
+          },
+          "lightsOn": {
+            "from": [],
+            "to": [
+              "hood"
+            ]
+          },
+          "man": {
+            "from": {
+              "visible": true,
+              "at": [
+                4.4,
+                0.2
+              ],
+              "clip": "idle_look_around_01"
+            },
+            "to": {
+              "visible": true,
+              "at": [
+                11.28,
+                1.92
+              ],
+              "clip": "walk_slow_01"
+            }
+          },
+          "seccam": {
+            "from": false,
+            "to": true
+          },
+          "hunt": {
+            "from": true,
+            "to": false
+          }
+        }
+      },
+      {
+        "pass": "again",
+        "id": "nest",
+        "playedWhilePaused": 0,
+        "ranAt": 3,
+        "ran": true,
+        "alive": true,
+        "did": {
+          "sounds": [
+            "step_floor",
+            "scare:hangers",
+            "hangers",
+            "gasp",
+            "scare:sting_braam",
+            "sting_braam",
+            "breaker_big",
+            "creak_2"
+          ],
+          "says": [
+            "Get out. ...The spare key.",
+            "He\u2019s back. ...Listen."
+          ],
+          "voices": []
+        },
+        "diff": {
+          "flags": {
+            "from": [
+              "alerts",
+              "bath-dark",
+              "bath-tried",
+              "bathroom-open",
+              "glass",
+              "hanger",
+              "live",
+              "nest-seen",
+              "night-lift",
+              "power-cut",
+              "prints",
+              "restored",
+              "silhouette",
+              "tap-off",
+              "torch",
+              "woke"
+            ],
+            "to": [
+              "alerts",
+              "bath-dark",
+              "bath-tried",
+              "bathroom-open",
+              "glass",
+              "hanger",
+              "hunt",
+              "live",
+              "nest-seen",
+              "night-lift",
+              "power-cut",
+              "prints",
+              "restored",
+              "silhouette",
+              "tap-off",
+              "torch",
+              "woke"
+            ]
+          },
+          "act": {
+            "from": 3,
+            "to": 4
+          },
+          "power": {
+            "from": {
+              "main": true,
+              "rcd": true,
+              "breakers": {
+                "lights1": true,
+                "lights2": true,
+                "kitchen": true,
+                "living": false,
+                "bed": true,
+                "bathroom": false,
+                "oven": true
+              },
+              "lit": [
+                "lights1",
+                "lights2",
+                "kitchen",
+                "bed",
+                "oven"
+              ]
+            },
+            "to": {
+              "main": false,
+              "rcd": true,
+              "breakers": {
+                "lights1": true,
+                "lights2": true,
+                "kitchen": true,
+                "living": false,
+                "bed": true,
+                "bathroom": false,
+                "oven": true
+              },
+              "lit": []
+            }
+          },
+          "lightsOn": {
+            "from": [
+              "hood"
+            ],
+            "to": []
+          },
+          "man": {
+            "from": {
+              "visible": true,
+              "at": [
+                11.28,
+                1.92
+              ],
+              "clip": "walk_slow_01"
+            },
+            "to": {
+              "visible": true,
+              "at": [
+                4.34,
+                0.85
+              ],
+              "clip": "walk_slow_01"
+            }
+          },
+          "seccam": {
+            "from": true,
+            "to": false
+          },
+          "hunt": {
+            "from": false,
+            "to": true
+          }
+        }
+      },
+      {
+        "pass": "again",
+        "id": "alerts",
+        "playedWhilePaused": 0,
+        "ranAt": 3,
+        "ran": true,
+        "alive": true,
+        "did": {
+          "sounds": [
+            "step_floor",
+            "phone_buzz"
+          ],
+          "says": [
+            "Get down. Stay quiet."
+          ],
+          "voices": []
+        },
+        "diff": {
+          "man": {
+            "from": {
+              "visible": true,
+              "at": [
+                4.34,
+                0.85
+              ],
+              "clip": "walk_slow_01"
+            },
+            "to": {
+              "visible": true,
+              "at": [
+                1.66,
+                3.48
+              ],
+              "clip": "walk_slow_01"
+            }
+          },
+          "phone": {
+            "from": {
+              "booted": true,
+              "booting": null,
+              "lit": 0,
+              "app": "live"
+            },
+            "to": {
+              "booted": true,
+              "booting": null,
+              "lit": 13.5,
+              "app": "lock"
+            }
+          }
+        }
+      },
+      {
+        "pass": "again",
+        "id": "tap-off",
+        "playedWhilePaused": 0,
+        "ranAt": 3,
+        "ran": true,
+        "alive": true,
+        "did": {
+          "sounds": [
+            "step_floor",
+            "heartbeat",
+            "creak_2",
+            "latch_2",
+            "water_drop",
+            "creak_3",
+            "creak_long",
+            "thunder_far_3"
+          ],
+          "says": [
+            "Get out. ...The spare key."
+          ],
+          "voices": []
+        },
+        "diff": {
+          "man": {
+            "from": {
+              "visible": true,
+              "at": [
+                1.66,
+                3.48
+              ],
+              "clip": "walk_slow_01"
+            },
+            "to": {
+              "visible": true,
+              "at": [
+                4.6,
+                2.2
+              ],
+              "clip": "idle_look_around_01"
+            }
+          },
+          "phone": {
+            "from": {
+              "booted": true,
+              "booting": null,
+              "lit": 13.5,
+              "app": "lock"
+            },
+            "to": {
+              "booted": true,
+              "booting": null,
+              "lit": 0.6,
+              "app": "lock"
+            }
+          }
+        }
+      },
+      {
+        "pass": "again",
+        "id": "power-back",
+        "playedWhilePaused": 0,
+        "ranAt": 3,
+        "ran": true,
+        "alive": true,
+        "did": {
+          "sounds": [
+            "step_floor",
+            "heartbeat",
+            "his_breath_1",
+            "his_breath_2"
+          ],
+          "says": [],
+          "voices": []
+        },
+        "diff": {
+          "power": {
+            "from": {
+              "main": false,
+              "rcd": true,
+              "breakers": {
+                "lights1": true,
+                "lights2": true,
+                "kitchen": true,
+                "living": false,
+                "bed": true,
+                "bathroom": false,
+                "oven": true
+              },
+              "lit": []
+            },
+            "to": {
+              "main": true,
+              "rcd": true,
+              "breakers": {
+                "lights1": true,
+                "lights2": true,
+                "kitchen": true,
+                "living": false,
+                "bed": true,
+                "bathroom": false,
+                "oven": true
+              },
+              "lit": [
+                "lights1",
+                "lights2",
+                "kitchen",
+                "bed",
+                "oven"
+              ]
+            }
+          },
+          "lightsOn": {
+            "from": [],
+            "to": [
+              "hood"
+            ]
+          },
+          "man": {
+            "from": {
+              "visible": true,
+              "at": [
+                4.6,
+                2.2
+              ],
+              "clip": "idle_look_around_01"
+            },
+            "to": {
+              "visible": true,
+              "at": [
+                -4.02,
+                1.61
+              ],
+              "clip": "walk_neutral_01"
+            }
+          },
+          "phone": {
+            "from": {
+              "booted": true,
+              "booting": null,
+              "lit": 0.6,
+              "app": "lock"
+            },
+            "to": {
+              "booted": true,
+              "booting": null,
+              "lit": 0,
+              "app": "lock"
+            }
+          }
+        }
+      },
+      {
+        "pass": "again",
+        "id": "silhouette",
+        "playedWhilePaused": 0,
+        "ranAt": 3,
+        "ran": true,
+        "alive": true,
+        "did": {
+          "sounds": [
+            "scare:sting_riser",
+            "sting_riser",
+            "heartbeat",
+            "step_floor",
+            "his_breath_2",
+            "knife_stab",
+            "gasp",
+            "body_fall",
+            "tinnitus",
+            "his_breath_1",
+            "blanket",
+            "scare:step_wet",
+            "step_wet",
+            "wardrobe_creak",
+            "door_slam",
+            "scare:door_kick",
+            "door_kick",
+            "scare:boom",
+            "boom",
+            "creak_3",
+            "creak_2"
+          ],
+          "says": [
+            "Wake up. Wake up.",
+            "...Someone\u2019s in here."
+          ],
+          "voices": []
+        },
+        "diff": {
+          "flags": {
+            "from": [
+              "alerts",
+              "bath-dark",
+              "bath-tried",
+              "bathroom-open",
+              "glass",
+              "hanger",
+              "hunt",
+              "live",
+              "nest-seen",
+              "night-lift",
+              "power-cut",
+              "prints",
+              "restored",
+              "silhouette",
+              "tap-off",
+              "torch",
+              "woke"
+            ],
+            "to": [
+              "alerts",
+              "bath-dark",
+              "bath-tried",
+              "bathroom-open",
+              "glass",
+              "hanger",
+              "live",
+              "nest-seen",
+              "night-lift",
+              "power-cut",
+              "prints",
+              "restored",
+              "silhouette",
+              "tap-off",
+              "torch",
+              "woke"
+            ]
+          },
+          "act": {
+            "from": 4,
+            "to": 3
+          },
+          "man": {
+            "from": {
+              "visible": true,
+              "at": [
+                -4.02,
+                1.61
+              ],
+              "clip": "walk_neutral_01"
+            },
+            "to": {
+              "visible": false,
+              "at": [
+                10.45,
+                2.49
+              ],
+              "clip": "run_neutral_01"
+            }
+          },
+          "hunt": {
+            "from": true,
+            "to": false
+          },
+          "wardrobeRight": {
+            "from": 1,
+            "to": 0.18
+          }
+        }
+      },
+      {
+        "pass": "again",
+        "id": "power-cut",
+        "playedWhilePaused": 0,
+        "ranAt": 3,
+        "ran": true,
+        "alive": true,
+        "did": {
+          "sounds": [
+            "creak_3",
+            "creak_2",
+            "arc_zap",
+            "thunder_far_4",
+            "arc_crackle",
+            "arc_discharge",
+            "boom",
+            "rcd_trip",
+            "power_down",
+            "scare:boom",
+            "thunder_near_2"
+          ],
+          "says": [
+            "He\u2019s in my bedroom.",
+            "No. No, no, no."
+          ],
+          "voices": []
+        },
+        "diff": {
+          "flags": {
+            "from": [
+              "alerts",
+              "bath-dark",
+              "bath-tried",
+              "bathroom-open",
+              "glass",
+              "hanger",
+              "live",
+              "nest-seen",
+              "night-lift",
+              "power-cut",
+              "prints",
+              "restored",
+              "silhouette",
+              "tap-off",
+              "torch",
+              "woke"
+            ],
+            "to": [
+              "alerts",
+              "bath-dark",
+              "bath-tried",
+              "bathroom-open",
+              "glass",
+              "hanger",
+              "live",
+              "nest-seen",
+              "night-lift",
+              "power-cut",
+              "prints",
+              "silhouette",
+              "tap-off",
+              "torch",
+              "woke"
+            ]
+          },
+          "act": {
+            "from": 3,
+            "to": 2
+          },
+          "power": {
+            "from": {
+              "main": true,
+              "rcd": true,
+              "breakers": {
+                "lights1": true,
+                "lights2": true,
+                "kitchen": true,
+                "living": false,
+                "bed": true,
+                "bathroom": false,
+                "oven": true
+              },
+              "lit": [
+                "lights1",
+                "lights2",
+                "kitchen",
+                "bed",
+                "oven"
+              ]
+            },
+            "to": {
+              "main": true,
+              "rcd": false,
+              "breakers": {
+                "lights1": true,
+                "lights2": true,
+                "kitchen": true,
+                "living": true,
+                "bed": true,
+                "bathroom": true,
+                "oven": true
+              },
+              "lit": []
+            }
+          },
+          "lightsOn": {
+            "from": [
+              "hood"
+            ],
+            "to": []
+          },
+          "tap": {
+            "from": false,
+            "to": true
+          }
+        }
+      },
+      {
+        "pass": "again",
+        "id": "bathroom-locked",
+        "playedWhilePaused": 0,
+        "ranAt": 3,
+        "ran": true,
+        "alive": true,
+        "did": {
+          "sounds": [
+            "door_locked",
+            "thunder_far_4",
+            "latch_2",
+            "water_drop",
+            "thunder_far_2"
+          ],
+          "says": [
+            "Locked."
+          ],
+          "voices": []
+        },
+        "diff": {
+          "tap": {
+            "from": true,
+            "to": false
+          }
+        }
+      },
+      {
+        "pass": "again",
+        "id": "crow",
+        "playedWhilePaused": 0,
+        "ranAt": 3,
+        "ran": true,
+        "alive": true,
+        "did": {
+          "sounds": [
+            "thunder_far_2",
+            "scare:window_thud",
+            "window_thud",
+            "crow_caw",
+            "wing_flap",
+            "thunder_far_3"
+          ],
+          "says": [
+            "Jesus.",
+            "...Just a bird."
+          ],
+          "voices": []
+        },
+        "diff": {}
+      },
+      {
+        "pass": "again",
+        "id": "falling-glass",
+        "playedWhilePaused": 0,
+        "ranAt": 3,
+        "ran": true,
+        "alive": true,
+        "did": {
+          "sounds": [
+            "thunder_far_2",
+            "glass_break",
+            "thunder_far_1"
+          ],
+          "says": [
+            "...What was that?"
+          ],
+          "voices": []
+        },
+        "diff": {}
+      },
+      {
+        "pass": "ending",
+        "id": "end-sweet-dreams",
+        "playedWhilePaused": 0,
+        "ranAt": 3,
+        "ran": true,
+        "alive": true,
+        "did": {
+          "sounds": [
+            "creak_long",
+            "blanket",
+            "bed_move",
+            "wardrobe_creak",
+            "creak_1"
+          ],
+          "says": [],
+          "voices": []
+        },
+        "diff": {
+          "flags": {
+            "from": [
+              "alerts",
+              "bath-dark",
+              "bath-tried",
+              "bathroom-open",
+              "glass",
+              "hanger",
+              "live",
+              "nest-seen",
+              "night-lift",
+              "power-cut",
+              "prints",
+              "silhouette",
+              "tap-off",
+              "torch",
+              "woke"
+            ],
+            "to": [
+              "alerts",
+              "bath-dark",
+              "bath-tried",
+              "bathroom-open",
+              "ended",
+              "glass",
+              "hanger",
+              "live",
+              "nest-seen",
+              "night-lift",
+              "power-cut",
+              "prints",
+              "silhouette",
+              "tap-off",
+              "torch",
+              "woke"
+            ]
+          },
+          "ending": {
+            "from": false,
+            "to": true
+          }
+        }
+      },
+      {
+        "pass": "ending",
+        "id": "end-out",
+        "playedWhilePaused": 0,
+        "ranAt": 3,
+        "ran": true,
+        "alive": true,
+        "did": {
+          "sounds": [
+            "creak_long",
+            "door_creak",
+            "steps_socks",
+            "thunder_far_1",
+            "latch_1",
+            "deadbolt"
+          ],
+          "says": [
+            "The fuse box. Far end of the hall."
+          ],
+          "voices": []
+        },
+        "diff": {
+          "flags": {
+            "from": [
+              "alerts",
+              "bath-dark",
+              "bath-tried",
+              "bathroom-open",
+              "glass",
+              "hanger",
+              "live",
+              "nest-seen",
+              "night-lift",
+              "power-cut",
+              "prints",
+              "silhouette",
+              "tap-off",
+              "torch",
+              "woke"
+            ],
+            "to": [
+              "alerts",
+              "bath-dark",
+              "bath-tried",
+              "bathroom-open",
+              "ended",
+              "glass",
+              "hanger",
+              "live",
+              "nest-seen",
+              "night-lift",
+              "power-cut",
+              "prints",
+              "silhouette",
+              "tap-off",
+              "torch",
+              "woke"
+            ]
+          },
+          "ending": {
+            "from": false,
+            "to": true
+          }
+        }
+      },
+      {
+        "pass": "ending",
+        "id": "end-locked",
+        "playedWhilePaused": 0,
+        "ranAt": 3,
+        "ran": true,
+        "alive": true,
+        "did": {
+          "sounds": [
+            "creak_long",
+            "sirens_far",
+            "knock_police",
+            "door_smash",
+            "door_kick"
+          ],
+          "says": [],
+          "voices": [
+            "Outside: Police! Open the door!",
+            "Outside: We\u2019re coming in. Stand back from the door!"
+          ]
+        },
+        "diff": {
+          "flags": {
+            "from": [
+              "alerts",
+              "bath-dark",
+              "bath-tried",
+              "bathroom-open",
+              "glass",
+              "hanger",
+              "live",
+              "nest-seen",
+              "night-lift",
+              "power-cut",
+              "prints",
+              "silhouette",
+              "tap-off",
+              "torch",
+              "woke"
+            ],
+            "to": [
+              "alerts",
+              "bath-dark",
+              "bath-tried",
+              "bathroom-open",
+              "ended",
+              "glass",
+              "hanger",
+              "live",
+              "nest-seen",
+              "night-lift",
+              "power-cut",
+              "prints",
+              "silhouette",
+              "tap-off",
+              "torch",
+              "woke"
+            ]
+          },
+          "ending": {
+            "from": false,
+            "to": true
+          }
+        }
+      },
+      {
+        "pass": "ending",
+        "id": "end-evicted",
+        "playedWhilePaused": 0,
+        "ranAt": 3,
+        "ran": true,
+        "alive": true,
+        "did": {
+          "sounds": [
+            "creak_long",
+            "sirens_far",
+            "knock_police",
+            "door_smash",
+            "door_kick"
+          ],
+          "says": [],
+          "voices": [
+            "Outside: Police! Open the door!",
+            "Outside: We\u2019re coming in. Stand back from the door!"
+          ]
+        },
+        "diff": {
+          "flags": {
+            "from": [
+              "alerts",
+              "bath-dark",
+              "bath-tried",
+              "bathroom-open",
+              "glass",
+              "hanger",
+              "live",
+              "nest-seen",
+              "night-lift",
+              "power-cut",
+              "prints",
+              "silhouette",
+              "tap-off",
+              "torch",
+              "woke"
+            ],
+            "to": [
+              "alerts",
+              "bath-dark",
+              "bath-tried",
+              "bathroom-open",
+              "ended",
+              "glass",
+              "hanger",
+              "live",
+              "nest-seen",
+              "night-lift",
+              "power-cut",
+              "prints",
+              "silhouette",
+              "tap-off",
+              "torch",
+              "woke"
+            ]
+          },
+          "ending": {
+            "from": false,
+            "to": true
+          }
+        }
+      }
+    ],
+    "timing": "Director advanced only by the audit clock; native RAF continues rendering; shared pause predicate checked",
+    "seconds": 1543,
+    "failures": [],
+    "status": "PASS"
+  }
+}

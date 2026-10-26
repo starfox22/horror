@@ -284,7 +284,7 @@ const phone = new Phone({ app, camera, interactions, bank, story, hud, seccam, c
 phone.power = power;
 const hunt = new Hunt({ app, intruder, nav, walk: grid, player, camera, flashlight, bank, story, music, difficulty: () => story.difficulty });
 const fadeEl = Object.assign(document.createElement('div'), { id: 'fade' }); document.body.appendChild(fadeEl);
-const death = new Death({ app, camera, player, intruder, bank, music, veil: fadeEl, walk: grid, flashlight });
+const death = new Death({ app, camera, player, intruder, bank, music, veil: fadeEl, walk: grid, flashlight, rain });
 const endings = new Endings({ story, bank, music, hud, menu, fade: fadeEl, player, camera, clock: { label: () => nightClock().toTimeString().slice(0, 5) },
   stills: { show: async (id) => { const url = await seccam.still(id, 0); if (url) hud.examine({ className: 'photo', html: `<img src="${url}" alt="The camera, 03:14: the bed, and a man standing at its foot">` }); }, hide: () => hud.closeDoc() } });
 Object.assign(sys, { fusebox, world, nest, seccam, phone, hunt, death, endings, events, sounds: ambience, taps });
@@ -329,7 +329,7 @@ power.onChange(event => {
 {
   let holdTimer = null;
   const bedItem = interactions.add({ pos: new pc.Vec3(12.7, 0.75, 0.5), size: 0.9, active: () => story.canSleep(), label: () => 'Hold E · go back to sleep',
-    use: () => { clearTimeout(holdTimer); holdTimer = setTimeout(() => { if (eDown && story.canSleep() && interactions.focus === bedItem) story.sleptAgain(); }, 1500); } });
+    use: () => { clearTimeout(holdTimer); holdTimer = setTimeout(() => { if (eDown && isPlaying() && story.canSleep() && interactions.focus === bedItem) story.sleptAgain(); }, 1500); } });
 }
 let eDown = false;
 window.addEventListener('keydown', e => { if (e.code === 'KeyE') eDown = true; });
@@ -672,9 +672,9 @@ function showHint() {
 }
 
 // The floors' normals (floor-normals.js): every walkable, upward-facing triangle near the floor gets its own normal,
-// written into the mesh's vertex buffer once at load. World space in and out (the nodes rotate and scale uniformly).
+// written into the mesh's vertex buffer once at load, with normal matrices for rotated and nonuniformly scaled nodes.
 function fixFloorNormals(root) {
-  const done = new Set(), q = new pc.Vec3(), r = new pc.Vec3(), m3 = new pc.Vec3(), inverse = new pc.Mat4();
+  const done = new Set(), q = new pc.Vec3(), r = new pc.Vec3(), m3 = new pc.Vec3();
   let vertices = 0;
   for (const render of root.findComponents('render')) for (const mi of render.meshInstances) {
     const mesh = mi.mesh;
@@ -683,19 +683,12 @@ function fixFloorNormals(root) {
     const pos = [], nrm = [], idx = [];
     const n = mesh.getPositions(pos);
     if (!n || mesh.getNormals(nrm) !== n || !mesh.getIndices(idx)) continue;
-    const world = mi.node.getWorldTransform();
-    for (let i = 0; i < n * 3; i += 3) {
-      world.transformPoint(q.set(pos[i], pos[i + 1], pos[i + 2]), r); pos[i] = r.x; pos[i + 1] = r.y; pos[i + 2] = r.z;
-      world.transformVector(q.set(nrm[i], nrm[i + 1], nrm[i + 2]), r).normalize(); nrm[i] = r.x; nrm[i + 1] = r.y; nrm[i + 2] = r.z;
-    }
-    const changed = flattenFloorNormals(pos, nrm, idx);
+    const changed = flattenFloorNormals(pos, nrm, idx, { worldTransform: mi.node.getWorldTransform() });
     if (!changed) continue;
     vertices += changed;
-    inverse.copy(world).invert();
     const it = new pc.VertexIterator(mesh.vertexBuffer), tangent = it.element[pc.SEMANTIC_TANGENT];
     for (let i = 0; i < n; i++) {
-      inverse.transformVector(q.set(nrm[i * 3], nrm[i * 3 + 1], nrm[i * 3 + 2]), r);
-      r.normalize();                       // back to the mesh's space: the inverse rotation, renormalised
+      r.set(nrm[i * 3], nrm[i * 3 + 1], nrm[i * 3 + 2]);
       it.element[pc.SEMANTIC_NORMAL].set(r.x, r.y, r.z);
       // A normal-mapped floor's tangent made perpendicular to the new normal again (its handedness kept).
       if (tangent) {

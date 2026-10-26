@@ -6,9 +6,10 @@ import { performance } from 'node:perf_hooks';
 import { NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
 import draco3d from 'draco3dgltf';
-import { BoundingBox, Color, Entity, Mat4, Quat, Vec3, SHADOWUPDATE_NONE, SHADOWUPDATE_THISFRAME, SHADOWUPDATE_REALTIME } from 'playcanvas';
+import { BoundingBox, Camera, Color, Entity, Mat4, Quat, Vec3, SHADOWUPDATE_NONE, SHADOWUPDATE_THISFRAME, SHADOWUPDATE_REALTIME } from 'playcanvas';
 import { FlashlightSurfaces } from '../src/flashlight-surfaces.js';
 import { Flashlight } from '../src/flashlight.js';
+import { Intruder } from '../src/intruder.js';
 import { refreshShadows, rerenderShadows } from '../src/lighting.js';
 
 const near = (actual, expected, tolerance = 2e-5) => assert.ok(Math.abs(actual - expected) < tolerance, `${actual} differs from ${expected}`);
@@ -79,6 +80,30 @@ test('hidden, disabled, non-shadowing and fully transparent surfaces cannot crea
     target[field] = value; assert.equal(trace().meshInstance, wall.mi, `${field} should exclude the prop`); target[field] = original;
   }
   assert.equal(surfaces.trace(Vec3.ZERO, Vec3.ZERO), null);
+});
+
+test('LIVE actor visibility follows the querying engine camera instead of intercepting an unseen beam', () => {
+  const s = scene(), actor = s.add('LIVE actor', square, squareIndices), wall = s.add('wall', square, squareIndices);
+  actor.entity.setPosition(0, 0, -3); wall.entity.setPosition(0, 0, -8);
+  const camera = name => {
+    const c = new Camera(); c.node = new Entity(name);
+    c.frustum.setFromMat4(new Mat4().setPerspective(60, 1, 0.1, 20));
+    return c;
+  };
+  const playerCamera = camera('player camera'), securityCamera = camera('security camera');
+  const intruder = Object.assign(Object.create(Intruder.prototype), {
+    cameraOnly: true, isPlayerCamera: c => c === playerCamera || c === securityCamera,
+  });
+  // The same callback the real Intruder installs on its mesh instances.
+  actor.mi.isVisibleFunc = c => intruder.seenBy(c) && c.frustum.containsAabb(actor.mi.aabb);
+  const playerSurfaces = new FlashlightSurfaces(s.root, playerCamera), ray = new Vec3(0, 0, -1);
+  assert.equal(actor.mi.isVisibleFunc(playerCamera), false);
+  assert.equal(actor.mi.isVisibleFunc(securityCamera), true);
+  assert.equal(playerSurfaces.trace(Vec3.ZERO, ray).meshInstance, wall.mi, 'the player sees and lights the actual wall');
+  assert.equal(new FlashlightSurfaces(s.root, securityCamera).trace(Vec3.ZERO, ray).meshInstance, actor.mi);
+  assert.equal(new FlashlightSurfaces(s.root).trace(Vec3.ZERO, ray).meshInstance, actor.mi, 'camera-free geometry tools retain their API');
+  intruder.cameraOnly = false;
+  assert.equal(playerSurfaces.trace(Vec3.ZERO, ray).meshInstance, actor.mi, 'visibility is rechecked when he returns to normal play');
 });
 
 test('a ray originating inside geometry finds its exit and ignores sub-2cm self intersections', () => {

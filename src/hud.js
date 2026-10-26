@@ -27,7 +27,10 @@ export class Hud {
     this.promptEl.innerHTML = `<kbd>${key}</kbd>${text}`;
     this.promptEl.hidden = false; this.promptEl.classList.remove('out');
     clearTimeout(this.promptTimer);
-    this.promptTimer = setTimeout(() => { this.promptEl.classList.add('out'); setTimeout(() => { this.promptEl.hidden = true; }, 900); }, seconds * 1000);
+    this.promptTimer = setTimeout(() => {
+      this.promptEl.classList.add('out');
+      this.promptTimer = setTimeout(() => { this.promptTimer = null; this.promptEl.hidden = true; }, 900);
+    }, seconds * 1000);
   }
 
   // Takes a prompt off the screen now (its key has been used); key: only if the prompt showing is that key's.
@@ -35,13 +38,16 @@ export class Hud {
     if (this.promptEl.hidden || (key && this.promptKey !== key)) return;
     clearTimeout(this.promptTimer);
     this.promptEl.classList.add('out');
-    this.promptTimer = setTimeout(() => { this.promptEl.hidden = true; }, 900);
+    this.promptTimer = setTimeout(() => { this.promptTimer = null; this.promptEl.hidden = true; }, 900);
   }
 
   toast(text, seconds = 2.5) {
     this.toastEl.textContent = text; this.toastEl.hidden = false; this.toastEl.classList.remove('out');
     clearTimeout(this.toastTimer);
-    this.toastTimer = setTimeout(() => { this.toastEl.classList.add('out'); setTimeout(() => { this.toastEl.hidden = true; }, 900); }, seconds * 1000);
+    this.toastTimer = setTimeout(() => {
+      this.toastEl.classList.add('out');
+      this.toastTimer = setTimeout(() => { this.toastTimer = null; this.toastEl.hidden = true; }, 900);
+    }, seconds * 1000);
   }
 
   // A voice on the phone, as a caption under the thoughts.
@@ -49,7 +55,10 @@ export class Hud {
     this.voiceEl.innerHTML = `<b>${who}</b> ${text}`;
     this.voiceEl.hidden = false; this.voiceEl.classList.remove('out');
     clearTimeout(this.voiceTimer);
-    this.voiceTimer = setTimeout(() => { this.voiceEl.classList.add('out'); setTimeout(() => { this.voiceEl.hidden = true; }, 900); }, Math.max(3.5, text.length * 0.075) * 1000);
+    this.voiceTimer = setTimeout(() => {
+      this.voiceEl.classList.add('out');
+      this.voiceTimer = setTimeout(() => { this.voiceTimer = null; this.voiceEl.hidden = true; }, 900);
+    }, Math.max(3.5, text.length * 0.075) * 1000);
   }
 
   // A sound, in words ([Glass shatters, in the bedroom]), for players who turned sound captions on.
@@ -57,7 +66,10 @@ export class Hud {
     if (!this.soundCaptions) return;
     this.soundEl.textContent = text; this.soundEl.hidden = false; this.soundEl.classList.remove('out');
     clearTimeout(this.soundTimer);
-    this.soundTimer = setTimeout(() => { this.soundEl.classList.add('out'); setTimeout(() => { this.soundEl.hidden = true; }, 900); }, seconds * 1000);
+    this.soundTimer = setTimeout(() => {
+      this.soundEl.classList.add('out');
+      this.soundTimer = setTimeout(() => { this.soundTimer = null; this.soundEl.hidden = true; }, 900);
+    }, seconds * 1000);
   }
 
   crouch(on) { this.crouchEl.hidden = !on; }

@@ -1,50 +1,44 @@
-# Codex apartment preview deployment
+# Playable builds and deployment
 
-Ongoing Codex development and review branch: `codex-review` (Git branch names cannot contain spaces). The branch was renamed from `codex/apartment-lighting-pass`; keep subsequent review passes on this same branch. Claude uses a separate branch. Merge into or push to `main` only when explicitly requested by the owner.
+All Codex development continues on `codex-review`. The owner must explicitly request any push or merge to `main`. Claude's source branch is `claude/pensive-volta-et0etl`; do not commit or push Codex work there.
 
-The owner authorized promotion of 0.11 to `main` on 2026-10-24. [CLAUDE_HANDOFF.md](CLAUDE_HANDOFF.md) records the production publication and current continuation baseline. Production deployment [40111353532](https://github.com/starfox22/horror/actions/runs/40111353532) succeeded from `73f66df26830f888c3c17869543f6df25a9ec844`; the preview workflow was then rerun to restore both URLs.
+## Current baseline and paths
 
-`.github/workflows/pages-preview.yml` builds two independent checkouts with Node 22 and `npm ci`: the current `main` commit and the exact development commit that triggered the workflow. It uploads one GitHub Pages artifact containing:
+On 2026-10-26, a fresh fetch confirmed `main` and Claude's branch were exactly the same build 0.15 commit, `c5a619f1e75881f46edbcf392f6c7f1e27e7a47e`. Codex was fast-forwarded to that entire history; the 0.16 bug pass continues from it. See [REVIEW_16.md](REVIEW_16.md) and [HANDOFF.md](HANDOFF.md).
 
-| Path | Build |
+| Path | Source |
 | --- | --- |
-| `/horror/` | Production game, built from `main` |
-| `/horror/codex/` | Codex environment and lighting pass |
-| `/horror/codex/build-info.json` | Full original and preview commit SHAs |
+| https://starfox22.github.io/horror/ | Production, read-only checkout of `main` |
+| https://starfox22.github.io/horror/codex/ | Exact `codex-review` commit that triggers the Codex workflow |
+| https://starfox22.github.io/horror/claude/ | Read-only checkout of `claude/pensive-volta-et0etl` |
+| `/horror/codex/build-info.json` | `original`, `preview`, `claude` full source SHAs |
+| `/horror/claude/build-info.json` | `main`, `claude`, `codex` full source SHAs |
 
-The published preview is **https://starfox22.github.io/horror/codex/**. [Workflow run 40109659758, attempt 2](https://github.com/starfox22/horror/actions/runs/40109659758/attempts/2) restored build 0.11 at both production and review URLs after the main promotion. No changes to `main` or repository visibility are required by this workflow. Apartment assets are already committed; neither build regenerates them or downloads the source model.
+`.github/workflows/pages-preview.yml` now preserves all three games in one Pages artifact. Each source has a separate checkout and Node 22 / `npm ci` build; generated files are never committed. Codex runs all actual `tools/check-*.mjs` regressions, including the newer story, power, phone, intruder and normal tests. `check-collision.mjs` is excluded because it is a picture generator that writes into `assets-src/`. The workflow has both a push filter and a job guard restricting it to `codex-review`.
 
-## Deployment configuration and current publication
+No gameplay source is written to `main` or Claude's branch by this deployment. The imported application assets are already committed; publication needs no model regeneration or external model download.
 
-The repository is public. GitHub Pages uses **GitHub Actions** as its source. The owner selected **No restriction** for deployment branches in the `github-pages` environment; the previously blocking main-only rule is gone. If restrictions are reintroduced later, they must permit `codex-review` for its preview workflow.
+## Configuration
 
-Deployment run **40109659758**, attempt 2, completed successfully after the main Pages deployment. Its published provenance at [`/horror/codex/build-info.json`](https://starfox22.github.io/horror/codex/build-info.json) records:
+The repository is public, Pages uses **GitHub Actions**, and the owner has selected **No restriction** for deployment branches in the `github-pages` environment. A later restriction must permit `codex-review`. Do not work around a deployment permission error by pushing to `main`.
 
-- Preview commit: `259e12e6ade8d6ad97fcd6af81be4d2e95e453a4`.
-- Main production source (`original`): `73f66df26830f888c3c17869543f6df25a9ec844`.
-
-The initial review publication (attempt 1) preserved main 0.7; that historical record is in REVIEW_11.md. Main is now owner-approved 0.11. Later documentation-only branch heads can differ from the deployed source without changing the game.
-
-Both site roots load, and the preview HTML identifies build 0.11. The hosted hand SHA256 matches the final adapted asset; both drinking recordings and the hand license return HTTP 200. All 90 local Node regressions, eight room destinations, graphics UI/persistence, native WebGL drinking and full WebGPU gameplay checks pass. The final hosted HTTPS WebGPU check passed default 60 FPS, native fridge opening/second-E drinking, loaded hand/audio, pause/resume and hidden-tab freeze, glass return, control handoff and native refrigerator closing, with no unexpected page, console or HTTP failures. See [REVIEW_11.md](REVIEW_11.md) and its validation JSON for the precise inspection method. CPU rendering does not establish desktop hardware throughput. Documentation-only follow-ups skip CI and do not change the deployed game revision. Future code changes should trigger and verify a new deployment on `codex-review`.
-
-The agent integration could read deployment status and rerun Actions, but attempts to enable Pages or edit environment branch policies returned HTTP 403. The owner resolved those settings in GitHub. Do not change `main` to work around a future deployment permission failure.
-
-The hosted browser checker uses the session's configured HTTP(S) proxy for remote URLs. In a managed cloud machine, Chromium must trust the provided session proxy CA and have access to its certificate store; keep TLS verification enabled. Localhost checks do not use that proxy.
+All three workflows share the `pages` concurrency group because GitHub Pages accepts one site artifact. The original `pages.yml` workflow publishes production alone and will remove both preview subdirectories if it runs later; rerun the Codex workflow from `codex-review` to restore all three. Claude's workflow already preserves all three outputs. Never dispatch the production or Claude workflow from the Codex ref: those workflows lack an equivalent ref guard and can label the wrong source as a different build.
 
 ## Publish and verify
 
-1. Complete the documented local build, browser and interaction checks, and commit the preview changes on `codex-review`.
-2. Push that branch to `origin`. Its push event runs **Pages · Codex review**. The workflow also declares `workflow_dispatch`, but GitHub's manual-run control may be unavailable while this workflow exists only on a non-default branch; pushing is the normal trigger.
-3. Inspect the workflow run and resolve any Pages setup, environment branch-policy or reviewer requirement in GitHub. Build success alone does not establish deployment success.
-4. Verify that both `/horror/` and `/horror/codex/` load, then inspect `/horror/codex/build-info.json` to confirm the expected commit. Test a representative interaction and movement in the deployed preview, not just an HTTP response.
-
-Useful read-only deployment checks are:
+1. Complete the regression suite, production build and appropriate browser checks on `codex-review`.
+2. Commit and push explicitly with `git push origin HEAD:refs/heads/codex-review`. The push triggers **Pages · Codex review**. Do not use `[skip ci]` for an application release.
+3. Inspect that exact run through deployment success; a successful build alone is insufficient.
+4. Verify all three HTML roots, decoder/model assets and each preview's build-info against the expected source SHAs. Inspect representative hosted behavior for application/path changes.
+5. Record the run, release SHA, results and screenshots. Documentation-only follow-ups may use `[skip ci]`; distinguish their branch HEAD from the deployed game revision.
 
 ```sh
-gh api repos/starfox22/horror/pages
 gh run list --repo starfox22/horror --branch codex-review --workflow pages-preview.yml
+gh api repos/starfox22/horror/pages
 ```
 
-The preview is a subdirectory of the **same Pages site**. Both workflows use the `pages` concurrency group. The existing `pages.yml` workflow still publishes only `main` at the root: **a later `main` deployment will remove `/codex/`**. Run the preview workflow again after that deployment to restore both builds. Keeping previews across all future `main` deployments would require a separately reviewed change to the original workflow or a separate hosting repository.
+Keep the managed HTTP(S) proxy and its CA trust, including in Chromium; never disable TLS verification. Hosted browser tooling uses the inherited proxy. Chromium may need certificate-store filesystem access in a managed workspace; local checks do not use the network proxy. CPU SwiftShader rendering verifies behavior, not desktop GPU throughput.
 
-To publish only current production, run the existing `Pages` workflow for `main`. This replaces the site's artifact with the current main build. The preview workflow never commits generated assets or modifies either source checkout.
+## Publication record
+
+The 0.16 run and final source SHAs are added after deployment. Historical 0.11 promotion/deployment records are preserved in [CLAUDE_HANDOFF.md](CLAUDE_HANDOFF.md) and [REVIEW_11.md](REVIEW_11.md); 0.10 records are in [REVIEW_10.md](REVIEW_10.md). The old guide's two-output workflow and 0.11 production claim are superseded by the paths and baseline above.

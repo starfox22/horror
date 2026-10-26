@@ -331,13 +331,20 @@ export class Phone {
   }
 
   // --- the emergency call ----------------------------------------------------------------------------------------
+  // Dialogue and automatic hangups belong to one call. The player may redial
+  // before they fire; an abandoned call must not speak into or end its successor.
+  afterCall(call, seconds, fn, id = null) {
+    this.story?.after(seconds, () => { if (this.call === call) fn(); }, id);
+  }
+
   dial() {
     if (this.charge < 1) return;
+    this.story?.cancel?.('callback');
     this.app_ = 'call';
     this.bank?.play('phone_dial', { gain: 0.3 });
     this.bank?.play('phone_static', { gain: 0.2, delay: 1.6 });
-    this.call = { t: 0, line: 'Calling 112…', choices: null, step: 0 };
-    this.story?.after(3.2, () => this.dispatcher('112. What’s your emergency?', this.firstChoices()), 'call');
+    const call = this.call = { t: 0, line: 'Calling 112…', choices: null, step: 0 };
+    this.afterCall(call, 3.2, () => this.dispatcher('112. What’s your emergency?', this.firstChoices()), 'call');
     this.noise?.(null, null, 'walk');
   }
 
@@ -365,7 +372,7 @@ export class Phone {
     if (choice.id === 'answer') {
       call.incoming = false; call.choices = null; call.sent = true; this.incoming = false; this.dirty = true;
       const remaining = this.firstChoices().filter(c => c.id !== 'unsure' && !(c.id === 'where' && s?.told?.where) && !(c.id === 'who' && s?.told?.who));
-      s?.after(1.2, () => this.dispatcher('Emergency services, you called us. Are you safe? Officers are on their way. Stay quiet.', remaining.length ? remaining : null));
+      this.afterCall(call, 1.2, () => this.dispatcher('Emergency services, you called us. Are you safe? Officers are on their way. Stay quiet.', remaining.length ? remaining : null));
       return;
     }
     call.told ||= {};
@@ -374,19 +381,21 @@ export class Phone {
     this.noise?.(null, null, 'crouch');
     call.choices = null; this.dirty = true;
     if (choice.id === 'unsure' && !s?.has('hunt')) {
-      s?.after(2.5, () => this.dispatcher('Is anyone hurt? ...If you think someone is in the property, get out if you can, and call us back.'));
-      s?.after(9, () => this.hangUp(true));
+      this.afterCall(call, 2.5, () => this.dispatcher('Is anyone hurt? ...If you think someone is in the property, get out if you can, and call us back.'));
+      this.afterCall(call, 9, () => this.hangUp(true));
       return;
     }
     const remaining = this.firstChoices().filter(c => !call.told[c.id] && c.id !== 'unsure');
     if (!call.sent) {
       call.sent = true;
       s?.after(2.6, () => {
-        this.dispatcher('Officers are on their way. Two minutes. Stay on the line if you can. Is there somewhere you can hide?', remaining.length ? remaining : null);
+        if (this.call === call) this.dispatcher('Officers are on their way. Two minutes. Stay on the line if you can. Is there somewhere you can hide?', remaining.length ? remaining : null);
+        // The information was already given: dispatch still happens if the
+        // player hangs up, independently of the abandoned call's screen.
         s?.policeCalled({ where: call.told.where, who: call.told.who });
       });
     } else {
-      s?.after(2, () => { this.dispatcher(choice.id === 'where' ? 'In the ceiling. Okay. I’ve told them.' : 'Okay. I’ve passed that on.', remaining.length ? remaining : null); s?.policeCalled({ where: call.told.where, who: call.told.who }); });
+      s?.after(2, () => { if (this.call === call) this.dispatcher(choice.id === 'where' ? 'In the ceiling. Okay. I’ve told them.' : 'Okay. I’ve passed that on.', remaining.length ? remaining : null); s?.policeCalled({ where: call.told.where, who: call.told.who }); });
     }
   }
 
@@ -394,6 +403,7 @@ export class Phone {
     if (!this.call) return;
     const sent = this.call.sent;
     this.call = null; this.app_ = 'lock'; this.dirty = true;
+    this.story?.cancel?.('call'); this.story?.cancel?.('callback');
     this.bank?.play('latch_2', { gain: 0.1, rate: 1.8 });
     // Real dispatchers call back.
     if (sent && !theyDid) this.story?.after(14, () => this.ring(), 'callback');
@@ -401,6 +411,7 @@ export class Phone {
 
   ring() {
     if (this.call || this.story?.has('ended')) return;
+    this.story?.cancel?.('call'); this.story?.cancel?.('callback');
     this.incoming = true; this.app_ = 'call';
     this.call = { t: 0, line: 'Incoming call · Emergency services', choices: [{ text: 'Answer', id: 'answer' }, { text: 'Decline', id: 'decline' }], incoming: true };
     // During the hunt the phone is on vibrate: a ringtone then would be a death sentence nobody could have seen coming.
