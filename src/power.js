@@ -128,6 +128,7 @@ export class Power {
   }
 
   update(dt) {
+    if (this.paused?.()) return;              // behind the pause menu a cut or a flicker waits (main.js)
     this.time += Math.min(dt, 0.1);
     if (!this.changing) return;
     for (const fn of this.listeners) fn(null);        // re-apply levels this frame

@@ -15,11 +15,11 @@ import { ArmRig, frameRotation } from './arm-rig.js';
 
 // The hand that holds it (build 0.15, the owner: "the smartphone does not look good on my hand"): the drinking arm's
 // model again (arm-rig.js), in the phone's own frame (x right, y up, z out of the screen; origin its centre). As a
-// right hand holds a phone: the palm against its back, a little right of centre and low; the fingers across the back
+// right hand holds a phone: the palm against its back, right of centre and near the bottom; the fingers across the back
 // towards its left edge, curling round it (grip); the thumb (the rig's -X at rest) up along its right edge. The shoulder
 // is where the drinking arm's is (drink-sequence.js SHOULDER, camera space).
 export const HAND = {
-  palm: new Vec3(0.026, -0.024, -0.0068), fingers: new Vec3(-1, 0.18, 0), facing: new Vec3(0, 0, 1), grip: 0.5,
+  palm: new Vec3(0.024, -0.058, -0.0068), fingers: new Vec3(-1, 0.12, 0), facing: new Vec3(0, 0, 1), grip: 0.5,
   shoulder: new Vec3(0.19, -0.25, 0.09),
 };
 
@@ -199,7 +199,7 @@ export class Phone {
     const palm = turn.transformVector(HAND.palm, (this._palm ||= new Vec3())).add(at);
     const wrist = rotation.transformVector(this.handPalm, (this._wrist ||= new Vec3())).mulScalar(-1).add(palm);
     this.rig.pose(HAND.shoulder, wrist, rotation, { grip: HAND.grip });
-    const glow = this.booted && this.booting === null ? 0.05 : 0.004;
+    const glow = this.booted && this.booting === null ? 0.012 : 0.002;
     if (glow !== this.handGlow) { this.handGlow = glow; for (const m of this.handMats.values()) { m.emissiveIntensity = glow; m.update(); } }
   }
 
@@ -244,6 +244,7 @@ export class Phone {
     if (!now && this.booting === null) { this.booting = 0; this.wake(4); this.dirty = true; return; }
     this.booting = null;
     this.booted = true; this.charge = Math.max(this.charge, 4);
+    if (this.app_ === 'dead') this.app_ = 'lock';       // held up while it started: the lock screen now
     this.notifications = CLIPS.map(c => ({ ...c, unread: true }));
     this.wake(20);
     this.buzz(3);
@@ -334,6 +335,7 @@ export class Phone {
 
   dispatcher(text, choices = null) {
     if (!this.call) return;
+    if (!this.call.connected) { this.call.connected = true; this.call.t = 0; }    // the call's clock runs from the answer
     this.call.line = text; this.call.choices = choices; this.sel = 0; this.dirty = true;
     this.story?.sys.hud?.voice('Dispatcher', text);
     this.bank?.play('phone_static', { gain: 0.12 });
@@ -341,6 +343,7 @@ export class Phone {
 
   answer(choice) {
     const call = this.call, s = this.story;
+    if (choice.id === 'decline') { this.incoming = false; this.hangUp(true); return; }   // they will not call again
     // The dispatcher calling back: answering connects the call; what was said before still stands (story.js).
     if (choice.id === 'answer') {
       call.incoming = false; call.choices = null; call.sent = true; this.incoming = false; this.dirty = true;
@@ -381,7 +384,8 @@ export class Phone {
 
   ring() {
     if (this.call || this.story?.has('ended')) return;
-    this.incoming = true; this.app_ = 'call'; this.call = { t: 0, line: 'Incoming call · Emergency services', choices: [{ text: 'Answer', id: 'answer' }], incoming: true };
+    this.incoming = true; this.app_ = 'call';
+    this.call = { t: 0, line: 'Incoming call · Emergency services', choices: [{ text: 'Answer', id: 'answer' }, { text: 'Decline', id: 'decline' }], incoming: true };
     // During the hunt the phone is on vibrate: a ringtone then would be a death sentence nobody could have seen coming.
     if (!this.silenced && !this.story?.has('hunt')) {
       for (let i = 0; i < 3; i++) this.bank?.play('phone_ring', { gain: 0.6, delay: i * 5.4, at: this.onCharger ? CHARGER : null });
@@ -480,13 +484,15 @@ export class Phone {
   // The clips' thumbnails: a frame from the middle of each (the clip's own canvas is the video's, so a copy).
   async loadThumbs() {
     for (const c of CLIPS) {
-      const clip = await this.seccam?.loadClip?.(c.id).catch(() => null);
-      if (!clip?.img) continue;
-      const { w, h, cols, frames, fps } = clip.meta, frame = Math.floor(frames * 0.6);
-      const t = Object.assign(document.createElement('canvas'), { width: w, height: h });
-      t.getContext('2d').drawImage(clip.img, (frame % cols) * w, Math.floor(frame / cols) * h, w, h, 0, 0, w, h);
-      this.thumbs[c.id] = t; this.durations[c.id] = frames / fps;
-      this.dirty = true;
+      try {
+        const clip = await this.seccam?.loadClip?.(c.id);
+        if (!clip?.img?.naturalWidth) continue;             // a missing still: the row shows without its thumbnail
+        const { w, h, cols, frames, fps } = clip.meta, frame = Math.floor(frames * 0.6);
+        const t = Object.assign(document.createElement('canvas'), { width: w, height: h });
+        t.getContext('2d').drawImage(clip.img, (frame % cols) * w, Math.floor(frame / cols) * h, w, h, 0, 0, w, h);
+        this.thumbs[c.id] = t; this.durations[c.id] = frames / fps;
+        this.dirty = true;
+      } catch (error) { console.warn(`phone: no thumbnail for ${c.id}`, error); }
     }
   }
 
@@ -509,7 +515,7 @@ export class Phone {
       options: this.holder.enabled ? this.options() : [], sel: this.sel,
       clip: this.clip ? { ...this.clip, t: clip?.t ?? 0, duration: this.durations[this.clip.id] ?? (clip ? clip.c.meta.frames / clip.c.meta.fps : 4) } : null,
       live: { status: this.seccam?.liveStatus?.() || '8 s delay' },
-      call: call ? { line: call.line, incoming: !!call.incoming, connected: !/^Calling/.test(call.line || ''), t: call.t ?? 0 } : null,
+      call: call ? { line: call.line, incoming: !!call.incoming, connected: !!call.connected, t: call.t ?? 0 } : null,
     };
   }
 

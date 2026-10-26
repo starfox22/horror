@@ -99,7 +99,7 @@ const result = await page.evaluate(async (only) => {
     '0047': { fps: 6, n: 24, setup: () => {
       sleeper.enabled = true; aim([9.76, 1.5, -0.62], 26);
       // Standing in the shelf half (1.81 m under the shelf at 1.84), his face just behind the left door's free edge.
-      man.show(true); man.setTorch(false); man.place(9.44, -0.68, 90, 0.17); pose('idle_neutral_01', 0.4);
+      man.show(true); man.place(9.44, -0.68, 90, 0.17); pose('idle_neutral_01', 0.4);
     }, step: (i, t) => {
       setDoor(0.17 * (ease((t - 0.6) / 0.9) - ease((t - 2.7) / 0.8)), 'left');
       man.headPitch = -6;
@@ -107,7 +107,7 @@ const result = await page.evaluate(async (only) => {
     // 02:58 — 5 s: he stands at the foot of the empty bed; at 2 s he turns to the lens and lifts his face to it.
     '0258': { fps: 6, n: 30, setup: () => {
       sleeper.enabled = false; setDoor(0, 'left'); aim([11.3, 1.15, 0.5], 52);
-      man.show(true); man.setTorch(false); man.place(11.35, 0.5, 90); pose('idle_breathe_01', 0);
+      man.show(true); man.place(11.35, 0.5, 90); pose('idle_breathe_01', 0);
     }, step: (i, t) => {
       const k = ease((t - 2) / 1.4);
       man.place(11.35, 0.5, 90 - 31.5 * k); pose('idle_breathe_01', 0.2 + t * 0.9); man.headPitch = -26 * ease((t - 2.8) / 1.2);
@@ -115,7 +115,7 @@ const result = await page.evaluate(async (only) => {
     // 03:14 — one frame: you asleep, him at the foot of the bed looking at you.
     '0314': { fps: 1, n: 1, setup: () => {
       sleeper.enabled = true; setDoor(0); restore();
-      man.show(true); man.setTorch(false); man.place(11.4, 0.6, 90); pose('idle_neutral_01', 1.0); man.headPitch = 8;
+      man.show(true); man.place(11.4, 0.6, 90); pose('idle_neutral_01', 1.0); man.headPitch = 8;
     }, step: () => {} },
   };
   for (const [id, c] of Object.entries(clips)) {

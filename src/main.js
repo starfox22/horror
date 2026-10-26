@@ -337,9 +337,9 @@ window.addEventListener('keyup', e => { if (e.code === 'KeyE') eDown = false; })
 window.addEventListener('blur', () => { eDown = false; });
 sys.eHeld = () => eDown && isPlaying();                 // the front door's lock turns while E is held (story.js)
 flashlight.canToggle = () => isPlaying() && !death.busy && !endings.running;
-phone.blocked = () => !isPlaying() || death.busy || !!endings.running;
+phone.blocked = () => !isPlaying() || death.busy || !!endings.running || drink.running;   // one right arm at a time
 // Behind the pause menu nothing moves on: the phone's boot, the LIVE scene, a death and its wake wait.
-phone.paused = seccam.paused = death.paused = () => !isPlaying();
+phone.paused = seccam.paused = death.paused = power.paused = () => !isPlaying();
 app.on('update', dt => thought.update(isPlaying() ? dt : 0));
 // Journal toasts wait for a quiet moment: 5 s after a scare, no thought on screen.
 journal.ready = () => story.time - story.lastScare >= 5 && !thought.line && !thought.queue.length && !hud.reading && !death.busy;
@@ -354,7 +354,7 @@ if (hash.has('dark')) {
 }
 if (hash.has('allon')) switches.rooms.forEach(r => { if (!r.on) switches.toggle(r); });
 // Picked up switched off: "F · Flashlight on" stays on screen until it is first switched on (flashlight.js pickUp).
-flashlight.prompt = on => (on ? hud.prompt('F', 'Flashlight on', 600) : hud.hidePrompt());
+flashlight.prompt = on => (on ? hud.prompt('F', 'Flashlight on', 600) : hud.hidePrompt('F'));
 flashlight.onPickUp = () => story.tookTorch();
 if (hash.has('flash')) flashlight.pickUp({ on: true });
 rain = new Rain(app, apartment, ambience, lit);
@@ -673,7 +673,7 @@ function showHint() {
 // The floors' normals (floor-normals.js): every walkable, upward-facing triangle near the floor gets its own normal,
 // written into the mesh's vertex buffer once at load. World space in and out (the nodes rotate and scale uniformly).
 function fixFloorNormals(root) {
-  const done = new Set(), q = new pc.Vec3(), r = new pc.Vec3(), inverse = new pc.Mat4();
+  const done = new Set(), q = new pc.Vec3(), r = new pc.Vec3(), m3 = new pc.Vec3(), inverse = new pc.Mat4();
   let vertices = 0;
   for (const render of root.findComponents('render')) for (const mi of render.meshInstances) {
     const mesh = mi.mesh;
@@ -691,11 +691,17 @@ function fixFloorNormals(root) {
     if (!changed) continue;
     vertices += changed;
     inverse.copy(world).invert();
-    const it = new pc.VertexIterator(mesh.vertexBuffer);
+    const it = new pc.VertexIterator(mesh.vertexBuffer), tangent = it.element[pc.SEMANTIC_TANGENT];
     for (let i = 0; i < n; i++) {
       inverse.transformVector(q.set(nrm[i * 3], nrm[i * 3 + 1], nrm[i * 3 + 2]), r);
       r.normalize();                       // back to the mesh's space: the inverse rotation, renormalised
       it.element[pc.SEMANTIC_NORMAL].set(r.x, r.y, r.z);
+      // A normal-mapped floor's tangent made perpendicular to the new normal again (its handedness kept).
+      if (tangent) {
+        q.set(tangent.get(0), tangent.get(1), tangent.get(2));
+        q.sub(m3.copy(r).mulScalar(q.dot(r)));
+        if (q.lengthSq() > 1e-12) { q.normalize(); tangent.set(q.x, q.y, q.z, tangent.get(3)); }
+      }
       it.next();
     }
     it.end();

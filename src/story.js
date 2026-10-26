@@ -363,7 +363,7 @@ export class Story {
   // Then: the flat's lights flicker for about a second with a short circuit's buzz in every dip (CUT_SURGE), then the
   // bang and the dark.
   powerCut(cause) {
-    if (this.has('power-cut') || this.cutting) return;
+    if (this.has('power-cut') || this.cutting || this.has('hunt')) return;
     const fl = this.sys.flashlight;
     if (fl && !fl.held) { this.waitForTorch(cause); return; }
     this.cutting = true; this.cutWaiting = null;
@@ -666,6 +666,9 @@ export class Story {
   huntStart(cause) {
     if (this.has('hunt')) return;
     this.set('hunt');
+    // A cut still to come (a hunt started early from the developer menu): it never comes now.
+    for (const id of ['cut-fallback', 'cut', 'brownout', 'blackout']) this.cancel(id);
+    this.cutWaiting = null; this.cutting = false;
     this.cancel('hunt-fallback'); this.cancel('hunt-call'); this.cancel('hunt-door');
     this.act = 4;
     this.sys.music?.sting('hit');
@@ -679,7 +682,8 @@ export class Story {
     this.packNest();                          // he takes the nest up into the void during the hunt (out of view)
     this.save();
     if (door) { this.after(1.2, () => this.say('...He heard it.', { hold: 1.4 })); return; }
-    this.after(2.5, () => this.say(this.seesHim() ? 'There. ...By the fuse box.' : 'He’s back. ...Listen.'));
+    // Seen only in the torch (he carries no light): in sight with the torch on, else heard.
+    this.after(2.5, () => this.say(this.seesHim() && this.sys.flashlight?.on ? 'There. ...By the fuse box.' : 'He’s back. ...Listen.'));
     this.after(5.5, () => { this.say(this.sys.flashlight?.on ? 'Torch off. Get down.' : 'Get down. Stay quiet.'); this.sys.hud?.prompt('C', 'Crouch', 6); });
     this.after(28, () => this.say(this.sys.items?.has('spare-key') ? 'The door. Now.' : 'Get out. ...The spare key.'));
   }
@@ -817,7 +821,7 @@ export class Story {
     else this.say('Empty.');
   }
   sleptAgain() { if (!this.has('ended')) this.sys.endings?.play('sweet-dreams'); }
-  canSleep() { return this.has('glass') && !this.has('power-cut'); }
+  canSleep() { return this.has('glass') && !this.has('power-cut') && !this.cutting; }
 
   // --- the developer menu's replays (story-events.js) -----------------------------------------------------------
   // Each scripted event, played from wherever the night is (the owner: "make sure all the events in developer menu
@@ -827,12 +831,16 @@ export class Story {
 
   // The hunt stopped without an ending: he is gone (hidden), the music down, Act IV's flag cleared.
   devStopHunt() {
-    const hunt = this.sys.hunt;
+    const hunt = this.sys.hunt, was = this.has('hunt');
     if (hunt?.active) { hunt.active = false; hunt.stalker?.set?.('off'); hunt.knife?.(0); hunt.music?.hunt?.(false); }
+    // He had broken the main switch: it works again, the flat as the fuse box left it, and the hunt comes back by itself
+    // later as it would have (its fallback).
+    if (was && this.sys.power) { this.sys.power.mainBroken = false; this.sys.power.setMain(true); }
     this.sys.intruder?.show?.(false);
     this.flags.delete('hunt');
     this.cancel('hunt-fallback'); this.cancel('hunt-call'); this.cancel('hunt-door');
     if (this.act === 4) this.act = this.has('restored') ? 3 : this.has('power-cut') ? 2 : 1;
+    if (was && this.has('restored')) this.huntFallback(150);
   }
 
   // Every circuit live at once (no stutter, no sound), the faults and the broken main forgotten.
@@ -900,7 +908,7 @@ export class Story {
     const power = this.sys.power;
     if (!power) return;
     power.mainBroken = false;
-    const live = Object.keys(power.breakers).every(c => power.live(c));
+    const live = power.main && power.rcd;
     const restore = () => {
       power.breakers.bathroom = false;
       if (this.nuisance !== 'none') power.breakers[this.nuisance] = false;
@@ -927,7 +935,8 @@ export class Story {
     const nest = this.sys.nest;
     if (nest?.packed) { nest.packed = false; for (const p of Object.values(nest.props || {})) p.enabled = true; }
     nest?.hatch?.(true);
-    this.set('silhouette');
+    // Before the man was seen: as if he had run into the wardrobe (the bathroom open, his prints, the hatch).
+    if (this.set('silhouette')) this.afterSilhouette();
     this.flags.delete('hanger'); this.flags.delete('nest-seen');
     const right = this.sys.closets?.doors?.find(d => d.id === 'right');
     if (right && right.angle < 0.6) this.sys.closets.open?.(right);
@@ -941,8 +950,9 @@ export class Story {
     this.flags.delete('live');
     if (cam) { cam.scene = null; cam.cameraOnly?.(false); }
     if (ph) {
-      if (!ph.booted) ph.boot({ now: true });
+      // In the hand first, then booted (on the nightstand it would buzz there).
       if (!ph.has) { ph.has = true; ph.onCharger = false; ph.charger?.(false); }
+      if (!ph.booted) ph.boot({ now: true });
       ph.call = null; ph.raised = true; ph.openLive?.();
       ph.dirty = true;
     }

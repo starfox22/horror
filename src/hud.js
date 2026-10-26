@@ -23,15 +23,16 @@ export class Hud {
   }
 
   prompt(key, text, seconds = 4) {
+    this.promptKey = key;
     this.promptEl.innerHTML = `<kbd>${key}</kbd>${text}`;
     this.promptEl.hidden = false; this.promptEl.classList.remove('out');
     clearTimeout(this.promptTimer);
     this.promptTimer = setTimeout(() => { this.promptEl.classList.add('out'); setTimeout(() => { this.promptEl.hidden = true; }, 900); }, seconds * 1000);
   }
 
-  // Takes a prompt off the screen now (its key has been used).
-  hidePrompt() {
-    if (this.promptEl.hidden) return;
+  // Takes a prompt off the screen now (its key has been used); key: only if the prompt showing is that key's.
+  hidePrompt(key = null) {
+    if (this.promptEl.hidden || (key && this.promptKey !== key)) return;
     clearTimeout(this.promptTimer);
     this.promptEl.classList.add('out');
     this.promptTimer = setTimeout(() => { this.promptEl.hidden = true; }, 900);

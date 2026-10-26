@@ -149,8 +149,7 @@ function circleButton(g, x, y, r, fill, draw) { g.fillStyle = fill; g.beginPath(
 
 function statusBar(g, s) {
   text(g, clock(s.time), 72, 66, { font: f(600, 32) });
-  // The camera's island.
-  g.fillStyle = '#000'; rr(g, W / 2 - 96, 22, 192, 60, 30); g.fill();
+  // (The camera's island is the model's own, in front of the screen.)
   if (s.silenced) { text(g, '🔕', W / 2 + 128, 66, { font: f(400, 22) }); }
   signal(g, W - 222, 64, s.bars ?? 2);
   text(g, s.network ?? '4G', W - 178, 64, { font: f(600, 22) });
@@ -332,7 +331,7 @@ function call(g, s, wp) {
     const sel = s.sel ?? 0;
     circleButton(g, 170, H - 250, 72, RED, () => handset(g, 170, H - 246, 1.9, '#fff', true));
     circleButton(g, W - 170, H - 250, 72, GREEN, () => handset(g, W - 170, H - 250, 1.9, '#fff'));
-    if (sel === 0) { g.strokeStyle = 'rgba(255,255,255,0.9)'; g.lineWidth = 5; g.beginPath(); g.arc(W - 170, H - 250, 84, 0, Math.PI * 2); g.stroke(); }
+    g.strokeStyle = 'rgba(255,255,255,0.9)'; g.lineWidth = 5; g.beginPath(); g.arc(sel === 0 ? W - 170 : 170, H - 250, 84, 0, Math.PI * 2); g.stroke();
     text(g, 'Decline', 170, H - 140, { font: f(500, 26), color: DIM, align: 'center' });
     text(g, 'Accept', W - 170, H - 140, { font: f(500, 26), color: DIM, align: 'center' });
     homeBar(g);

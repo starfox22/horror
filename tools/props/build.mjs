@@ -452,6 +452,18 @@ const OPS = {
       scan(pr, (q, i) => { uv[2 * i] = (q[0] - lo[0]) / (hi[0] - lo[0]); uv[2 * i + 1] = (hi[1] - q[1]) / (hi[1] - lo[1]); });
       pr.setAttribute('TEXCOORD_0', doc.createAccessor().setType('VEC2').setArray(uv).setBuffer(doc.getRoot().listBuffers()[0]));
     }
+    // Its triangles face the back (the file's material is double-sided; the game's screen material is not, so it was
+    // culled and the cover glass showed the phone's insides): wound to face +Z.
+    for (const pr of screens) {
+      const pos = pr.getAttribute('POSITION'), idx = pr.getIndices(), tri = idx.getArray().slice(), a = [], b = [], c = [];
+      for (let t = 0; t < tri.length; t += 3) {
+        pos.getElement(tri[t], a); pos.getElement(tri[t + 1], b); pos.getElement(tri[t + 2], c);
+        if ((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]) < 0) { const k = tri[t + 1]; tri[t + 1] = tri[t + 2]; tri[t + 2] = k; }
+      }
+      idx.setArray(tri);
+      const nrm = pr.getAttribute('NORMAL');
+      if (nrm) for (let i = 0; i < nrm.getCount(); i++) nrm.setElement(i, [0, 0, 1]);
+    }
     // The screen lies exactly on the display frame's face (z-fighting: the black frame won): lifted 0.2 mm, still under
     // the cover glass.
     for (const pr of screens) { const pos = pr.getAttribute('POSITION'), q = []; for (let i = 0; i < pos.getCount(); i++) { pos.getElement(i, q); q[2] += 0.0002; pos.setElement(i, q); } }

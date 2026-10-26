@@ -6,7 +6,7 @@
 //   when     a sentence on what makes it happen in the game
 //   trigger  optional { signal, delay }: it fires `delay` seconds of play after a system sends `signal` (Director.signal),
 //            once. Seconds of play: the clock stops while the game is paused or the tab is hidden.
-//   run(ctx) what it does (ctx.story: story.js; ctx.fallingGlass: the 0.12 event on its own). From build 0.15 each plays
+//   run(ctx, how) what it does (how: 'story' or 'manual') (ctx.story: story.js; ctx.fallingGlass: the 0.12 event on its own). From build 0.15 each plays
 //            from any point of the night (story.js dev*: what it needs is put in place, its once-only flags cleared).
 export const STORY_EVENTS = [
   {
@@ -14,7 +14,9 @@ export const STORY_EVENTS = [
     label: 'Falling glass',
     when: 'Three seconds after the refrigerator is shut, once the player has drunk the glass of water.',
     trigger: { signal: 'fridge-shut-after-drink', delay: 3 },
-    run: ctx => (ctx.story ? ctx.story.devGlass() : ctx.fallingGlass()),
+    // The story's run breaks it once (glassBreaks ignores a second signal: the fridge shut again later); the developer
+    // menu's (how 'manual') replays it whenever.
+    run: (ctx, how) => (ctx.story ? (how === 'manual' ? ctx.story.devGlass() : ctx.story.glassBreaks()) : ctx.fallingGlass()),
   },
   { id: 'crow', label: 'The crow at the window', when: 'Once, before the man has been seen: standing near a window and looking at it, a crow slams into the glass (the developer menu: the window nearest the view).',
     run: ctx => ctx.story.sys.crow?.strike({ force: true }) },
@@ -29,7 +31,7 @@ export const STORY_EVENTS = [
   { id: 'tap-off', label: 'The tap, and the ceiling', when: 'The player turns off the bathroom tap: something heavy shifts in the ceiling towards the wardrobe.',
     run: ctx => ctx.story.devTapOff() },
   { id: 'alerts', label: 'The phone boots', when: 'On its charger once the power is back (after the quiet): it buzzes hard against the nightstand with the camera alerts it missed.',
-    run: ctx => { const ph = ctx.story.sys.phone; ph.booted = false; if (!ph.has) { ph.onCharger = true; ph.charger?.(true); } ph.boot(); } },
+    run: ctx => { const ph = ctx.story.sys.phone; ph.booted = false; if (!ph.has) { ph.onCharger = true; ph.charger?.(true); } ph.boot(); if (ph.raised) ph.app_ = 'lock'; } },
   { id: 'nest', label: 'The nest', when: 'The player opens the wardrobe’s right door after the power cut: a hanger drops, then his things.',
     run: ctx => ctx.story.devNest() },
   { id: 'live', label: 'LIVE', when: 'The player opens LIVE in the camera app: he comes out of the wardrobe; the power dies.',
@@ -126,7 +128,7 @@ export class Director {
 
   play(event, how) {
     this.log.push({ id: event.id, how, at: performance.now() });
-    try { event.run(this.ctx); } catch (error) { console.error(`Event ${event.id} failed`, error); }
+    try { event.run(this.ctx, how); } catch (error) { console.error(`Event ${event.id} failed`, error); }
   }
 
   reset() { this.fired.clear(); this.pending.length = 0; this.queued = null; this.onQueue?.(); }

@@ -436,11 +436,12 @@ test('build 0.15: every developer-menu event plays from any point of the night, 
   sys.crow = { strike: () => { calls.push('crow.strike'); return true; } };
   sys.intruder = { show: (on) => calls.push(`man.${on}`), place() {}, play() {} };
   story.begin({ seed: 5 });
+  let switched = 0; sys.power.onChange(e => { if (e?.off?.length || e?.on?.length) switched++; });   // the power going off or on, as the flat sees it
   const order = STORY_EVENTS.filter(e => !e.id.startsWith('end-'));
   for (const events of [order, [...order].reverse(), order]) for (const e of events) {
-    const power = () => JSON.stringify(sys.power.snapshot()) + sys.power.surges.length;
+    const power = () => JSON.stringify(sys.power.snapshot()) + sys.power.surges.length + switched;
     const before = { calls: calls.length, said: said.length, flags: [...story.flags].join(), power: power() };
-    e.run({ story, fallingGlass: () => {} });
+    e.run({ story, fallingGlass: () => {} }, 'manual');
     run(10);
     story.dying = false;                  // the death stub calls back at once
     const did = calls.length > before.calls || said.length > before.said || [...story.flags].join() !== before.flags || power() !== before.power;

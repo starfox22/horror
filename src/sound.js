@@ -238,9 +238,10 @@ export class SoundBank {
     g.setValueAtTime(0, t0);
     for (const [s, l] of windows) {
       const a = t0 + s, b = a + l;
+      let level = 1;
       g.setValueAtTime(0, a); g.linearRampToValueAtTime(1, a + 0.008);
-      for (let t = a + 0.02; t < b - 0.02; t += 0.018) g.setValueAtTime(0.45 + Math.random() * 0.55, t);   // the arc sputters
-      g.setValueAtTime(g.value, Math.max(a + 0.01, b - 0.012)); g.linearRampToValueAtTime(0, b);
+      for (let t = a + 0.02; t < b - 0.02; t += 0.018) { level = 0.45 + Math.random() * 0.55; g.setValueAtTime(level, t); }   // the arc sputters
+      g.setValueAtTime(level, Math.max(a + 0.01, b - 0.012)); g.linearRampToValueAtTime(0, b);    // and fades, never clicks
     }
     const out = ctx.createGain(); out.gain.value = gain;
     gate.connect(out);

@@ -168,12 +168,12 @@ export class Flashlight {
     this.sounds?.pickUp();
     this.onPickUp?.();
     if (on) this.toggle();
-    else this.prompt?.(true);
+    else { this.prompting = true; this.prompt?.(true); }
   }
 
   toggle() {
     this.on = !this.on;
-    if (this.on) this.prompt?.(false);
+    if (this.on && this.prompting) { this.prompting = false; this.prompt?.(false); }
     this.sounds?.flashlightClick(this.on);
     this.flicker = this.on ? 0.22 : 0;
     this.surfaceTimer = 0;      // a fresh target on the first lit frame
@@ -186,7 +186,7 @@ export class Flashlight {
   grip(on) {
     if (!this.held) return;
     this.gripped = !!on;
-    if (on && !this.on) { this.flicker = 0; this.surfaceTimer = 0; }
+    if (on && !this.on) { this.flicker = 0; this.surfaceTimer = 0; this.bounceAt = this.bounceFacing = null; }
   }
 
   // The cheap switch's contact: the beam stutters for `seconds` (story.js: the silhouette). Reduced flashes: a dip.
