@@ -100,6 +100,8 @@ Read [REVIEW_11.md](REVIEW_11.md) and [DRINK_ASSETS.md](DRINK_ASSETS.md). Auto n
 
 ## Published builds
 
+- Current Codex 0.16: https://starfox22.github.io/horror/codex/?v=0.16 from `0690cf2d7b0aa5afafed66f925907305a9952f36`; [deployment 40319600101](https://github.com/starfox22/horror/actions/runs/40319600101) passed. All 59 newer Claude commits are incorporated, followed by the bug pass. All 231 CPU checks, 26 WebGPU scenarios, 28 WebGL event/ending cases and normal-menu label check passed. Both live provenance files match and the hosted JS equals the local build byte for byte. Main and Claude remain at their shared 0.15 commit `c5a619f`. See [REVIEW_16.md](REVIEW_16.md). Documentation-only follow-ups skip CI and do not change the deployed game revision.
+
 - Production 0.15 (Claude) is on `main` since 2026-10-26 at the owner's request ("when you are finally done, go ahead
   and push to main"): https://starfox22.github.io/horror/ (the Pages workflow deploys `main`; `main` fast-forwarded to
   `claude/pensive-volta-et0etl`), the preview https://starfox22.github.io/horror/claude/, and the claude.ai artifact

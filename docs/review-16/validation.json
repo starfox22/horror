@@ -30,7 +30,21 @@
     "retouching": false
   },
   "browserChecks": "PASS: 26 WebGPU scenarios and 28 WebGL event/ending cases",
-  "publication": "pending",
+  "publication": {
+    "status": "PASS",
+    "revision": "0690cf2d7b0aa5afafed66f925907305a9952f36",
+    "run": 40319600101,
+    "url": "https://starfox22.github.io/horror/codex/?v=0.16",
+    "original": "c5a619f1e75881f46edbcf392f6c7f1e27e7a47e",
+    "claude": "c5a619f1e75881f46edbcf392f6c7f1e27e7a47e",
+    "allThreeRoots200": true,
+    "bothBuildInfoSchemasMatch": true,
+    "selectedAssetsHttp200": 106,
+    "finalSampledAssetsHttp200": true,
+    "localAndHostedBundle": "index-0wl6GmmU.js",
+    "bundleSha256": "8e4e2b9a686deb1bbad1f9b37d15eb479827117bfa92968fe0d17f804eece9ad",
+    "bundleByteMatch": true
+  },
   "webgpu": {
     "mode": "webgpu",
     "url": "http://127.0.0.1:4180/",
@@ -2259,5 +2273,6 @@
     "errors": [],
     "scope": "real menu initialization before model loading; version-label correction only",
     "note": "Final metadata-only correction after the gameplay audits; both visible version labels use the existing index label."
-  }
+  },
+  "gameplayAuditsRevision": "781f973de80a4adebd822ca3295f04c9fc0de16a"
 }

@@ -41,4 +41,6 @@ Keep the managed HTTP(S) proxy and its CA trust, including in Chromium; never di
 
 ## Publication record
 
-The 0.16 run and final source SHAs are added after deployment. Historical 0.11 promotion/deployment records are preserved in [CLAUDE_HANDOFF.md](CLAUDE_HANDOFF.md) and [REVIEW_11.md](REVIEW_11.md); 0.10 records are in [REVIEW_10.md](REVIEW_10.md). The old guide's two-output workflow and 0.11 production claim are superseded by the paths and baseline above.
+Final 0.16 [deployment 40319600101](https://github.com/starfox22/horror/actions/runs/40319600101) passed. Codex game revision is `0690cf2d7b0aa5afafed66f925907305a9952f36`; both main and Claude are `c5a619f1e75881f46edbcf392f6c7f1e27e7a47e`. Both provenance files match, all three roots return 200, and the final hosted JS SHA256 matches the local build. The index and actual menu footer both identify Codex 0.16. Models, geometry, audio, normal texture, font and decoders return 200. Read [REVIEW_16.md](REVIEW_16.md) and its validation data for the 231 CPU, 26 WebGPU and 28 WebGL checks.
+
+Historical 0.11 promotion/deployment records are preserved in [CLAUDE_HANDOFF.md](CLAUDE_HANDOFF.md) and [REVIEW_11.md](REVIEW_11.md); 0.10 records are in [REVIEW_10.md](REVIEW_10.md). The old guide's two-output workflow and 0.11 production claim are superseded by the paths and baseline above. Documentation-only follow-ups skip CI; their branch HEAD need not match the deployed application SHA.
