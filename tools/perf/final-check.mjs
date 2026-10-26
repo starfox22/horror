@@ -1,7 +1,8 @@
 // After the warm-up, nothing the player does should build a shader or re-render a burst of shadows: Act I's
 // interactions, then the night (build 0.14: the taps, the light under the bathroom door, the cut, the fuse box, the man
 // running into the bedroom, the phone booting on the nightstand, the nest's hanger, LIVE, the hunt, the crow, the death
-// with its blood and fall).
+// with its blood and fall). Build 0.15: the cut's flicker and buzz, the phone held in the hand with its screen's light,
+// the death lit by the player's gripped torch.
 // node tools/perf/final-check.mjs <url> [webgpu]
 import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
@@ -53,6 +54,7 @@ const [url, mode = 'webgl'] = process.argv.slice(2);
     // Build 0.13: the night. Story time is stepped by hand (software rendering runs at about a frame a second).
     const tick = async (seconds) => { for (let t = 0; t < seconds; t += 0.05) { s.story.update(0.05); s.power.update(0.05); s.seccam.update(0.05); s.fusebox.update(0.05); s.phone.update(0.05); } await frames(1); };
     s.player.update = () => {};
+    s.power.paused = () => false;                 // build 0.15: the power stands still while paused (no pointer lock here)
     await step('light under the door', async () => { s.story.glassBreaks(); s.world.bathroomOccupied(true); s.camera.setPosition(10.9, 1.6, 0.82); s.camera.lookAt(new s.pc.Vec3(9.3, 0.2, 0.82)); await tick(0.2); }, 8);
     await step('bathroom light out', async () => { s.story.bathroomTried(); await tick(3.2); }, 10);
     await step('power cut', async () => { s.story.powerCut('test'); await tick(2); }, 10);

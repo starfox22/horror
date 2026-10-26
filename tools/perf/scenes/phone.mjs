@@ -23,7 +23,7 @@ export default [
   } },
   // The corridor in the dark, the torch on, the phone up: the alerts.
   { name: 'phone-lock', wait: 6, setup: (s) => {
-    s.dark(); if (!s.flashlight.held) s.flashlight.pickUp({ on: true });
+    s.dark(); if (!s.flashlight.held) s.flashlight.pickUp({ on: true }); else if (!s.flashlight.on) s.flashlight.toggle();
     s.view(8.6, 1.79, 3.5, 90, -6); s.flashlight.rot.copy(s.camera.getRotation());
     s.holdPhone('lock', 0);
   } },
@@ -37,6 +37,7 @@ export default [
     ph.raised = false; ph.raiseK = 0; ph.has = false; ph.onCharger = true; ph.charger?.(true); ph.app_ = 'lock'; ph.call = null;
     ph.seccam?.stopLive?.(); ph.video.enabled = false;
     ph.lit = 30; ph.dirty = true;
-    s.view(12.95, 1.25, 1.25, -130, -36);
+    if (s.flashlight.held && !s.flashlight.on) s.flashlight.toggle();
+    s.view(13.2, 1.3, 1.38, -138, -50); s.flashlight.rot.copy(s.camera.getRotation());
   } },
 ];

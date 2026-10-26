@@ -9,7 +9,8 @@
 // Screen: a canvas (drawn when something changes) on the model's screen, the video on its own quad in front of it. The
 // copy on the nightstand shows the same canvas: dark, except for a while after something wakes it (plugged in: the
 // empty-battery glyph; booting: its logo; an alert: the lock screen), like a real phone lying face up.
-import { Color, Entity, StandardMaterial, Texture, Vec2, Vec3, Quat, PIXELFORMAT_RGBA8, FILTER_LINEAR, ADDRESS_CLAMP_TO_EDGE, BLEND_NONE, BLEND_ADDITIVE } from 'playcanvas';
+import { Color, Entity, StandardMaterial, Texture, Vec2, Vec3, Quat, PIXELFORMAT_RGBA8, FILTER_LINEAR, ADDRESS_CLAMP_TO_EDGE, BLEND_NONE, BLEND_ADDITIVE,
+  LIGHTFALLOFF_INVERSESQUARED, SHADOWUPDATE_REALTIME, MASK_AFFECT_DYNAMIC, MASK_AFFECT_LIGHTMAPPED } from 'playcanvas';
 import { W, H, VIDEO, drawScreen, makeWallpaper } from './phone-screen.js';
 import { ArmRig, frameRotation } from './arm-rig.js';
 
@@ -51,6 +52,7 @@ export class Phone {
     this.texture = new Texture(app.graphicsDevice, { width: W, height: H, format: PIXELFORMAT_RGBA8, mipmaps: false,
       minFilter: FILTER_LINEAR, magFilter: FILTER_LINEAR, addressU: ADDRESS_CLAMP_TO_EDGE, addressV: ADDRESS_CLAMP_TO_EDGE, name: 'phone-screen' });
     this.buildHolder();
+    this.buildScreenLight();
     this.buildStandGlow(CHARGER);
     this.chargerItem = interactions.add({ pos: CHARGER, size: 0.18, active: () => this.has && !this.onCharger,
       label: () => 'Put the phone on charge', use: () => this.putOnCharger() });
@@ -171,17 +173,9 @@ export class Phone {
     this.camera.addChild(this.handCarrier);
     this.handCarrier.addChild(entity);
     const playerCamera = this.camera.camera.camera;
-    // Its own materials (the drinking arm keeps its): a faint emissive, the screen's cold light on the fingers, set by
-    // how lit the screen is (poseHand). Emissive from the start, so lighting it builds no shader in play.
-    this.handMats = new Map();
     for (const r of entity.findComponents('render')) for (const mi of r.meshInstances) {
       mi.castShadow = false; mi.isVisibleFunc = cam => cam === playerCamera;
-      if (!this.handMats.has(mi.material)) {
-        const m = mi.material.clone(); configure?.(m);
-        m.emissive = new Color(0.55, 0.62, 0.8); m.emissiveIntensity = 0.001; m.update();
-        this.handMats.set(mi.material, m);
-      }
-      mi.material = this.handMats.get(mi.material);
+      if (!mi.material._phoneConfigured) { mi.material._phoneConfigured = true; configure?.(mi.material); }
     }
     this.rig = new ArmRig(entity, data);
     this.handPalm = new Vec3(...data.wristToPalm);
@@ -199,8 +193,31 @@ export class Phone {
     const palm = turn.transformVector(HAND.palm, (this._palm ||= new Vec3())).add(at);
     const wrist = rotation.transformVector(this.handPalm, (this._wrist ||= new Vec3())).mulScalar(-1).add(palm);
     this.rig.pose(HAND.shoulder, wrist, rotation, { grip: HAND.grip });
-    const glow = this.booted && this.booting === null ? 0.012 : 0.002;
-    if (glow !== this.handGlow) { this.handGlow = glow; for (const m of this.handMats.values()) { m.emissiveIntensity = glow; m.update(); } }
+  }
+
+  // The screen's own light (build 0.15): a small cold spot just in front of the glass, shining out of it, so the thumb
+  // and fingers round the phone (and a wall a few centimetres away) are lit by the screen, as they are in the dark. A
+  // light in the hand like the torch's: the player's view only (never a probe capture: the lightmapped bit, probes.js),
+  // shadowed like every light here (fixShadowAtlas counts it: made before it runs), realtime, lit only while the screen
+  // in the hand is on. `warmLight` (main.js warm-up): on, faintly, so its shaders are built at loading.
+  buildScreenLight() {
+    this.screenLight = new Entity('phone screen light');
+    this.screenLight.addComponent('light', { type: 'spot', color: new Color(0.72, 0.8, 1), intensity: 0, range: 0.9,
+      innerConeAngle: 45, outerConeAngle: 80, falloffMode: LIGHTFALLOFF_INVERSESQUARED, castShadows: true, shadowResolution: 256,
+      shadowBias: 0.05, normalOffsetBias: 0.004, shadowUpdateMode: SHADOWUPDATE_REALTIME, enabled: false,
+      mask: MASK_AFFECT_DYNAMIC | MASK_AFFECT_LIGHTMAPPED });
+    this.screenLight.setLocalPosition(0, 0, 0.035);
+    this.screenLight.setLocalEulerAngles(-90, 0, 0);          // a spot shines along its -Y: out of the screen (+Z)
+    this.holder.addChild(this.screenLight);
+  }
+
+  updateScreenLight() {
+    if (!this.screenLight) return;
+    const on = this.holder.enabled && this.booted && this.booting === null;
+    const level = this.warmLight ? 0.01 : on ? 0.55 * Math.min(1, this.raiseK * 1.4) : 0;
+    const l = this.screenLight.light;
+    if (l.enabled !== level > 0) l.enabled = level > 0;
+    l.intensity = level;
   }
 
   // --- state ---------------------------------------------------------------------------------------------------
@@ -469,6 +486,7 @@ export class Phone {
       this.holder.setLocalEulerAngles(6 - 3 * watch + (1 - k) * 25, -8 + 6 * watch, -3 + 3 * watch + Math.sin(t * 0.9) * 0.6);
     }
     this.poseHand();
+    this.updateScreenLight();
     // Screens that change by themselves (a clip's time, LIVE's status, a call's line) redraw a few times a second, not
     // every frame: the canvas is a 540x1170 upload.
     if (this.raised && (this.app_ === 'clip' || this.app_ === 'live' || this.app_ === 'call')) {

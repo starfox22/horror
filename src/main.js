@@ -423,7 +423,8 @@ if (!shot || hash.has('warm')) {
     () => crow.reveal(),                       // the crow, his feathers and the smear on the glass (crow.js)
     // Build 0.13: the story's later things on view for the sweep (their shaders).
     // The phone held up with its video showing (phone.update keeps the holder only while it is raised).
-    () => { phone.raised = true; phone.raiseK = 1; phone.video.enabled = true; return () => { phone.raised = false; phone.raiseK = 0; phone.video.enabled = false; phone.holder.enabled = false; }; },
+    () => { phone.raised = true; phone.raiseK = 1; phone.video.enabled = true; phone.warmLight = true;
+      return () => { phone.raised = false; phone.raiseK = 0; phone.video.enabled = false; phone.holder.enabled = false; phone.warmLight = false; phone.updateScreenLight(); }; },
     () => {
       const was = { shards: world.hasShards, flood: world.floodLevel, prints: world.printRoot.enabled, fog: world.fog.enabled, hatch: nest.hatchOpen, dryer: !!world.dryer?.enabled, charging: phone.onCharger };
       world.shards(true); world.flood(1); world.prints(true); world.mirrorFog(true); nest.hatch(true); nest.dustEntity.particlesystem.play();
