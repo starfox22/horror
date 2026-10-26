@@ -12,7 +12,7 @@ export default [
       ph.app_ = app === 'call' ? 'call' : app === 'lock' ? 'lock' : 'cam';
       if (app === 'clip') ph.playClip({ id: '0258', time: '02:58', title: 'Motion · Bedroom', evidence: 'clip-0258' });
       if (app === 'live') ph.openLive();
-      if (app === 'call') ph.call = { t: 41, sent: true, line: 'Officers are on their way. Two minutes. Stay on the line if you can. Is there somewhere you can hide?',
+      if (app === 'call') ph.call = { t: 41, sent: true, connected: true, line: 'Officers are on their way. Two minutes. Stay on the line if you can. Is there somewhere you can hide?',
         choices: [{ text: '"He’s in the ceiling. Above my wardrobe."', id: 'where' }, { text: '"It’s the man they evicted. From 5B."', id: 'who' }] };
       ph.sel = sel; ph.dirty = true;
     };

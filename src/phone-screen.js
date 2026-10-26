@@ -231,8 +231,8 @@ function notification(g, s, wp, n, y) {
   camIcon(g, 56, y + 24, 54);
   text(g, 'HOME CAM', 126, y + 48, { font: f(600, 24), color: DIM });
   text(g, n.ago ?? n.time, W - 64, y + 48, { font: f(400, 24), color: FAINT, align: 'right' });
-  text(g, 'Motion detected', 56, y + 98, { font: f(600, 30) });
-  text(g, `${n.place ?? 'Bedroom'} · ${n.time}`, 56, y + 134, { font: f(400, 28), color: 'rgba(235,240,248,0.78)' });
+  text(g, 'Motion detected', 56, y + 100, { font: f(600, 34) });
+  text(g, `${n.place ?? 'Bedroom'} · ${n.time}`, 56, y + 138, { font: f(400, 30), color: 'rgba(235,240,248,0.8)' });
   const th = s.thumbs?.[n.id];
   if (th) { g.save(); rr(g, W - 64 - 130, y + 66, 130, 74, 12); g.clip(); g.drawImage(th, W - 64 - 130, y + 66, 130, 74); g.restore(); }
 }
@@ -317,12 +317,12 @@ function call(g, s, wp) {
   // What the dispatcher last said, in a bubble.
   let y = 380;
   if (c.line && !c.incoming && c.connected !== false && !/^Calling/.test(c.line)) {
-    g.font = f(500, 32);
-    const lines = wrap(g, c.line, W - 160);
-    const h = 70 + lines.length * 42;
-    frost(g, wp, 40, y, W - 80, h, 30, { tint: 'rgba(255,255,255,0.12)' });
-    text(g, 'Dispatcher', 72, y + 44, { font: f(600, 22), color: DIM });
-    lines.forEach((l, i) => text(g, l, 72, y + 88 + i * 42, { font: f(500, 32) }));
+    g.font = f(500, 38);
+    const lines = wrap(g, c.line, W - 150);
+    const h = 78 + lines.length * 48;
+    frost(g, wp, 34, y, W - 68, h, 30, { tint: 'rgba(255,255,255,0.12)' });
+    text(g, 'Dispatcher', 66, y + 46, { font: f(600, 26), color: DIM });
+    lines.forEach((l, i) => text(g, l, 66, y + 96 + i * 48, { font: f(500, 38) }));
     y += h + 26;
   }
   const opts = s.options || [];
@@ -340,16 +340,17 @@ function call(g, s, wp) {
   const answers = opts.filter(([l]) => l !== 'Hang up');
   answers.forEach(([label], i) => {
     const sel = i === s.sel;
-    g.font = f(500, 30);
-    const lines = wrap(g, label.replace(/^"|"$/g, ''), W - 200);
-    const h = 40 + lines.length * 40;
-    frost(g, wp, 40, y, W - 80, h, 26, { selected: sel, tint: 'rgba(255,255,255,0.08)' });
-    lines.forEach((l, k) => text(g, l, 76, y + 50 + k * 40, { font: f(500, 30), color: sel ? '#0d0f14' : WHITE }));
+    g.font = f(600, 34);
+    const lines = wrap(g, label.replace(/^"|"$/g, ''), W - 170);
+    const h = 44 + lines.length * 44;
+    frost(g, wp, 34, y, W - 68, h, 26, { selected: sel, tint: 'rgba(255,255,255,0.08)' });
+    lines.forEach((l, k) => text(g, l, 66, y + 54 + k * 44, { font: f(600, 34), color: sel ? '#0d0f14' : WHITE }));
     y += h + 16;
   });
   if (answers.length) text(g, 'Whisper · scroll and click', W / 2, y + 30, { font: f(500, 22), color: FAINT, align: 'center' });
-  // The call's controls; the red button hangs up (selected when it is the only choice).
-  const row = H - 400, xs = [W / 2 - 190, W / 2, W / 2 + 190];
+  // The call's controls (not while answers are offered: they need the room); the red button hangs up (selected when it
+  // is the only choice).
+  const row = H - 400, xs = answers.length ? [] : [W / 2 - 190, W / 2, W / 2 + 190];
   const labels = ['mute', 'keypad', 'speaker'];
   xs.forEach((x, i) => {
     circleButton(g, x, row, 62, 'rgba(255,255,255,0.14)', () => {

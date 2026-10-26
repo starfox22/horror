@@ -482,7 +482,7 @@ export class Phone {
       // Held up in front of you while you watch the camera (clips, LIVE), lower to the right otherwise.
       const watch = this.watchK = (this.watchK ?? 0) + (((this.app_ === 'clip' || this.app_ === 'live') ? 1 : 0) - (this.watchK ?? 0)) * (1 - Math.exp(-dt * 6));
       // Up where it can be read (build 0.15: it was held so low that its screen ran off the bottom of the view).
-      this.holder.setLocalPosition(0.052 - 0.04 * watch, -0.078 + 0.03 * watch - (1 - k) * 0.2 + Math.sin(t * 1.3) * 0.002, -0.25 + 0.02 * watch);
+      this.holder.setLocalPosition(0.045 - 0.035 * watch, -0.066 + 0.024 * watch - (1 - k) * 0.2 + Math.sin(t * 1.3) * 0.002, -0.225 + 0.012 * watch);
       this.holder.setLocalEulerAngles(6 - 3 * watch + (1 - k) * 25, -8 + 6 * watch, -3 + 3 * watch + Math.sin(t * 0.9) * 0.6);
     }
     this.poseHand();
