@@ -96,13 +96,19 @@ Read [REVIEW_11.md](REVIEW_11.md) and [DRINK_ASSETS.md](DRINK_ASSETS.md). Auto n
 
 ## Published builds
 
+- Production 0.15 (Claude) is on `main` since 2026-10-26 at the owner's request ("when you are finally done, go ahead
+  and push to main"): https://starfox22.github.io/horror/ (the Pages workflow deploys `main`; `main` fast-forwarded to
+  `claude/pensive-volta-et0etl`), the preview https://starfox22.github.io/horror/claude/, and the claude.ai artifact
+  https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9 (version 18: since 0.14 only the bundle, `index.html`, the phone
+  (`assets/props/story/phone.glb.b64.txt`) and the props' `LICENSES.txt` changed; the apartment parts,
+  `apartment.json`, `collision.json`, `sight.json` and `lib/` were not re-sent; the old `index-BzN0g41R.js` removed).
 - Build 0.14 (Claude), 2026-10-25, from `claude/pensive-volta-et0etl` at `46d0265`: the preview
   https://starfox22.github.io/horror/claude/ (`pages-claude.yml`, every push to the branch) and the claude.ai artifact
   https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9 (version 17: only the bundle changed from version 16, `26b739e`,
   which lacked the pause hold and the touch-screen note; for 0.14 the apartment parts, `apartment.json`,
   `collision.json`, `sight.json` and `lib/` were unchanged since 0.13 and not re-sent; new: the crow, his knife and
   the kitchen's knives, the porcelain-masked intruder, the blood, the re-baked clips, the new recordings; the old
-  `index-*.js` / `.css` removed). `main` still serves 0.13: promote 0.14 only when the owner asks.
+  `index-*.js` / `.css` removed). Superseded by 0.15 on `main`.
 - Production 0.13 (Claude) is on `main` since 2026-10-25 at the owner's request ("publish directly to main"):
   https://starfox22.github.io/horror/?v=0.13 (the Pages workflow deploys `main`), and on the claude.ai artifact
   https://claude.ai/artifact/4wUwgVm7PferEUwiqMeDd9 (same URL; the apartment parts were unchanged and not re-sent; new:
